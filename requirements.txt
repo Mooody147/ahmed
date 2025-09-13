@@ -1,0 +1,4 @@
+pdfplumber
+ezdxf
+fastapi
+uvicorn
