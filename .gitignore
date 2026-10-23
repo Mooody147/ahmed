@@ -1,3 +1,6 @@
 node_modules/
 test/shots/
 __pycache__/
+app/
+release/
+test/desktop/out/

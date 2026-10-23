@@ -6,6 +6,9 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': 
 const clone = o => JSON.parse(JSON.stringify(o));
 const TZ = (() => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone; } catch { return 'local'; } })();
 const nowISO = () => new Date().toISOString();
+// Desktop build: platform.js adds window.claude.desktop (Electron). Absent in the web/artifact build.
+const DK = (typeof window !== 'undefined' && window.claude && window.claude.desktop) || null;
+const DESKTOP = !!DK;
 
 /* ---------- icons ---------- */
 const svg = (d, s = 18) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
@@ -214,7 +217,7 @@ function render() {
   const tc = [...St.tasks.values()].filter(t => t.status !== 'done' && isMine(t) && t.status !== 'waiting').length;
   document.querySelectorAll('[data-count="todo"]').forEach(n => { n.textContent = tc || ''; n.hidden = !tc; });
   const sm = $('#storage-mode');
-  if (sm) sm.innerHTML = St.mode === 'db' ? '<span class="dot"></span>Saved to your Claude account · private to you' : St.mode === 'local' ? '<span class="dot local"></span>Saved in this browser only' : '<span class="dot off"></span>Connecting…';
+  if (sm) sm.innerHTML = St.mode === 'db' ? (DESKTOP ? '<span class="dot"></span>Saved on this computer · private to you' : '<span class="dot"></span>Saved to your Claude account · private to you') : St.mode === 'local' ? '<span class="dot local"></span>Saved in this browser only' : '<span class="dot off"></span>Connecting…';
   keepFocus(() => {
     const main = $('#main');
     if (!St.ready) { main.innerHTML = `<div class="wrap"><div class="empty"><div class="progress indet" style="width:180px"><i></i></div><p>Opening your register…</p></div></div>`; return; }
@@ -1149,7 +1152,7 @@ function viewImport() {
   const ready = UI.staging.filter(b => b.state === 'ready' && !b.skip);
   return `<div class="wrap">
     <div class="page-head"><div><h1>Add emails</h1><div class="sub">Forward emails to your address, or add saved Outlook files. Claude reads each email with its attachments and proposes tasks for your review.</div></div></div>
-    ${!aiOK && St.capsResolved ? callout('warn', '<p><b>Claude analysis is not available in this view.</b> Open this page inside Claude while signed in, and choose Allow when asked.</p>') : ''}
+    ${!aiOK && St.capsResolved ? callout('warn', DESKTOP ? '<p><b>Claude analysis is not set up yet.</b> Add your Anthropic API key in Setup › Connections. <button class="btn sm" data-act="nav" data-view="setup">Open Setup</button></p>' : '<p><b>Claude analysis is not available in this view.</b> Open this page inside Claude while signed in, and choose Allow when asked.</p>') : ''}
     ${!s.me.name ? callout('warn', `<p>Tell Claude who you are first, so it can separate your actions from other people's. <button class="btn sm" data-act="nav" data-view="setup">Open Setup</button></p>`) : ''}
     ${gmailCardHTML()}
     <div class="drop" id="drop">
@@ -1349,6 +1352,9 @@ function aiErrorText(e) {
     invalid_json: 'The answer could not be read as tasks. Press Analyse to try again.',
     empty_completion: 'Claude returned an empty answer. Try again, or send fewer attachments.',
     upstream_error: 'Connection problem while analysing. Press Analyse to retry this email.',
+    auth_failed: 'Your Anthropic API key was rejected. Check it in Setup › Connections.',
+    billing: 'Your Anthropic account has no usable credit or the model is not enabled for it. Check console.anthropic.com › Billing, then press Analyse again.',
+    model_not_found: 'The Claude model set in Setup › Connections was not found. Check the model names there.',
   })[c] || ('Analysis failed' + (c ? ' (' + c + ')' : '') + '.');
 }
 async function runAnalysis() {
@@ -1368,7 +1374,7 @@ async function runAnalysis() {
     } catch (e) {
       if (e && e.code === 'cancelled') { b.state = 'ready'; break; }
       b.state = 'error'; b.error = aiErrorText(e);
-      if (e && ['not_granted', 'sampling_disabled', 'rate_limited', 'session_expired'].includes(e.code)) { rerenderStaging(); break; }
+      if (e && ['not_granted', 'sampling_disabled', 'rate_limited', 'session_expired', 'auth_failed', 'billing', 'model_not_found'].includes(e.code)) { rerenderStaging(); break; }
     }
     rerenderStaging();
   }
@@ -1490,14 +1496,14 @@ async function reanalyze(eid) {
 const GMAIL = 'Gmail';
 const GM_LABEL = 'Action Register/Imported';
 const GM = { status: 'idle', error: '', lastChecked: null, newCount: 0, seen: null, autoDone: false, busy: false };
-const gmDefaults = () => ({ address: 'msobeah12+tasks@gmail.com', days: 14, autoCheck: true, autoAnalyse: true, label: true, labelId: '' });
+const gmDefaults = () => ({ address: DESKTOP ? DK.suggestedAddress() : 'msobeah12+tasks@gmail.com', days: 14, autoCheck: true, autoAnalyse: true, label: true, labelId: '' });
 const gmCfg = () => Object.assign(gmDefaults(), St.settings.gmail || {});
 const payloadOf = r => { let p = r && r.payload !== undefined ? r.payload : r; if (typeof p === 'string') { try { p = JSON.parse(p); } catch {} } return p || {}; };
 function mcpErrorText(e) {
   const c = e && e.code;
   return ({
-    needs_reauth: 'Gmail needs reconnecting: claude.ai Settings › Connectors › Gmail.',
-    server_not_connected: 'Gmail is not connected to your Claude account. Add it in claude.ai Settings › Connectors, then press Check now.',
+    needs_reauth: DESKTOP ? 'Gmail needs reconnecting: Setup › Connections › Connect Gmail.' : 'Gmail needs reconnecting: claude.ai Settings › Connectors › Gmail.',
+    server_not_connected: DESKTOP ? 'Gmail is not connected. Connect it in Setup › Connections, then press Check now.' : 'Gmail is not connected to your Claude account. Add it in claude.ai Settings › Connectors, then press Check now.',
     selection_required: 'You have more than one Gmail connector. Choose one when Claude asks, then press Check now.',
     not_in_manifest: 'Gmail access was turned off or declined for this page. Allow it from the page’s permissions, then press Check now.',
     approval_required: 'Gmail access needs your approval. Press Check now and choose Allow.',
@@ -1548,7 +1554,7 @@ function gmQuery(g) {
 }
 async function checkGmail(manual) {
   const g = gmCfg();
-  if (!St.mcp) { if (manual) toast('Gmail access is not available in this view. Open the page inside Claude while signed in.', { err: true }); return; }
+  if (!St.mcp) { if (manual) toast(DESKTOP ? 'Gmail is not connected. Connect it in Setup › Connections.' : 'Gmail access is not available in this view. Open the page inside Claude while signed in.', { err: true }); return; }
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(g.address.trim())) { if (manual) toast('Enter your forwarding address first.', { err: true }); return; }
   if (GM.busy) return;
   GM.busy = true; GM.status = 'checking'; GM.error = ''; render();
@@ -1613,7 +1619,7 @@ function gmailCardHTML() {
       ${available && g.address ? `<button class="btn sm" data-act="gmail-check" ${GM.busy ? 'disabled' : ''}>${GM.busy ? 'Checking…' : 'Check now'}</button>` : ''}</div>
     ${g.address ? fwdAddrHTML() : callout('warn', `<p>No forwarding address yet. <button class="btn sm" data-act="nav" data-view="setup">Set it in Setup</button></p>`)}
     <p class="small muted" style="margin:0">Forward work emails here from Outlook — <b>Forward as Attachment</b> keeps the original sender, date and attachments exactly. Anything you type above the forwarded message is treated as your own note.${g.autoCheck ? ` New forwards are picked up when you open this page${g.autoAnalyse ? ' and analysed automatically' : ''}.` : ''}${GM.lastChecked ? ` Last checked ${esc(new Date(GM.lastChecked).toTimeString().slice(0, 5))}.` : ''}</p>
-    ${!available && St.capsResolved ? callout('warn', '<p>Gmail access is not available in this view. Open the page inside Claude while signed in, with Gmail connected in claude.ai Settings › Connectors.</p>') : ''}
+    ${!available && St.capsResolved ? callout('warn', DESKTOP ? '<p>Gmail is not connected yet. <button class="btn sm" data-act="nav" data-view="setup">Connect it in Setup</button> — or skip it and add saved .msg / .eml files below.</p>' : '<p>Gmail access is not available in this view. Open the page inside Claude while signed in, with Gmail connected in claude.ai Settings › Connectors.</p>') : ''}
     ${GM.status === 'error' ? callout('crit', `<p>${esc(GM.error)}</p>`) : GM.busy && GM.error ? `<div class="small muted">${esc(GM.error)}</div>` : ''}
   </section>`;
 }
@@ -1687,6 +1693,7 @@ function viewSetup() {
   const lim = St.limits;
   return `<div class="wrap settings">
     <div class="page-head"><div><h1>Setup</h1><div class="sub">How the assistant identifies your work, and where your data lives.</div></div></div>
+    ${DESKTOP ? DK.setupHTML() : ''}
     <section class="card pad"><div class="section-title"><h2>You</h2></div>
       <div class="grid2">
         <label class="field"><span>Name</span><input class="input" id="s-name" value="${esc(me.name || '')}" placeholder="${esc(St.profileName || 'Your name')}"></label>
@@ -1702,7 +1709,7 @@ function viewSetup() {
     <section class="card pad"><div class="section-title"><h2>Forwarding inbox</h2></div>
       ${fwdAddrHTML()}
       <div class="grid2">
-        <label class="field"><span>Forwarding address (in the Gmail account connected to Claude)</span><input class="input" id="gm-addr" type="email" value="${esc(gmCfg().address)}" placeholder="yourname+tasks@gmail.com" autocomplete="off"></label>
+        <label class="field"><span>Forwarding address (in the Gmail account connected ${DESKTOP ? 'in Connections' : 'to Claude'})</span><input class="input" id="gm-addr" type="email" value="${esc(gmCfg().address)}" placeholder="yourname+tasks@gmail.com" autocomplete="off"></label>
         <label class="field"><span>Look back</span><select class="input" id="gm-days">${[3, 7, 14, 30, 60].map(d => `<option value="${d}" ${+gmCfg().days === d ? 'selected' : ''}>${d} days</option>`).join('')}</select></label>
         <label class="check"><input type="checkbox" id="gm-auto" ${gmCfg().autoCheck ? 'checked' : ''}><span>Check for new forwards when I open the page</span></label>
         <label class="check"><input type="checkbox" id="gm-analyse" ${gmCfg().autoAnalyse ? 'checked' : ''}><span>Analyse new forwards automatically<br><span class="small muted">Uses your Claude usage. Tasks still wait for your approval.</span></span></label>
@@ -1710,7 +1717,7 @@ function viewSetup() {
       </div>
       <div class="row end"><button class="btn primary" data-act="gmail-save">Save</button></div>
       <details class="howto"><summary>How the forwarding address works</summary><ol>
-        <li>Gmail delivers mail sent to <span class="mono">yourname+anything@gmail.com</span> to <span class="mono">yourname@gmail.com</span>. Use the Gmail account connected to Claude (claude.ai Settings › Connectors).</li>
+        <li>Gmail delivers mail sent to <span class="mono">yourname+anything@gmail.com</span> to <span class="mono">yourname@gmail.com</span>. ${DESKTOP ? 'Use the Gmail account connected in Setup › Connections.' : 'Use the Gmail account connected to Claude (claude.ai Settings › Connectors).'}</li>
         <li>Optional: in Gmail search <span class="mono">to:(your forwarding address)</span> › Create filter › Skip the Inbox, so forwards stay out of your personal inbox.</li>
         <li>Check your company’s rules before forwarding work email to a personal mailbox. Automatic forwarding rules to outside addresses are often blocked by Microsoft 365; this works with forwards you send yourself.</li>
       </ol></details>
@@ -1726,9 +1733,9 @@ function viewSetup() {
     <section class="card pad"><div class="section-title"><h2>Privacy</h2></div>
       <label class="check"><input type="checkbox" id="s-store" data-chg="opt" data-key="storeText" ${s.storeText ? 'checked' : ''}><span>Keep extracted email and attachment text<br><span class="small muted">Needed to view text later and to re-analyse. When off, only tasks, evidence quotes and summaries are kept.</span></span></label>
       <dl class="kv">
-        <dt>Where data is kept</dt><dd>${St.mode === 'db' ? 'Your Claude account, in a private area of this page that only you can read — not visible to people you share the page with.' : 'This browser only (cloud saving is unavailable in this view). Export backups regularly.'}</dd>
+        <dt>Where data is kept</dt><dd>${DESKTOP ? 'On this computer only, in ' + esc(DK.dataDir()) + '. Export backups regularly.' : St.mode === 'db' ? 'Your Claude account, in a private area of this page that only you can read — not visible to people you share the page with.' : 'This browser only (cloud saving is unavailable in this view). Export backups regularly.'}</dd>
         <dt>What is sent to Claude</dt><dd>Only during analysis: the email text, the text read from attachments you leave ticked, and page images when image options are on.</dd>
-        <dt>What never happens</dt><dd>No mailbox connection, no automatic reading of your inbox, nothing sent anywhere else.</dd>
+        <dt>What never happens</dt><dd>${DESKTOP ? 'No access to your work mailbox. Only the personal Gmail you connect is read, and only messages sent to your forwarding address. Nothing is sent anywhere except Anthropic (analysis) and Gmail.' : 'No mailbox connection, no automatic reading of your inbox, nothing sent anywhere else.'}</dd>
         <dt>Image limit per email</dt><dd>${lim && lim.images ? lim.images.maxCount + ' images' : 'Images unavailable in this view'}</dd>
       </dl>
     </section>

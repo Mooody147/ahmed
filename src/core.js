@@ -488,7 +488,8 @@ function kindOf(name, mime) {
 const KIND_LABEL = { pdf: 'PDF', image: 'Image', docx: 'Word', sheet: 'Spreadsheet', pptx: 'PowerPoint', text: 'Text', html: 'HTML', eml: 'Email', msg: 'Outlook item', zip: 'ZIP', dxf: 'DXF drawing', cad: 'CAD model', rtf: 'RTF', legacy: 'Legacy Office', tiff: 'TIFF image', heic: 'HEIC image', odt: 'OpenDocument', archive: 'Archive', media: 'Audio/video', binary: 'Program', unknown: 'File' };
 
 /* ---------- library loader (browser) ---------- */
-const CDN = {
+// The desktop app sets globalThis.ETM_CDN to locally bundled copies of the same versions.
+const CDN = (typeof globalThis !== 'undefined' && globalThis.ETM_CDN) || {
   pdf: ['https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js', 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js'],
   xlsx: ['https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js'],
   mammoth: ['https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js'],
@@ -500,7 +501,7 @@ function loadScript(src) {
   if (scriptP[src]) return scriptP[src];
   return (scriptP[src] = new Promise((res, rej) => {
     const s = document.createElement('script'); s.src = src; s.async = true; s.crossOrigin = 'anonymous';
-    s.onload = () => res(); s.onerror = () => { delete scriptP[src]; rej(new Error('Could not load the reader library (' + src.split('/npm/')[1].split('/')[0] + '). Check your connection and try again.')); };
+    s.onload = () => res(); s.onerror = () => { delete scriptP[src]; rej(new Error('Could not load the reader library (' + (src.split('/npm/')[1] || src.split('/').pop()).split('/')[0] + '). Check your connection and try again.')); };
     document.head.appendChild(s);
   }));
 }
