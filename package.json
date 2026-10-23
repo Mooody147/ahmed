@@ -1,0 +1,19 @@
+{
+  "name": "action-register",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Email-to-task manager for mechanical / water & wastewater engineers: imports Outlook emails with attachments, Claude extracts evidence-backed tasks, user approves, tasks shown as a Project → Topic → Task mind map.",
+  "scripts": {
+    "build": "node build.js",
+    "test:unit": "node test/unit/parse.test.js && node test/unit/ai.test.js",
+    "test:e2e": "python3 test/e2e_final.py && python3 test/e2e_gmail.py && python3 test/e2e_3d.py && python3 test/e2e_map.py"
+  },
+  "devDependencies": {
+    "docx": "8.5.0",
+    "jszip": "3.10.1",
+    "mammoth": "1.8.0",
+    "pdf-lib": "1.17.1",
+    "pdfjs-dist": "3.11.174",
+    "xlsx": "0.18.5"
+  }
+}
