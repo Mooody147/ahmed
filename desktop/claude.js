@@ -35,14 +35,18 @@ function buildParams(config, req, opts) {
     content.push({ type: 'text', text: `IMG${i + 1}:` });
     content.push({ type: 'image', source: { type: 'base64', media_type: im.type, data: Buffer.from(im.data).toString('base64') } });
   });
-  content.push({ type: 'text', text: req.prompt });
+  // The analysis instructions come before "=== EMAIL HEADER ===" and repeat for every email of the
+  // day, so they go first with a cache breakpoint (prompt caching cuts their cost on later emails).
+  const cut = req.prompt.indexOf('\n=== EMAIL HEADER ===');
+  if (cut > 4000) content.unshift({ type: 'text', text: req.prompt.slice(0, cut), cache_control: { type: 'ephemeral' } });
+  content.push({ type: 'text', text: cut > 4000 ? req.prompt.slice(cut + 1) : req.prompt });
   const params = { model, max_tokens: MAX_TOKENS, messages: [{ role: 'user', content }] };
   if (opts.effort) params.output_config = { effort: EFFORT[req.tier] || 'high' };
   if (opts.fallbacks && FALLBACK_MODELS.test(model)) { params.fallbacks = 'default'; params.betas = [FALLBACK_BETA]; }
   return params;
 }
 
-async function run(config, req, onDelta) {
+async function run(config, req, onDelta, onUsage) {
   const c = client(config);
   const ac = new AbortController();
   running.set(req.id, ac);
@@ -52,6 +56,7 @@ async function run(config, req, onDelta) {
       const params = buildParams(config, req, opts);
       try {
         const msg = await streamOnce(c, params, ac.signal, onDelta);
+        if (onUsage && msg.usage) { try { onUsage({ model: msg.model || params.model, input: msg.usage.input_tokens || 0, output: msg.usage.output_tokens || 0, cacheRead: msg.usage.cache_read_input_tokens || 0, cacheWrite: msg.usage.cache_creation_input_tokens || 0 }); } catch {} }
         return finish(msg);
       } catch (e) {
         // A model set in Setup that predates effort / fallbacks rejects those fields: retry once without them.

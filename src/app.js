@@ -89,16 +89,19 @@ let lsTimer = null;
 function saveLocal() {
   clearTimeout(lsTimer);
   lsTimer = setTimeout(() => {
-    try { localStorage.setItem(LS_KEY, JSON.stringify({ tasks: [...St.tasks.values()], emails: [...St.emails.values()], settings: St.settings, board: [...St.board.values()], daily: [...St.daily.values()], layout: St.layout })); }
+    try { localStorage.setItem(LS_KEY, JSON.stringify({ tasks: [...St.tasks.values()], emails: [...St.emails.values()], settings: St.settings, board: [...St.board.values()], daily: [...St.daily.values()], layout: St.layout, cols: Object.fromEntries(COLS.map(n => [n, colList(n)])) })); }
     catch { toast('This browser refused to save (storage full or blocked). Export a backup from Setup.', { err: true }); }
   }, 250);
 }
 function putTask(t) {
   t.updatedAt = nowISO();
+  const before = St.tasks.get(t.id);
   St.tasks.set(t.id, t); FRESH.set(t.id, Date.now());
+  runHooks('taskChanged', before || null, t);
   if (St.mode === 'db') writeDoc(St.refs.tasks.doc(t.id), t); else saveLocal();
 }
 function delTask(id) {
+  if (St.tasks.has(id)) runHooks('deleted', 'task', St.tasks.get(id));
   St.tasks.delete(id);
   if (St.mode === 'db') St.refs.tasks.doc(id).delete().catch(dbError); else saveLocal();
 }
@@ -107,6 +110,7 @@ function putEmail(e) {
   if (St.mode === 'db') writeDoc(St.refs.emails.doc(e.id), e); else saveLocal();
 }
 function delEmail(id) {
+  if (St.emails.has(id)) runHooks('deleted', 'email', St.emails.get(id));
   St.emails.delete(id);
   if (St.mode === 'db') { St.refs.emails.doc(id).delete().catch(dbError); St.refs.texts.doc(id).delete().catch(() => {}); }
   else { saveLocal(); try { const m = JSON.parse(localStorage.getItem(LS_TEXT) || '{}'); delete m[id]; localStorage.setItem(LS_TEXT, JSON.stringify(m)); } catch {} }
@@ -119,6 +123,12 @@ function putLayout(l) { St.layout = l; if (St.mode === 'db') writeDoc(St.refs.la
 function putDaily(d) { d.updatedAt = nowISO(); St.daily.set(d.id, d); if (St.mode === 'db') writeDoc(St.refs.daily.doc(d.id), d); else saveLocal(); }
 function delDaily(id) { St.daily.delete(id); if (St.mode === 'db') St.refs.daily.doc(id).delete().catch(dbError); else saveLocal(); }
 const mergeLayout = l => ({ off: {}, size: {}, ...(l || {}) });
+// further collections used by feature files: document register, time log, lessons, recycle bin, learned preferences
+const COLS = ['docreg', 'time', 'lessons', 'trash', 'prefs'];
+St.cols = Object.fromEntries(COLS.map(n => [n, new Map()]));
+const colList = n => [...St.cols[n].values()];
+function colPut(n, d) { d.updatedAt = nowISO(); St.cols[n].set(d.id, d); if (St.mode === 'db') writeDoc(St.refs.cols[n].doc(d.id), d); else saveLocal(); }
+function colDel(n, id) { St.cols[n].delete(id); if (St.mode === 'db') St.refs.cols[n].doc(id).delete().catch(dbError); else saveLocal(); }
 function putSettings(s) {
   St.settings = s;
   if (St.mode === 'db') writeDoc(St.refs.settings, s); else saveLocal();
@@ -152,7 +162,7 @@ async function initStore() {
     St.db = db; St.mode = 'db';
     const base = db.doc('data/users/' + St.uid + '/register');
     St.refs = { tasks: base.collection('tasks'), emails: base.collection('emails'), texts: base.collection('texts'), board: base.collection('board'), daily: base.collection('daily'), settings: db.doc('data/users/' + St.uid + '/settings'), layout: db.doc('data/users/' + St.uid + '/canvaslayout'), seen: db.doc('data/users/' + St.uid + '/gmailseen') };
-    let got = 0; const done = () => { if (++got >= 3 && !St.ready) { St.ready = true; setTimeout(() => { maybeAutoCheck(); if (UI.view === 'todo') maybeAutoCategorize(); }, 300); } render(); };
+    let got = 0; const done = () => { if (++got >= 3 && !St.ready) { St.ready = true; setTimeout(() => { maybeAutoCheck(); if (UI.view === 'todo') maybeAutoCategorize(); runHooks('ready'); }, 300); } render(); };
     const fail = e => { if (e && e.code === 'revoked') toast('Access to saved data ended for this view. Reload the page.', { err: true }); else toast('Live sync stopped (' + (e && e.code || 'error') + '). Reload to reconnect.', { err: true }); };
     St.refs.tasks.onSnapshot(s => { St.tasks = new Map(s.docs.map(d => [d.id, { ...clone(d.data()), id: d.id }])); if (!St._t) { St._t = 1; done(); } else scheduleRender(); }, fail);
     St.refs.emails.onSnapshot(s => { St.emails = new Map(s.docs.map(d => [d.id, { ...clone(d.data()), id: d.id }])); if (!St._e) { St._e = 1; done(); } else scheduleRender(); }, fail);
@@ -160,13 +170,15 @@ async function initStore() {
     St.refs.board.onSnapshot(s => { St.board = new Map(s.docs.map(d => [d.id, { ...clone(d.data()), id: d.id }])); scheduleRender(); }, fail);
     St.refs.daily.onSnapshot(s => { St.daily = new Map(s.docs.map(d => [d.id, { ...clone(d.data()), id: d.id }])); scheduleRender(); }, fail);
     St.refs.layout.onSnapshot(d => { St.layout = mergeLayout(d.exists ? clone(d.data()) : null); scheduleRender(); }, fail);
+    St.refs.cols = {};
+    for (const n of COLS) { St.refs.cols[n] = base.collection(n); St.refs.cols[n].onSnapshot(s => { St.cols[n] = new Map(s.docs.map(d => [d.id, { ...clone(d.data()), id: d.id }])); scheduleRender(); }, fail); }
   } else {
     St.mode = 'local';
     try {
       const raw = JSON.parse(localStorage.getItem(LS_KEY) || 'null');
-      if (raw) { (raw.tasks || []).forEach(t => St.tasks.set(t.id, t)); (raw.emails || []).forEach(e => St.emails.set(e.id, e)); (raw.board || []).forEach(b => St.board.set(b.id, b)); (raw.daily || []).forEach(d => St.daily.set(d.id, d)); St.layout = mergeLayout(raw.layout); St.settings = mergeSettings(raw.settings); }
+      if (raw) { (raw.tasks || []).forEach(t => St.tasks.set(t.id, t)); (raw.emails || []).forEach(e => St.emails.set(e.id, e)); (raw.board || []).forEach(b => St.board.set(b.id, b)); (raw.daily || []).forEach(d => St.daily.set(d.id, d)); St.layout = mergeLayout(raw.layout); for (const n of COLS) (raw.cols && raw.cols[n] || []).forEach(d => St.cols[n].set(d.id, d)); St.settings = mergeSettings(raw.settings); }
     } catch {}
-    St.ready = true; render(); setTimeout(() => { maybeAutoCheck(); if (UI.view === 'todo') maybeAutoCategorize(); }, 300);
+    St.ready = true; render(); setTimeout(() => { maybeAutoCheck(); if (UI.view === 'todo') maybeAutoCategorize(); runHooks('ready'); }, 300);
   }
 }
 function maybeAutoCheck() { if (GM.autoDone) return; GM.autoDone = true; const g = gmCfg(); if (St.mcp && g.address && g.autoCheck) checkGmail(false); }
@@ -224,6 +236,7 @@ function keepFocus(fn) {
 }
 function render() {
   if (cvHold()) { UI.cvPending = true; return; }
+  runHooks('beforeRender');
   const c = counts();
   document.querySelectorAll('[data-nav]').forEach(b => b.setAttribute('aria-current', b.dataset.nav === UI.view ? 'page' : 'false'));
   const rc = c.review;
@@ -235,11 +248,12 @@ function render() {
   keepFocus(() => {
     const main = $('#main');
     if (!St.ready) { main.innerHTML = `<div class="wrap"><div class="empty"><div class="progress indet" style="width:180px"><i></i></div><p>Opening your register…</p></div></div>`; return; }
-    main.innerHTML = ({ todo: viewTodo, daily: viewDaily, review: viewReview, import: viewImport, emails: viewEmails, setup: viewSetup })[UI.view]();
+    main.innerHTML = deco((VIEW_FN[UI.view] || viewTodo)());
   });
   if (UI.view === 'todo' && UI.todoMode === 'map') afterMapRender();
   document.querySelectorAll('#main textarea.autogrow').forEach(autosize);
   if (UI.drawer && UI.drawer.kind === 'email' && UI.drawer.dirty) renderDrawer();
+  if (St.ready) runHooks('afterRender');
 }
 
 /* ---------- shared fragments ---------- */
@@ -296,8 +310,9 @@ function closeDrawer() { UI.drawer = null; $('#drawer').hidden = true; $('#scrim
 function renderDrawer() {
   const dr = UI.drawer; if (!dr) return closeDrawer();
   const el = $('#drawer');
-  if (dr.kind === 'task') { const t = St.tasks.get(dr.id); if (!t) return closeDrawer(); el.innerHTML = taskDrawerHTML(t); }
-  else if (dr.kind === 'email') { const e = St.emails.get(dr.id); if (!e) return closeDrawer(); el.innerHTML = emailDrawerHTML(e); dr.dirty = false; loadEmailTexts(e.id); }
+  if (dr.kind === 'task') { const t = St.tasks.get(dr.id); if (!t) return closeDrawer(); el.innerHTML = deco(taskDrawerHTML(t)); }
+  else if (dr.kind === 'email') { const e = St.emails.get(dr.id); if (!e) return closeDrawer(); el.innerHTML = deco(emailDrawerHTML(e)); dr.dirty = false; loadEmailTexts(e.id); }
+  else if (DRAWER_FN[dr.kind]) { const h = DRAWER_FN[dr.kind](dr); if (h == null) return closeDrawer(); el.innerHTML = deco(h); }
   el.hidden = false; $('#scrim').hidden = false; document.body.style.overflow = 'hidden';
   const ta = el.querySelector('.title-edit'); if (ta) autosize(ta);
 }
@@ -307,10 +322,11 @@ function taskDrawerHTML(t) {
   const basis = t.deadlineBasis === 'uncertain' ? '<span class="chip warn">Uncertain</span>' : t.deadlineBasis === 'relative' ? '<span class="chip">Calculated</span>' : t.deadlineBasis === 'explicit' ? '<span class="chip ok">Stated</span>' : '';
   const emails = (t.emailIds || []).map(id => St.emails.get(id)).filter(Boolean);
   return `<div class="drawer-h"><span class="mono muted">${esc(t.ref || '')}</span>${chipPrio(t.priority)}<span class="spacer"></span><button class="icon-btn" data-act="close-drawer" aria-label="Close">${I.x}</button></div>
-  <div class="drawer-b">
+  <div class="drawer-b two"><div class="dcol-main">
     <textarea class="title-edit" id="d-title" rows="1" data-chg="task-field" data-field="title" dir="auto" aria-label="Title">${esc(t.title)}</textarea>
     ${t.placement && t.placement.status === 'suggested' ? callout('info', `<p><b>❓ Claude isn’t sure where this belongs.</b> Choose one:</p><div style="display:grid;gap:6px;margin-top:8px">${(t.placement.options || []).map((o, i) => { const r = o.relatedTaskId && St.tasks.get(o.relatedTaskId); return `<button class="btn sm opt-btn" data-act="use-placement" data-i="${i}">${o.project ? '📁 ' + esc(o.project) : ''}${o.discipline ? ' › ' + esc(E.DISCIPLINES[o.discipline]) : ''}${r ? ' · 🔗 ' + esc(r.ref) : ''}${o.reason ? `<span class="muted small"> — ${esc(o.reason)}</span>` : ''}</button>`; }).join('')}<button class="btn sm ghost" data-act="keep-placement">Keep where it is${t.project ? ': ' + esc(t.project) : ''}</button></div>`) : ''}
     <div class="seg" role="group" aria-label="Status">${Object.entries(STATUS).map(([k, v]) => `<button data-act="set-status" data-id="${esc(t.id)}" data-status="${k}" aria-pressed="${t.status === k}">${v}</button>`).join('')}</div>
+    ${taskActionsHTML(t)}
     ${t.status === 'blocked' ? `<label class="field"><span>Blocked because</span><input class="input" id="d-blocked" data-chg="task-field" data-field="blockedReason" value="${esc(t.blockedReason)}" placeholder="What is stopping this?"></label>` : ''}
     <div class="grid2">
       <label class="field"><span>Deadline ${basis}</span><input class="input" type="date" id="d-deadline" data-chg="task-field" data-field="deadline" value="${esc(t.deadline || '')}"></label>
@@ -340,11 +356,12 @@ function taskDrawerHTML(t) {
     })()}
     <label class="field"><span>Depends on</span><input class="input" id="d-dep" data-chg="task-field" data-field="dependsOn" value="${esc(t.dependsOn)}" dir="auto"></label>
     <label class="field"><span>My notes</span><textarea class="input" id="d-notes" rows="3" data-chg="task-field" data-field="notes" dir="auto">${esc(t.notes)}</textarea></label>
+    </div><div class="dcol-side">
     <div><div class="label" style="margin-bottom:8px">Evidence</div>${evidenceHTML(t.evidence, true)}</div>
     ${emails.length ? `<div><div class="label" style="margin-bottom:6px">Source emails</div>${emails.map(e => `<button class="btn ghost sm" style="justify-content:flex-start;max-width:100%;overflow:hidden" data-act="open-email" data-id="${esc(e.id)}">${I.mail}<span style="overflow:hidden;text-overflow:ellipsis">${esc(e.subject || '(no subject)')}</span></button>`).join('')}</div>` : ''}
     <div><div class="label" style="margin-bottom:8px">History</div><div class="history">${(t.history || []).slice().reverse().map(h => `<div><time>${esc(fmtDate(h.at, { day: 'numeric', month: 'short' }))} ${esc(new Date(h.at).toTimeString().slice(0, 5))}</time><span dir="auto">${esc(h.text)}</span></div>`).join('')}</div></div>
     <div class="row">${UI.confirm === 'del-' + t.id ? `<span class="small">Delete this task permanently?</span><button class="btn sm danger" data-act="delete-task" data-id="${esc(t.id)}">Delete</button><button class="btn sm" data-act="cancel-confirm">Keep</button>` : `<button class="btn ghost sm danger" data-act="ask-delete-task" data-id="${esc(t.id)}">${I.trash} Delete task</button>`}</div>
-  </div>`;
+  </div></div>`;
 }
 const FIELD_LABEL = { topic: 'Topic', discipline: 'Category', workType: 'Work type', title: 'Title', deadline: 'Deadline', priority: 'Priority', project: 'Project', ownership: 'Whose action', owner: 'Responsible', requestedBy: 'Requested by', nextStep: 'Next step', action: 'Requirement', dependsOn: 'Depends on', notes: 'Notes', blockedReason: 'Blocked reason' };
 function setTaskField(id, field, value) {
@@ -486,7 +503,8 @@ function monogram(name) {
   const w = n.split(/[\s—–-]+/).filter(x => /[\p{L}\p{N}]/u.test(x));
   return (w.length > 1 ? w[0][0] + w[1][0] : n.slice(0, 2)).toUpperCase();
 }
-const projBadge = (name, cls = '') => `<span class="pbadge ${cls}" style="--h:${hueOf(name)}" aria-hidden="true">${esc(monogram(name))}</span>`;
+const projHue = name => { const m = projMeta(name); return m.hue != null ? m.hue : hueOf(name); };
+const projBadge = (name, cls = '') => { const m = projMeta(name); return `<span class="pbadge ${cls}${m.icon ? ' has-ico' : ''}" style="--h:${projHue(name)}" aria-hidden="true">${m.icon ? ico(m.icon) : esc(monogram(name))}</span>`; };
 function ring(pct, size = 40) {
   const p = Math.max(0, Math.min(100, Math.round(pct)));
   return `<span class="ring" style="--p:${p};width:${size}px;height:${size}px" role="img" aria-label="${p}% done"><svg viewBox="0 0 36 36"><circle class="ring-bg" cx="18" cy="18" r="15.9"/><circle class="ring-fg" cx="18" cy="18" r="15.9" stroke-dasharray="${p} 100"/></svg><b>${p}%</b></span>`;
@@ -645,14 +663,7 @@ function viewTodo() {
   const tiles = [['all', '📋', 'Open tasks', ''], ['overdue', '🔥', 'Overdue', 'over'], ['today', '⏰', 'Due today', 'today'], ['week', '📆', 'Next 7 days', ''], ['waiting', '⏳', 'Waiting on others', 'wait']];
   const f = UI.todoFilter || 'all';
   return `<div class="wrap">
-    <section class="hero ${UI.todoMode === 'map' ? 'compact' : ''}">
-      <div class="hero-txt"><div class="label">${esc(new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }))}</div>
-        <h1>${greeting()}</h1>
-        <p class="hero-sub">${mine.length ? `You have <b>${mine.length}</b> open task${mine.length === 1 ? '' : 's'}${items ? ` with <b>${items}</b> item${items === 1 ? '' : 's'} inside` : ''}${c.overdue ? ` — <b class="over-txt">${c.overdue} overdue</b>` : c.today ? ` — <b>${c.today}</b> due today` : ''}.` : 'Nothing open. Forward an email when something new lands.'}</p>
-        <div class="row"><button class="btn primary" data-act="nav" data-view="import">${I.upload} Add emails</button><button class="btn" data-act="new-task">${I.plus} Task</button>${rc ? `<button class="btn review-btn" data-act="nav" data-view="review">📬 Review ${rc}</button>` : ''}</div>
-      </div>
-      ${UI.todoMode === 'map' ? '' : `<div class="hero-art">${ILLUSTRATION}</div>`}
-    </section>
+    ${todayStripHTML()}
     ${!St.settings.setupDone ? setupCardHTML() : ''}
     ${uncategorised && St.sample ? callout('info', `<div class="row"><span>${CAT.running ? '🧠 Claude is sorting your tasks into projects and categories…' : `🏷️ ${uncategorised} task${uncategorised > 1 ? 's are' : ' is'} not categorised yet.`}</span><span class="spacer"></span>${CAT.running ? '<div class="progress indet" style="width:90px"><i></i></div>' : `<button class="btn sm primary" data-act="ai-categorize">Categorise with Claude</button>`}</div>`) : ''}
     ${CAT.error && !CAT.running ? callout('warn', `<p>${esc(CAT.error)}</p>`) : ''}
@@ -737,7 +748,7 @@ function buildMap() {
   const projs = new Map();
   for (const t of tasks) {
     const [pk, pl] = projKeyLabel(t);
-    if (!projs.has(pk)) projs.set(pk, { id: pk, type: 'project', label: pl, hue: pk === 'p:~' ? 200 : hueOf(pl), cats: new Map(), n: 0, done: 0 });
+    if (!projs.has(pk)) projs.set(pk, { id: pk, type: 'project', label: pl, hue: pk === 'p:~' ? 200 : projHue(pl), cats: new Map(), n: 0, done: 0 });
     const P = projs.get(pk); P.n++; if (t.status === 'done') P.done++;
     const tp = topicOf(t); const ck = tp ? E.normMatch(tp) : '~';
     if (!P.cats.has(ck)) P.cats.set(ck, { id: 'tp:' + pk + ':' + ck, type: 'topic', key: ck, label: tp || 'General', hue: P.hue, tasks: [] });
@@ -842,7 +853,7 @@ function measureNode(n) {
   if (measureCache.has(key)) return measureCache.get(key);
   let m = document.getElementById('map-measure');
   if (!m) { m = document.createElement('div'); m.id = 'map-measure'; m.setAttribute('aria-hidden', 'true'); m.style.cssText = 'position:absolute;left:-20000px;top:0;width:2000px;visibility:hidden;pointer-events:none'; document.body.appendChild(m); }
-  m.innerHTML = html;
+  m.innerHTML = deco(html);
   const h = Math.ceil(m.firstElementChild ? m.firstElementChild.offsetHeight : MH[n.type]);
   m.innerHTML = '';
   if (measureCache.size > 3000) measureCache.clear();
@@ -1066,8 +1077,8 @@ function renderWorld() {
   const w = $('#map-world'); if (!w) return;
   const M = buildMap(); UI.mapLayout = M;
   w.style.width = M.w + 'px'; w.style.height = M.h + 'px';
-  w.innerHTML = worldHTML(M);
-  const c = $('#cv-ctx-slot'); if (c) c.innerHTML = ctxHTML();
+  w.innerHTML = deco(worldHTML(M));
+  const c = $('#cv-ctx-slot'); if (c) c.innerHTML = deco(ctxHTML());
 }
 function renderWorldSoon() { if (worldRaf) return; worldRaf = requestAnimationFrame(() => { worldRaf = null; renderWorld(); }); }
 /* --- camera --- */
@@ -1869,6 +1880,7 @@ function approveEmail(eid, quiet) {
     putTask(t); updated++;
   }
   e.reviewState = 'reviewed'; e.reviewedAt = now; putEmail(e);
+  runHooks('approved', e);
   if (!quiet) { toast(`${added} task${added === 1 ? '' : 's'} added${updated ? `, ${updated} updated` : ''}.`, { action: 'Open to-do', fn: () => go('todo') }); render(); }
   return { added, updated };
 }
@@ -1959,7 +1971,7 @@ function stagingHTML() {
     </div>`;
   }).join('')}</div>`;
 }
-function rerenderStaging() { const n = $('#staging'); if (n && UI.view === 'import') keepFocus(() => { n.innerHTML = stagingHTML(); }); if (UI.view === 'import') { const btnRow = document.querySelector('[data-act="analyze"]'); if (btnRow || UI.analyzing) scheduleRender(); } }
+function rerenderStaging() { const n = $('#staging'); if (n && UI.view === 'import') keepFocus(() => { n.innerHTML = deco(stagingHTML()); }); if (UI.view === 'import') { const btnRow = document.querySelector('[data-act="analyze"]'); if (btnRow || UI.analyzing) scheduleRender(); } }
 
 /* ----- file intake ----- */
 const mkAtt = o => ({ id: E.uid('a'), name: o.name, mime: o.mime || E.guessMime(o.name), size: o.size ?? (o.bytes ? o.bytes.length : 0), bytes: o.bytes || null, email: o.email || null, inline: !!o.inline, include: true, res: null, extracting: false });
@@ -2121,6 +2133,7 @@ async function runAnalysis() {
   UI.analyzing = false; UI.abort = null;
   render();
   if (ok) toast(`${ok} email${ok > 1 ? 's' : ''} analysed.`, { action: 'Review', fn: () => go('review') });
+  runHooks('analysed', ok);
 }
 function retryErrored() { UI.staging.forEach(b => { if (b.state === 'error') b.state = 'ready'; }); }
 
@@ -2153,7 +2166,7 @@ async function analyzeBundle(b, signal, onProgress) {
   const { prompt, truncations } = E.buildPrompt({
     me: s.me, projects: allProjects(), topics: allTopics(), today: E.todayISO(), tz: TZ,
     email: { subject: masker.mask(em.subject), from: masker.mask(em.from), to: masker.mask(em.to), cc: masker.mask(em.cc), date: em.date, forwardedBy: masker.mask(em.forwardedBy || ''), forwardedAt: em.forwardedAt || '', forwardMode: em.forwardMode || '', body: masker.mask(em.body || (b.source === 'docs' ? '(No email — the user shared these documents directly. Identify what they require from the user, if anything.)' : '')) },
-    attachments: atts, images: images.map(i => ({ key: i.key, label: i.label })), openTasks: related, budget,
+    attachments: atts, images: images.map(i => ({ key: i.key, label: i.label })), openTasks: related, budget, notes: promptNotes(em),
   });
   onProgress('Waiting for Claude… (consent, queue and thinking can take a minute)');
   const raw = await St.sample.json(prompt, {
@@ -2162,6 +2175,7 @@ async function analyzeBundle(b, signal, onProgress) {
     onText: ({ text }) => onProgress(`Receiving results… ${Math.round(text.length / 100) / 10}k characters`),
   });
   const an = E.normalizeAnalysis(raw, { unmask: masker.unmask });
+  runHooks('proposals', an, em, b); // email rules and learned corrections adjust the proposals
   // local verification + flags
   const flags = [];
   b.atts.forEach((a, i) => {
@@ -2394,7 +2408,7 @@ async function loadEmailTexts(id) {
   textsCache.set(id, 'loading');
   const tx = await getTexts(id);
   textsCache.set(id, tx || null);
-  if (UI.drawer && UI.drawer.kind === 'email' && UI.drawer.id === id) { const el = $('#drawer'); const e = St.emails.get(id); if (e) { const sc = el.querySelector('.drawer-b')?.scrollTop; el.innerHTML = emailDrawerHTML(e); const b = el.querySelector('.drawer-b'); if (b && sc) b.scrollTop = sc; } }
+  if (UI.drawer && UI.drawer.kind === 'email' && UI.drawer.id === id) { const el = $('#drawer'); const e = St.emails.get(id); if (e) { const sc = el.querySelector('.drawer-b')?.scrollTop; el.innerHTML = deco(emailDrawerHTML(e)); const b = el.querySelector('.drawer-b'); if (b && sc) b.scrollTop = sc; } }
 }
 function emailDrawerHTML(e) {
   const a = e.analysis || {};
@@ -2433,7 +2447,7 @@ function viewSetup() {
   return `<div class="wrap settings">
     <div class="page-head"><div><h1>Setup</h1><div class="sub">How the assistant identifies your work, and where your data lives.</div></div></div>
     ${DESKTOP ? DK.setupHTML() : ''}
-    <section class="card pad"><div class="section-title"><h2>You</h2></div>
+    <section class="card pad" id="set-you" data-sec="You and projects"><div class="section-title"><h2>You</h2></div>
       <div class="grid2">
         <label class="field"><span>Name</span><input class="input" id="s-name" value="${esc(me.name || '')}" placeholder="${esc(St.profileName || 'Your name')}"></label>
         <label class="field"><span>Work email address(es), comma-separated</span><input class="input" id="s-emails" value="${esc(me.emails.join(', '))}"></label>
@@ -2446,7 +2460,7 @@ function viewSetup() {
       <label class="field"><span>Projects — one per line: CODE | Name | other names</span><textarea class="input" id="s-projects" rows="4" placeholder="ELM | El Mahsama WWTP Expansion | Mahsama, EM-WWTP" dir="auto">${esc(projText)}</textarea></label>
       <div class="row end"><button class="btn primary" data-act="save-setup">Save</button></div>
     </section>
-    <section class="card pad"><div class="section-title"><h2>Forwarding inbox</h2></div>
+    <section class="card pad" id="set-inbox" data-sec="Forwarding inbox"><div class="section-title"><h2>Forwarding inbox</h2></div>
       ${fwdAddrHTML()}
       <div class="grid2">
         <label class="field"><span>Forwarding address (in the Gmail account connected ${DESKTOP ? 'in Connections' : 'to Claude'})</span><input class="input" id="gm-addr" type="email" value="${esc(gmCfg().address)}" placeholder="yourname+tasks@gmail.com" autocomplete="off"></label>
@@ -2462,7 +2476,7 @@ function viewSetup() {
         <li>Check your company’s rules before forwarding work email to a personal mailbox. Automatic forwarding rules to outside addresses are often blocked by Microsoft 365; this works with forwards you send yourself.</li>
       </ol></details>
     </section>
-    <section class="card pad"><div class="section-title"><h2>Analysis</h2></div>
+    <section class="card pad" id="set-analysis" data-sec="Analysis"><div class="section-title"><h2>Analysis</h2></div>
       <div class="grid2">
         <label class="check"><input type="checkbox" id="o-vision" data-chg="opt" data-key="vision" ${s.vision ? 'checked' : ''}><span>Send images of scanned pages and photos<br><span class="small muted">Needed for scans, photos and marked-up prints.</span></span></label>
         <label class="check"><input type="checkbox" id="o-draw" data-chg="opt" data-key="drawings" ${s.drawings ? 'checked' : ''}><span>Send images of drawing sheets (A3 and larger)<br><span class="small muted">Lets Claude see revision clouds and the title block.</span></span></label>
@@ -2470,7 +2484,8 @@ function viewSetup() {
         <label class="field"><span>Analysis depth</span><select class="input" id="o-tier" data-chg="opt" data-key="tier"><option value="complex" ${s.tier === 'complex' ? 'selected' : ''}>Thorough (best for attachments)</option><option value="default" ${s.tier === 'default' ? 'selected' : ''}>Balanced (faster)</option></select></label>
       </div>
     </section>
-    <section class="card pad"><div class="section-title"><h2>Privacy</h2></div>
+    <!--SETUP-EXTRA-->
+    <section class="card pad" id="set-privacy" data-sec="Privacy"><div class="section-title"><h2>Privacy</h2></div>
       <label class="check"><input type="checkbox" id="s-store" data-chg="opt" data-key="storeText" ${s.storeText ? 'checked' : ''}><span>Keep extracted email and attachment text<br><span class="small muted">Needed to view text later and to re-analyse. When off, only tasks, evidence quotes and summaries are kept.</span></span></label>
       <dl class="kv">
         <dt>Where data is kept</dt><dd>${DESKTOP ? 'On this computer only, in ' + esc(DK.dataDir()) + '. Export backups regularly.' : St.mode === 'db' ? 'Your Claude account, in a private area of this page that only you can read — not visible to people you share the page with.' : 'This browser only (cloud saving is unavailable in this view). Export backups regularly.'}</dd>
@@ -2479,7 +2494,7 @@ function viewSetup() {
         <dt>Image limit per email</dt><dd>${lim && lim.images ? lim.images.maxCount + ' images' : 'Images unavailable in this view'}</dd>
       </dl>
     </section>
-    <section class="card pad"><div class="section-title"><h2>Backup and export</h2></div>
+    <section class="card pad" id="set-backup" data-sec="Backup"><div class="section-title"><h2>Backup and export</h2></div>
       <div class="row">
         <button class="btn" data-act="export-json">${I.download} Full backup (.json)</button>
         <button class="btn" data-act="export-csv">${I.download} Tasks for Excel (.csv)</button>
@@ -2534,11 +2549,14 @@ function exportICS() {
   });
   offerFile(`action-register-deadlines-${stamp()}.ics`, ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Action Register//EN', 'CALSCALE:GREGORIAN', ...ev, 'END:VCALENDAR'].join('\r\n'));
 }
-async function exportJSON() {
+async function backupData() {
   const emails = [...St.emails.values()];
   const texts = {};
   if (St.settings.storeText) for (const e of emails) { const t = await getTexts(e.id); if (t) texts[e.id] = t; }
-  offerFile(`action-register-backup-${stamp()}.json`, JSON.stringify({ app: 'action-register', version: 1, exportedAt: nowISO(), settings: St.settings, tasks: [...St.tasks.values()], emails, texts, board: [...St.board.values()], daily: [...St.daily.values()], layout: St.layout }, null, 1));
+  return { app: 'action-register', version: 1, exportedAt: nowISO(), settings: St.settings, tasks: [...St.tasks.values()], emails, texts, board: [...St.board.values()], daily: [...St.daily.values()], layout: St.layout, cols: Object.fromEntries(COLS.map(n => [n, colList(n)])) };
+}
+async function exportJSON() {
+  offerFile(`action-register-backup-${stamp()}.json`, JSON.stringify(await backupData(), null, 1));
 }
 async function importJSON(file) {
   try {
@@ -2550,6 +2568,7 @@ async function importJSON(file) {
     for (const [id, t] of Object.entries(d.texts || {})) await putTexts(id, t);
     for (const b of d.board || []) if (b && b.id) putBoard(b);
     for (const x of d.daily || []) if (x && x.id) putDaily(x);
+    for (const n of COLS) for (const x of (d.cols && d.cols[n]) || []) if (x && x.id) colPut(n, x);
     if (d.layout) putLayout(mergeLayout({ off: { ...(d.layout.off || {}), ...St.layout.off }, size: { ...(d.layout.size || {}), ...St.layout.size } }));
     if (d.settings && !St.settings.setupDone) putSettings(mergeSettings(d.settings));
     if (St.mode !== 'db') saveLocal();
@@ -2562,6 +2581,7 @@ async function wipeAll() {
   for (const id of eids) delEmail(id);
   for (const id of [...St.board.keys()]) delBoard(id);
   for (const id of [...St.daily.keys()]) delDaily(id);
+  for (const n of COLS) for (const id of [...St.cols[n].keys()]) colDel(n, id);
   putLayout(mergeLayout()); UI.cvUndo = []; UI.cvRedo = [];
   if (St.mode !== 'db') { try { localStorage.removeItem(LS_TEXT); } catch {} }
   UI.confirm = null; toast('All data deleted.'); render();
@@ -2571,13 +2591,22 @@ async function wipeAll() {
 function toast(msg, o = {}) {
   const box = $('#toasts'); while (box.children.length >= 2) box.firstElementChild.remove(); const t = document.createElement('div');
   t.className = 'toast' + (o.err ? ' err' : ''); t.setAttribute('role', o.err ? 'alert' : 'status');
-  const span = document.createElement('span'); span.textContent = msg; span.style.flex = '1'; t.append(span);
+  const span = document.createElement('span'); span.innerHTML = deco(esc(msg)); span.style.flex = '1'; t.append(span);
   if (o.action) { const b = document.createElement('button'); b.className = 'btn'; b.textContent = o.action; b.onclick = () => { o.fn(); t.remove(); }; t.append(b); }
   box.append(t); setTimeout(() => t.remove(), o.err ? 9000 : o.action ? 7000 : 3800);
 }
 
 /* ---------- navigation ---------- */
 const VIEWS = ['todo', 'daily', 'review', 'import', 'emails', 'setup'];
+// view and drawer renderers; feature files add theirs (and push to VIEWS)
+const VIEW_FN = { todo: () => viewTodo(), daily: () => viewDaily(), review: () => viewReview(), import: () => viewImport(), emails: () => viewEmails(), setup: () => viewSetup() };
+const DRAWER_FN = {};
+// buttons shown under the status row of the task panel; feature files push (t) => html
+const TASK_ACTIONS = [];
+function taskActionsHTML(t) { const parts = TASK_ACTIONS.map(f => { try { return f(t) || ''; } catch { return ''; } }).filter(Boolean); return parts.length ? `<div class="row task-actions">${parts.join('')}</div>` : ''; }
+// feature hooks: beforeRender / afterRender (every full render), ready (data loaded), analysed (after a run), taskChanged (old, new)
+const HOOKS = { beforeRender: [], afterRender: [], ready: [], analysed: [], taskChanged: [], deleted: [], proposals: [], approved: [] };
+const runHooks = (k, ...a) => { for (const f of HOOKS[k]) { try { f(...a); } catch (e) { console.warn('hook ' + k, e); } } };
 function go(view) { if (!VIEWS.includes(view)) view = 'todo'; if (view === 'todo') setTimeout(maybeAutoCategorize, 400); UI.view = view; UI.confirm = null; closeDrawer(); render(); window.scrollTo(0, 0); try { history.replaceState(null, '', '#' + view); } catch {} }
 
 /* ---------- events ---------- */
@@ -2729,7 +2758,7 @@ document.addEventListener('input', e => {
   if (el.classList && (el.classList.contains('title-edit') || el.classList.contains('autogrow'))) autosize(el);
   if (el.dataset && el.dataset.inp) {
     UI[el.dataset.inp] = el.value; clearTimeout(qTimer);
-    qTimer = setTimeout(() => { if (el.dataset.inp === 'mapQ') { render(); const ids = [...(document.querySelectorAll('.mnode.task.hit'))].map(n => n.dataset.tid); if (ids.length && UI.mapQ) { const vp = $('#map-vp'), n = UI.mapLayout.nodes.find(x => x.id === 't:' + ids[0]); if (vp && n) { UI.map.x = vp.clientWidth / 2 - (n.x + n.w / 2) * UI.map.k; UI.map.y = vp.clientHeight / 2 - (n.y + n.h / 2) * UI.map.k; applyCam(true); } } return; } if (el.dataset.inp === 'todoQ') { const n = $('#todo-groups'); if (n) n.innerHTML = todoGroupsHTML(); } else render(); }, 120);
+    qTimer = setTimeout(() => { if (el.dataset.inp === 'mapQ') { render(); const ids = [...(document.querySelectorAll('.mnode.task.hit'))].map(n => n.dataset.tid); if (ids.length && UI.mapQ) { const vp = $('#map-vp'), n = UI.mapLayout.nodes.find(x => x.id === 't:' + ids[0]); if (vp && n) { UI.map.x = vp.clientWidth / 2 - (n.x + n.w / 2) * UI.map.k; UI.map.y = vp.clientHeight / 2 - (n.y + n.h / 2) * UI.map.k; applyCam(true); } } return; } if (el.dataset.inp === 'todoQ') { const n = $('#todo-groups'); if (n) n.innerHTML = deco(todoGroupsHTML()); } else render(); }, 120);
   }
 });
 document.addEventListener('keydown', e => { if (e.key === 'Enter' && (e.target.id === 'day-in' || e.target.id === 'day-mgr')) { e.preventDefault(); dayAdd(); return; } if (e.key === 'Enter' && e.target.classList && e.target.classList.contains('title-edit')) { e.preventDefault(); e.target.blur(); } if (e.key === 'Enter' && e.target.id === 'd-sub-new') { e.preventDefault(); addSub(); } });

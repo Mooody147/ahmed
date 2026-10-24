@@ -494,8 +494,9 @@ const CDN = (typeof globalThis !== 'undefined' && globalThis.ETM_CDN) || {
   xlsx: ['https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js'],
   mammoth: ['https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js'],
   jszip: ['https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js'],
+  docx: ['https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js'],
 };
-const GLOBAL = { pdf: 'pdfjsLib', xlsx: 'XLSX', mammoth: 'mammoth', jszip: 'JSZip' };
+const GLOBAL = { pdf: 'pdfjsLib', xlsx: 'XLSX', mammoth: 'mammoth', jszip: 'JSZip', docx: 'docx' };
 const scriptP = {};
 function loadScript(src) {
   if (scriptP[src]) return scriptP[src];
@@ -837,7 +838,8 @@ RULES
 10. Flags: attachment referenced but not provided; content unreadable/truncated that may hold requirements; conflicting instructions; owner unclear; deadline uncertain; revision mismatch (comments refer to a different revision than attached).
 11. Relationships and placement: in "relatedTaskIds" list TRACKED TASK ids that this task follows on from, depends on, answers, or continues (e.g. a resubmission after comments, a reply to a query I raised). Never invent ids; [] when none. Set "placementConfidence" (0–1) for how sure you are of the project, category and links. When below 0.7, give up to 3 "placementOptions" — alternative {project, discipline, relatedTaskId, reason} — so I can choose.
 12. If nothing is needed from me, set actionRequired false and explain in noActionReason. Waiting/FYI items may still be listed if useful.
-
+13. Documents: list in "documents" every drawing/document/datasheet/calculation that this email submits, returns with a review status code, approves, rejects or requests (for my document register): its number exactly as written, title, revision, the review code if one is given (1 approved, 2 approved with comments, 3 revise and resubmit, 4 rejected — use the digit), and who issued or returned it. [] when there are none.
+${input.notes ? '\nUSER RULES AND PREFERENCES (follow these)\n' + input.notes + '\n' : ''}
 ${ENGINEERING_NOTES}
 
 ${CATEGORY_RULES}
@@ -851,7 +853,8 @@ OUTPUT — exactly this JSON shape:
 "tasks":[{"ref":"N1","title":"imperative, specific, ≤90 chars (include doc no./tag)","action":"exactly what must be done, with specifics from the source","type":"do|reply|review|approve|submit|revise|decide|follow_up|attend","ownership":"mine|waiting|fyi","topic":"short subject name","workType":"one of the workType values","discipline":"one of the discipline values","owner":"me or responsible person/company","requestedBy":"who asked","project":"…","priority":"critical|high|medium|low","deadline":"YYYY-MM-DD or null","deadlineText":"as written, or null","deadlineBasis":"explicit|relative|none|uncertain","nextStep":"one concrete first step","dependsOn":null,"blocked":false,"blockedReason":null,"tags":["pumps"],"subtasks":[{"text":"C-01 — item needing action","ref":"C-01","location":"Sheet CRS, row 5"}],"evidence":[{"source":"A1","location":"Sheet CRS, row 14","quote":"exact words from the source"}],"confidence":0.9,"matchesTaskId":null,"relatedTaskIds":[],"placementConfidence":0.9,"placementOptions":[]}],
 "updates":[{"taskId":"existing id","change":"completed|status|deadline|note","newStatus":"todo|in_progress|waiting|blocked|done|null","newDeadline":"YYYY-MM-DD or null","note":"what changed","evidence":[{"source":"BODY","location":null,"quote":"…"}]}],
 "decisions":["decision — by whom"],
-"flags":[{"kind":"missing_attachment|unreadable|truncated|ambiguous|uncertain_deadline|conflict|owner_unclear|revision_mismatch","detail":"…","source":"A2"}]}
+"flags":[{"kind":"missing_attachment|unreadable|truncated|ambiguous|uncertain_deadline|conflict|owner_unclear|revision_mismatch","detail":"…","source":"A2"}],
+"documents":[{"number":"document/drawing number as written","title":"…","revision":"A|B|0|… or null","code":"1|2|3|4 or null","status":"submitted|returned|approved|rejected|requested|for_info","by":"who issued or returned it","date":"YYYY-MM-DD or null","source":"A1"}]}
 
 SOURCES`;
   const hdr = [`Subject: ${email.subject || '(none)'}`, `From: ${email.from || '(unknown)'}`, `Sent: ${email.date ? email.date.replace('T', ' ').slice(0, 16) + ' UTC' : '(unknown)'}`, `To: ${email.to || '(unknown)'}`, email.cc ? `Cc: ${email.cc}` : '', email.forwardedBy ? `Forwarded to my task inbox by: ${email.forwardedBy}${email.forwardedAt ? ' on ' + email.forwardedAt.slice(0, 10) : ''} (${email.forwardMode === 'attachment' ? 'original attached, headers exact' : 'original quoted inline, header recovered from text'})` : ''].filter(Boolean).join('\n');
@@ -934,6 +937,7 @@ function normalizeAnalysis(raw, ctx) {
     project: S(r.project), category: S(r.category) || 'other',
     tasks, updates,
     decisions: (Array.isArray(r.decisions) ? r.decisions : []).map(S).filter(Boolean).slice(0, 12),
+    documents: (Array.isArray(r.documents) ? r.documents : []).slice(0, 60).map(d => ({ number: S(d && d.number), title: S(d && d.title), revision: S(d && d.revision), code: /^[1-4]$/.test(S(d && d.code)) ? S(d.code) : '', status: ['submitted', 'returned', 'approved', 'rejected', 'requested', 'for_info'].includes(S(d && d.status)) ? S(d.status) : '', by: S(d && d.by), date: validISO(S(d && d.date)) ? S(d.date) : '', source: S(d && d.source).toUpperCase() })).filter(d => d.number || d.title),
     flags: (Array.isArray(r.flags) ? r.flags : []).map(f => ({ kind: S(f && f.kind) || 'ambiguous', detail: S(f && f.detail), source: S(f && f.source) })).filter(f => f.detail).slice(0, 20),
   };
 }

@@ -1,7 +1,7 @@
 <title>Action Register</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap">
 <style>
 /* Layout: a working register — left rail + one work column on desktop; top bar + bottom tabs on phones.
    Rows are ruled like a document register; refs and locations are set in mono like drawing numbers. */
@@ -11,8 +11,8 @@
   --crit: #B3261E; --crit-soft: #FBE3E0; --high: #B9540B; --high-soft: #FCEADB; --med: #2C6AA3; --med-soft: #E0EBF6; --low: #6B7876; --low-soft: #E8EDEC;
   --ok: #1D7A4C; --ok-soft: #DCF0E4; --wait: #6A4DAE; --wait-soft: #EAE4F7; --warn: #8F6200; --warn-soft: #FAEFD2;
   --shadow: 0 1px 2px rgba(16,32,30,.06), 0 8px 24px rgba(16,32,30,.08);
-  --f-display: 'IBM Plex Sans Condensed', 'Arial Narrow', 'Roboto Condensed', system-ui, sans-serif;
-  --f-body: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans Arabic', sans-serif;
+  --f-display: 'IBM Plex Sans Condensed', 'IBM Plex Sans Arabic', 'Arial Narrow', 'Roboto Condensed', system-ui, sans-serif;
+  --f-body: 'IBM Plex Sans', 'IBM Plex Sans Arabic', system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans Arabic', sans-serif;
   --f-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Consolas, monospace;
   --r: 8px; --rail: 232px;
 }
@@ -75,7 +75,7 @@ main { min-width: 0; padding-block: 22px 60px; padding-left: max(16px, env(safe-
   .topbar { display: flex; position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; align-items: center; gap: 10px; padding-block: 10px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); background: var(--surface); border-bottom: 1px solid var(--line); }
   .topbar .brand { padding: 0; } .topbar .brand-mark { width: 26px; height: 26px; }
   .topbar .spacer { flex: 1; }
-  .tabbar { display: grid; grid-template-columns: repeat(5, 1fr); position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; background: var(--surface); border-top: 1px solid var(--line); padding: 4px max(8px, env(safe-area-inset-right, 0px)) calc(4px + env(safe-area-inset-bottom, 0px)) max(8px, env(safe-area-inset-left, 0px)); }
+  .tabbar { display: grid; grid-template-columns: repeat(6, 1fr); position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; background: var(--surface); border-top: 1px solid var(--line); padding: 4px max(8px, env(safe-area-inset-right, 0px)) calc(4px + env(safe-area-inset-bottom, 0px)) max(8px, env(safe-area-inset-left, 0px)); }
   .tab { display: grid; justify-items: center; gap: 1px; border: 0; background: none; padding: 6px 2px; font-size: 11px; color: var(--ink-3); position: relative; }
   .tab[aria-current="page"] { color: var(--accent); }
   .tab .badge { position: absolute; top: 2px; left: calc(50% + 6px); background: var(--accent); color: var(--accent-ink); font-size: 10px; min-width: 16px; padding: 0 4px; border-radius: 99px; line-height: 16px; }
@@ -293,7 +293,7 @@ details.more > summary::-webkit-details-marker { display: none; }
 .todo-item.is-done .ttl { text-decoration: line-through; color: var(--ink-3); }
 .todo-item.is-done .tick { background: var(--ok); border-color: var(--ok); color: var(--surface); }
 .over-txt { color: var(--crit); font-weight: 600; }
-@media (max-width: 860px) { .tabbar { grid-template-columns: repeat(5, 1fr); } }
+@media (max-width: 860px) { .tabbar { grid-template-columns: repeat(6, 1fr); } }
 @media (max-width: 560px) { .todo-gh .gstats .muted { display: none; } }
 
 .todo-search { position: relative; flex: 1 1 220px; min-width: 0; }
@@ -652,7 +652,144 @@ body.map-full-on { overflow: hidden; }
 .map-viewport.dayon .mnode.task.dayhit { box-shadow: 0 0 0 3px var(--accent), 0 6px 18px -6px color-mix(in srgb, var(--accent) 60%, transparent); }
 .steps { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
 
+/* ---------- line icons (features/00-icons.js) ---------- */
+.ei { display: inline-block; width: 1em; height: 1em; vertical-align: -0.14em; flex: none; }
+.ei.t-crit { color: var(--crit); } .ei.t-high { color: var(--high); } .ei.t-med { color: var(--med); } .ei.t-low { color: var(--low); }
+.ei.t-warn { color: var(--warn); } .ei.t-ok { color: var(--ok); } .ei.t-wait { color: var(--wait); } .ei.t-accent { color: var(--accent); }
+.big-emoji .ei { width: 46px; height: 46px; color: var(--accent); stroke-width: 1.4; }
+.gicon .ei, .cicon .ei { width: 20px; height: 20px; color: var(--ink-2); }
+.tile-e .ei { width: 22px; height: 22px; color: var(--accent); }
+.tile.over .tile-e .ei { color: var(--crit); } .tile.today .tile-e .ei { color: var(--warn); } .tile.wait .tile-e .ei { color: var(--wait); }
+.chip .ei { margin-right: 1px; }
+
+/* ---------- desktop title strip, toasts, density (features/01) ---------- */
+.titlestrip { display: none; }
+body.has-titlebar { --tb: 34px; }
+body.has-titlebar .titlestrip { display: flex; align-items: center; gap: 12px; position: fixed; top: 0; left: 0; right: 0; height: var(--tb); z-index: 45; padding: 0 150px 0 14px; background: var(--surface); border-bottom: 1px solid var(--line); -webkit-app-region: drag; user-select: none; }
+body.has-titlebar.plat-darwin .titlestrip { padding-left: 84px; padding-right: 14px; }
+.ts-brand { display: inline-flex; align-items: center; gap: 7px; font: 600 13px var(--f-display); color: var(--ink-2); white-space: nowrap; }
+.ts-brand svg { width: 15px; height: 15px; color: var(--accent); }
+.ts-search { -webkit-app-region: no-drag; display: inline-flex; align-items: center; gap: 8px; height: 24px; min-width: 0; width: min(440px, 46vw); margin: 0 auto; padding: 0 8px; border: 1px solid var(--line); border-radius: 7px; background: var(--sunken); color: var(--ink-3); font: inherit; font-size: 12.5px; cursor: pointer; }
+.ts-search span { flex: 1; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ts-search kbd { font: 500 10.5px var(--f-mono); padding: 1px 5px; border: 1px solid var(--line); border-radius: 4px; background: var(--surface); }
+.ts-space { width: 1px; }
+body.has-titlebar { padding-top: var(--tb); }
+body.has-titlebar .rail { top: var(--tb); height: calc(100vh - var(--tb)); }
+body.has-titlebar .scrim, body.has-titlebar .drawer, body.has-titlebar .map-wrap.full { top: var(--tb); }
+body.has-titlebar .topbar { top: var(--tb); }
+.toasts { left: auto; right: 18px; transform: none; width: min(380px, calc(100% - 32px)); }
+.toast { font-size: 13.5px; padding: 10px 12px; }
+@media (max-width: 860px) { .toasts { left: 50%; right: auto; transform: translateX(-50%); bottom: calc(70px + env(safe-area-inset-bottom, 0px)); } }
+html[data-density="compact"] .card.pad { padding: 12px 14px; }
+html[data-density="compact"] .wrap { gap: 12px; }
+html[data-density="compact"] .btn { min-height: 30px; padding-block: 4px; }
+html[data-density="compact"] .input { min-height: 32px; }
+html[data-density="compact"] .tile { padding: 8px 12px; }
+html[data-density="compact"] .dcard { padding: 8px; gap: 4px; }
+html[data-density="compact"] .trow, html[data-density="compact"] .erow { padding-block: 6px; }
+.sw.big { width: 26px; height: 26px; }
+.set-rows { display: grid; gap: 14px; }
+.set-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
+.set-row > div:first-child { min-width: 200px; flex: 1; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --ink-3: #8D9B98; } }
+:root[data-theme="dark"] { --ink-3: #8D9B98; }
+
+/* ---------- home: Today strip, briefing, risk radar (features/03) ---------- */
+.today-strip { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; padding: 14px 18px; border: 1px solid var(--line); border-radius: 18px; background: linear-gradient(180deg, var(--face-top), transparent 70%), var(--surface); box-shadow: var(--elev-1); }
+.today-strip h1 { font-size: 22px; line-height: 1.15; }
+.ts-left { min-width: 180px; }
+.ts-stats { display: flex; gap: 8px; flex-wrap: wrap; flex: 1; }
+.tstat { display: inline-flex; align-items: baseline; gap: 6px; padding: 7px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--sunken); color: var(--ink-2); font: inherit; font-size: 13px; cursor: pointer; }
+.tstat b { font-size: 18px; color: var(--ink); font-family: var(--f-display); }
+.tstat.over:not(.zero) { border-color: color-mix(in srgb, var(--crit) 45%, var(--line)); background: var(--crit-soft); } .tstat.over:not(.zero) b { color: var(--crit); }
+.tstat.today:not(.zero) { border-color: color-mix(in srgb, var(--warn) 45%, var(--line)); background: var(--warn-soft); }
+.tstat.wait:not(.zero) b { color: var(--wait); } .tstat.rev:not(.zero) { border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); background: var(--accent-soft); }
+.tstat.zero { opacity: .65; }
+.ts-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.brief { display: grid; gap: 8px; }
+.brief-list { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+.brief-list li { line-height: 1.4; }
+.ref-chip { margin-left: 6px; cursor: pointer; font-family: var(--f-mono); font-size: 11.5px; border: 1px solid var(--line); background: var(--surface); }
+.risks { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.risks .label { margin-right: 4px; }
+.risk { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 99px; border: 1px solid var(--line); background: var(--surface); color: var(--ink-2); font: inherit; font-size: 12.5px; cursor: pointer; }
+.risk .rdot { width: 8px; height: 8px; border-radius: 50%; background: var(--wait); }
+.risk.l2 .rdot { background: var(--warn); } .risk.l3 .rdot { background: var(--crit); }
+
+/* ---------- command palette, shortcuts, quick add, more, lock, focus ---------- */
+.modal.top { align-items: start; padding-top: 12vh; }
+.palette { width: min(640px, 100%); display: grid; gap: 8px; padding: 10px; }
+.palette .input { height: 42px; font-size: 15px; }
+.pal-list { max-height: 52vh; overflow: auto; display: grid; gap: 1px; }
+.pal-g { font: 600 11px var(--f-display); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); padding: 8px 10px 4px; }
+.pal-item { display: flex; justify-content: space-between; gap: 10px; align-items: center; text-align: left; border: 0; background: none; padding: 8px 10px; border-radius: 8px; font: inherit; color: var(--ink); cursor: pointer; }
+.pal-item.on, .pal-item:hover { background: var(--accent-soft); }
+.pal-foot { padding: 2px 6px; }
+.shortcuts { width: min(560px, 100%); max-height: 80vh; overflow: auto; }
+.kv.sc dt { white-space: nowrap; }
+kbd { font: 500 11.5px var(--f-mono); padding: 1px 6px; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 5px; background: var(--sunken); color: var(--ink); }
+.quick-add { width: min(560px, 100%); display: grid; gap: 10px; }
+.more-sheet { width: min(420px, 100%); display: grid; gap: 8px; }
+.more-btn { justify-content: flex-start; }
+.lockscreen { position: fixed; inset: 0; z-index: 95; display: grid; place-items: center; background: var(--bg); }
+.lock-card { width: min(340px, calc(100% - 32px)); display: grid; gap: 10px; justify-items: center; text-align: center; padding: 28px; }
+.lock-card .input { text-align: center; font-size: 20px; letter-spacing: .3em; }
+.focus-mode { position: fixed; inset: 0; z-index: 80; display: grid; place-items: center; background: color-mix(in srgb, var(--bg) 94%, transparent); backdrop-filter: blur(6px); padding: 16px; }
+.focus-card { width: min(640px, 100%); display: grid; gap: 14px; }
+.focus-timer { font: 600 72px var(--f-display); text-align: center; color: var(--accent); letter-spacing: .02em; }
+.focus-list { display: grid; gap: 8px; }
+.focus-item { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 14px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; }
+.focus-item.on { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+.focus-item input { position: absolute; opacity: 0; pointer-events: none; }
+.fi-n { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); font-weight: 600; flex: none; }
+.fi-t { flex: 1; min-width: 0; display: grid; } .fi-t small { color: var(--ink-3); }
+
+/* ---------- Setup layout ---------- */
+.set-layout { display: grid; grid-template-columns: 190px minmax(0, 1fr); gap: 8px; align-items: start; }
+.set-index { position: sticky; top: calc(var(--tb, 0px) + 18px); display: grid; gap: 2px; padding: 22px 0 0 18px; }
+.set-index button { text-align: left; border: 0; background: none; padding: 6px 10px; border-radius: 8px; font: inherit; font-size: 13px; color: var(--ink-2); cursor: pointer; }
+.set-index button:hover { background: var(--sunken); color: var(--ink); }
+.set-main .wrap { margin: 0; }
+@media (max-width: 1000px) { .set-layout { grid-template-columns: minmax(0, 1fr); } .set-index { display: none; } }
+.set-sec { display: grid; gap: 10px; scroll-margin-top: calc(var(--tb, 0px) + 12px); }
+.settings > section { scroll-margin-top: calc(var(--tb, 0px) + 12px); }
+.pm-list { display: grid; gap: 6px; }
+.pm-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 6px 0; border-bottom: 1px solid var(--line-2); }
+.pm-hues .sw[data-on] { box-shadow: 0 0 0 2px var(--ink); }
+.pm-icon { width: auto; height: 32px; }
+.pbadge.has-ico { display: inline-grid; place-items: center; } .pbadge.has-ico .ei { width: 60%; height: 60%; color: #fff; }
+.rules { display: grid; gap: 8px; }
+.rule { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 8px; border: 1px solid var(--line); border-radius: 12px; background: var(--sunken); }
+.rule .input { width: auto; flex: 1; min-width: 130px; height: 32px; }
+.tpls { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
+.tpl { display: grid; gap: 6px; padding: 10px; border: 1px solid var(--line); border-radius: 12px; }
+.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+.tbl th, .tbl td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line-2); vertical-align: top; }
+.tbl th { font: 600 11.5px var(--f-display); letter-spacing: .05em; text-transform: uppercase; color: var(--ink-3); }
+.tbl td.num, .tbl th.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+/* ---------- task panel: actions row, two columns on wide screens ---------- */
+.task-actions { gap: 6px; flex-wrap: wrap; }
+.tpl-pick { gap: 4px; flex-wrap: nowrap; } .tpl-pick .input { height: 30px; width: auto; max-width: 170px; font-size: 12.5px; }
+.drawer-b.two > .dcol-main, .drawer-b.two > .dcol-side { display: grid; gap: 16px; align-content: start; min-width: 0; }
+@media (min-width: 1240px) {
+  .drawer:has(.drawer-b.two) { width: min(1060px, 92vw); }
+  .drawer-b.two { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 22px; align-items: start; }
+  .drawer-b.two > .dcol-side { position: sticky; top: 0; }
+}
+
+/* ---------- privacy mode: blur people and email text ---------- */
+body.privacy .erow .f, body.privacy .kv dd, body.privacy .ev q, body.privacy .bodytext, body.privacy .preview, body.privacy .chip.wait, body.privacy .ach li span, body.privacy .att .name, body.privacy #d-req, body.privacy #d-owner, body.privacy .email-meta { filter: blur(5px); }
+
+/* ---------- print ---------- */
+@media print {
+  .rail, .tabbar, .topbar, .titlestrip, .toasts, .drawer, .scrim, .map-toolbar, .cv-tools, .cv-sub, .ts-actions, .mode-bar, .todo-bar, .tiles, .brief, .no-print { display: none !important; }
+  body, body.has-titlebar { padding: 0 !important; background: #fff !important; }
+  .app { display: block !important; } .card, .dcard, .tcard { box-shadow: none !important; break-inside: avoid; }
+}
+
 </style>
+<div class="titlestrip" id="titlestrip"><span class="ts-brand"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c3.3 4 6 7.2 6 10.4a6 6 0 0 1-12 0C6 10.2 8.7 7 12 3z"/><path d="m9.3 13.6 1.9 1.9 3.6-4.1"/></svg> Action Register</span><button class="ts-search" data-act="palette" title="Search and commands (Ctrl+K)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg><span>Search or type a command</span><kbd>Ctrl K</kbd></button><span class="ts-space"></span></div>
 <div class="app">
   <aside class="rail" aria-label="Main">
     <div class="brand"><span class="brand-mark"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c3.3 4 6 7.2 6 10.4a6 6 0 0 1-12 0C6 10.2 8.7 7 12 3z"/><path d="m9.3 13.6 1.9 1.9 3.6-4.1"/></svg></span><div><div class="brand-name">Action Register</div><div class="brand-sub">Email → tasks, with evidence</div></div></div>
@@ -661,6 +798,9 @@ body.map-full-on { overflow: hidden; }
     <button class="nav" data-nav="review"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16v12H5.5L4 17.5z"/><path d="m8.5 10 2.2 2.2L15.5 7.5"/></svg>Review<span class="count" data-count="review" hidden></span></button>
     <button class="nav" data-nav="import"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>Add emails</button>
     <button class="nav" data-nav="emails"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>Emails</button>
+    <button class="nav" data-nav="docs"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5M8.5 13h7M8.5 16.5h5"/></svg>Documents</button>
+    <button class="nav" data-nav="insights"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M21 20H3"/></svg>Insights</button>
+    <button class="nav" data-nav="tools"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 6.5a4 4 0 0 0-5.3 5L4 16.7 7.3 20l5.2-5.2a4 4 0 0 0 5-5.3l-2.6 2.6-2.4-.6-.6-2.4z"/></svg>Tools</button>
     <button class="nav" data-nav="setup"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>Setup</button>
     <div class="rail-foot"><div id="storage-mode"><span class="dot off"></span>Connecting…</div><div>No mailbox access. You approve every task.</div></div>
   </aside>
@@ -674,6 +814,7 @@ body.map-full-on { overflow: hidden; }
     <button class="tab" data-nav="review"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16v12H5.5L4 17.5z"/><path d="m8.5 10 2.2 2.2L15.5 7.5"/></svg>Review<span class="badge" data-count="review" hidden></span></button>
     <button class="tab" data-nav="import"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>Add</button>
     <button class="tab" data-nav="emails"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>Emails</button>
+    <button class="tab" data-act="more-menu"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/></svg>More</button>
   </nav>
 </div>
 <div class="scrim" id="scrim" hidden></div>
@@ -1177,8 +1318,9 @@ const CDN = (typeof globalThis !== 'undefined' && globalThis.ETM_CDN) || {
   xlsx: ['https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js'],
   mammoth: ['https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js'],
   jszip: ['https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js'],
+  docx: ['https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js'],
 };
-const GLOBAL = { pdf: 'pdfjsLib', xlsx: 'XLSX', mammoth: 'mammoth', jszip: 'JSZip' };
+const GLOBAL = { pdf: 'pdfjsLib', xlsx: 'XLSX', mammoth: 'mammoth', jszip: 'JSZip', docx: 'docx' };
 const scriptP = {};
 function loadScript(src) {
   if (scriptP[src]) return scriptP[src];
@@ -1520,7 +1662,8 @@ RULES
 10. Flags: attachment referenced but not provided; content unreadable/truncated that may hold requirements; conflicting instructions; owner unclear; deadline uncertain; revision mismatch (comments refer to a different revision than attached).
 11. Relationships and placement: in "relatedTaskIds" list TRACKED TASK ids that this task follows on from, depends on, answers, or continues (e.g. a resubmission after comments, a reply to a query I raised). Never invent ids; [] when none. Set "placementConfidence" (0–1) for how sure you are of the project, category and links. When below 0.7, give up to 3 "placementOptions" — alternative {project, discipline, relatedTaskId, reason} — so I can choose.
 12. If nothing is needed from me, set actionRequired false and explain in noActionReason. Waiting/FYI items may still be listed if useful.
-
+13. Documents: list in "documents" every drawing/document/datasheet/calculation that this email submits, returns with a review status code, approves, rejects or requests (for my document register): its number exactly as written, title, revision, the review code if one is given (1 approved, 2 approved with comments, 3 revise and resubmit, 4 rejected — use the digit), and who issued or returned it. [] when there are none.
+${input.notes ? '\nUSER RULES AND PREFERENCES (follow these)\n' + input.notes + '\n' : ''}
 ${ENGINEERING_NOTES}
 
 ${CATEGORY_RULES}
@@ -1534,7 +1677,8 @@ OUTPUT — exactly this JSON shape:
 "tasks":[{"ref":"N1","title":"imperative, specific, ≤90 chars (include doc no./tag)","action":"exactly what must be done, with specifics from the source","type":"do|reply|review|approve|submit|revise|decide|follow_up|attend","ownership":"mine|waiting|fyi","topic":"short subject name","workType":"one of the workType values","discipline":"one of the discipline values","owner":"me or responsible person/company","requestedBy":"who asked","project":"…","priority":"critical|high|medium|low","deadline":"YYYY-MM-DD or null","deadlineText":"as written, or null","deadlineBasis":"explicit|relative|none|uncertain","nextStep":"one concrete first step","dependsOn":null,"blocked":false,"blockedReason":null,"tags":["pumps"],"subtasks":[{"text":"C-01 — item needing action","ref":"C-01","location":"Sheet CRS, row 5"}],"evidence":[{"source":"A1","location":"Sheet CRS, row 14","quote":"exact words from the source"}],"confidence":0.9,"matchesTaskId":null,"relatedTaskIds":[],"placementConfidence":0.9,"placementOptions":[]}],
 "updates":[{"taskId":"existing id","change":"completed|status|deadline|note","newStatus":"todo|in_progress|waiting|blocked|done|null","newDeadline":"YYYY-MM-DD or null","note":"what changed","evidence":[{"source":"BODY","location":null,"quote":"…"}]}],
 "decisions":["decision — by whom"],
-"flags":[{"kind":"missing_attachment|unreadable|truncated|ambiguous|uncertain_deadline|conflict|owner_unclear|revision_mismatch","detail":"…","source":"A2"}]}
+"flags":[{"kind":"missing_attachment|unreadable|truncated|ambiguous|uncertain_deadline|conflict|owner_unclear|revision_mismatch","detail":"…","source":"A2"}],
+"documents":[{"number":"document/drawing number as written","title":"…","revision":"A|B|0|… or null","code":"1|2|3|4 or null","status":"submitted|returned|approved|rejected|requested|for_info","by":"who issued or returned it","date":"YYYY-MM-DD or null","source":"A1"}]}
 
 SOURCES`;
   const hdr = [`Subject: ${email.subject || '(none)'}`, `From: ${email.from || '(unknown)'}`, `Sent: ${email.date ? email.date.replace('T', ' ').slice(0, 16) + ' UTC' : '(unknown)'}`, `To: ${email.to || '(unknown)'}`, email.cc ? `Cc: ${email.cc}` : '', email.forwardedBy ? `Forwarded to my task inbox by: ${email.forwardedBy}${email.forwardedAt ? ' on ' + email.forwardedAt.slice(0, 10) : ''} (${email.forwardMode === 'attachment' ? 'original attached, headers exact' : 'original quoted inline, header recovered from text'})` : ''].filter(Boolean).join('\n');
@@ -1617,6 +1761,7 @@ function normalizeAnalysis(raw, ctx) {
     project: S(r.project), category: S(r.category) || 'other',
     tasks, updates,
     decisions: (Array.isArray(r.decisions) ? r.decisions : []).map(S).filter(Boolean).slice(0, 12),
+    documents: (Array.isArray(r.documents) ? r.documents : []).slice(0, 60).map(d => ({ number: S(d && d.number), title: S(d && d.title), revision: S(d && d.revision), code: /^[1-4]$/.test(S(d && d.code)) ? S(d.code) : '', status: ['submitted', 'returned', 'approved', 'rejected', 'requested', 'for_info'].includes(S(d && d.status)) ? S(d.status) : '', by: S(d && d.by), date: validISO(S(d && d.date)) ? S(d.date) : '', source: S(d && d.source).toUpperCase() })).filter(d => d.number || d.title),
     flags: (Array.isArray(r.flags) ? r.flags : []).map(f => ({ kind: S(f && f.kind) || 'ambiguous', detail: S(f && f.detail), source: S(f && f.source) })).filter(f => f.detail).slice(0, 20),
   };
 }
@@ -1800,16 +1945,19 @@ let lsTimer = null;
 function saveLocal() {
   clearTimeout(lsTimer);
   lsTimer = setTimeout(() => {
-    try { localStorage.setItem(LS_KEY, JSON.stringify({ tasks: [...St.tasks.values()], emails: [...St.emails.values()], settings: St.settings, board: [...St.board.values()], daily: [...St.daily.values()], layout: St.layout })); }
+    try { localStorage.setItem(LS_KEY, JSON.stringify({ tasks: [...St.tasks.values()], emails: [...St.emails.values()], settings: St.settings, board: [...St.board.values()], daily: [...St.daily.values()], layout: St.layout, cols: Object.fromEntries(COLS.map(n => [n, colList(n)])) })); }
     catch { toast('This browser refused to save (storage full or blocked). Export a backup from Setup.', { err: true }); }
   }, 250);
 }
 function putTask(t) {
   t.updatedAt = nowISO();
+  const before = St.tasks.get(t.id);
   St.tasks.set(t.id, t); FRESH.set(t.id, Date.now());
+  runHooks('taskChanged', before || null, t);
   if (St.mode === 'db') writeDoc(St.refs.tasks.doc(t.id), t); else saveLocal();
 }
 function delTask(id) {
+  if (St.tasks.has(id)) runHooks('deleted', 'task', St.tasks.get(id));
   St.tasks.delete(id);
   if (St.mode === 'db') St.refs.tasks.doc(id).delete().catch(dbError); else saveLocal();
 }
@@ -1818,6 +1966,7 @@ function putEmail(e) {
   if (St.mode === 'db') writeDoc(St.refs.emails.doc(e.id), e); else saveLocal();
 }
 function delEmail(id) {
+  if (St.emails.has(id)) runHooks('deleted', 'email', St.emails.get(id));
   St.emails.delete(id);
   if (St.mode === 'db') { St.refs.emails.doc(id).delete().catch(dbError); St.refs.texts.doc(id).delete().catch(() => {}); }
   else { saveLocal(); try { const m = JSON.parse(localStorage.getItem(LS_TEXT) || '{}'); delete m[id]; localStorage.setItem(LS_TEXT, JSON.stringify(m)); } catch {} }
@@ -1830,6 +1979,12 @@ function putLayout(l) { St.layout = l; if (St.mode === 'db') writeDoc(St.refs.la
 function putDaily(d) { d.updatedAt = nowISO(); St.daily.set(d.id, d); if (St.mode === 'db') writeDoc(St.refs.daily.doc(d.id), d); else saveLocal(); }
 function delDaily(id) { St.daily.delete(id); if (St.mode === 'db') St.refs.daily.doc(id).delete().catch(dbError); else saveLocal(); }
 const mergeLayout = l => ({ off: {}, size: {}, ...(l || {}) });
+// further collections used by feature files: document register, time log, lessons, recycle bin, learned preferences
+const COLS = ['docreg', 'time', 'lessons', 'trash', 'prefs'];
+St.cols = Object.fromEntries(COLS.map(n => [n, new Map()]));
+const colList = n => [...St.cols[n].values()];
+function colPut(n, d) { d.updatedAt = nowISO(); St.cols[n].set(d.id, d); if (St.mode === 'db') writeDoc(St.refs.cols[n].doc(d.id), d); else saveLocal(); }
+function colDel(n, id) { St.cols[n].delete(id); if (St.mode === 'db') St.refs.cols[n].doc(id).delete().catch(dbError); else saveLocal(); }
 function putSettings(s) {
   St.settings = s;
   if (St.mode === 'db') writeDoc(St.refs.settings, s); else saveLocal();
@@ -1863,7 +2018,7 @@ async function initStore() {
     St.db = db; St.mode = 'db';
     const base = db.doc('data/users/' + St.uid + '/register');
     St.refs = { tasks: base.collection('tasks'), emails: base.collection('emails'), texts: base.collection('texts'), board: base.collection('board'), daily: base.collection('daily'), settings: db.doc('data/users/' + St.uid + '/settings'), layout: db.doc('data/users/' + St.uid + '/canvaslayout'), seen: db.doc('data/users/' + St.uid + '/gmailseen') };
-    let got = 0; const done = () => { if (++got >= 3 && !St.ready) { St.ready = true; setTimeout(() => { maybeAutoCheck(); if (UI.view === 'todo') maybeAutoCategorize(); }, 300); } render(); };
+    let got = 0; const done = () => { if (++got >= 3 && !St.ready) { St.ready = true; setTimeout(() => { maybeAutoCheck(); if (UI.view === 'todo') maybeAutoCategorize(); runHooks('ready'); }, 300); } render(); };
     const fail = e => { if (e && e.code === 'revoked') toast('Access to saved data ended for this view. Reload the page.', { err: true }); else toast('Live sync stopped (' + (e && e.code || 'error') + '). Reload to reconnect.', { err: true }); };
     St.refs.tasks.onSnapshot(s => { St.tasks = new Map(s.docs.map(d => [d.id, { ...clone(d.data()), id: d.id }])); if (!St._t) { St._t = 1; done(); } else scheduleRender(); }, fail);
     St.refs.emails.onSnapshot(s => { St.emails = new Map(s.docs.map(d => [d.id, { ...clone(d.data()), id: d.id }])); if (!St._e) { St._e = 1; done(); } else scheduleRender(); }, fail);
@@ -1871,13 +2026,15 @@ async function initStore() {
     St.refs.board.onSnapshot(s => { St.board = new Map(s.docs.map(d => [d.id, { ...clone(d.data()), id: d.id }])); scheduleRender(); }, fail);
     St.refs.daily.onSnapshot(s => { St.daily = new Map(s.docs.map(d => [d.id, { ...clone(d.data()), id: d.id }])); scheduleRender(); }, fail);
     St.refs.layout.onSnapshot(d => { St.layout = mergeLayout(d.exists ? clone(d.data()) : null); scheduleRender(); }, fail);
+    St.refs.cols = {};
+    for (const n of COLS) { St.refs.cols[n] = base.collection(n); St.refs.cols[n].onSnapshot(s => { St.cols[n] = new Map(s.docs.map(d => [d.id, { ...clone(d.data()), id: d.id }])); scheduleRender(); }, fail); }
   } else {
     St.mode = 'local';
     try {
       const raw = JSON.parse(localStorage.getItem(LS_KEY) || 'null');
-      if (raw) { (raw.tasks || []).forEach(t => St.tasks.set(t.id, t)); (raw.emails || []).forEach(e => St.emails.set(e.id, e)); (raw.board || []).forEach(b => St.board.set(b.id, b)); (raw.daily || []).forEach(d => St.daily.set(d.id, d)); St.layout = mergeLayout(raw.layout); St.settings = mergeSettings(raw.settings); }
+      if (raw) { (raw.tasks || []).forEach(t => St.tasks.set(t.id, t)); (raw.emails || []).forEach(e => St.emails.set(e.id, e)); (raw.board || []).forEach(b => St.board.set(b.id, b)); (raw.daily || []).forEach(d => St.daily.set(d.id, d)); St.layout = mergeLayout(raw.layout); for (const n of COLS) (raw.cols && raw.cols[n] || []).forEach(d => St.cols[n].set(d.id, d)); St.settings = mergeSettings(raw.settings); }
     } catch {}
-    St.ready = true; render(); setTimeout(() => { maybeAutoCheck(); if (UI.view === 'todo') maybeAutoCategorize(); }, 300);
+    St.ready = true; render(); setTimeout(() => { maybeAutoCheck(); if (UI.view === 'todo') maybeAutoCategorize(); runHooks('ready'); }, 300);
   }
 }
 function maybeAutoCheck() { if (GM.autoDone) return; GM.autoDone = true; const g = gmCfg(); if (St.mcp && g.address && g.autoCheck) checkGmail(false); }
@@ -1935,6 +2092,7 @@ function keepFocus(fn) {
 }
 function render() {
   if (cvHold()) { UI.cvPending = true; return; }
+  runHooks('beforeRender');
   const c = counts();
   document.querySelectorAll('[data-nav]').forEach(b => b.setAttribute('aria-current', b.dataset.nav === UI.view ? 'page' : 'false'));
   const rc = c.review;
@@ -1946,11 +2104,12 @@ function render() {
   keepFocus(() => {
     const main = $('#main');
     if (!St.ready) { main.innerHTML = `<div class="wrap"><div class="empty"><div class="progress indet" style="width:180px"><i></i></div><p>Opening your register…</p></div></div>`; return; }
-    main.innerHTML = ({ todo: viewTodo, daily: viewDaily, review: viewReview, import: viewImport, emails: viewEmails, setup: viewSetup })[UI.view]();
+    main.innerHTML = deco((VIEW_FN[UI.view] || viewTodo)());
   });
   if (UI.view === 'todo' && UI.todoMode === 'map') afterMapRender();
   document.querySelectorAll('#main textarea.autogrow').forEach(autosize);
   if (UI.drawer && UI.drawer.kind === 'email' && UI.drawer.dirty) renderDrawer();
+  if (St.ready) runHooks('afterRender');
 }
 
 /* ---------- shared fragments ---------- */
@@ -2007,8 +2166,9 @@ function closeDrawer() { UI.drawer = null; $('#drawer').hidden = true; $('#scrim
 function renderDrawer() {
   const dr = UI.drawer; if (!dr) return closeDrawer();
   const el = $('#drawer');
-  if (dr.kind === 'task') { const t = St.tasks.get(dr.id); if (!t) return closeDrawer(); el.innerHTML = taskDrawerHTML(t); }
-  else if (dr.kind === 'email') { const e = St.emails.get(dr.id); if (!e) return closeDrawer(); el.innerHTML = emailDrawerHTML(e); dr.dirty = false; loadEmailTexts(e.id); }
+  if (dr.kind === 'task') { const t = St.tasks.get(dr.id); if (!t) return closeDrawer(); el.innerHTML = deco(taskDrawerHTML(t)); }
+  else if (dr.kind === 'email') { const e = St.emails.get(dr.id); if (!e) return closeDrawer(); el.innerHTML = deco(emailDrawerHTML(e)); dr.dirty = false; loadEmailTexts(e.id); }
+  else if (DRAWER_FN[dr.kind]) { const h = DRAWER_FN[dr.kind](dr); if (h == null) return closeDrawer(); el.innerHTML = deco(h); }
   el.hidden = false; $('#scrim').hidden = false; document.body.style.overflow = 'hidden';
   const ta = el.querySelector('.title-edit'); if (ta) autosize(ta);
 }
@@ -2018,10 +2178,11 @@ function taskDrawerHTML(t) {
   const basis = t.deadlineBasis === 'uncertain' ? '<span class="chip warn">Uncertain</span>' : t.deadlineBasis === 'relative' ? '<span class="chip">Calculated</span>' : t.deadlineBasis === 'explicit' ? '<span class="chip ok">Stated</span>' : '';
   const emails = (t.emailIds || []).map(id => St.emails.get(id)).filter(Boolean);
   return `<div class="drawer-h"><span class="mono muted">${esc(t.ref || '')}</span>${chipPrio(t.priority)}<span class="spacer"></span><button class="icon-btn" data-act="close-drawer" aria-label="Close">${I.x}</button></div>
-  <div class="drawer-b">
+  <div class="drawer-b two"><div class="dcol-main">
     <textarea class="title-edit" id="d-title" rows="1" data-chg="task-field" data-field="title" dir="auto" aria-label="Title">${esc(t.title)}</textarea>
     ${t.placement && t.placement.status === 'suggested' ? callout('info', `<p><b>❓ Claude isn’t sure where this belongs.</b> Choose one:</p><div style="display:grid;gap:6px;margin-top:8px">${(t.placement.options || []).map((o, i) => { const r = o.relatedTaskId && St.tasks.get(o.relatedTaskId); return `<button class="btn sm opt-btn" data-act="use-placement" data-i="${i}">${o.project ? '📁 ' + esc(o.project) : ''}${o.discipline ? ' › ' + esc(E.DISCIPLINES[o.discipline]) : ''}${r ? ' · 🔗 ' + esc(r.ref) : ''}${o.reason ? `<span class="muted small"> — ${esc(o.reason)}</span>` : ''}</button>`; }).join('')}<button class="btn sm ghost" data-act="keep-placement">Keep where it is${t.project ? ': ' + esc(t.project) : ''}</button></div>`) : ''}
     <div class="seg" role="group" aria-label="Status">${Object.entries(STATUS).map(([k, v]) => `<button data-act="set-status" data-id="${esc(t.id)}" data-status="${k}" aria-pressed="${t.status === k}">${v}</button>`).join('')}</div>
+    ${taskActionsHTML(t)}
     ${t.status === 'blocked' ? `<label class="field"><span>Blocked because</span><input class="input" id="d-blocked" data-chg="task-field" data-field="blockedReason" value="${esc(t.blockedReason)}" placeholder="What is stopping this?"></label>` : ''}
     <div class="grid2">
       <label class="field"><span>Deadline ${basis}</span><input class="input" type="date" id="d-deadline" data-chg="task-field" data-field="deadline" value="${esc(t.deadline || '')}"></label>
@@ -2051,11 +2212,12 @@ function taskDrawerHTML(t) {
     })()}
     <label class="field"><span>Depends on</span><input class="input" id="d-dep" data-chg="task-field" data-field="dependsOn" value="${esc(t.dependsOn)}" dir="auto"></label>
     <label class="field"><span>My notes</span><textarea class="input" id="d-notes" rows="3" data-chg="task-field" data-field="notes" dir="auto">${esc(t.notes)}</textarea></label>
+    </div><div class="dcol-side">
     <div><div class="label" style="margin-bottom:8px">Evidence</div>${evidenceHTML(t.evidence, true)}</div>
     ${emails.length ? `<div><div class="label" style="margin-bottom:6px">Source emails</div>${emails.map(e => `<button class="btn ghost sm" style="justify-content:flex-start;max-width:100%;overflow:hidden" data-act="open-email" data-id="${esc(e.id)}">${I.mail}<span style="overflow:hidden;text-overflow:ellipsis">${esc(e.subject || '(no subject)')}</span></button>`).join('')}</div>` : ''}
     <div><div class="label" style="margin-bottom:8px">History</div><div class="history">${(t.history || []).slice().reverse().map(h => `<div><time>${esc(fmtDate(h.at, { day: 'numeric', month: 'short' }))} ${esc(new Date(h.at).toTimeString().slice(0, 5))}</time><span dir="auto">${esc(h.text)}</span></div>`).join('')}</div></div>
     <div class="row">${UI.confirm === 'del-' + t.id ? `<span class="small">Delete this task permanently?</span><button class="btn sm danger" data-act="delete-task" data-id="${esc(t.id)}">Delete</button><button class="btn sm" data-act="cancel-confirm">Keep</button>` : `<button class="btn ghost sm danger" data-act="ask-delete-task" data-id="${esc(t.id)}">${I.trash} Delete task</button>`}</div>
-  </div>`;
+  </div></div>`;
 }
 const FIELD_LABEL = { topic: 'Topic', discipline: 'Category', workType: 'Work type', title: 'Title', deadline: 'Deadline', priority: 'Priority', project: 'Project', ownership: 'Whose action', owner: 'Responsible', requestedBy: 'Requested by', nextStep: 'Next step', action: 'Requirement', dependsOn: 'Depends on', notes: 'Notes', blockedReason: 'Blocked reason' };
 function setTaskField(id, field, value) {
@@ -2197,7 +2359,8 @@ function monogram(name) {
   const w = n.split(/[\s—–-]+/).filter(x => /[\p{L}\p{N}]/u.test(x));
   return (w.length > 1 ? w[0][0] + w[1][0] : n.slice(0, 2)).toUpperCase();
 }
-const projBadge = (name, cls = '') => `<span class="pbadge ${cls}" style="--h:${hueOf(name)}" aria-hidden="true">${esc(monogram(name))}</span>`;
+const projHue = name => { const m = projMeta(name); return m.hue != null ? m.hue : hueOf(name); };
+const projBadge = (name, cls = '') => { const m = projMeta(name); return `<span class="pbadge ${cls}${m.icon ? ' has-ico' : ''}" style="--h:${projHue(name)}" aria-hidden="true">${m.icon ? ico(m.icon) : esc(monogram(name))}</span>`; };
 function ring(pct, size = 40) {
   const p = Math.max(0, Math.min(100, Math.round(pct)));
   return `<span class="ring" style="--p:${p};width:${size}px;height:${size}px" role="img" aria-label="${p}% done"><svg viewBox="0 0 36 36"><circle class="ring-bg" cx="18" cy="18" r="15.9"/><circle class="ring-fg" cx="18" cy="18" r="15.9" stroke-dasharray="${p} 100"/></svg><b>${p}%</b></span>`;
@@ -2356,14 +2519,7 @@ function viewTodo() {
   const tiles = [['all', '📋', 'Open tasks', ''], ['overdue', '🔥', 'Overdue', 'over'], ['today', '⏰', 'Due today', 'today'], ['week', '📆', 'Next 7 days', ''], ['waiting', '⏳', 'Waiting on others', 'wait']];
   const f = UI.todoFilter || 'all';
   return `<div class="wrap">
-    <section class="hero ${UI.todoMode === 'map' ? 'compact' : ''}">
-      <div class="hero-txt"><div class="label">${esc(new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }))}</div>
-        <h1>${greeting()}</h1>
-        <p class="hero-sub">${mine.length ? `You have <b>${mine.length}</b> open task${mine.length === 1 ? '' : 's'}${items ? ` with <b>${items}</b> item${items === 1 ? '' : 's'} inside` : ''}${c.overdue ? ` — <b class="over-txt">${c.overdue} overdue</b>` : c.today ? ` — <b>${c.today}</b> due today` : ''}.` : 'Nothing open. Forward an email when something new lands.'}</p>
-        <div class="row"><button class="btn primary" data-act="nav" data-view="import">${I.upload} Add emails</button><button class="btn" data-act="new-task">${I.plus} Task</button>${rc ? `<button class="btn review-btn" data-act="nav" data-view="review">📬 Review ${rc}</button>` : ''}</div>
-      </div>
-      ${UI.todoMode === 'map' ? '' : `<div class="hero-art">${ILLUSTRATION}</div>`}
-    </section>
+    ${todayStripHTML()}
     ${!St.settings.setupDone ? setupCardHTML() : ''}
     ${uncategorised && St.sample ? callout('info', `<div class="row"><span>${CAT.running ? '🧠 Claude is sorting your tasks into projects and categories…' : `🏷️ ${uncategorised} task${uncategorised > 1 ? 's are' : ' is'} not categorised yet.`}</span><span class="spacer"></span>${CAT.running ? '<div class="progress indet" style="width:90px"><i></i></div>' : `<button class="btn sm primary" data-act="ai-categorize">Categorise with Claude</button>`}</div>`) : ''}
     ${CAT.error && !CAT.running ? callout('warn', `<p>${esc(CAT.error)}</p>`) : ''}
@@ -2448,7 +2604,7 @@ function buildMap() {
   const projs = new Map();
   for (const t of tasks) {
     const [pk, pl] = projKeyLabel(t);
-    if (!projs.has(pk)) projs.set(pk, { id: pk, type: 'project', label: pl, hue: pk === 'p:~' ? 200 : hueOf(pl), cats: new Map(), n: 0, done: 0 });
+    if (!projs.has(pk)) projs.set(pk, { id: pk, type: 'project', label: pl, hue: pk === 'p:~' ? 200 : projHue(pl), cats: new Map(), n: 0, done: 0 });
     const P = projs.get(pk); P.n++; if (t.status === 'done') P.done++;
     const tp = topicOf(t); const ck = tp ? E.normMatch(tp) : '~';
     if (!P.cats.has(ck)) P.cats.set(ck, { id: 'tp:' + pk + ':' + ck, type: 'topic', key: ck, label: tp || 'General', hue: P.hue, tasks: [] });
@@ -2553,7 +2709,7 @@ function measureNode(n) {
   if (measureCache.has(key)) return measureCache.get(key);
   let m = document.getElementById('map-measure');
   if (!m) { m = document.createElement('div'); m.id = 'map-measure'; m.setAttribute('aria-hidden', 'true'); m.style.cssText = 'position:absolute;left:-20000px;top:0;width:2000px;visibility:hidden;pointer-events:none'; document.body.appendChild(m); }
-  m.innerHTML = html;
+  m.innerHTML = deco(html);
   const h = Math.ceil(m.firstElementChild ? m.firstElementChild.offsetHeight : MH[n.type]);
   m.innerHTML = '';
   if (measureCache.size > 3000) measureCache.clear();
@@ -2777,8 +2933,8 @@ function renderWorld() {
   const w = $('#map-world'); if (!w) return;
   const M = buildMap(); UI.mapLayout = M;
   w.style.width = M.w + 'px'; w.style.height = M.h + 'px';
-  w.innerHTML = worldHTML(M);
-  const c = $('#cv-ctx-slot'); if (c) c.innerHTML = ctxHTML();
+  w.innerHTML = deco(worldHTML(M));
+  const c = $('#cv-ctx-slot'); if (c) c.innerHTML = deco(ctxHTML());
 }
 function renderWorldSoon() { if (worldRaf) return; worldRaf = requestAnimationFrame(() => { worldRaf = null; renderWorld(); }); }
 /* --- camera --- */
@@ -3580,6 +3736,7 @@ function approveEmail(eid, quiet) {
     putTask(t); updated++;
   }
   e.reviewState = 'reviewed'; e.reviewedAt = now; putEmail(e);
+  runHooks('approved', e);
   if (!quiet) { toast(`${added} task${added === 1 ? '' : 's'} added${updated ? `, ${updated} updated` : ''}.`, { action: 'Open to-do', fn: () => go('todo') }); render(); }
   return { added, updated };
 }
@@ -3670,7 +3827,7 @@ function stagingHTML() {
     </div>`;
   }).join('')}</div>`;
 }
-function rerenderStaging() { const n = $('#staging'); if (n && UI.view === 'import') keepFocus(() => { n.innerHTML = stagingHTML(); }); if (UI.view === 'import') { const btnRow = document.querySelector('[data-act="analyze"]'); if (btnRow || UI.analyzing) scheduleRender(); } }
+function rerenderStaging() { const n = $('#staging'); if (n && UI.view === 'import') keepFocus(() => { n.innerHTML = deco(stagingHTML()); }); if (UI.view === 'import') { const btnRow = document.querySelector('[data-act="analyze"]'); if (btnRow || UI.analyzing) scheduleRender(); } }
 
 /* ----- file intake ----- */
 const mkAtt = o => ({ id: E.uid('a'), name: o.name, mime: o.mime || E.guessMime(o.name), size: o.size ?? (o.bytes ? o.bytes.length : 0), bytes: o.bytes || null, email: o.email || null, inline: !!o.inline, include: true, res: null, extracting: false });
@@ -3832,6 +3989,7 @@ async function runAnalysis() {
   UI.analyzing = false; UI.abort = null;
   render();
   if (ok) toast(`${ok} email${ok > 1 ? 's' : ''} analysed.`, { action: 'Review', fn: () => go('review') });
+  runHooks('analysed', ok);
 }
 function retryErrored() { UI.staging.forEach(b => { if (b.state === 'error') b.state = 'ready'; }); }
 
@@ -3864,7 +4022,7 @@ async function analyzeBundle(b, signal, onProgress) {
   const { prompt, truncations } = E.buildPrompt({
     me: s.me, projects: allProjects(), topics: allTopics(), today: E.todayISO(), tz: TZ,
     email: { subject: masker.mask(em.subject), from: masker.mask(em.from), to: masker.mask(em.to), cc: masker.mask(em.cc), date: em.date, forwardedBy: masker.mask(em.forwardedBy || ''), forwardedAt: em.forwardedAt || '', forwardMode: em.forwardMode || '', body: masker.mask(em.body || (b.source === 'docs' ? '(No email — the user shared these documents directly. Identify what they require from the user, if anything.)' : '')) },
-    attachments: atts, images: images.map(i => ({ key: i.key, label: i.label })), openTasks: related, budget,
+    attachments: atts, images: images.map(i => ({ key: i.key, label: i.label })), openTasks: related, budget, notes: promptNotes(em),
   });
   onProgress('Waiting for Claude… (consent, queue and thinking can take a minute)');
   const raw = await St.sample.json(prompt, {
@@ -3873,6 +4031,7 @@ async function analyzeBundle(b, signal, onProgress) {
     onText: ({ text }) => onProgress(`Receiving results… ${Math.round(text.length / 100) / 10}k characters`),
   });
   const an = E.normalizeAnalysis(raw, { unmask: masker.unmask });
+  runHooks('proposals', an, em, b); // email rules and learned corrections adjust the proposals
   // local verification + flags
   const flags = [];
   b.atts.forEach((a, i) => {
@@ -4105,7 +4264,7 @@ async function loadEmailTexts(id) {
   textsCache.set(id, 'loading');
   const tx = await getTexts(id);
   textsCache.set(id, tx || null);
-  if (UI.drawer && UI.drawer.kind === 'email' && UI.drawer.id === id) { const el = $('#drawer'); const e = St.emails.get(id); if (e) { const sc = el.querySelector('.drawer-b')?.scrollTop; el.innerHTML = emailDrawerHTML(e); const b = el.querySelector('.drawer-b'); if (b && sc) b.scrollTop = sc; } }
+  if (UI.drawer && UI.drawer.kind === 'email' && UI.drawer.id === id) { const el = $('#drawer'); const e = St.emails.get(id); if (e) { const sc = el.querySelector('.drawer-b')?.scrollTop; el.innerHTML = deco(emailDrawerHTML(e)); const b = el.querySelector('.drawer-b'); if (b && sc) b.scrollTop = sc; } }
 }
 function emailDrawerHTML(e) {
   const a = e.analysis || {};
@@ -4144,7 +4303,7 @@ function viewSetup() {
   return `<div class="wrap settings">
     <div class="page-head"><div><h1>Setup</h1><div class="sub">How the assistant identifies your work, and where your data lives.</div></div></div>
     ${DESKTOP ? DK.setupHTML() : ''}
-    <section class="card pad"><div class="section-title"><h2>You</h2></div>
+    <section class="card pad" id="set-you" data-sec="You and projects"><div class="section-title"><h2>You</h2></div>
       <div class="grid2">
         <label class="field"><span>Name</span><input class="input" id="s-name" value="${esc(me.name || '')}" placeholder="${esc(St.profileName || 'Your name')}"></label>
         <label class="field"><span>Work email address(es), comma-separated</span><input class="input" id="s-emails" value="${esc(me.emails.join(', '))}"></label>
@@ -4157,7 +4316,7 @@ function viewSetup() {
       <label class="field"><span>Projects — one per line: CODE | Name | other names</span><textarea class="input" id="s-projects" rows="4" placeholder="ELM | El Mahsama WWTP Expansion | Mahsama, EM-WWTP" dir="auto">${esc(projText)}</textarea></label>
       <div class="row end"><button class="btn primary" data-act="save-setup">Save</button></div>
     </section>
-    <section class="card pad"><div class="section-title"><h2>Forwarding inbox</h2></div>
+    <section class="card pad" id="set-inbox" data-sec="Forwarding inbox"><div class="section-title"><h2>Forwarding inbox</h2></div>
       ${fwdAddrHTML()}
       <div class="grid2">
         <label class="field"><span>Forwarding address (in the Gmail account connected ${DESKTOP ? 'in Connections' : 'to Claude'})</span><input class="input" id="gm-addr" type="email" value="${esc(gmCfg().address)}" placeholder="yourname+tasks@gmail.com" autocomplete="off"></label>
@@ -4173,7 +4332,7 @@ function viewSetup() {
         <li>Check your company’s rules before forwarding work email to a personal mailbox. Automatic forwarding rules to outside addresses are often blocked by Microsoft 365; this works with forwards you send yourself.</li>
       </ol></details>
     </section>
-    <section class="card pad"><div class="section-title"><h2>Analysis</h2></div>
+    <section class="card pad" id="set-analysis" data-sec="Analysis"><div class="section-title"><h2>Analysis</h2></div>
       <div class="grid2">
         <label class="check"><input type="checkbox" id="o-vision" data-chg="opt" data-key="vision" ${s.vision ? 'checked' : ''}><span>Send images of scanned pages and photos<br><span class="small muted">Needed for scans, photos and marked-up prints.</span></span></label>
         <label class="check"><input type="checkbox" id="o-draw" data-chg="opt" data-key="drawings" ${s.drawings ? 'checked' : ''}><span>Send images of drawing sheets (A3 and larger)<br><span class="small muted">Lets Claude see revision clouds and the title block.</span></span></label>
@@ -4181,7 +4340,8 @@ function viewSetup() {
         <label class="field"><span>Analysis depth</span><select class="input" id="o-tier" data-chg="opt" data-key="tier"><option value="complex" ${s.tier === 'complex' ? 'selected' : ''}>Thorough (best for attachments)</option><option value="default" ${s.tier === 'default' ? 'selected' : ''}>Balanced (faster)</option></select></label>
       </div>
     </section>
-    <section class="card pad"><div class="section-title"><h2>Privacy</h2></div>
+    <!--SETUP-EXTRA-->
+    <section class="card pad" id="set-privacy" data-sec="Privacy"><div class="section-title"><h2>Privacy</h2></div>
       <label class="check"><input type="checkbox" id="s-store" data-chg="opt" data-key="storeText" ${s.storeText ? 'checked' : ''}><span>Keep extracted email and attachment text<br><span class="small muted">Needed to view text later and to re-analyse. When off, only tasks, evidence quotes and summaries are kept.</span></span></label>
       <dl class="kv">
         <dt>Where data is kept</dt><dd>${DESKTOP ? 'On this computer only, in ' + esc(DK.dataDir()) + '. Export backups regularly.' : St.mode === 'db' ? 'Your Claude account, in a private area of this page that only you can read — not visible to people you share the page with.' : 'This browser only (cloud saving is unavailable in this view). Export backups regularly.'}</dd>
@@ -4190,7 +4350,7 @@ function viewSetup() {
         <dt>Image limit per email</dt><dd>${lim && lim.images ? lim.images.maxCount + ' images' : 'Images unavailable in this view'}</dd>
       </dl>
     </section>
-    <section class="card pad"><div class="section-title"><h2>Backup and export</h2></div>
+    <section class="card pad" id="set-backup" data-sec="Backup"><div class="section-title"><h2>Backup and export</h2></div>
       <div class="row">
         <button class="btn" data-act="export-json">${I.download} Full backup (.json)</button>
         <button class="btn" data-act="export-csv">${I.download} Tasks for Excel (.csv)</button>
@@ -4245,11 +4405,14 @@ function exportICS() {
   });
   offerFile(`action-register-deadlines-${stamp()}.ics`, ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Action Register//EN', 'CALSCALE:GREGORIAN', ...ev, 'END:VCALENDAR'].join('\r\n'));
 }
-async function exportJSON() {
+async function backupData() {
   const emails = [...St.emails.values()];
   const texts = {};
   if (St.settings.storeText) for (const e of emails) { const t = await getTexts(e.id); if (t) texts[e.id] = t; }
-  offerFile(`action-register-backup-${stamp()}.json`, JSON.stringify({ app: 'action-register', version: 1, exportedAt: nowISO(), settings: St.settings, tasks: [...St.tasks.values()], emails, texts, board: [...St.board.values()], daily: [...St.daily.values()], layout: St.layout }, null, 1));
+  return { app: 'action-register', version: 1, exportedAt: nowISO(), settings: St.settings, tasks: [...St.tasks.values()], emails, texts, board: [...St.board.values()], daily: [...St.daily.values()], layout: St.layout, cols: Object.fromEntries(COLS.map(n => [n, colList(n)])) };
+}
+async function exportJSON() {
+  offerFile(`action-register-backup-${stamp()}.json`, JSON.stringify(await backupData(), null, 1));
 }
 async function importJSON(file) {
   try {
@@ -4261,6 +4424,7 @@ async function importJSON(file) {
     for (const [id, t] of Object.entries(d.texts || {})) await putTexts(id, t);
     for (const b of d.board || []) if (b && b.id) putBoard(b);
     for (const x of d.daily || []) if (x && x.id) putDaily(x);
+    for (const n of COLS) for (const x of (d.cols && d.cols[n]) || []) if (x && x.id) colPut(n, x);
     if (d.layout) putLayout(mergeLayout({ off: { ...(d.layout.off || {}), ...St.layout.off }, size: { ...(d.layout.size || {}), ...St.layout.size } }));
     if (d.settings && !St.settings.setupDone) putSettings(mergeSettings(d.settings));
     if (St.mode !== 'db') saveLocal();
@@ -4273,6 +4437,7 @@ async function wipeAll() {
   for (const id of eids) delEmail(id);
   for (const id of [...St.board.keys()]) delBoard(id);
   for (const id of [...St.daily.keys()]) delDaily(id);
+  for (const n of COLS) for (const id of [...St.cols[n].keys()]) colDel(n, id);
   putLayout(mergeLayout()); UI.cvUndo = []; UI.cvRedo = [];
   if (St.mode !== 'db') { try { localStorage.removeItem(LS_TEXT); } catch {} }
   UI.confirm = null; toast('All data deleted.'); render();
@@ -4282,13 +4447,22 @@ async function wipeAll() {
 function toast(msg, o = {}) {
   const box = $('#toasts'); while (box.children.length >= 2) box.firstElementChild.remove(); const t = document.createElement('div');
   t.className = 'toast' + (o.err ? ' err' : ''); t.setAttribute('role', o.err ? 'alert' : 'status');
-  const span = document.createElement('span'); span.textContent = msg; span.style.flex = '1'; t.append(span);
+  const span = document.createElement('span'); span.innerHTML = deco(esc(msg)); span.style.flex = '1'; t.append(span);
   if (o.action) { const b = document.createElement('button'); b.className = 'btn'; b.textContent = o.action; b.onclick = () => { o.fn(); t.remove(); }; t.append(b); }
   box.append(t); setTimeout(() => t.remove(), o.err ? 9000 : o.action ? 7000 : 3800);
 }
 
 /* ---------- navigation ---------- */
 const VIEWS = ['todo', 'daily', 'review', 'import', 'emails', 'setup'];
+// view and drawer renderers; feature files add theirs (and push to VIEWS)
+const VIEW_FN = { todo: () => viewTodo(), daily: () => viewDaily(), review: () => viewReview(), import: () => viewImport(), emails: () => viewEmails(), setup: () => viewSetup() };
+const DRAWER_FN = {};
+// buttons shown under the status row of the task panel; feature files push (t) => html
+const TASK_ACTIONS = [];
+function taskActionsHTML(t) { const parts = TASK_ACTIONS.map(f => { try { return f(t) || ''; } catch { return ''; } }).filter(Boolean); return parts.length ? `<div class="row task-actions">${parts.join('')}</div>` : ''; }
+// feature hooks: beforeRender / afterRender (every full render), ready (data loaded), analysed (after a run), taskChanged (old, new)
+const HOOKS = { beforeRender: [], afterRender: [], ready: [], analysed: [], taskChanged: [], deleted: [], proposals: [], approved: [] };
+const runHooks = (k, ...a) => { for (const f of HOOKS[k]) { try { f(...a); } catch (e) { console.warn('hook ' + k, e); } } };
 function go(view) { if (!VIEWS.includes(view)) view = 'todo'; if (view === 'todo') setTimeout(maybeAutoCategorize, 400); UI.view = view; UI.confirm = null; closeDrawer(); render(); window.scrollTo(0, 0); try { history.replaceState(null, '', '#' + view); } catch {} }
 
 /* ---------- events ---------- */
@@ -4440,7 +4614,7 @@ document.addEventListener('input', e => {
   if (el.classList && (el.classList.contains('title-edit') || el.classList.contains('autogrow'))) autosize(el);
   if (el.dataset && el.dataset.inp) {
     UI[el.dataset.inp] = el.value; clearTimeout(qTimer);
-    qTimer = setTimeout(() => { if (el.dataset.inp === 'mapQ') { render(); const ids = [...(document.querySelectorAll('.mnode.task.hit'))].map(n => n.dataset.tid); if (ids.length && UI.mapQ) { const vp = $('#map-vp'), n = UI.mapLayout.nodes.find(x => x.id === 't:' + ids[0]); if (vp && n) { UI.map.x = vp.clientWidth / 2 - (n.x + n.w / 2) * UI.map.k; UI.map.y = vp.clientHeight / 2 - (n.y + n.h / 2) * UI.map.k; applyCam(true); } } return; } if (el.dataset.inp === 'todoQ') { const n = $('#todo-groups'); if (n) n.innerHTML = todoGroupsHTML(); } else render(); }, 120);
+    qTimer = setTimeout(() => { if (el.dataset.inp === 'mapQ') { render(); const ids = [...(document.querySelectorAll('.mnode.task.hit'))].map(n => n.dataset.tid); if (ids.length && UI.mapQ) { const vp = $('#map-vp'), n = UI.mapLayout.nodes.find(x => x.id === 't:' + ids[0]); if (vp && n) { UI.map.x = vp.clientWidth / 2 - (n.x + n.w / 2) * UI.map.k; UI.map.y = vp.clientHeight / 2 - (n.y + n.h / 2) * UI.map.k; applyCam(true); } } return; } if (el.dataset.inp === 'todoQ') { const n = $('#todo-groups'); if (n) n.innerHTML = deco(todoGroupsHTML()); } else render(); }, 120);
   }
 });
 document.addEventListener('keydown', e => { if (e.key === 'Enter' && (e.target.id === 'day-in' || e.target.id === 'day-mgr')) { e.preventDefault(); dayAdd(); return; } if (e.key === 'Enter' && e.target.classList && e.target.classList.contains('title-edit')) { e.preventDefault(); e.target.blur(); } if (e.key === 'Enter' && e.target.id === 'd-sub-new') { e.preventDefault(); addSub(); } });
@@ -4458,6 +4632,726 @@ document.addEventListener('paste', e => {
   const txt = e.clipboardData && e.clipboardData.getData('text/plain');
   if (txt && txt.trim().length > 20) { e.preventDefault(); UI.pasteOpen = true; render(); const ta = $('#paste-text'); if (ta) ta.value = txt; }
 });
+
+/* ===== features/00-icons.js ===== */
+/* ---------- line icons in place of emoji ---------- */
+// Screens are written with emoji as short-hands; deco() swaps each for a line icon of one style
+// when the HTML is put on screen. Text inside tags, attributes, <textarea>, <option>, <title>,
+// <script> and <style> is left alone, so what people type is never changed.
+const ICON_PATHS = {
+  help: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9.2a2.6 2.6 0 0 1 5 .9c0 1.7-2.5 2.4-2.5 3.9M12 17.2h.01"/>',
+  folder: '<path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2.2h7a2 2 0 0 1 2 2V17a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/>',
+  link: '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1.2 1.2"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1.2-1.2"/>',
+  map: '<circle cx="5.5" cy="12" r="2.5"/><circle cx="18.5" cy="5.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/><path d="M8 12h3.5c2 0 2.5-6.5 4.5-6.5M11.5 12c2 0 2.5 6.5 4.5 6.5"/>',
+  compass: '<circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5z"/>',
+  message: '<path d="M4 5h16v11H9l-5 4z"/>',
+  search: '<circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/>',
+  pencil: '<path d="M4 20l1-4.5L15.5 5a2.1 2.1 0 0 1 3 3L8 18.5z"/><path d="m13.5 7 3 3"/>',
+  send: '<path d="M21 3 10 14"/><path d="M21 3l-7 18-4-7-7-4z"/>',
+  ok: '<circle cx="12" cy="12" r="9"/><path d="m8 12.2 2.8 2.8L16.2 9.5"/>',
+  scale: '<path d="M12 4v16M7 20h10M5 7h14"/><path d="M5 7 2.5 13a3 3 0 0 0 5 0zM19 7l-2.5 6a3 3 0 0 0 5 0z"/>',
+  bell: '<path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/>',
+  calendar: '<rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/>',
+  ruler: '<path d="M3 17 17 3l4 4L7 21z"/><path d="m7 13 2 2M10 10l2 2M13 7l2 2"/>',
+  critical: '<path d="M8.5 3h7L21 8.5v7L15.5 21h-7L3 15.5v-7z"/><path d="M12 8v5M12 16.2h.01"/>',
+  high: '<path d="M12 5 21 19H3z"/>',
+  medium: '<path d="M12 4l8 8-8 8-8-8z"/>',
+  low: '<rect x="7" y="7" width="10" height="10" rx="2"/>',
+  stack: '<path d="M4 8.5 12 4l8 4.5-8 4.5z"/><path d="m4 12.5 8 4.5 8-4.5M4 16.5 12 21l8-4.5"/>',
+  tag: '<path d="M3.5 12.5V4h8.5l8.5 8.5-8.5 8.5z"/><circle cx="8" cy="8.5" r="1.3"/>',
+  topic: '<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><path d="M16.5 13.5v6M13.5 16.5h6"/>',
+  flame: '<path d="M12 21a6 6 0 0 0 6-6c0-3.5-2.5-5.5-3.5-8.5-1.5 2-2 3-2 4.5-1-1-1.5-2.5-1.5-4C8 9 6 11.5 6 15a6 6 0 0 0 6 6z"/>',
+  alarm: '<circle cx="12" cy="13" r="7"/><path d="M12 9.5V13l2.5 2M4.5 5 7 3M19.5 5 17 3"/>',
+  infinity: '<path d="M8.5 9a3 3 0 1 0 0 6c2.5 0 4.5-6 7-6a3 3 0 1 1 0 6c-2.5 0-4.5-6-7-6z"/>',
+  party: '<path d="m4 20 4-11 7 7z"/><path d="M13 3c.5 1.5-.5 3-2 3.5M20 11c-1.5-.5-3 .5-3.5 2M16 4l.5 1.5M19.5 7.5 21 8M18 3l1 1"/>',
+  pin: '<path d="M9 3h6l-1 6 3 3H7l3-3z"/><path d="M12 15v6"/>',
+  hourglass: '<path d="M7 3h10M7 21h10M8 3c0 4 8 5 8 9s-8 5-8 9M16 3c0 4-8 5-8 9s8 5 8 9"/>',
+  blocked: '<circle cx="12" cy="12" r="9"/><path d="m5.6 5.6 12.8 12.8"/>',
+  play: '<path d="M8 5.5v13l10-6.5z"/>',
+  pause: '<path d="M8.5 5v14M15.5 5v14"/>',
+  next: '<path d="M5 12h14M13 6l6 6-6 6"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/>',
+  hand: '<path d="M8 13V6.5a1.5 1.5 0 0 1 3 0V11m0-5.5a1.5 1.5 0 0 1 3 0V11m0-4a1.5 1.5 0 0 1 3 0v7c0 4-2.5 7-6 7s-5-1.5-7-5l-1.5-3a1.5 1.5 0 0 1 2.6-1.4L8 14"/>',
+  clipboard: '<rect x="5" y="4.5" width="14" height="16" rx="2"/><path d="M9 4.5h6v3H9zM8.5 12h7M8.5 16h5"/>',
+  inbox: '<path d="M3.5 13.5 6 5h12l2.5 8.5V19a1 1 0 0 1-1 1h-15a1 1 0 0 1-1-1z"/><path d="M3.5 13.5H9l1 2h4l1-2h5.5"/>',
+  board: '<rect x="3.5" y="4" width="7" height="16" rx="1.5"/><rect x="13.5" y="4" width="7" height="10" rx="1.5"/>',
+  list: '<path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/>',
+  manager: '<rect x="3.5" y="7.5" width="17" height="12" rx="2"/><path d="M9 7.5V5.5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M3.5 12.5h17"/>',
+  star: '<path d="m12 3.5 2.6 5.4 5.9.8-4.3 4.1 1 5.8L12 16.8 6.8 19.6l1-5.8L3.5 9.7l5.9-.8z"/>',
+  new: '<circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/>',
+  refresh: '<path d="M20 11a8 8 0 0 0-14.3-4.6L4 8"/><path d="M4 4v4h4M4 13a8 8 0 0 0 14.3 4.6L20 16"/><path d="M20 20v-4h-4"/>',
+  mail: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>',
+  globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.5 3.5 5.5 3.5 9s-1 6.5-3.5 9c-2.5-2.5-3.5-5.5-3.5-9S9.5 5.5 12 3z"/>',
+  carried: '<path d="M5 4v7a4 4 0 0 0 4 4h10"/><path d="m15 11 4 4-4 4"/>',
+  x: '<path d="M18 6 6 18M6 6l12 12"/>',
+  sparkles: '<path d="M10 3.5 11.6 8 16 9.6 11.6 11.2 10 15.5 8.4 11.2 4 9.6 8.4 8z"/><path d="M17.5 13.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/>',
+  bulb: '<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/>',
+  user: '<circle cx="12" cy="8" r="4"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/>',
+  note: '<path d="M5 4h14v11l-5 5H5z"/><path d="M14 20v-5h5M8.5 9h7M8.5 12.5h4"/>',
+  check: '<path d="m5 12.5 4.5 4.5L19 7.5"/>',
+  info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5h.01"/>',
+  undo: '<path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/>',
+  clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  focus: '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1"/>',
+  chart: '<path d="M4 20V10M10 20V4M16 20v-7M21 20H3"/>',
+  doc: '<path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5M8.5 13h7M8.5 16.5h5"/>',
+  tools: '<path d="M14.5 6.5a4 4 0 0 0-5.3 5L4 16.7 7.3 20l5.2-5.2a4 4 0 0 0 5-5.3l-2.6 2.6-2.4-.6-.6-2.4z"/>',
+  lock: '<rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/>',
+  eye: '<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/>',
+  eyeoff: '<path d="M3 3l18 18M10.6 6c.5-.1.9-.1 1.4-.1 6 0 9.5 6.1 9.5 6.1a17 17 0 0 1-2.9 3.6M6.6 7.2C4.1 8.8 2.5 12 2.5 12s3.5 6.5 9.5 6.5c1.6 0 3-.4 4.2-1"/><path d="M9.9 10a3 3 0 0 0 4.1 4.1"/>',
+  print: '<path d="M7 9V3.5h10V9M7 17H4.5v-6.5a1.5 1.5 0 0 1 1.5-1.5h12a1.5 1.5 0 0 1 1.5 1.5V17H17"/><rect x="7" y="14" width="10" height="7" rx="1"/>',
+  download: '<path d="M12 4v12M7 11l5 5 5-5"/><path d="M4 20h16"/>',
+  trash: '<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>',
+  keyboard: '<rect x="2.5" y="6" width="19" height="12" rx="2"/><path d="M6 10h.01M9.5 10h.01M13 10h.01M16.5 10h.01M8 14h8"/>',
+  present: '<rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M12 16v4M8 20h8M10 8v4.5L14 10z"/>',
+  image: '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-9 9"/>',
+  gear: '<circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/>',
+  palette: '<path d="M12 3.5a8.5 8.5 0 1 0 0 17c1 0 1.5-.7 1.5-1.4 0-1.2-1-1.6-1-2.6 0-.9.7-1.5 1.6-1.5H16a4.5 4.5 0 0 0 4.5-4.5c0-3.9-3.8-7-8.5-7z"/><circle cx="7.5" cy="11.5" r="1"/><circle cx="10" cy="7.5" r="1"/><circle cx="14.5" cy="7.5" r="1"/>',
+  bot: '<rect x="4" y="8" width="16" height="11" rx="3"/><path d="M12 4v4M9 13h.01M15 13h.01M9.5 16h5"/>',
+  equipment: '<circle cx="12" cy="12" r="3.5"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/><rect x="7" y="7" width="10" height="10" rx="5"/>',
+};
+const EMOJI_ICON = {
+  '❓': 'help', '📁': 'folder', '🔗': 'link', '🧠': 'map', '🧭': 'compass', '💬': 'message', '🔍': 'search', '🔎': 'search', '✏': 'pencil', '✎': 'pencil',
+  '📤': 'send', '✅': 'ok', '⚖': 'scale', '🔔': 'bell', '📅': 'calendar', '📆': 'calendar', '🗓': 'calendar', '📐': 'ruler', '🚨': 'critical', '🔺': 'high',
+  '🔷': 'medium', '▫': 'low', '🗂': 'stack', '🏷': 'tag', '🧩': 'topic', '🔥': 'flame', '⏰': 'alarm', '♾': 'infinity', '🎉': 'party', '📌': 'pin',
+  '⏳': 'hourglass', '⛔': 'blocked', '▶': 'play', '⏸': 'pause', '👉': 'next', '🌤': 'sun', '👋': 'hand', '📋': 'clipboard', '📬': 'inbox', '▦': 'board',
+  '☰': 'list', '👔': 'manager', '⭐': 'star', '🆕': 'new', '🔄': 'refresh', '📨': 'mail', '🌐': 'globe', '↪': 'carried', '✕': 'x', '✨': 'sparkles',
+  '💡': 'bulb', '🙋': 'user', '📝': 'note', '✓': 'check', 'ℹ': 'info', '↺': 'undo', '🕒': 'clock', '🎯': 'focus', '📊': 'chart', '📄': 'doc',
+  '🛠': 'tools', '🔒': 'lock', '👁': 'eye', '🖨': 'print', '⬇': 'download', '🗑': 'trash', '⌨': 'keyboard', '🖥': 'present', '🖼': 'image', '⚙': 'gear',
+  '🎨': 'palette', '🤖': 'bot', '⚙️': 'gear', '🔩': 'equipment',
+};
+const ICON_TONE = { flame: 'crit', critical: 'crit', blocked: 'crit', high: 'high', star: 'warn', ok: 'ok', party: 'ok', alarm: 'warn', hourglass: 'wait', manager: 'wait', medium: 'med', low: 'low', bulb: 'warn', sparkles: 'accent', pin: 'accent' };
+const icoCache = new Map();
+function ico(name, extra) {
+  const k = name + '|' + (extra || '');
+  if (icoCache.has(k)) return icoCache.get(k);
+  const d = ICON_PATHS[name]; if (!d) return '';
+  const v = `<svg class="ei${ICON_TONE[name] ? ' t-' + ICON_TONE[name] : ''}${extra ? ' ' + extra : ''}" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+  icoCache.set(k, v); return v;
+}
+const EMOJI_RE = new RegExp('(' + Object.keys(EMOJI_ICON).sort((a, b) => b.length - a.length).map(k => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')\\uFE0F?', 'gu');
+const RAW_TAGS = /^<(textarea|option|title|script|style)\b/i;
+function deco(html) {
+  if (!html || typeof html !== 'string') return html;
+  let out = '', raw = null;
+  for (const part of html.split(/(<[^>]*>)/)) {
+    if (!part) continue;
+    if (part[0] === '<') {
+      out += part;
+      if (raw) { if (new RegExp('^</' + raw + '\\b', 'i').test(part)) raw = null; }
+      else { const m = RAW_TAGS.exec(part); if (m && !/\/>$/.test(part)) raw = m[1]; }
+      continue;
+    }
+    out += raw ? part : part.replace(EMOJI_RE, (_, e) => ico(EMOJI_ICON[e] || EMOJI_ICON[e.replace(/️/g, '')]) || e);
+  }
+  return out;
+}
+
+/* ===== features/01-appearance.js ===== */
+/* ---------- appearance: theme, accent colour, density, text size ---------- */
+// Stored in St.settings.ui; applied to <html> (data-theme, data-density, accent tokens).
+const ACCENTS = {
+  teal: { light: ['#0A6B74', '#085A62', '#D5EBEB'], dark: ['#52B4BD', '#6CC4CC', '#143537'], label: 'Teal' },
+  blue: { light: ['#1F5FBF', '#184C99', '#DCE7F8'], dark: ['#6FA3EE', '#8DB7F2', '#16294A'], label: 'Blue' },
+  indigo: { light: ['#4B47B8', '#3C3994', '#E2E1F7'], dark: ['#9A97EE', '#B0AEF2', '#24224A'], label: 'Indigo' },
+  green: { light: ['#2F7A3E', '#256232', '#DDEFE0'], dark: ['#6CC27E', '#86CF95', '#173321'], label: 'Green' },
+  amber: { light: ['#9A5B00', '#7D4A00', '#F6E7CF'], dark: ['#E6A54A', '#EDB868', '#3A2A12'], label: 'Amber' },
+  rose: { light: ['#B03A5B', '#912F4A', '#F6DEE5'], dark: ['#EE8BA6', '#F2A3B8', '#40202A'], label: 'Rose' },
+};
+const uiPrefs = () => Object.assign({ theme: 'system', accent: 'teal', density: 'comfortable', text: 100 }, St.settings.ui || {});
+const darkMQ = typeof matchMedia === 'function' ? matchMedia('(prefers-color-scheme: dark)') : null;
+const isDark = () => { const t = uiPrefs().theme; return t === 'dark' || (t === 'system' && !!(darkMQ && darkMQ.matches)); };
+let appearanceSig = '';
+function applyAppearance(force) {
+  const p = uiPrefs(), dark = isDark();
+  const sig = JSON.stringify([p, dark]); if (!force && sig === appearanceSig) return; appearanceSig = sig;
+  const r = document.documentElement;
+  if (p.theme === 'system') r.removeAttribute('data-theme'); else r.setAttribute('data-theme', p.theme);
+  r.dataset.density = p.density;
+  const a = (ACCENTS[p.accent] || ACCENTS.teal)[dark ? 'dark' : 'light'];
+  if (p.accent && p.accent !== 'teal') { r.style.setProperty('--accent', a[0]); r.style.setProperty('--accent-2', a[1]); r.style.setProperty('--accent-soft', a[2]); }
+  else ['--accent', '--accent-2', '--accent-soft'].forEach(k => r.style.removeProperty(k));
+  if (DESKTOP) {
+    document.body.classList.add('has-titlebar', 'plat-' + ((DK.status() || {}).platform || 'win32'));
+    try { DK.call('ui:titlebar', dark ? { color: '#151D1C', symbol: '#E3EBE9' } : { color: '#FFFFFF', symbol: '#15201E' }); } catch {}
+    try { DK.call('ui:zoom', { factor: (+p.text || 100) / 100 }); } catch {}
+  }
+}
+if (darkMQ && darkMQ.addEventListener) darkMQ.addEventListener('change', () => applyAppearance(true));
+function setUiPref(k, v) { const s = clone(St.settings); s.ui = { ...uiPrefs(), [k]: v }; putSettings(s); applyAppearance(); render(); }
+function appearanceHTML() {
+  const p = uiPrefs();
+  const seg = (key, opts) => `<div class="seg" role="group">${opts.map(([v, l]) => `<button data-act="ui-pref" data-key="${key}" data-val="${v}" aria-pressed="${String(p[key]) === String(v)}">${l}</button>`).join('')}</div>`;
+  return `<section class="card pad set-sec"><div class="section-title"><h2>Appearance</h2></div>
+    <div class="set-rows">
+      <div class="set-row"><div><b>Theme</b><div class="small muted">Follow Windows, or always light or dark.</div></div>${seg('theme', [['system', 'Follow system'], ['light', 'Light'], ['dark', 'Dark']])}</div>
+      <div class="set-row"><div><b>Accent colour</b><div class="small muted">Buttons, highlights and links.</div></div><div class="row accent-pick">${Object.entries(ACCENTS).map(([k, a]) => `<button class="sw big ${p.accent === k ? 'on' : ''}" data-act="ui-pref" data-key="accent" data-val="${k}" style="--c:${a[isDark() ? 'dark' : 'light'][0]}" title="${a.label}" aria-label="${a.label}" aria-pressed="${p.accent === k}"></button>`).join('')}</div></div>
+      <div class="set-row"><div><b>Density</b><div class="small muted">Compact fits more on screen.</div></div>${seg('density', [['comfortable', 'Comfortable'], ['compact', 'Compact']])}</div>
+      ${DESKTOP ? `<div class="set-row"><div><b>Text size</b><div class="small muted">Makes everything larger or smaller.</div></div>${seg('text', [[90, '90%'], [100, '100%'], [110, '110%'], [125, '125%']])}</div>` : ''}
+    </div></section>`;
+}
+Object.assign(ACT, { 'ui-pref': el => setUiPref(el.dataset.key, el.dataset.key === 'text' ? +el.dataset.val : el.dataset.val) });
+HOOKS.beforeRender.push(() => applyAppearance());
+
+/* ===== features/02-background.js ===== */
+/* ---------- background work: periodic Gmail checks, reminders, watch folder, backups, quick add, lock ---------- */
+// Periodic Gmail checks and the quick-add box work in the web build too; notifications, the
+// watch folder, backups, updates and the PIN lock need the desktop app.
+const BG = { lastGmail: Date.now(), timer: null, notifiedDay: '', backupDay: '' };
+const lsGet = k => { try { return localStorage.getItem(k) || ''; } catch { return ''; } };
+const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch {} };
+const autoPrefs = () => Object.assign({ gmailEvery: 10, morning: true, morningAt: '07:30', backup: true }, St.settings.auto || {});
+function deskNotify(title, body, view, id) {
+  if (DESKTOP) { DK.call('sys:notify', { title, body, view, id }).catch(() => {}); return; }
+  toast(title + (body ? ' — ' + body : ''));
+}
+function todaysNumbers() {
+  const mine = [...St.tasks.values()].filter(t => t.status !== 'done' && isMine(t));
+  return { overdue: mine.filter(t => t.deadline && t.deadline < T()).length, today: mine.filter(t => t.deadline === T()).length, review: counts().review };
+}
+async function backgroundTick() {
+  if (!St.ready) return;
+  const a = autoPrefs(), g = gmCfg();
+  // 1. Gmail every N minutes (the check analyses new forwards itself when "Analyse automatically" is on)
+  if (St.mcp && g.address && g.autoCheck && +a.gmailEvery > 0 && Date.now() - BG.lastGmail > a.gmailEvery * 60000 && !GM.busy && !UI.analyzing) {
+    BG.lastGmail = Date.now();
+    try { await checkGmail(false); } catch {}
+  }
+  // 2. morning reminder, once a day after the chosen time
+  const now = new Date(), hm = now.toTimeString().slice(0, 5);
+  if (a.morning && hm >= (a.morningAt || '07:30') && lsGet('ar-morning') !== T()) {
+    lsSet('ar-morning', T());
+    const n = todaysNumbers();
+    if (n.overdue || n.today || n.review) deskNotify('Good morning — your day', [n.today ? `${n.today} due today` : '', n.overdue ? `${n.overdue} overdue` : '', n.review ? `${n.review} email${n.review > 1 ? 's' : ''} to review` : ''].filter(Boolean).join(' · '), 'todo');
+  }
+  // 3. daily backup (desktop)
+  if (DESKTOP && a.backup && lsGet('ar-backup') !== T() && St.tasks.size) {
+    lsSet('ar-backup', T());
+    try { const data = await backupData(); await DK.call('backup:write', { name: `action-register-backup-${T()}.json`, text: JSON.stringify(data) }); } catch (e) { lsSet('ar-backup', ''); }
+  }
+}
+HOOKS.analysed.push(ok => { if (ok && (document.hidden || !document.hasFocus())) deskNotify(`${ok} new email${ok > 1 ? 's' : ''} analysed`, 'Tasks are waiting for your review.', 'review'); });
+HOOKS.ready.push(() => {
+  clearInterval(BG.timer); BG.timer = setInterval(backgroundTick, 30000); setTimeout(backgroundTick, 4000);
+  if (!DESKTOP) return;
+  DK.on('quick-add', () => openQuickAdd());
+  DK.on('gmail-check', () => checkGmail(true));
+  DK.on('nav', ({ view, id }) => { if (view) go(view); if (id && St.tasks.has(id)) openDrawer('task', id); });
+  DK.on('update:ready', ({ version }) => { UI.updateReady = version; render(); toast(`Version ${version} is ready to install.`, { action: 'Restart now', fn: () => DK.call('update:install') }); });
+  DK.on('sample:usage', () => { DK.refresh(); });
+  DK.on('import:file', async ({ name, path, data }) => {
+    try {
+      const f = new File([data], name);
+      await intakeFiles([f]);
+      await DK.call('watch:done', { path, ok: true });
+      toast(`Imported ${name} from your watch folder.`, { action: 'Show', fn: () => go('import') });
+      if (gmCfg().autoAnalyse && St.sample && !UI.analyzing) { await extractPending(); runAnalysis(); }
+    } catch { DK.call('watch:done', { path, ok: false }).catch(() => {}); }
+  });
+  DK.call('watch:ready').catch(() => {});
+  const st = DK.status(); if (st.update) UI.updateReady = st.update.version;
+});
+
+/* --- quick add (Ctrl+N in the app, or the global hotkey from anywhere) --- */
+function openQuickAdd() {
+  const m = $('#modal');
+  m.innerHTML = deco(`<div class="card quick-add" role="dialog" aria-label="Quick add">
+    <div class="row"><b>Quick add for today</b><span class="spacer"></span><button class="icon-btn" data-act="close-modal" aria-label="Close">${I.x}</button></div>
+    <div class="seg" role="group">${DAY_KINDS.map(([k, l]) => `<button data-act="qa-kind" data-kind="${k}" aria-pressed="${(UI.qaKind || 'mine') === k}">${l}</button>`).join('')}</div>
+    <input class="input" id="qa-in" dir="auto" autocomplete="off" placeholder="What needs doing? e.g. Send revised valve schedule to the consultant">
+    <div class="row end"><span class="small muted">Enter to add · Esc to close</span><span class="spacer"></span><button class="btn primary" data-act="qa-add">Add</button></div></div>`);
+  m.hidden = false; setTimeout(() => $('#qa-in')?.focus(), 30);
+}
+function quickAdd() {
+  const v = ($('#qa-in') || {}).value || ''; if (!v.trim()) return;
+  const kind = UI.qaKind || 'mine', D = T();
+  if (kind === 'achievement' || kind === 'note') putDaily({ id: E.uid('d'), kind, date: D, text: v.trim(), taskId: null, createdAt: nowISO() });
+  else createDailyTask(v.trim(), D, kind, kind === 'manager' ? managerName() : '');
+  $('#modal').hidden = true; toast(kind === 'achievement' ? 'Achievement recorded.' : kind === 'note' ? 'Note added to today.' : 'Added to today’s plan.', { action: 'Open Daily', fn: () => go('daily') });
+  render();
+}
+Object.assign(ACT, {
+  'qa-kind': el => { UI.qaKind = el.dataset.kind; openQuickAdd(); },
+  'qa-add': () => quickAdd(),
+  'update-install': () => DESKTOP && DK.call('update:install'),
+});
+document.addEventListener('keydown', e => {
+  if (e.target && e.target.id === 'qa-in' && e.key === 'Enter') { e.preventDefault(); quickAdd(); }
+  if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'n' && !(e.target.closest && e.target.closest('input,textarea,[contenteditable]'))) { e.preventDefault(); openQuickAdd(); }
+});
+
+/* --- PIN lock (desktop) --- */
+function showLock() {
+  if (!DESKTOP || !DK.status().desktop || !DK.status().desktop.locked) return;
+  let el = $('#lock'); if (!el) { el = document.createElement('div'); el.id = 'lock'; document.body.appendChild(el); }
+  el.className = 'lockscreen';
+  el.innerHTML = deco(`<div class="card lock-card"><span class="brand-mark">${I.brand}</span><h2>Action Register is locked</h2><p class="small muted">Enter your PIN to open it.</p>
+    <input class="input" id="lock-pin" type="password" inputmode="numeric" autocomplete="off" maxlength="8" aria-label="PIN"><div class="small" id="lock-msg" style="color:var(--crit);min-height:1.2em"></div>
+    <button class="btn primary" data-act="lock-open">Unlock</button></div>`);
+  el.hidden = false; setTimeout(() => $('#lock-pin')?.focus(), 30);
+}
+async function tryUnlock() {
+  const pin = ($('#lock-pin') || {}).value || '';
+  const ok = await DK.call('lock:check', { pin }).catch(() => false);
+  if (ok) { const el = $('#lock'); if (el) el.remove(); }
+  else { const m = $('#lock-msg'); if (m) m.textContent = 'That PIN is not right.'; const i = $('#lock-pin'); if (i) { i.value = ''; i.focus(); } }
+}
+Object.assign(ACT, { 'lock-open': () => tryUnlock(), 'lock-now': () => showLock() });
+document.addEventListener('keydown', e => { if (e.target && e.target.id === 'lock-pin' && e.key === 'Enter') { e.preventDefault(); tryUnlock(); } });
+if (DESKTOP) showLock();
+
+/* ===== features/03-home.js ===== */
+/* ---------- home: Today strip, morning briefing, risk radar ---------- */
+const BRIEF = { running: false, error: '' };
+const briefKey = () => 'brief-' + T();
+const todayBrief = () => St.cols.prefs.get(briefKey()) || null;
+function openMine() { return [...St.tasks.values()].filter(t => t.status !== 'done' && t.ownership !== 'fyi'); }
+// Local rules that flag tasks likely to slip; Claude is not needed for these.
+function riskList() {
+  const out = [], today = T(), now = Date.now();
+  const age = iso => iso ? Math.floor((now - new Date(iso)) / 864e5) : 0;
+  for (const t of openMine()) {
+    const d = t.deadline ? E.dayDiff(today, t.deadline) : null;
+    const lastTouch = t.updatedAt || t.createdAt;
+    if (d !== null && d < 0) out.push({ t, level: 3, why: `${-d} day${d === -1 ? '' : 's'} overdue` });
+    else if (d !== null && d <= 2 && t.status === 'todo' && !subsDone(t)) out.push({ t, level: 2, why: d === 0 ? 'Due today and not started' : `Due in ${d} day${d > 1 ? 's' : ''}, not started` });
+    if (t.status === 'blocked') out.push({ t, level: 2, why: 'Blocked' + (t.blockedReason ? ': ' + E.clip(t.blockedReason, 50) : '') });
+    if ((t.ownership === 'waiting' || t.status === 'waiting') && age(lastTouch) >= 7) out.push({ t, level: 1, why: `Waiting on ${t.owner || 'others'} for ${age(lastTouch)} days` });
+  }
+  for (const d of colList('docreg')) if (/^[34]$/.test(String(d.code || '')) && !d.resubmitted && d.status !== 'closed') {
+    const task = d.taskId && St.tasks.get(d.taskId);
+    if (!task || task.status === 'done') out.push({ t: task || null, doc: d, level: 2, why: `${d.number || d.title} returned Code ${d.code} — no open resubmission task` });
+  }
+  const seen = new Set();
+  return out.sort((a, b) => b.level - a.level).filter(r => { const k = (r.t ? r.t.id : r.doc.id) + r.why; if (seen.has(k)) return false; seen.add(k); return true; });
+}
+function localBrief() {
+  const m = openMine().filter(t => isMine(t) && t.status !== 'waiting');
+  const today = m.filter(t => t.deadline === T()), over = m.filter(t => t.deadline && t.deadline < T());
+  const waiting = openMine().filter(t => t.ownership === 'waiting' || t.status === 'waiting');
+  const lines = [];
+  if (over.length) lines.push({ text: `${over.length} overdue: ${over.slice(0, 3).map(t => t.ref).join(', ')}${over.length > 3 ? '…' : ''}`, taskIds: over.slice(0, 3).map(t => t.id) });
+  if (today.length) lines.push({ text: `Due today: ${today.slice(0, 3).map(t => E.clip(t.title, 50)).join('; ')}`, taskIds: today.slice(0, 3).map(t => t.id) });
+  const top = m.filter(t => !today.includes(t) && !over.includes(t)).sort((a, b) => (PRIO_RANK[a.priority] ?? 2) - (PRIO_RANK[b.priority] ?? 2) || (a.deadline || '9').localeCompare(b.deadline || '9'))[0];
+  if (top) lines.push({ text: `Next most important: ${E.clip(top.title, 70)}`, taskIds: [top.id] });
+  if (waiting.length) lines.push({ text: `Waiting on others: ${[...new Set(waiting.map(t => t.owner || 'others'))].slice(0, 4).join(', ')}`, taskIds: waiting.slice(0, 3).map(t => t.id) });
+  const rc = counts().review; if (rc) lines.push({ text: `${rc} analysed email${rc > 1 ? 's' : ''} waiting for your review`, taskIds: [] });
+  return { headline: lines.length ? 'Here is your day' : 'Nothing urgent today', bullets: lines, by: 'local', at: nowISO() };
+}
+async function makeBrief(manual) {
+  if (BRIEF.running) return;
+  if (!St.sample) { colPut('prefs', { id: briefKey(), ...localBrief() }); render(); return; }
+  BRIEF.running = true; BRIEF.error = ''; render();
+  try {
+    const tasks = openMine().slice(0, 120).map(t => JSON.stringify({ id: t.id, ref: t.ref, title: t.title, project: t.project || '', status: t.status, priority: t.priority, deadline: t.deadline, owner: t.ownership === 'mine' ? 'me' : t.owner, waitingSince: (t.ownership === 'waiting' || t.status === 'waiting') ? (t.updatedAt || '').slice(0, 10) : undefined, items: subsOf(t).length ? `${subsDone(t)}/${subsOf(t).length}` : undefined })).join('\n');
+    const risks = riskList().slice(0, 10).map(r => '- ' + (r.t ? r.t.ref + ' ' : '') + r.why).join('\n');
+    const prompt = `You are the morning assistant of ${St.settings.me.name || 'a mechanical design engineer'} (${St.settings.me.role || 'water and wastewater treatment'}). Today is ${T()}.\nOpen tasks (one JSON object per line):\n${tasks || '(none)'}\n\nAlready flagged risks:\n${risks || '(none)'}\n\nWrite a briefing of at most 5 short bullets: what matters most today, what is overdue or at risk, and who the user is waiting on. Be specific (refs, documents, people). Do not invent anything that is not in the data.\nReply with JSON only: {"headline":"<one line>","bullets":[{"text":"<bullet>","taskIds":["<id>"]}]}`;
+    const ans = await St.sample.json(prompt, { modelTier: 'quick' });
+    const bullets = (ans && Array.isArray(ans.bullets) ? ans.bullets : []).filter(b => b && b.text).slice(0, 6).map(b => ({ text: E.clip(String(b.text), 220), taskIds: (Array.isArray(b.taskIds) ? b.taskIds : []).map(String).filter(id => St.tasks.has(id)).slice(0, 4) }));
+    colPut('prefs', { id: briefKey(), ...(bullets.length ? { headline: E.clip(String(ans.headline || 'Your day'), 120), bullets, by: 'claude', at: nowISO() } : localBrief()) });
+  } catch (e) {
+    BRIEF.error = 'Claude could not write the briefing (' + ((e && e.code) || 'error') + '). Showing the basic one.';
+    colPut('prefs', { id: briefKey(), ...localBrief() });
+  } finally { BRIEF.running = false; render(); }
+}
+HOOKS.ready.push(() => { if (autoPrefs().briefing !== false && !todayBrief() && St.tasks.size) setTimeout(() => makeBrief(false), 1500); });
+function todayStripHTML() {
+  const n = todaysNumbers(), all = openMine();
+  const waiting = all.filter(t => t.ownership === 'waiting' || t.status === 'waiting').length;
+  const name = (St.settings.me.name || St.profileName || '').split(' ')[0];
+  const h = new Date().getHours(); const greet = h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
+  const stat = (k, n, label, cls, act) => `<button class="tstat ${cls} ${n ? '' : 'zero'}" data-act="${act}" ${k ? `data-filter="${k}"` : ''}><b class="num">${n}</b><span>${label}</span></button>`;
+  // the numbers open the list view filtered to them
+  const b = todayBrief(), risks = riskList();
+  return `<section class="today-strip">
+      <div class="ts-left"><div class="label">${esc(new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' }))}</div><h1>${greet}${name ? ', ' + esc(name) : ''}</h1></div>
+      <div class="ts-stats">
+        ${stat('today', n.today, 'Due today', 'today', 'strip-filter')}${stat('overdue', n.overdue, 'Overdue', 'over', 'strip-filter')}${stat('waiting', waiting, 'Waiting on others', 'wait', 'strip-filter')}${stat('', n.review, 'To review', 'rev', 'goto-review')}
+      </div>
+      <div class="ts-actions"><button class="btn primary" data-act="nav" data-view="import">${I.upload} Add emails</button><button class="btn" data-act="new-task">${I.plus} Task</button><button class="btn" data-act="focus-mode" title="Focus on your top 3 with a timer">🎯 Focus</button></div>
+    </section>
+    ${UI.updateReady ? callout('ok', `<div class="row"><span>Version ${esc(UI.updateReady)} has been downloaded.</span><span class="spacer"></span><button class="btn sm primary" data-act="update-install">Restart to update</button></div>`) : ''}
+    ${(b || BRIEF.running || risks.length) && !UI.briefHidden ? `<section class="card pad brief">
+      <div class="row"><b>${BRIEF.running ? 'Writing your briefing…' : esc(b ? b.headline : 'Briefing')}</b>${b && b.by === 'claude' ? '<span class="chip accent">by Claude</span>' : ''}<span class="spacer"></span>
+        <button class="btn ghost sm" data-act="brief-refresh" ${BRIEF.running ? 'disabled' : ''} title="Write it again">↺</button><button class="btn ghost sm" data-act="brief-hide" title="Hide for now">${I.x}</button></div>
+      ${BRIEF.error ? `<p class="small muted">${esc(BRIEF.error)}</p>` : ''}
+      ${b ? `<ul class="brief-list">${b.bullets.map(x => `<li><span dir="auto">${esc(x.text)}</span>${x.taskIds.map(id => St.tasks.get(id)).filter(Boolean).map(t => `<button class="chip ref-chip" data-act="open-task" data-id="${esc(t.id)}">${esc(t.ref)}</button>`).join('')}</li>`).join('')}</ul>` : ''}
+      ${risks.length ? `<div class="risks"><span class="label">Risk radar</span>${risks.slice(0, 6).map(r => `<button class="risk l${r.level}" ${r.t ? `data-act="open-task" data-id="${esc(r.t.id)}"` : 'data-act="nav" data-view="docs"'}><span class="rdot"></span>${r.t ? `<b class="mono">${esc(r.t.ref)}</b> ` : ''}${esc(r.why)}</button>`).join('')}${risks.length > 6 ? `<button class="btn ghost sm" data-act="nav" data-view="insights">+${risks.length - 6} more</button>` : ''}</div>` : ''}
+    </section>` : (UI.briefHidden ? '' : '')}`;
+}
+Object.assign(ACT, {
+  'strip-filter': el => { UI.todoFilter = el.dataset.filter; if (el.dataset.filter === 'waiting') UI.todoWaiting = true; if (UI.todoMode === 'map') { UI.todoMode = 'list'; saveTodoPrefs(); } render(); },
+  'brief-refresh': () => makeBrief(true),
+  'brief-hide': () => { UI.briefHidden = true; render(); },
+});
+
+/* ---------- command palette (Ctrl+K) ---------- */
+const PAL = { open: false, q: '', i: 0, items: [] };
+function paletteItems(q) {
+  const nq = E.normMatch(q), out = [];
+  const add = (group, label, run, hint) => out.push({ group, label, run, hint });
+  const views = [['todo', 'To-do'], ['daily', 'Daily'], ['review', 'Review'], ['import', 'Add emails'], ['emails', 'Emails'], ['docs', 'Documents'], ['insights', 'Insights'], ['tools', 'Tools'], ['setup', 'Setup']];
+  const acts = [
+    ['New task', () => ACT['new-task']()], ['Quick add for today', () => openQuickAdd()], ['Check Gmail now', () => checkGmail(true)],
+    ['Focus mode', () => openFocus()], ['Morning briefing — write again', () => { go('todo'); makeBrief(true); }],
+    ['Privacy mode on/off', () => togglePrivacy()], ['Keyboard shortcuts', () => openShortcuts()],
+    ['Weekly report', () => { UI.insTab = 'reports'; go('insights'); }], ['Timesheet', () => { UI.insTab = 'time'; go('insights'); }],
+    ['Engineering calculators', () => { UI.toolTab = 'calc'; go('tools'); }], ['Compare datasheets / offers', () => { UI.toolTab = 'compare'; go('tools'); }],
+    ['CRS responses', () => { UI.toolTab = 'crs'; go('tools'); }], ['Document register', () => { UI.docTab = 'register'; go('docs'); }],
+    ['Full backup (.json)', () => exportJSON()], ['Recycle bin', () => { go('setup'); setTimeout(() => document.getElementById('set-bin')?.scrollIntoView(), 80); }],
+    ...(DESKTOP && DK.status().desktop && DK.status().desktop.locked ? [['Lock now', () => showLock()]] : []),
+  ];
+  for (const [v, l] of views) if (!nq || E.normMatch('go to ' + l).includes(nq)) add('Go to', l, () => go(v));
+  for (const [l, f] of acts) if (!nq || E.normMatch(l).includes(nq)) add('Actions', l, f);
+  if (q.trim().length > 2 && St.sample) add('Ask Claude', `Ask: “${q.trim()}”`, () => openAsk(q.trim()));
+  if (nq) {
+    const words = nq.split(' ');
+    const hit = s => { const h = E.normMatch(s); return words.every(w => h.includes(w)); };
+    for (const t of St.tasks.values()) if (hit([t.ref, t.title, t.project, topicOf(t), t.owner].join(' '))) add('Tasks', `${t.ref} · ${E.clip(t.title, 80)}`, () => openDrawer('task', t.id), t.status === 'done' ? 'done' : t.project || '');
+    for (const e of St.emails.values()) if (hit([e.subject, e.from].join(' '))) add('Emails', E.clip(e.subject || '(no subject)', 80), () => openDrawer('email', e.id), fmtDate(e.date || e.importedAt));
+    for (const p of projectsList()) if (hit(p)) add('Projects', p, () => { UI.mapFocus = 'p:' + E.normMatch(p); UI.todoMode = 'map'; UI.map.fitted = false; go('todo'); }, 'canvas');
+  }
+  return out.slice(0, 40);
+}
+function renderPalette() {
+  const m = $('#modal'); PAL.items = paletteItems(PAL.q); PAL.i = Math.min(PAL.i, Math.max(0, PAL.items.length - 1));
+  let g = '';
+  const rows = PAL.items.map((it, i) => { const head = it.group !== g ? `<div class="pal-g">${esc(it.group)}</div>` : ''; g = it.group; return head + `<button class="pal-item ${i === PAL.i ? 'on' : ''}" data-act="pal-run" data-i="${i}"><span dir="auto">${esc(it.label)}</span>${it.hint ? `<span class="small muted">${esc(it.hint)}</span>` : ''}</button>`; }).join('');
+  const body = `<div class="card palette" role="dialog" aria-label="Search and commands"><input class="input" id="pal-in" placeholder="Search tasks, emails, projects, or type a command…" value="${esc(PAL.q)}" autocomplete="off" dir="auto"><div class="pal-list" id="pal-list">${rows || '<p class="small muted" style="padding:10px">Nothing found.</p>'}</div><div class="small muted pal-foot">↑ ↓ to move · Enter to open · Esc to close</div></div>`;
+  if (PAL.open && $('#pal-in')) { $('#pal-list').innerHTML = deco(rows || '<p class="small muted" style="padding:10px">Nothing found.</p>'); return; }
+  m.innerHTML = deco(body); m.hidden = false; m.classList.add('top'); PAL.open = true;
+  const inp = $('#pal-in'); inp.focus(); inp.setSelectionRange(PAL.q.length, PAL.q.length);
+}
+function openPalette() { PAL.q = ''; PAL.i = 0; PAL.open = false; renderPalette(); }
+function closePalette() { PAL.open = false; const m = $('#modal'); m.hidden = true; m.classList.remove('top'); }
+function runPal(i) { const it = PAL.items[i]; if (!it) return; closePalette(); it.run(); }
+document.addEventListener('input', e => { if (e.target && e.target.id === 'pal-in') { PAL.q = e.target.value; PAL.i = 0; renderPalette(); } });
+document.addEventListener('keydown', e => {
+  const mod = e.ctrlKey || e.metaKey;
+  if (mod && e.key.toLowerCase() === 'k') { e.preventDefault(); PAL.open && !$('#modal').hidden ? closePalette() : openPalette(); return; }
+  if (!PAL.open) return;
+  if (e.key === 'Escape') { e.preventDefault(); closePalette(); }
+  else if (e.key === 'ArrowDown') { e.preventDefault(); PAL.i = Math.min(PAL.items.length - 1, PAL.i + 1); renderPalette(); $('.pal-item.on')?.scrollIntoView({ block: 'nearest' }); }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); PAL.i = Math.max(0, PAL.i - 1); renderPalette(); $('.pal-item.on')?.scrollIntoView({ block: 'nearest' }); }
+  else if (e.key === 'Enter') { e.preventDefault(); runPal(PAL.i); }
+});
+Object.assign(ACT, { palette: () => openPalette(), 'pal-run': el => runPal(+el.dataset.i) });
+
+/* ---------- keyboard shortcuts help (?) ---------- */
+const SHORTCUTS = [
+  ['Anywhere', [['Ctrl K', 'Search and commands'], ['Ctrl N', 'Quick add for today'], ['Ctrl Shift Space', 'Quick add from any program (desktop)'], ['Ctrl Shift P', 'Privacy mode on/off'], ['?', 'This list'], ['Esc', 'Close panels']]],
+  ['Canvas', [['V H K', 'Select, pan, task'], ['N T', 'Sticky note, text'], ['R O D', 'Rectangle, ellipse, diamond'], ['A L C', 'Arrow, line, connector'], ['P M E', 'Pen, highlighter, eraser'], ['F', 'Frame'], ['Space + drag', 'Pan'], ['Ctrl Z / Ctrl Shift Z', 'Undo / redo'], ['Ctrl D', 'Duplicate'], ['Del', 'Delete selection'], ['Shift F', 'Full screen'], ['← →', 'Next / previous project in presentation mode']]],
+];
+function openShortcuts() {
+  const m = $('#modal');
+  m.innerHTML = deco(`<div class="card shortcuts" role="dialog" aria-label="Keyboard shortcuts"><div class="row"><b>⌨ Keyboard shortcuts</b><span class="spacer"></span><button class="icon-btn" data-act="close-modal" aria-label="Close">${I.x}</button></div>
+    ${SHORTCUTS.map(([g, list]) => `<div><div class="label" style="margin:8px 0 6px">${esc(g)}</div><dl class="kv sc">${list.map(([k, v]) => `<dt>${k.split(' / ').map(x => `<kbd>${esc(x)}</kbd>`).join(' / ')}</dt><dd>${esc(v)}</dd>`).join('')}</dl></div>`).join('')}</div>`);
+  m.hidden = false;
+}
+document.addEventListener('keydown', e => {
+  if (e.key === '?' && !(e.target.closest && e.target.closest('input,textarea,select,[contenteditable]')) && $('#modal').hidden) { e.preventDefault(); openShortcuts(); }
+  if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'p') { e.preventDefault(); togglePrivacy(); }
+});
+
+/* ---------- privacy mode: blur names, addresses and email text on screen ---------- */
+function togglePrivacy(on) { UI.privacy = on === undefined ? !UI.privacy : on; document.body.classList.toggle('privacy', UI.privacy); toast(UI.privacy ? 'Privacy mode on — names and email text are blurred.' : 'Privacy mode off.'); }
+Object.assign(ACT, { privacy: () => togglePrivacy() });
+
+/* ---------- recycle bin (30 days) ---------- */
+HOOKS.deleted.push((kind, obj) => { if (obj && obj.id) colPut('trash', { id: kind + ':' + obj.id, kind, data: clone(obj), deletedAt: nowISO() }); });
+HOOKS.taskChanged.push((before, t) => { if (!before && St.cols.trash.has('task:' + t.id)) colDel('trash', 'task:' + t.id); });
+HOOKS.ready.push(() => { const cut = Date.now() - 30 * 864e5; for (const x of colList('trash')) if (new Date(x.deletedAt) < cut) colDel('trash', x.id); });
+function binHTML() {
+  const list = colList('trash').sort((a, b) => b.deletedAt.localeCompare(a.deletedAt));
+  return `<section class="card pad set-sec" id="set-bin"><div class="section-title"><h2>🗑 Recycle bin</h2></div>
+    <p class="small muted" style="margin:0">Deleted tasks and email records are kept here for 30 days.</p>
+    ${list.length ? `<div class="register">${list.slice(0, 100).map(x => `<div class="erow"><time>${esc(fmtDate(x.deletedAt.slice(0, 10)))}</time><div style="min-width:0"><div class="s" dir="auto">${esc(x.kind === 'task' ? (x.data.ref || '') + ' ' + (x.data.title || '') : x.data.subject || '(no subject)')}</div><div class="f">${x.kind === 'task' ? 'Task' : 'Email record'}</div></div><div class="tside"><button class="btn sm" data-act="bin-restore" data-id="${esc(x.id)}">Restore</button><button class="btn ghost sm danger" data-act="bin-purge" data-id="${esc(x.id)}">Delete forever</button></div></div>`).join('')}</div>` : '<p class="small muted">The bin is empty.</p>'}
+  </section>`;
+}
+Object.assign(ACT, {
+  'bin-restore': el => { const x = St.cols.trash.get(el.dataset.id); if (!x) return; if (x.kind === 'task') putTask(clone(x.data)); else putEmail(clone(x.data)); colDel('trash', x.id); render(); toast('Restored.'); },
+  'bin-purge': el => { colDel('trash', el.dataset.id); render(); },
+});
+
+/* ---------- focus mode: top 3 tasks and a 25-minute timer ---------- */
+const FOCUS = { taskId: null, end: 0, left: 25 * 60, running: false, timer: null, startedAt: null };
+function focusTasks() {
+  return openMine().filter(t => isMine(t) && t.status !== 'waiting')
+    .sort((a, b) => ((b.deadline && b.deadline < T()) - (a.deadline && a.deadline < T())) || ((b.deadline === T()) - (a.deadline === T())) || ((b.status === 'in_progress') - (a.status === 'in_progress')) || (PRIO_RANK[a.priority] ?? 2) - (PRIO_RANK[b.priority] ?? 2) || (a.deadline || '9').localeCompare(b.deadline || '9')).slice(0, 3);
+}
+function focusHTML() {
+  const list = focusTasks(); if (!FOCUS.taskId && list[0]) FOCUS.taskId = list[0].id;
+  const mm = String(Math.floor(FOCUS.left / 60)).padStart(2, '0'), ss = String(FOCUS.left % 60).padStart(2, '0');
+  return `<div class="focus-card"><div class="row"><b>🎯 Focus</b><span class="spacer"></span><button class="btn ghost sm" data-act="focus-close">Leave focus (Esc)</button></div>
+    <div class="focus-timer num" id="focus-timer">${mm}:${ss}</div>
+    <div class="row" style="justify-content:center">${FOCUS.running ? '<button class="btn" data-act="focus-pause">⏸ Pause</button>' : `<button class="btn primary" data-act="focus-start">▶ ${FOCUS.left < 25 * 60 ? 'Resume' : 'Start 25 minutes'}</button>`}<button class="btn ghost" data-act="focus-reset">↺ Reset</button></div>
+    <div class="focus-list">${list.length ? list.map((t, i) => { const d = dueInfo(t); return `<label class="focus-item ${FOCUS.taskId === t.id ? 'on' : ''}"><input type="radio" name="focus-t" data-chg="focus-pick" value="${esc(t.id)}" ${FOCUS.taskId === t.id ? 'checked' : ''}><span class="fi-n">${i + 1}</span><span class="fi-t"><b dir="auto">${esc(t.title)}</b><small>${esc(t.ref)} · ${esc(d.txt)}${t.nextStep ? ' · next: ' + esc(E.clip(t.nextStep, 60)) : ''}</small></span><button class="btn sm" data-act="toggle-done" data-id="${esc(t.id)}">✓ Done</button></label>`; }).join('') : '<p class="muted">Nothing open — enjoy the quiet.</p>'}</div>
+    <p class="small muted" style="text-align:center;margin:0">Time is added to the selected task’s timesheet when the timer ends or you pause.</p></div>`;
+}
+function openFocus() { let el = $('#focus'); if (!el) { el = document.createElement('div'); el.id = 'focus'; el.className = 'focus-mode'; document.body.appendChild(el); } el.hidden = false; el.innerHTML = deco(focusHTML()); }
+function closeFocus() { if (FOCUS.running) focusPause(); const el = $('#focus'); if (el) el.hidden = true; }
+function focusTick() {
+  FOCUS.left = Math.max(0, Math.round((FOCUS.end - Date.now()) / 1000));
+  const n = $('#focus-timer'); if (n) n.textContent = String(Math.floor(FOCUS.left / 60)).padStart(2, '0') + ':' + String(FOCUS.left % 60).padStart(2, '0');
+  if (!FOCUS.left) { focusPause(); FOCUS.left = 25 * 60; deskNotify('Focus session done', 'Take a short break.', 'daily'); const el = $('#focus'); if (el && !el.hidden) el.innerHTML = deco(focusHTML()); }
+}
+function focusStart() { if (!FOCUS.taskId) return; FOCUS.running = true; FOCUS.startedAt = nowISO(); FOCUS.end = Date.now() + FOCUS.left * 1000; clearInterval(FOCUS.timer); FOCUS.timer = setInterval(focusTick, 1000); openFocus(); }
+function focusPause() {
+  if (!FOCUS.running) return;
+  FOCUS.running = false; clearInterval(FOCUS.timer);
+  const mins = Math.round((Date.now() - new Date(FOCUS.startedAt)) / 60000);
+  if (mins >= 1 && typeof logTime === 'function') logTime(FOCUS.taskId, FOCUS.startedAt, nowISO(), 'focus');
+  openFocus();
+}
+Object.assign(ACT, {
+  'focus-mode': () => openFocus(), 'focus-close': () => closeFocus(), 'focus-start': () => focusStart(), 'focus-pause': () => focusPause(),
+  'focus-reset': () => { if (FOCUS.running) focusPause(); FOCUS.left = 25 * 60; openFocus(); },
+});
+Object.assign(CHG, { 'focus-pick': el => { if (FOCUS.running) focusPause(); FOCUS.taskId = el.value; openFocus(); } });
+document.addEventListener('keydown', e => { const f = $('#focus'); if (e.key === 'Escape' && f && !f.hidden) closeFocus(); });
+// the focus view refreshes when tasks change (e.g. ticked done)
+HOOKS.afterRender.push(() => { const f = $('#focus'); if (f && !f.hidden) f.innerHTML = deco(focusHTML()); });
+
+/* ---------- phone "More" menu ---------- */
+Object.assign(ACT, {
+  'more-menu': () => {
+    const m = $('#modal');
+    m.innerHTML = deco(`<div class="card more-sheet" role="dialog" aria-label="More"><div class="row"><b>More</b><span class="spacer"></span><button class="icon-btn" data-act="close-modal" aria-label="Close">${I.x}</button></div>
+      ${[['docs', '📄 Documents'], ['insights', '📊 Insights'], ['tools', '🛠 Tools'], ['setup', '⚙ Setup']].map(([v, l]) => `<button class="btn more-btn" data-act="more-go" data-view="${v}">${l}</button>`).join('')}
+      <button class="btn more-btn" data-act="palette">🔎 Search and commands</button></div>`);
+    m.hidden = false;
+  },
+  'more-go': el => { $('#modal').hidden = true; go(el.dataset.view); },
+});
+
+/* ---------- print ---------- */
+Object.assign(ACT, { print: () => window.print() });
+
+/* ===== features/04-setup.js ===== */
+/* ---------- Setup: section index and the extra sections ---------- */
+VIEW_FN.setup = () => {
+  const extra = [projectMetaHTML(), rulesHTML(), workweekHTML(), appearanceHTML(), automationHTML(), templatesHTML(), recurringHTML(), DESKTOP ? usageHTML() : '', binHTML()].join('');
+  const h = viewSetup().replace('<!--SETUP-EXTRA-->', extra);
+  const secs = [...h.matchAll(/<section[^>]*\bid="([^"]+)"[^>]*\bdata-sec="([^"]+)"/g)].map(m => [m[1], m[2]]);
+  return `<div class="set-layout"><nav class="set-index" aria-label="Setup sections">${secs.map(([id, l]) => `<button data-act="set-jump" data-id="${esc(id)}">${esc(l)}</button>`).join('')}</nav><div class="set-main">${h}</div></div>`;
+};
+Object.assign(ACT, { 'set-jump': el => document.getElementById(el.dataset.id)?.scrollIntoView({ behavior: 'smooth', block: 'start' }) });
+const saveSettings = mut => { const s = clone(St.settings); mut(s); putSettings(s); };
+
+/* --- project colours and icons --- */
+const PROJ_ICONS = ['', 'pump', 'valve', 'pipe', 'tank', 'blower', 'building', 'screen', 'bolt', 'drop', 'gear'];
+Object.assign(ICON_PATHS, {
+  pump: '<circle cx="10" cy="13" r="6"/><circle cx="10" cy="13" r="2"/><path d="M14 8.5V4h6v4M4 20h12"/>',
+  valve: '<path d="M3 8v8l9-4zM21 8v8l-9-4zM12 12V5M9 5h6"/>',
+  pipe: '<path d="M3 9h9a4 4 0 0 1 4 4v8M3 15h9M10 21h12M3 7v10"/>',
+  tank: '<ellipse cx="12" cy="6" rx="7" ry="2.5"/><path d="M5 6v12c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5V6M5 12c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5"/>',
+  blower: '<circle cx="12" cy="12" r="8"/><path d="M12 12c0-3 2-5 5-5M12 12c3 0 5 2 5 5M12 12c0 3-2 5-5 5M12 12c-3 0-5-2-5-5"/>',
+  building: '<path d="M4 21V8l8-5 8 5v13M9 21v-6h6v6M8 11h.01M12 11h.01M16 11h.01"/>',
+  screen: '<path d="M5 3v18M9 3v18M13 3v18M17 3v18M3 6h18M3 18h18"/>',
+  bolt: '<path d="M13 3 5 14h6l-1 7 8-11h-6z"/>',
+  drop: '<path d="M12 3c3.3 4 6 7.2 6 10.4a6 6 0 0 1-12 0C6 10.2 8.7 7 12 3z"/>',
+});
+const HUE_CHOICES = [186, 214, 256, 288, 334, 4, 22, 40, 120, 150];
+const projMeta = name => (St.settings.projectMeta || {})[E.normMatch(name || '')] || {};
+function projectMetaHTML() {
+  const list = projectsList(); if (!list.length) return '';
+  return `<section class="card pad set-sec" id="set-projects" data-sec="Project colours"><div class="section-title"><h2>Project colours and icons</h2></div>
+    <p class="small muted" style="margin:0">Used for the project everywhere: canvas, lists, Daily and reports.</p>
+    <div class="pm-list">${list.map(p => { const m = projMeta(p); return `<div class="pm-row">${projBadge(p)}<b dir="auto">${esc(p)}</b><span class="spacer"></span>
+      <div class="row pm-hues">${HUE_CHOICES.map(h => `<button class="sw" style="--c:hsl(${h} 55% 46%)" data-act="pm-set" data-p="${esc(p)}" data-k="hue" data-v="${h}" aria-label="Colour" aria-pressed="${m.hue === h}" ${m.hue === h ? 'data-on="1"' : ''}></button>`).join('')}</div>
+      <select class="input pm-icon" data-chg="pm-icon" data-p="${esc(p)}" aria-label="Icon">${PROJ_ICONS.map(i => `<option value="${i}" ${(m.icon || '') === i ? 'selected' : ''}>${i ? i[0].toUpperCase() + i.slice(1) : 'Initials'}</option>`).join('')}</select></div>`; }).join('')}</div></section>`;
+}
+function setProjMeta(p, k, v) { saveSettings(s => { s.projectMeta = s.projectMeta || {}; const key = E.normMatch(p); s.projectMeta[key] = { ...(s.projectMeta[key] || {}), [k]: v }; }); render(); }
+Object.assign(ACT, { 'pm-set': el => setProjMeta(el.dataset.p, el.dataset.k, +el.dataset.v) });
+Object.assign(CHG, { 'pm-icon': el => setProjMeta(el.dataset.p, 'icon', el.value) });
+
+/* --- email rules --- */
+const rulesList = () => Array.isArray(St.settings.rules) ? St.settings.rules : [];
+function rulesHTML() {
+  const r = rulesList(), projs = projectsList();
+  return `<section class="card pad set-sec" id="set-rules" data-sec="Email rules"><div class="section-title"><h2>Email rules</h2></div>
+    <p class="small muted" style="margin:0">Applied to Claude's proposals before you review them. For example: subject contains “CRS” and sender contains “consultant” → priority High, project ELM. Leave a box empty to ignore it.</p>
+    ${r.length ? `<div class="rules">${r.map(x => `<div class="rule">
+      <span class="label">If</span><input class="input" placeholder="sender contains…" value="${esc(x.from || '')}" data-chg="rule-f" data-id="${esc(x.id)}" data-f="from"><input class="input" placeholder="subject contains…" value="${esc(x.subject || '')}" data-chg="rule-f" data-id="${esc(x.id)}" data-f="subject">
+      <span class="label">then</span><input class="input" list="projlist2" placeholder="project" value="${esc(x.project || '')}" data-chg="rule-f" data-id="${esc(x.id)}" data-f="project">
+      <select class="input" data-chg="rule-f" data-id="${esc(x.id)}" data-f="priority"><option value="">priority as found</option>${Object.entries(PRIO).map(([k, v]) => `<option value="${k}" ${x.priority === k ? 'selected' : ''}>${v}</option>`).join('')}</select>
+      <select class="input" data-chg="rule-f" data-id="${esc(x.id)}" data-f="ownership"><option value="">owner as found</option>${Object.entries(OWNERSHIP).map(([k, v]) => `<option value="${k}" ${x.ownership === k ? 'selected' : ''}>${v}</option>`).join('')}</select>
+      <input class="input" placeholder="topic" value="${esc(x.topic || '')}" data-chg="rule-f" data-id="${esc(x.id)}" data-f="topic">
+      <label class="check small"><input type="checkbox" data-chg="rule-f" data-id="${esc(x.id)}" data-f="skip" ${x.skip ? 'checked' : ''}>No tasks (FYI only)</label>
+      <button class="icon-btn" data-act="rule-del" data-id="${esc(x.id)}" aria-label="Delete rule">${I.x}</button></div>`).join('')}</div><datalist id="projlist2">${projs.map(p => `<option value="${esc(p)}">`).join('')}</datalist>` : ''}
+    <div class="row"><button class="btn sm" data-act="rule-add">${I.plus} Add rule</button></div></section>`;
+}
+Object.assign(ACT, {
+  'rule-add': () => { saveSettings(s => { s.rules = [...rulesList(), { id: E.uid('r'), from: '', subject: '', project: '', priority: '', ownership: '', topic: '', skip: false }]; }); render(); },
+  'rule-del': el => { saveSettings(s => { s.rules = rulesList().filter(x => x.id !== el.dataset.id); }); render(); },
+});
+Object.assign(CHG, { 'rule-f': el => { saveSettings(s => { s.rules = rulesList().map(x => x.id === el.dataset.id ? { ...x, [el.dataset.f]: el.type === 'checkbox' ? el.checked : el.value.trim() } : x); }); } });
+const ruleMatches = (r, em) => (r.from || r.subject) && (!r.from || E.normMatch(em.from + ' ' + (em.forwardedBy || '')).includes(E.normMatch(r.from))) && (!r.subject || E.normMatch(em.subject).includes(E.normMatch(r.subject)));
+HOOKS.proposals.push((an, em) => {
+  for (const r of rulesList()) {
+    if (!ruleMatches(r, em)) continue;
+    if (r.skip) { an.tasks = []; an.actionRequired = false; an.noActionReason = `Marked FYI by your rule (${[r.from, r.subject].filter(Boolean).join(' / ')}).`; continue; }
+    for (const p of an.tasks) {
+      if (r.project) p.project = r.project; if (r.priority) p.priority = r.priority; if (r.topic) p.topic = r.topic;
+      if (r.ownership) { p.ownership = r.ownership; if (r.ownership === 'mine') p.owner = 'me'; }
+      p.ruleApplied = true;
+    }
+  }
+});
+
+/* --- working days and holidays --- */
+const DAYNAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const workweek = () => Object.assign({ weekend: [5, 6], holidays: '' }, St.settings.workweek || {});
+const holidayList = () => workweek().holidays.split('\n').map(l => l.trim()).map(l => /^(\d{4}-\d{2}-\d{2})\s*(.*)$/.exec(l)).filter(Boolean).map(m => ({ date: m[1], name: m[2] }));
+function isWorkingDay(iso) { const d = new Date(iso + 'T12:00:00').getDay(); return !workweek().weekend.includes(d) && !holidayList().some(h => h.date === iso); }
+function addWorkingDays(iso, n) { let d = iso, k = 0; while (k < n) { d = E.addDays(d, 1); if (isWorkingDay(d)) k++; } return d; }
+function workweekHTML() {
+  const w = workweek();
+  return `<section class="card pad set-sec" id="set-workweek" data-sec="Working days"><div class="section-title"><h2>Working days and holidays</h2></div>
+    <p class="small muted" style="margin:0">Claude counts “within 10 working days” with these, and recurring tasks skip non-working days.</p>
+    <div class="row">${DAYNAMES.map((n, i) => `<label class="check small"><input type="checkbox" data-chg="ww-day" data-d="${i}" ${w.weekend.includes(i) ? '' : 'checked'}>${n.slice(0, 3)}</label>`).join('')}</div>
+    <label class="field"><span>Public holidays — one per line: YYYY-MM-DD name</span><textarea class="input" rows="4" data-chg="ww-hol" placeholder="2026-12-25 Christmas" dir="auto">${esc(w.holidays)}</textarea></label></section>`;
+}
+Object.assign(CHG, {
+  'ww-day': el => { const d = +el.dataset.d; saveSettings(s => { const w = workweek(); const we = new Set(w.weekend); el.checked ? we.delete(d) : we.add(d); s.workweek = { ...w, weekend: [...we].sort() }; }); },
+  'ww-hol': el => { saveSettings(s => { s.workweek = { ...workweek(), holidays: el.value }; }); },
+});
+// Extra lines for the analysis prompt: working week, holidays, learned corrections
+function promptNotes(em) {
+  const w = workweek(), lines = [];
+  const work = DAYNAMES.filter((_, i) => !w.weekend.includes(i));
+  lines.push(`Working days are ${work.join(', ')}; ${w.weekend.map(i => DAYNAMES[i]).join(' and ') || 'no day'} ${w.weekend.length === 1 ? 'is' : 'are'} the weekend. When a deadline is given in working days, skip weekends and the holidays below.`);
+  const soon = holidayList().filter(h => h.date >= T() && h.date <= E.addDays(T(), 120));
+  if (soon.length) lines.push('Public holidays: ' + soon.map(h => `${h.date}${h.name ? ' (' + h.name + ')' : ''}`).join(', ') + '.');
+  if (typeof learnedNotes === 'function') { const l = learnedNotes(em); if (l) lines.push(l); }
+  return lines.join('\n');
+}
+
+/* --- automation --- */
+function automationHTML() {
+  const a = autoPrefs(), d = DESKTOP ? (DK.status().desktop || {}) : null;
+  const sel = (key, opts, v) => `<select class="input" data-chg="auto-f" data-f="${key}" style="width:auto">${opts.map(([x, l]) => `<option value="${x}" ${String(v) === String(x) ? 'selected' : ''}>${l}</option>`).join('')}</select>`;
+  const dsk = (k, label, sub) => `<label class="check"><input type="checkbox" data-chg="sys-f" data-f="${k}" ${d[k] ? 'checked' : ''}><span>${label}${sub ? `<br><span class="small muted">${sub}</span>` : ''}</span></label>`;
+  return `<section class="card pad set-sec" id="set-auto" data-sec="Automation"><div class="section-title"><h2>Automation</h2></div>
+    <div class="set-rows">
+      <div class="set-row"><div><b>Check Gmail in the background</b><div class="small muted">While the app is open${DESKTOP ? ' or in the tray' : ''}.</div></div>${sel('gmailEvery', [[0, 'Off'], [5, 'Every 5 minutes'], [10, 'Every 10 minutes'], [15, 'Every 15 minutes'], [30, 'Every 30 minutes'], [60, 'Every hour']], a.gmailEvery)}</div>
+      <div class="set-row"><div><b>Morning reminder</b><div class="small muted">${DESKTOP ? 'A notification with what is due and overdue.' : 'A message with what is due and overdue.'}</div></div><div class="row">${sel('morning', [[true, 'On'], [false, 'Off']], a.morning)}<input class="input" type="time" value="${esc(a.morningAt)}" data-chg="auto-f" data-f="morningAt" style="width:auto"></div></div>
+      <div class="set-row"><div><b>Morning briefing by Claude</b><div class="small muted">A 5-line summary at the top of To-do, written once a day (quick model, small cost).</div></div>${sel('briefing', [[true, 'On'], [false, 'Off']], a.briefing !== false)}</div>
+      ${DESKTOP ? `<div class="set-row"><div><b>Daily backup</b><div class="small muted mono" style="word-break:break-all">${esc(d.backupDir || '')}</div></div><div class="row">${sel('backup', [[true, 'On'], [false, 'Off']], a.backup)}<button class="btn sm" data-act="sys-folder" data-f="backupDir">Change folder…</button><button class="btn sm" data-act="backup-now">Back up now</button></div></div>` : ''}
+    </div>
+    ${DESKTOP ? `<div class="grid2" style="margin-top:8px">
+      ${dsk('closeToTray', 'Keep running in the tray when the window is closed', 'Gmail keeps being checked; right-click the tray icon to quit.')}
+      ${dsk('notify', 'Show Windows notifications', 'New tasks to review, the morning reminder, timer finished.')}
+      ${dsk('startWithWindows', 'Start with Windows')}
+      ${dsk('startHidden', 'Start hidden in the tray', 'Only when started with Windows.')}
+      ${dsk('autoUpdate', 'Install updates automatically', `This is version ${esc(DK.status().version)}. New versions download in the background.`)}
+    </div>
+    <div class="set-rows" style="margin-top:8px">
+      <div class="set-row"><div><b>Quick add from any program</b><div class="small muted">Keyboard shortcut that opens the quick-add box.</div></div><input class="input mono" style="width:240px" value="${esc(d.hotkey || '')}" data-chg="sys-f" data-f="hotkey" placeholder="CommandOrControl+Shift+Space"></div>
+      <div class="set-row"><div><b>Watch folder</b><div class="small muted">Files you save here (for example Outlook messages dragged from Outlook) are imported automatically and moved to “Imported”.</div>${d.watchDir ? `<div class="small mono" style="word-break:break-all">${esc(d.watchDir)}</div>` : ''}</div><div class="row"><button class="btn sm" data-act="sys-folder" data-f="watchDir">${d.watchDir ? 'Change…' : 'Choose folder…'}</button>${d.watchDir ? `<button class="btn sm" data-act="open-path" data-p="${esc(d.watchDir)}">Open</button><button class="btn ghost sm" data-act="sys-clear" data-f="watchDir">Turn off</button>` : ''}</div></div>
+      <div class="set-row"><div><b>Data folder</b><div class="small muted">Move it into OneDrive or Google Drive to keep it backed up or use it on a second computer (never open it on two computers at the same time).</div><div class="small mono" style="word-break:break-all">${esc(DK.dataDir())}</div></div><button class="btn sm" data-act="data-move">Move…</button></div>
+      <div class="set-row"><div><b>PIN lock</b><div class="small muted">Ask for a PIN when the app opens.</div></div><div class="row">${d.locked ? '<button class="btn sm" data-act="lock-now">Lock now</button><button class="btn ghost sm danger" data-act="pin-clear">Remove PIN</button>' : '<input class="input" id="pin-new" type="password" inputmode="numeric" maxlength="8" placeholder="4–8 digits" style="width:120px"><button class="btn sm" data-act="pin-set">Set PIN</button>'}</div></div>
+    </div>` : ''}
+  </section>`;
+}
+Object.assign(CHG, {
+  'auto-f': el => { const v = el.value === 'true' ? true : el.value === 'false' ? false : /^\d+$/.test(el.value) ? +el.value : el.value; saveSettings(s => { s.auto = { ...autoPrefs(), [el.dataset.f]: v }; }); },
+  'sys-f': async el => { const v = el.type === 'checkbox' ? el.checked : el.value.trim(); const st = await DK.call('sys:prefs', { [el.dataset.f]: v }).catch(e => { toast(e.message || 'Could not save.', { err: true }); return null; }); DK.refresh(); if (st && el.dataset.f === 'hotkey' && !st.hotkeyOk) toast('That shortcut could not be registered — another program may use it.', { err: true }); render(); },
+});
+Object.assign(ACT, {
+  'sys-folder': async el => { const cur = (DK.status().desktop || {})[el.dataset.f]; const dir = await DK.call('sys:choose-folder', { title: 'Choose a folder', current: cur }).catch(() => ''); if (!dir) return; await DK.call('sys:prefs', { [el.dataset.f]: dir }); DK.refresh(); render(); },
+  'sys-clear': async el => { await DK.call('sys:prefs', { [el.dataset.f]: '' }); DK.refresh(); render(); },
+  'open-path': el => DK.call('shell:openPath', el.dataset.p).catch(() => {}),
+  'backup-now': async () => { try { const r = await DK.call('backup:write', { name: `action-register-backup-${T()}.json`, text: JSON.stringify(await backupData()) }); lsSet('ar-backup', T()); toast('Backup saved: ' + r.path); } catch (e) { toast('Backup failed: ' + (e.message || e.code), { err: true }); } },
+  'data-move': async () => { try { const r = await DK.call('data:move'); toast(r.usedExisting ? 'Found existing data there — restarting to use it.' : 'Data copied — restarting from the new folder.'); } catch (e) { if (e.code !== 'cancelled') toast('Could not move the data: ' + (e.message || e.code), { err: true }); } },
+  'pin-set': async () => { const pin = ($('#pin-new') || {}).value || ''; try { await DK.call('lock:set', { pin }); DK.refresh(); render(); toast('PIN set. The app will ask for it when it opens.'); } catch (e) { toast(e.message || 'Could not set the PIN.', { err: true }); } },
+  'pin-clear': async () => { await DK.call('lock:set', { pin: '' }); DK.refresh(); render(); toast('PIN removed.'); },
+});
+
+/* --- checklist templates --- */
+const DEFAULT_TEMPLATES = [
+  { id: 'tpl-pump', name: 'Pump submittal', items: 'Datasheet (duty point, NPSHr, efficiency)\nPerformance curves at duty and run-out\nGA and foundation drawing\nMotor datasheet (kW, IP, efficiency class)\nNPSH available calculation\nMaterial certificates\nFactory test procedure (ISO 9906)\nO&M and spare parts list' },
+  { id: 'tpl-valve', name: 'Valve submittal', items: 'Valve schedule (tag, DN, PN, type)\nDatasheets per valve type\nActuator datasheets (IP rating, torque)\nGA drawings\nCoating specification\nTest certificates (EN 12266)\nInstallation instructions' },
+  { id: 'tpl-site', name: 'Site visit', items: 'Agree scope and access\nPPE and permit\nPhotos of each area\nSnag list\nMeasurements to confirm\nMinutes of meeting issued' },
+  { id: 'tpl-rfq', name: 'RFQ / tender evaluation', items: 'Clarification list issued\nOffers received\nTechnical bid evaluation table\nDeviations listed\nCommercial comparison\nRecommendation issued' },
+];
+const templatesList = () => Array.isArray(St.settings.templates) ? St.settings.templates : DEFAULT_TEMPLATES;
+function templatesHTML() {
+  return `<section class="card pad set-sec" id="set-templates" data-sec="Checklists"><div class="section-title"><h2>Checklist templates</h2></div>
+    <p class="small muted" style="margin:0">Add one to any task from its details panel. One item per line.</p>
+    <div class="tpls">${templatesList().map(t => `<div class="tpl"><div class="row"><input class="input" value="${esc(t.name)}" data-chg="tpl-f" data-id="${esc(t.id)}" data-f="name" aria-label="Template name"><button class="icon-btn" data-act="tpl-del" data-id="${esc(t.id)}" aria-label="Delete template">${I.x}</button></div><textarea class="input" rows="5" data-chg="tpl-f" data-id="${esc(t.id)}" data-f="items" dir="auto">${esc(t.items)}</textarea></div>`).join('')}</div>
+    <div class="row"><button class="btn sm" data-act="tpl-add">${I.plus} Add template</button></div></section>`;
+}
+Object.assign(ACT, {
+  'tpl-add': () => { saveSettings(s => { s.templates = [...templatesList(), { id: E.uid('tpl'), name: 'New checklist', items: '' }]; }); render(); },
+  'tpl-del': el => { saveSettings(s => { s.templates = templatesList().filter(x => x.id !== el.dataset.id); }); render(); },
+  'tpl-apply': el => {
+    const id = ($('#d-tpl') || {}).value; const tpl = templatesList().find(x => x.id === id); const t0 = UI.drawer && St.tasks.get(UI.drawer.id); if (!tpl || !t0) return;
+    const t = clone(t0); const have = new Set(subsOf(t).map(x => E.normMatch(x.text)));
+    const add = tpl.items.split('\n').map(x => x.trim()).filter(x => x && !have.has(E.normMatch(x))).map(text => ({ id: E.uid('s'), text, ref: '', location: '', done: false }));
+    t.subtasks = [...subsOf(t), ...add]; (t.history = t.history || []).push({ at: nowISO(), text: `Checklist added: ${tpl.name} (${add.length} items)` });
+    putTask(t); render(); renderDrawer(); toast(`${add.length} items added from “${tpl.name}”.`);
+  },
+});
+Object.assign(CHG, { 'tpl-f': el => { saveSettings(s => { s.templates = templatesList().map(x => x.id === el.dataset.id ? { ...x, [el.dataset.f]: el.value } : x); }); } });
+
+/* --- recurring tasks --- */
+const recurList = () => Array.isArray(St.settings.recurring) ? St.settings.recurring : [];
+function recurDue(r, day) {
+  if (r.last === day || !isWorkingDay(day) && r.freq !== 'weekly' && r.freq !== 'monthly') return false;
+  const d = new Date(day + 'T12:00:00');
+  if (r.freq === 'workdays') return isWorkingDay(day);
+  if (r.freq === 'weekly') return d.getDay() === +r.weekday;
+  if (r.freq === 'monthly') return d.getDate() === Math.min(+r.monthday || 1, new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate());
+  return false;
+}
+function runRecurring() {
+  const day = T(); const made = [];
+  for (const r of recurList()) {
+    if (!r.title || !recurDue(r, day)) continue;
+    const t = makeTask({ title: r.title, project: r.project || '', priority: r.priority || 'medium', source: 'recurring', days: [day], deadline: day, deadlineBasis: 'explicit', history: [{ at: nowISO(), text: `Created by the recurring task “${r.title}”` }] });
+    if (r.template) { const tpl = templatesList().find(x => x.id === r.template); if (tpl) t.subtasks = tpl.items.split('\n').map(x => x.trim()).filter(Boolean).map(text => ({ id: E.uid('s'), text, ref: '', location: '', done: false })); }
+    if (r.project) t.projectLocked = true;
+    putTask(t); made.push(r.id);
+  }
+  if (made.length) { saveSettings(s => { s.recurring = recurList().map(x => made.includes(x.id) ? { ...x, last: day } : x); }); toast(`${made.length} recurring task${made.length > 1 ? 's' : ''} added for today.`); render(); }
+}
+HOOKS.ready.push(() => setTimeout(runRecurring, 2500));
+let recurDay = ''; HOOKS.afterRender.push(() => { if (recurDay && recurDay !== T()) setTimeout(runRecurring, 500); recurDay = T(); });
+function recurringHTML() {
+  const list = recurList(), projs = projectsList();
+  return `<section class="card pad set-sec" id="set-recurring" data-sec="Recurring tasks"><div class="section-title"><h2>Recurring tasks</h2></div>
+    <p class="small muted" style="margin:0">Created automatically on the day they are due, and put on that day’s plan.</p>
+    ${list.length ? `<div class="rules">${list.map(r => `<div class="rule">
+      <input class="input" placeholder="Task title, e.g. Weekly progress meeting" value="${esc(r.title || '')}" data-chg="rec-f" data-id="${esc(r.id)}" data-f="title" style="flex:2;min-width:220px">
+      <select class="input" data-chg="rec-f" data-id="${esc(r.id)}" data-f="freq"><option value="weekly" ${r.freq === 'weekly' ? 'selected' : ''}>Every week</option><option value="monthly" ${r.freq === 'monthly' ? 'selected' : ''}>Every month</option><option value="workdays" ${r.freq === 'workdays' ? 'selected' : ''}>Every working day</option></select>
+      ${r.freq === 'monthly' ? `<input class="input" type="number" min="1" max="31" value="${esc(r.monthday || 1)}" data-chg="rec-f" data-id="${esc(r.id)}" data-f="monthday" style="width:80px" aria-label="Day of month">` : r.freq === 'workdays' ? '' : `<select class="input" data-chg="rec-f" data-id="${esc(r.id)}" data-f="weekday">${DAYNAMES.map((n, i) => `<option value="${i}" ${+r.weekday === i ? 'selected' : ''}>${n}</option>`).join('')}</select>`}
+      <input class="input" list="projlist3" placeholder="project" value="${esc(r.project || '')}" data-chg="rec-f" data-id="${esc(r.id)}" data-f="project">
+      <select class="input" data-chg="rec-f" data-id="${esc(r.id)}" data-f="template"><option value="">no checklist</option>${templatesList().map(t => `<option value="${esc(t.id)}" ${r.template === t.id ? 'selected' : ''}>${esc(t.name)}</option>`).join('')}</select>
+      <button class="icon-btn" data-act="rec-del" data-id="${esc(r.id)}" aria-label="Delete">${I.x}</button></div>`).join('')}</div><datalist id="projlist3">${projs.map(p => `<option value="${esc(p)}">`).join('')}</datalist>` : ''}
+    <div class="row"><button class="btn sm" data-act="rec-add">${I.plus} Add recurring task</button></div></section>`;
+}
+Object.assign(ACT, {
+  'rec-add': () => { saveSettings(s => { s.recurring = [...recurList(), { id: E.uid('rc'), title: '', freq: 'weekly', weekday: 0, monthday: 1, project: '', priority: 'medium', template: '', last: '' }]; }); render(); },
+  'rec-del': el => { saveSettings(s => { s.recurring = recurList().filter(x => x.id !== el.dataset.id); }); render(); },
+});
+Object.assign(CHG, { 'rec-f': el => { saveSettings(s => { s.recurring = recurList().map(x => x.id === el.dataset.id ? { ...x, [el.dataset.f]: el.value } : x); }); if (el.dataset.f === 'freq') render(); } });
+
+/* --- Claude usage and estimated cost (desktop) --- */
+// List prices per million tokens (Anthropic API, October 2026). Cache writes are estimated at 1.25× input.
+const PRICES = { 'claude-opus-5-5': { in: 4, out: 20, cr: 0.2 }, 'claude-sonnet-5-5': { in: 2, out: 10, cr: 0.2 }, 'claude-haiku-5-5': { in: 0.1, out: 0.5, cr: 0.01 } };
+function usageCost(model, u) { const p = PRICES[Object.keys(PRICES).find(k => String(model).startsWith(k))]; if (!p) return null; return (u.input * p.in + u.output * p.out + u.cacheRead * p.cr + u.cacheWrite * p.in * 1.25) / 1e6; }
+function usageMonth(month) { const m = ((DK && DK.status().usage) || {})[month] || {}; let calls = 0, cost = 0, unknown = false; for (const [model, u] of Object.entries(m)) { calls += u.calls; const c = usageCost(model, u); if (c === null) unknown = true; else cost += c; } return { rows: m, calls, cost, unknown }; }
+function usageHTML() {
+  const month = new Date().toISOString().slice(0, 7), u = usageMonth(month);
+  return `<section class="card pad set-sec" id="set-usage" data-sec="Usage and cost"><div class="section-title"><h2>Claude usage this month</h2></div>
+    ${u.calls ? `<table class="tbl"><thead><tr><th>Model</th><th>Calls</th><th>Input</th><th>Output</th><th>Cached read</th><th>Estimated cost</th></tr></thead><tbody>${Object.entries(u.rows).map(([m, x]) => { const c = usageCost(m, x); return `<tr><td class="mono">${esc(m)}</td><td class="num">${x.calls}</td><td class="num">${(x.input / 1000).toFixed(1)}k</td><td class="num">${(x.output / 1000).toFixed(1)}k</td><td class="num">${(x.cacheRead / 1000).toFixed(1)}k</td><td class="num">${c === null ? '—' : '$' + c.toFixed(2)}</td></tr>`; }).join('')}</tbody></table>
+    <p class="small muted" style="margin:0">About <b>$${u.cost.toFixed(2)}</b> so far this month${u.unknown ? ' (some models have no price on file)' : ''}. Estimate from list prices; your Anthropic invoice is the exact figure (console.anthropic.com › Billing).</p>` : '<p class="small muted" style="margin:0">No Claude calls yet this month.</p>'}
+  </section>`;
+}
+
+// "Add checklist" in the task panel
+TASK_ACTIONS.push(t => templatesList().length ? `<span class="row tpl-pick"><select class="input" id="d-tpl" aria-label="Checklist template">${templatesList().map(x => `<option value="${esc(x.id)}">${esc(x.name)}</option>`).join('')}</select><button class="btn sm" data-act="tpl-apply">${I.plus} Checklist</button></span>` : '');
 
 /* ---------- boot ---------- */
 const startView = (location.hash || '').replace('#', '');

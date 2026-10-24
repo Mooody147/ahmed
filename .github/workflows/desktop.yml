@@ -50,11 +50,13 @@ jobs:
           path: |
             release/*.exe
             release/*.dmg
+            release/*.yml
+            release/*.blockmap
           if-no-files-found: error
 
-  # Publishes the installers as the "latest" GitHub Release, so they can be
-  # downloaded from https://github.com/<owner>/<repo>/releases/latest without
-  # signing in (workflow artifacts need a GitHub login and a desktop browser).
+  # Publishes the installers as a GitHub Release tagged v<version> and marked latest, so they can be
+  # downloaded from https://github.com/<owner>/<repo>/releases/latest without signing in, and so
+  # installed copies update themselves (electron-updater reads latest.yml from that release).
   release:
     needs: build
     if: github.event_name == 'push'
@@ -62,6 +64,7 @@ jobs:
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
           pattern: action-register-*
@@ -71,14 +74,18 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          VERSION=$(node -p "require('./package.json').version")
+          TAG="v$VERSION"
+          rm -f installers/builder-debug.yml
           ls -l installers
           gh release delete latest --repo "$GITHUB_REPOSITORY" --yes --cleanup-tag || true
-          gh release create latest installers/* \
+          gh release delete "$TAG" --repo "$GITHUB_REPOSITORY" --yes --cleanup-tag || true
+          gh release create "$TAG" installers/* \
             --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --latest \
-            --title "Action Register — latest build" \
+            --title "Action Register $VERSION" \
             --notes "Built from ${GITHUB_SHA::7} on ${GITHUB_REF_NAME}.
 
-          Windows: download Action-Register-Setup-*.exe (installer) or Action-Register-Portable-*.exe (no install needed).
-          macOS: download the .dmg.
+          Windows: download Action-Register-Setup-$VERSION.exe (installer, updates itself) or Action-Register-Portable-$VERSION.exe (no install needed).
+          macOS: the arm64 .dmg is for Apple Silicon (M1 and later), the x64 .dmg for Intel Macs.
 
           The app is not code-signed. Windows: More info › Run anyway. macOS: right-click › Open the first time."

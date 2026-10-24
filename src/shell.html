@@ -1,10 +1,11 @@
 <title>Action Register</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap">
 <style>
 /*STYLE*/
 </style>
+<div class="titlestrip" id="titlestrip"><span class="ts-brand">/*BRAND*/ Action Register</span><button class="ts-search" data-act="palette" title="Search and commands (Ctrl+K)">/*I_SEARCH*/<span>Search or type a command</span><kbd>Ctrl K</kbd></button><span class="ts-space"></span></div>
 <div class="app">
   <aside class="rail" aria-label="Main">
     <div class="brand"><span class="brand-mark">/*BRAND*/</span><div><div class="brand-name">Action Register</div><div class="brand-sub">Email → tasks, with evidence</div></div></div>
@@ -13,6 +14,9 @@
     <button class="nav" data-nav="review">/*I_REVIEW*/Review<span class="count" data-count="review" hidden></span></button>
     <button class="nav" data-nav="import">/*I_UPLOAD*/Add emails</button>
     <button class="nav" data-nav="emails">/*I_MAIL*/Emails</button>
+    <button class="nav" data-nav="docs">/*I_DOCS*/Documents</button>
+    <button class="nav" data-nav="insights">/*I_CHART*/Insights</button>
+    <button class="nav" data-nav="tools">/*I_TOOLS*/Tools</button>
     <button class="nav" data-nav="setup">/*I_GEAR*/Setup</button>
     <div class="rail-foot"><div id="storage-mode"><span class="dot off"></span>Connecting…</div><div>No mailbox access. You approve every task.</div></div>
   </aside>
@@ -26,6 +30,7 @@
     <button class="tab" data-nav="review">/*I_REVIEW*/Review<span class="badge" data-count="review" hidden></span></button>
     <button class="tab" data-nav="import">/*I_UPLOAD*/Add</button>
     <button class="tab" data-nav="emails">/*I_MAIL*/Emails</button>
+    <button class="tab" data-act="more-menu">/*I_MORE*/More</button>
   </nav>
 </div>
 <div class="scrim" id="scrim" hidden></div>

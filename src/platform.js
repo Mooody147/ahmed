@@ -13,6 +13,7 @@ globalThis.ETM_CDN = {
   xlsx: ['vendor/xlsx.full.min.js'],
   mammoth: ['vendor/mammoth.browser.min.js'],
   jszip: ['vendor/jszip.min.js'],
+  docx: ['vendor/index.umd.js'],
 };
 
 let ST = B.status();
@@ -149,7 +150,7 @@ function connInner() {
     <hr style="border:0;border-top:1px solid var(--line, #ddd);margin:6px 0">
     <div class="row"><div style="min-width:0"><b>Data folder</b><div class="small muted mono" style="word-break:break-all">${esc(ST.dataDir)}</div></div><span class="spacer"></span><button class="btn" data-dact="open-data">Open folder</button></div>`;
 }
-function setupHTML() { return `<section class="card pad" id="dk-conn" style="display:grid;gap:12px">${connInner()}</section>`; }
+function setupHTML() { return `<section class="card pad" id="dk-conn" data-sec="Connections" style="display:grid;gap:12px">${connInner()}</section>`; }
 function repaint() { const n = document.getElementById('dk-conn'); if (n) n.innerHTML = connInner(); }
 function say(text, err) { UIX.msg = { text, err }; repaint(); }
 // Capabilities are resolved once at start-up (app.js initStore), so a change of key or Gmail account reloads the window.
@@ -204,7 +205,11 @@ document.addEventListener('click', e => {
 });
 
 window.claude = {
-  desktop: { setupHTML, suggestedAddress, dataDir: () => ST.dataDir, status: () => ST },
+  desktop: {
+    setupHTML, suggestedAddress, dataDir: () => ST.dataDir, status: () => ST, refresh,
+    // generic access for the desktop features in app.js (features/*): call(channel, arg) and on(event, cb)
+    call, on: (event, cb) => B.on(event, cb),
+  },
   use: async name => (caps[name] ? caps[name]() : null),
 };
 })();

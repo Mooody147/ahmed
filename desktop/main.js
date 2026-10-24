@@ -1,7 +1,7 @@
 'use strict';
 // Electron main process. Serves the renderer from app://, keeps the API key and
-// Gmail tokens here (never in the renderer), and answers the renderer's IPC calls
-// that back the window.claude.use() surface (see src/platform.js).
+// Gmail credentials here (never in the renderer), and answers the renderer's IPC calls
+// that back the window.claude.use() surface (see src/platform.js) and the desktop extras.
 const { app, BrowserWindow, ipcMain, protocol, net, session, shell, dialog, Menu, nativeTheme } = require('electron');
 const path = require('path');
 const fs = require('fs');
@@ -12,31 +12,44 @@ const { Config } = require('./config');
 const claude = require('./claude');
 const gmail = require('./gmail');
 const gmailImap = require('./gmail-imap');
+const sys = require('./system');
 
 const ROOT = path.join(__dirname, '..', 'app');
 const PARTITION = 'persist:action-register';
 
 if (process.env.AR_DATA_DIR) app.setPath('userData', path.resolve(process.env.AR_DATA_DIR));
-const DATA_DIR = path.join(app.getPath('userData'), 'data');
+const DATA_DIR = sys.resolveDataDir();
 
 protocol.registerSchemesAsPrivileged([{ scheme: 'app', privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true } }]);
 
 if (!process.env.AR_TEST && !app.requestSingleInstanceLock()) app.quit();
 
-let win = null, store = null, config = null;
+let win = null, store = null, config = null, updater = null, rendererReady = false;
+const ctx = {
+  show() { if (!win) return; if (win.isMinimized()) win.restore(); win.show(); win.focus(); },
+  send(ch, data) { if (win && !win.isDestroyed()) win.webContents.send(ch, data); },
+  rendererReady: () => rendererReady,
+};
 
 function createWindow() {
+  const dark = nativeTheme.shouldUseDarkColors, mac = process.platform === 'darwin';
   win = new BrowserWindow({
-    width: 1440, height: 950, minWidth: 360, minHeight: 520, show: false,
-    title: 'Action Register', backgroundColor: nativeTheme.shouldUseDarkColors ? '#0E1413' : '#EEF1F0',
+    ...sys.windowOptions(config), minWidth: 360, minHeight: 520, show: false,
+    title: 'Action Register', backgroundColor: dark ? '#0E1413' : '#EEF2F1',
     icon: path.join(__dirname, '..', 'build', 'icon.png'),
+    // the app draws its own title strip; the window buttons stay native
+    titleBarStyle: mac ? 'hiddenInset' : 'hidden',
+    ...(mac ? {} : { titleBarOverlay: { color: dark ? '#151D1C' : '#FFFFFF', symbolColor: dark ? '#E3EBE9' : '#15201E', height: 34 } }),
     webPreferences: { preload: path.join(__dirname, 'preload.js'), partition: PARTITION, contextIsolation: true, nodeIntegration: false, sandbox: true, spellcheck: true },
   });
-  win.once('ready-to-show', () => win.show());
+  sys.trackWindow(win, config);
+  win.once('ready-to-show', () => { if (!sys.startedHidden()) win.show(); });
+  win.webContents.on('did-start-loading', () => { rendererReady = false; });
   // Nothing navigates away from the app; external links open in the default browser.
   win.webContents.on('will-navigate', (e, url) => { if (!url.startsWith('app://')) e.preventDefault(); });
   win.webContents.setWindowOpenHandler(({ url }) => { if (/^https:\/\//.test(url)) shell.openExternal(url); return { action: 'deny' }; });
   win.loadURL('app://local/index.html' + (process.env.AR_START_VIEW ? '#' + process.env.AR_START_VIEW : ''));
+  sys.closeToTray(win, config);
 }
 
 function setupSession() {
@@ -57,7 +70,7 @@ function buildMenu() {
   const mac = process.platform === 'darwin';
   Menu.setApplicationMenu(Menu.buildFromTemplate([
     ...(mac ? [{ role: 'appMenu' }] : []),
-    { label: 'File', submenu: [{ label: 'Open data folder', click: () => shell.openPath(DATA_DIR) }, { type: 'separator' }, mac ? { role: 'close' } : { role: 'quit' }] },
+    { label: 'File', submenu: [{ label: 'Quick add task…', accelerator: 'CmdOrCtrl+N', click: () => ctx.send('quick-add', {}) }, { label: 'Open data folder', click: () => shell.openPath(DATA_DIR) }, { type: 'separator' }, { label: 'Quit', accelerator: 'CmdOrCtrl+Q', click: () => { sys.setQuitting(); app.quit(); } }] },
     { role: 'editMenu' },
     { label: 'View', submenu: [{ role: 'reload' }, { role: 'toggleDevTools' }, { type: 'separator' }, { role: 'resetZoom' }, { role: 'zoomIn' }, { role: 'zoomOut' }, { type: 'separator' }, { role: 'togglefullscreen' }] },
     { role: 'windowMenu' },
@@ -73,11 +86,15 @@ const handle = (ch, fn) => ipcMain.handle(ch, async (e, arg) => {
 });
 
 function status() {
+  const d = sys.prefs(config);
   return {
-    dataDir: DATA_DIR,
+    dataDir: DATA_DIR, platform: process.platform, packaged: app.isPackaged,
     user: { id: 'local', name: config.get().profileName || userName() },
     claude: { hasKey: !!config.secret('anthropicKey'), models: config.models(), maxPromptKB: config.get().maxPromptKB },
     gmail: { mode: gmailMode(), clientId: config.get().gmail.clientId || '', hasSecret: !!config.secret('gmailClientSecret'), connected: !!gmailMode(), account: config.get().gmail.account || '' },
+    desktop: { closeToTray: d.closeToTray, startWithWindows: d.startWithWindows, startHidden: d.startHidden, hotkey: d.hotkey, notify: d.notify, autoUpdate: d.autoUpdate, watchDir: d.watchDir, backupDir: d.backupDir, backupKeep: d.backupKeep, locked: !!d.pin },
+    usage: config.get().usage || {},
+    update: sys.updateReady(),
     secure: config.encrypted(),
     version: app.getVersion(),
   };
@@ -90,6 +107,29 @@ function gmailMode() {
   return '';
 }
 function userName() { try { return os.userInfo().username || ''; } catch { return ''; } }
+async function saveFile(filename, data) {
+  const ext = path.extname(filename).slice(1);
+  const defaultPath = path.join(process.env.AR_TEST_DOWNLOADS || app.getPath('downloads'), path.basename(filename));
+  let file = defaultPath;
+  if (!process.env.AR_TEST_DOWNLOADS) {
+    const r = await dialog.showSaveDialog(win, { defaultPath, filters: ext ? [{ name: ext.toUpperCase(), extensions: [ext] }, { name: 'All files', extensions: ['*'] }] : [] });
+    if (r.canceled || !r.filePath) throw { code: 'cancelled', message: 'Cancelled' };
+    file = r.filePath;
+  }
+  await fs.promises.writeFile(file, typeof data === 'string' ? data : Buffer.from(data));
+  return { status: 'saved', path: file };
+}
+// usage per month, for the cost estimate in Setup and Insights
+function addUsage(u) {
+  const month = new Date().toISOString().slice(0, 7);
+  const all = { ...(config.get().usage || {}) }; const m = { ...(all[month] || {}) };
+  const k = u.model; const x = { ...(m[k] || { calls: 0, input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }) };
+  x.calls++; x.input += u.input || 0; x.output += u.output || 0; x.cacheRead += u.cacheRead || 0; x.cacheWrite += u.cacheWrite || 0;
+  m[k] = x; all[month] = m;
+  for (const key of Object.keys(all).sort().slice(0, -13)) delete all[key];
+  config.set({ usage: all });
+  ctx.send('sample:usage', { month, usage: m });
+}
 
 function registerIpc() {
   ipcMain.on('desktop:status', e => { e.returnValue = status(); });
@@ -98,7 +138,7 @@ function registerIpc() {
   handle('db:set', ({ path: p, data }) => store.set(p, data));
   handle('db:delete', p => store.delete(p));
 
-  handle('sample:json', (req, e) => claude.run(config, req, delta => { if (!e.sender.isDestroyed()) e.sender.send('sample:text', { id: req.id, delta }); }));
+  handle('sample:json', (req, e) => claude.run(config, req, delta => { if (!e.sender.isDestroyed()) e.sender.send('sample:text', { id: req.id, delta }); }, addUsage));
   handle('sample:abort', id => claude.abort(id));
   handle('claude:test', () => claude.test(config));
   handle('config:claude', ({ key, models, maxPromptKB }) => {
@@ -126,20 +166,53 @@ function registerIpc() {
   });
   handle('gmail:disconnect', async () => { gmailImap.disconnect(config); await gmail.disconnect(config); config.set({ gmail: { ...config.get().gmail, mode: '' } }); return status(); });
 
-  handle('downloads:save', async ({ filename, data }) => {
-    const ext = path.extname(filename).slice(1);
-    const defaultPath = path.join(process.env.AR_TEST_DOWNLOADS || app.getPath('downloads'), path.basename(filename));
-    let file = defaultPath;
-    if (!process.env.AR_TEST_DOWNLOADS) {
-      const r = await dialog.showSaveDialog(win, { defaultPath, filters: ext ? [{ name: ext.toUpperCase(), extensions: [ext] }, { name: 'All files', extensions: ['*'] }] : [] });
-      if (r.canceled || !r.filePath) throw { code: 'cancelled', message: 'Cancelled' };
-      file = r.filePath;
-    }
-    await fs.promises.writeFile(file, typeof data === 'string' ? data : Buffer.from(data));
-    return { status: 'saved', path: file };
-  });
+  handle('downloads:save', ({ filename, data }) => saveFile(filename, data));
   handle('shell:openData', () => shell.openPath(DATA_DIR));
-  handle('shell:openExternal', url => { if (/^https:\/\/(console\.anthropic\.com|console\.cloud\.google\.com|docs\.anthropic\.com|myaccount\.google\.com|support\.google\.com|mail\.google\.com)\//.test(url)) return shell.openExternal(url); throw { code: 'forbidden', message: 'URL not allowed' }; });
+  handle('shell:openPath', p => { if (typeof p === 'string' && [sys.prefs(config).watchDir, sys.prefs(config).backupDir, DATA_DIR].some(d => d && p.startsWith(d))) return shell.openPath(p); throw { code: 'forbidden', message: 'Path not allowed' }; });
+  handle('shell:openExternal', url => { if (/^(https:\/\/(console\.anthropic\.com|console\.cloud\.google\.com|docs\.anthropic\.com|platform\.claude\.com|myaccount\.google\.com|support\.google\.com|mail\.google\.com|github\.com\/Mooody147)\/|mailto:)/.test(url)) return shell.openExternal(url); throw { code: 'forbidden', message: 'URL not allowed' }; });
+
+  /* desktop extras */
+  handle('sys:prefs', patch => {
+    const allowed = ['closeToTray', 'startWithWindows', 'startHidden', 'hotkey', 'notify', 'autoUpdate', 'watchDir', 'backupDir', 'backupKeep'];
+    const clean = Object.fromEntries(Object.entries(patch || {}).filter(([k]) => allowed.includes(k)));
+    sys.setPrefs(config, clean);
+    if ('startWithWindows' in clean || 'startHidden' in clean) sys.applyLoginItem(config);
+    let hotkeyOk = true;
+    if ('hotkey' in clean) hotkeyOk = sys.applyHotkey(ctx, config).ok;
+    if ('watchDir' in clean) sys.startWatch(ctx, config);
+    return { ...status(), hotkeyOk };
+  });
+  handle('sys:choose-folder', ({ title, current }) => sys.chooseFolder(win, title, current));
+  handle('sys:notify', n => sys.notify(ctx, config, n || {}));
+  handle('backup:write', ({ name, text }) => sys.writeBackup(config, name, text));
+  handle('data:move', async () => {
+    const folder = await sys.chooseFolder(win, 'Choose where to keep your Action Register data (for example a OneDrive folder)', path.dirname(DATA_DIR));
+    if (!folder) throw { code: 'cancelled', message: 'Cancelled' };
+    if (path.resolve(folder).startsWith(path.resolve(DATA_DIR))) throw { code: 'invalid_argument', message: 'Choose a folder outside the current data folder.' };
+    const r = await sys.moveDataDir(DATA_DIR, folder, async () => { store.flushSync(); });
+    if (!process.env.AR_TEST) setTimeout(() => { sys.setQuitting(); app.relaunch(); app.exit(0); }, 600);
+    return r;
+  });
+  handle('lock:set', ({ pin }) => { sys.setPin(config, pin); return status(); });
+  handle('lock:check', ({ pin }) => sys.checkPin(config, pin));
+  handle('update:install', () => { if (updater) updater.install(); return !!updater; });
+  handle('ui:titlebar', ({ color, symbol }) => { try { if (win.setTitleBarOverlay) win.setTitleBarOverlay({ color, symbolColor: symbol, height: 34 }); } catch {} return true; });
+  handle('ui:zoom', ({ factor }) => { const f = Math.max(0.8, Math.min(1.5, +factor || 1)); win.webContents.setZoomFactor(f); return f; });
+  handle('print:pdf', async ({ html, filename, landscape }) => {
+    const w = new BrowserWindow({ show: false, webPreferences: { sandbox: true, contextIsolation: true, javascript: false } });
+    try {
+      await w.loadURL('data:text/html;charset=utf-8;base64,' + Buffer.from(String(html)).toString('base64'));
+      const pdf = await w.webContents.printToPDF({ landscape: !!landscape, printBackground: true, pageSize: 'A4', margins: { marginType: 'default' } });
+      return await saveFile(filename || 'action-register.pdf', pdf);
+    } finally { w.destroy(); }
+  });
+  handle('capture:png', async ({ rect, filename }) => {
+    const r = rect ? { x: Math.max(0, Math.round(rect.x)), y: Math.max(0, Math.round(rect.y)), width: Math.round(rect.width), height: Math.round(rect.height) } : undefined;
+    const img = await win.webContents.capturePage(r);
+    return saveFile(filename || 'action-register-canvas.png', img.toPNG());
+  });
+  handle('watch:ready', () => { rendererReady = true; return true; });
+  handle('watch:done', ({ path: p, ok }) => sys.watchDone(config, p, ok));
 }
 
 app.whenReady().then(() => {
@@ -150,8 +223,13 @@ app.whenReady().then(() => {
   registerIpc();
   buildMenu();
   createWindow();
-  app.on('activate', () => { if (!BrowserWindow.getAllWindows().length) createWindow(); });
+  sys.setupTray(ctx);
+  sys.applyHotkey(ctx, config);
+  sys.startWatch(ctx, config);
+  updater = sys.setupUpdates(ctx, config);
+  app.on('activate', () => { if (!BrowserWindow.getAllWindows().length) createWindow(); else ctx.show(); });
 });
-app.on('second-instance', () => { if (win) { if (win.isMinimized()) win.restore(); win.focus(); } });
+app.on('second-instance', () => ctx.show());
 app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });
-app.on('before-quit', () => { if (store) store.flushSync(); });
+app.on('before-quit', () => { sys.setQuitting(); if (store) store.flushSync(); });
+app.on('will-quit', () => { try { require('electron').globalShortcut.unregisterAll(); } catch {} });
