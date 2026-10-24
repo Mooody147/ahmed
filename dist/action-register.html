@@ -923,6 +923,45 @@ details.menu > summary.on { background: var(--accent-soft); color: var(--accent)
 .ev-head b { white-space: nowrap; }
 .mail-note { flex: 1 1 220px; }
 
+/* ---------- Tools › My workbooks ---------- */
+.wb-drop { margin-bottom: 12px; }
+.wb-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 330px), 1fr)); gap: 12px; }
+.wb-card { display: grid; gap: 6px; align-content: start; }
+.wb-card .wb-ic { font-size: 22px; } .wb-card .wb-t { display: grid; min-width: 0; } .wb-card .wb-t b { font-size: 15px; } .wb-card .wb-t small { color: var(--ink-3); }
+.wb-card p { margin: 0; }
+.wb-h { font-size: 13px; text-transform: uppercase; letter-spacing: .05em; color: var(--ink-3); margin: 18px 0 8px; }
+.wb-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+.wb-head .wb-title { font-size: 16px; } .wb-head .wb-q { width: min(280px, 100%); }
+.wb-tabs { display: flex; gap: 2px; overflow-x: auto; border-bottom: 1px solid var(--line); margin-bottom: 8px; scrollbar-width: thin; }
+.wb-tabs button { border: 0; background: none; padding: 8px 12px; font: inherit; font-size: 13px; color: var(--ink-2); border-bottom: 3px solid transparent; white-space: nowrap; cursor: pointer; }
+.wb-tabs button.on { color: var(--ink); font-weight: 600; border-bottom-color: var(--tab, var(--accent)); }
+.wb-body { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
+.wb-body.with-runs { grid-template-columns: minmax(0, 1fr) 260px; }
+@media (max-width: 1000px) { .wb-body.with-runs { grid-template-columns: minmax(0, 1fr); } }
+.wb-scroll { overflow: auto; max-height: calc(100vh - 230px); background: #fff; border: 1px solid var(--line); border-radius: 10px; }
+.wb-grid-t { border-collapse: collapse; table-layout: fixed; color: #15201E; font: 12.5px/1.35 'IBM Plex Sans', 'IBM Plex Sans Arabic', Calibri, Arial, sans-serif; background: #fff; }
+.wb-grid-t td { padding: 2px 5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom; height: 20px; }
+.wb-grid-t.grid td { border: 1px solid #E3E8E7; }
+.wb-grid-t td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.wb-grid-t td.in { cursor: text; box-shadow: inset 0 0 0 1px rgba(178, 120, 0, .45); position: relative; }
+.wb-grid-t td.in:hover, .wb-grid-t td.in:focus { box-shadow: inset 0 0 0 2px #0A6B74; outline: none; }
+.wb-grid-t td.in[data-dv]::after { content: "▾"; position: absolute; right: 3px; top: 50%; transform: translateY(-50%); font-size: 10px; color: #5B6B68; }
+.wb-grid-t td.err { color: #B3261E; }
+.wb-grid-t td.ok:not([class*=" s"]) { color: #1C7649; } .wb-grid-t td.bad:not([class*=" s"]) { color: #AF3434; } .wb-grid-t td.warn:not([class*=" s"]) { color: #9E6410; }
+.wb-grid-t td.lnk { cursor: pointer; text-decoration: underline; }
+.wb-grid-t .wb-ed { font: inherit; padding: 1px 3px; border: 1px solid #0A6B74; border-radius: 3px; background: #fff; color: #15201E; box-sizing: border-box; }
+.wb-grid-t td.wb-rn { background: #F3F6F5; color: #7A8A87; font-size: 11px; white-space: nowrap; padding: 0 2px; position: sticky; left: 0; z-index: 1; }
+.wb-grid-t td.wb-rn span { display: inline-block; min-width: 24px; text-align: right; margin-right: 2px; }
+.wb-grid-t td.wb-rn button { border: 0; background: none; cursor: pointer; padding: 0 2px; color: #0A6B74; font-size: 12px; opacity: .35; }
+.wb-grid-t tr:hover td.wb-rn button { opacity: 1; }
+.wb-grid-t tr.flash td { animation: wbflash 2.4s ease-out 1; }
+@keyframes wbflash { 0%, 40% { background-color: #FFE07A; } }
+.wb-more { padding: 10px; text-align: center; }
+.wb-runs { display: grid; gap: 8px; align-content: start; max-height: calc(100vh - 230px); overflow: auto; }
+.wb-run { display: grid; grid-template-columns: 1fr auto; gap: 2px 6px; border-top: 1px solid var(--line-2, var(--line)); padding-top: 6px; }
+.wb-run small { grid-column: 1; } .wb-run .icon-btn { grid-column: 2; grid-row: 1; }
+.wb-savebox { width: min(560px, calc(100vw - 32px)); display: grid; gap: 10px; }
+
 </style>
 <div class="titlestrip" id="titlestrip"><span class="ts-brand"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c3.3 4 6 7.2 6 10.4a6 6 0 0 1-12 0C6 10.2 8.7 7 12 3z"/><path d="m9.3 13.6 1.9 1.9 3.6-4.1"/></svg> Action Register</span><button class="ts-search" data-act="palette" title="Search and commands (Ctrl+K)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg><span>Search or type a command</span><kbd>Ctrl K</kbd></button><span class="ts-space"></span></div>
 <div class="app">
@@ -957,6 +996,906 @@ details.menu > summary.on { background: var(--accent-soft); color: var(--accent)
 <div class="modal" id="modal" hidden></div>
 <div class="toasts" id="toasts" aria-live="polite"></div>
 <script>
+/* Workbook engine: runs Excel workbooks (values, formulas, named ranges, data validation) without Excel.
+   Used by Tools › Workbooks in the app and by the node tests. A workbook model comes from convert.js. */
+(function (root) {
+  'use strict';
+
+  /* ---------- values ---------- */
+  class XErr { constructor(e) { this.e = e; } toString() { return this.e; } }
+  const ERR = {};
+  for (const e of ['#N/A', '#VALUE!', '#REF!', '#DIV/0!', '#NUM!', '#NAME?', '#NULL!', '#CIRC!']) ERR[e] = new XErr(e);
+  const isErr = v => v instanceof XErr;
+  // a rectangular array of values (rows × cols)
+  class Arr { constructor(rows) { this.rows = rows; } get h() { return this.rows.length; } get w() { return this.rows[0] ? this.rows[0].length : 0; } }
+  // a reference to a block of cells
+  class Ref { constructor(book, sheet, r1, c1, r2, c2) { this.book = book; const sh = typeof sheet === 'string' ? book.sheet(sheet) : sheet; this.sh = sh; this.sheet = sh ? sh.name : sheet; this.r1 = Math.min(r1, r2); this.c1 = Math.min(c1, c2); this.r2 = Math.max(r1, r2); this.c2 = Math.max(c1, c2); }
+    get h() { return this.r2 - this.r1 + 1; } get w() { return this.c2 - this.c1 + 1; }
+    value(r, c) { return this.book.valueSh(this.sh, this.r1 + r, this.c1 + c); }
+    // ranges are read once per recalculation
+    toArr() {
+      const key = this.sh.idx + ':' + this.r1 + ',' + this.c1 + ',' + this.r2 + ',' + this.c2;
+      const hit = this.book.rcache.get(key); if (hit) return hit;
+      const rows = []; for (let r = 0; r < this.h; r++) { const row = []; for (let c = 0; c < this.w; c++) row.push(this.value(r, c)); rows.push(row); }
+      const a = new Arr(rows); this.book.rcache.set(key, a); return a;
+    } }
+
+  /* ---------- addresses ---------- */
+  const colNum = s => { let n = 0; for (const ch of s.toUpperCase()) n = n * 26 + ch.charCodeAt(0) - 64; return n; };
+  const colName = n => { let s = ''; while (n > 0) { const m = (n - 1) % 26; s = String.fromCharCode(65 + m) + s; n = Math.floor((n - 1) / 26); } return s; };
+  const addr = (r, c) => colName(c) + r;
+  function parseAddr(a) { const m = /^\$?([A-Za-z]{1,3})\$?(\d+)$/.exec(a); return m ? { r: +m[2], c: colNum(m[1]) } : null; }
+  const MAXR = 1048576, MAXC = 16384;
+
+  /* ---------- tokenizer ---------- */
+  const FN_RE = /^(?:_xlfn\.|_xlws\.)?[A-Za-z][A-Za-z0-9_.]*(?=\s*\()/;
+  const SHEET_RE = /^(?:'((?:[^']|'')+)'|([A-Za-z_\u00C0-\uFFFF][\w.\u00C0-\uFFFF]*))!/;
+  const CELL_RE = /^\$?[A-Za-z]{1,3}\$?\d+/;
+  const COL_RE = /^\$?[A-Za-z]{1,3}:\$?[A-Za-z]{1,3}(?![\w(])/;
+  const ROW_RE = /^\$?\d+:\$?\d+(?![\w.])/;
+  function tokenize(src) {
+    const out = []; let i = 0; const s = src;
+    const push = (t, v, extra) => out.push(Object.assign({ t, v }, extra || {}));
+    while (i < s.length) {
+      const ch = s[i], rest = s.slice(i);
+      if (ch === ' ' || ch === '\n' || ch === '\r' || ch === '\t') { i++; continue; }
+      if (ch === '"') { let j = i + 1, str = ''; for (;;) { if (j >= s.length) throw new Error('Unclosed string'); if (s[j] === '"') { if (s[j + 1] === '"') { str += '"'; j += 2; continue; } break; } str += s[j++]; } push('str', str); i = j + 1; continue; }
+      if (ch === '#') { const m = /^#(?:N\/A|VALUE!|REF!|DIV\/0!|NUM!|NAME\?|NULL!|GETTING_DATA)/i.exec(rest); if (m) { push('err', m[0].toUpperCase()); i += m[0].length; continue; } }
+      if (ch === '{') { push('{', ch); i++; continue; } if (ch === '}') { push('}', ch); i++; continue; }
+      if (ch === '(' || ch === ')' || ch === ',' || ch === ';') { push(ch, ch); i++; continue; }
+      const op2 = s.substr(i, 2);
+      if (op2 === '<=' || op2 === '>=' || op2 === '<>') { push('op', op2); i += 2; continue; }
+      if ('+-*/^&=<>%:'.includes(ch)) { push('op', ch); i++; continue; }
+      if (/[0-9.]/.test(ch)) { const m = /^(\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?/.exec(rest); if (m && !/^\d+:\$?\d/.test(rest)) { push('num', parseFloat(m[0])); i += m[0].length; continue; } }
+      // sheet-qualified or plain reference / name / function
+      let sheet = null, j = i; const sm = SHEET_RE.exec(rest);
+      if (sm) { sheet = (sm[1] || sm[2]).replace(/''/g, "'"); j = i + sm[0].length; }
+      const r2 = s.slice(j);
+      let m;
+      if ((m = COL_RE.exec(r2))) { push('ref', m[0], { sheet }); i = j + m[0].length; continue; }
+      if ((m = ROW_RE.exec(r2))) { push('ref', m[0], { sheet }); i = j + m[0].length; continue; }
+      if ((m = CELL_RE.exec(r2)) && !/^[\w(]/.test(r2.slice(m[0].length))) { push('ref', m[0], { sheet }); i = j + m[0].length; continue; }
+      if (!sheet && (m = FN_RE.exec(r2))) { push('fn', m[0].replace(/^_xl(?:fn|ws)\./i, '').toUpperCase()); i = j + m[0].length; continue; }
+      if ((m = /^[A-Za-z_\\\u00C0-\uFFFF][\w.\u00C0-\uFFFF]*/.exec(r2))) {
+        const w = m[0].toUpperCase();
+        if (!sheet && (w === 'TRUE' || w === 'FALSE')) push('bool', w === 'TRUE'); else push('name', m[0], { sheet });
+        i = j + m[0].length; continue;
+      }
+      throw new Error('Unexpected "' + ch + '" in formula');
+    }
+    return out;
+  }
+
+  /* ---------- parser → AST ---------- */
+  function parse(src) {
+    const toks = tokenize(src); let p = 0;
+    const peek = () => toks[p], next = () => toks[p++];
+    const isOp = (v) => peek() && peek().t === 'op' && peek().v === v;
+    function expect(t) { const k = next(); if (!k || k.t !== t) throw new Error('Expected ' + t); return k; }
+    function compare() { let a = concat(); while (peek() && peek().t === 'op' && ['=', '<>', '<', '>', '<=', '>='].includes(peek().v)) { const op = next().v; a = { k: 'bin', op, a, b: concat() }; } return a; }
+    function concat() { let a = add(); while (isOp('&')) { next(); a = { k: 'bin', op: '&', a, b: add() }; } return a; }
+    function add() { let a = mul(); while (isOp('+') || isOp('-')) { const op = next().v; a = { k: 'bin', op, a, b: mul() }; } return a; }
+    function mul() { let a = pow(); while (isOp('*') || isOp('/')) { const op = next().v; a = { k: 'bin', op, a, b: pow() }; } return a; }
+    function pow() { let a = unary(); while (isOp('^')) { next(); a = { k: 'bin', op: '^', a, b: unary() }; } return a; }
+    function unary() { if (isOp('-')) { next(); return { k: 'neg', a: unary() }; } if (isOp('+')) { next(); return unary(); } return percent(); }
+    function percent() { let a = range(); while (isOp('%')) { next(); a = { k: 'pct', a }; } return a; }
+    function range() { let a = primary(); while (isOp(':')) { next(); a = { k: 'range', a, b: primary() }; } return a; }
+    function args() { const list = []; expect('('); if (peek() && peek().t === ')') { next(); return list; }
+      for (;;) { if (peek() && (peek().t === ',' )) { list.push({ k: 'missing' }); next(); continue; } if (peek() && peek().t === ')') { list.push({ k: 'missing' }); next(); return list; }
+        list.push(compare()); const k = next(); if (!k) throw new Error('Unclosed ('); if (k.t === ')') return list; if (k.t !== ',') throw new Error('Expected , or )'); if (peek() && peek().t === ')') { list.push({ k: 'missing' }); next(); return list; } } }
+    function primary() {
+      const k = next(); if (!k) throw new Error('Unexpected end of formula');
+      if (k.t === 'num') return { k: 'num', v: k.v };
+      if (k.t === 'str') return { k: 'str', v: k.v };
+      if (k.t === 'bool') return { k: 'bool', v: k.v };
+      if (k.t === 'err') return { k: 'err', v: k.v };
+      if (k.t === 'ref') return refNode(k.v, k.sheet);
+      if (k.t === 'name') return { k: 'name', v: k.v, sheet: k.sheet };
+      if (k.t === 'fn') return { k: 'fn', name: k.v, args: args() };
+      if (k.t === '(') { const e = compare(); expect(')'); return { k: 'paren', a: e }; }
+      if (k.t === '{') { const rows = [[]]; for (;;) { const t = next(); if (!t) throw new Error('Unclosed {'); if (t.t === '}') break; if (t.t === ',') continue; if (t.t === ';') { rows.push([]); continue; }
+          let v; if (t.t === 'op' && t.v === '-') { const n = next(); v = -n.v; } else if (t.t === 'num' || t.t === 'str' || t.t === 'bool') v = t.v; else if (t.t === 'err') v = ERR[t.v]; else throw new Error('Bad array constant'); rows[rows.length - 1].push(v); }
+        return { k: 'arr', rows }; }
+      throw new Error('Unexpected ' + (k.v || k.t));
+    }
+    const ast = compare(); if (p < toks.length) throw new Error('Unexpected ' + (toks[p].v || toks[p].t));
+    return ast;
+  }
+  function refNode(text, sheet) {
+    const t = text.replace(/\$/g, '');
+    let m;
+    if ((m = /^([A-Za-z]{1,3}):([A-Za-z]{1,3})$/.exec(t))) return { k: 'ref', sheet, r1: 1, c1: colNum(m[1]), r2: MAXR, c2: colNum(m[2]), wholeCol: true, abs: [text.includes('$'), text.includes('$')], text };
+    if ((m = /^(\d+):(\d+)$/.exec(t))) return { k: 'ref', sheet, r1: +m[1], c1: 1, r2: +m[2], c2: MAXC, wholeRow: true, text };
+    const a = parseAddr(t);
+    const ca = /^\$/.test(text), ra = /^\$?[A-Za-z]+\$/.test(text);
+    return { k: 'ref', sheet, r1: a.r, c1: a.c, r2: a.r, c2: a.c, absC: ca, absR: ra };
+  }
+  // AST → formula text (used after inserting / deleting rows)
+  function unparse(n) {
+    const sh = s => s ? (/^[A-Za-z_][\w.]*$/.test(s) ? s : "'" + s.replace(/'/g, "''") + "'") + '!' : '';
+    switch (n.k) {
+      case 'num': return String(n.v);
+      case 'str': return '"' + n.v.replace(/"/g, '""') + '"';
+      case 'bool': return n.v ? 'TRUE' : 'FALSE';
+      case 'err': return n.v;
+      case 'missing': return '';
+      case 'name': return sh(n.sheet) + n.v;
+      case 'paren': return '(' + unparse(n.a) + ')';
+      case 'neg': return '-' + unparse(n.a);
+      case 'pct': return unparse(n.a) + '%';
+      case 'range': return n.a && n.a.deleted && n.b && n.b.deleted ? unparse(n.a) : unparse(n.a) + ':' + unparse(n.b);
+      case 'bin': return unparse(n.a) + n.op + unparse(n.b);
+      case 'fn': return n.name + '(' + n.args.map(unparse).join(',') + ')';
+      case 'arr': return '{' + n.rows.map(r => r.map(v => typeof v === 'string' ? '"' + v + '"' : isErr(v) ? v.e : String(v)).join(',')).join(';') + '}';
+      case 'ref': {
+        if (n.deleted) return sh(n.sheet) + '#REF!';
+        if (n.wholeCol || n.wholeRow) return sh(n.sheet) + n.text;
+        const one = (r, c, ac, ar) => (ac ? '$' : '') + colName(c) + (ar ? '$' : '') + r;
+        return sh(n.sheet) + one(n.r1, n.c1, n.absC, n.absR) + (n.r2 !== n.r1 || n.c2 !== n.c1 ? ':' + one(n.r2, n.c2, n.absC2 ?? n.absC, n.absR2 ?? n.absR) : '');
+      }
+    }
+    return '';
+  }
+
+  /* ---------- coercion ---------- */
+  function toNum(v) {
+    if (v === null || v === undefined) return 0;
+    if (typeof v === 'number') return v;
+    if (typeof v === 'boolean') return v ? 1 : 0;
+    if (isErr(v)) return v;
+    if (typeof v === 'string') { const t = v.trim(); if (t === '') return ERR['#VALUE!']; const pct = /%$/.test(t); const n = Number(pct ? t.slice(0, -1) : t.replace(/,/g, '')); return Number.isFinite(n) ? (pct ? n / 100 : n) : ERR['#VALUE!']; }
+    return ERR['#VALUE!'];
+  }
+  function toStr(v) {
+    if (v === null || v === undefined) return '';
+    if (typeof v === 'string') return v;
+    if (typeof v === 'boolean') return v ? 'TRUE' : 'FALSE';
+    if (typeof v === 'number') return numGeneral(v, 15);
+    if (isErr(v)) return v.e;
+    return String(v);
+  }
+  function toBool(v) {
+    if (v === null || v === undefined) return false;
+    if (typeof v === 'boolean') return v;
+    if (typeof v === 'number') return v !== 0;
+    if (isErr(v)) return v;
+    if (typeof v === 'string') { const u = v.toUpperCase(); if (u === 'TRUE') return true; if (u === 'FALSE') return false; return ERR['#VALUE!']; }
+    return false;
+  }
+  // a number in Excel's "General" style with up to `sig` significant digits
+  function numGeneral(n, sig) {
+    if (!Number.isFinite(n)) return '#NUM!';
+    if (n === 0) return '0';
+    const a = Math.abs(n);
+    if (a >= 1e15 || a < 1e-9) { let s = n.toExponential(Math.min(sig, 15) - 1); s = s.replace(/\.?0+e/, 'E').replace(/E\+?/, 'E+').replace('E+-', 'E-'); return s; }
+    let s = parseFloat(n.toPrecision(sig)).toString();
+    if (/e/.test(s)) s = parseFloat(n.toPrecision(sig)).toFixed(Math.max(0, sig - Math.floor(Math.log10(a)) - 1)).replace(/\.?0+$/, '');
+    return s;
+  }
+  const fix15 = n => (typeof n === 'number' && Number.isFinite(n) ? parseFloat(n.toPrecision(15)) : n);
+
+  /* ---------- number formats (cell display and TEXT()) ---------- */
+  function splitSections(fmt) { const out = []; let cur = '', q = false; for (let i = 0; i < fmt.length; i++) { const ch = fmt[i]; if (ch === '"') q = !q; if (ch === '\\' && !q) { cur += ch + (fmt[i + 1] || ''); i++; continue; } if (ch === ';' && !q) { out.push(cur); cur = ''; continue; } cur += ch; } out.push(cur); return out; }
+  const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  function serialToDate(n) { const ms = Math.round((n - 25569) * 86400000); return new Date(ms); }
+  function dateToSerial(d) { return d.getTime() / 86400000 + 25569; }
+  function roundHalf(x, d) { const m = Math.pow(10, d); const v = Math.abs(x) * m; const r = Math.round(fix15(v) + 1e-9 * (v > 1 ? 1 : 0)); return Math.sign(x) * r / m; }
+  function fmtDate(n, sec) {
+    const d = serialToDate(n); const Y = d.getUTCFullYear(), M = d.getUTCMonth(), D = d.getUTCDate(), h = d.getUTCHours(), mi = d.getUTCMinutes(), s = d.getUTCSeconds();
+    const ampm = /AM\/PM/i.test(sec);
+    let out = '', i = 0; const f = sec;
+    while (i < f.length) {
+      const rest = f.slice(i); let m;
+      if (rest[0] === '"') { const j = f.indexOf('"', i + 1); out += f.slice(i + 1, j < 0 ? f.length : j); i = j < 0 ? f.length : j + 1; continue; }
+      if (rest[0] === '\\') { out += rest[1] || ''; i += 2; continue; }
+      if ((m = /^yyyy|^yy/i.exec(rest))) { out += m[0].length === 4 ? Y : String(Y).slice(-2); i += m[0].length; continue; }
+      if ((m = /^mmmmm|^mmmm|^mmm/i.exec(rest))) { out += m[0].length === 5 ? MONTHS[M][0] : m[0].length === 4 ? MONTHS[M] : MONTHS[M].slice(0, 3); i += m[0].length; continue; }
+      if ((m = /^dddd|^ddd/i.exec(rest))) { out += m[0].length === 4 ? DAYS[d.getUTCDay()] : DAYS[d.getUTCDay()].slice(0, 3); i += m[0].length; continue; }
+      if ((m = /^dd?/i.exec(rest))) { out += m[0].length === 2 ? String(D).padStart(2, '0') : D; i += m[0].length; continue; }
+      if ((m = /^hh?/i.exec(rest))) { const hh = ampm ? (h % 12 || 12) : h; out += m[0].length === 2 ? String(hh).padStart(2, '0') : hh; i += m[0].length; continue; }
+      if ((m = /^mm?/i.exec(rest))) { const prevH = /h[^a-z]*$/i.test(out ? f.slice(0, i) : ''); const nextS = /^m+[^a-z]*s/i.test(rest); const val = prevH || nextS ? mi : M + 1; out += m[0].length === 2 ? String(val).padStart(2, '0') : val; i += m[0].length; continue; }
+      if ((m = /^ss?/i.exec(rest))) { out += m[0].length === 2 ? String(s).padStart(2, '0') : s; i += m[0].length; continue; }
+      if ((m = /^AM\/PM/i.exec(rest))) { out += h < 12 ? 'AM' : 'PM'; i += m[0].length; continue; }
+      out += rest[0]; i++;
+    }
+    return out;
+  }
+  function formatNumber(v, fmt) {
+    if (fmt === undefined || fmt === null || fmt === '' || /^general$/i.test(fmt)) return typeof v === 'number' ? numGeneral(v, 11) : toStr(v);
+    const secs = splitSections(fmt);
+    if (typeof v !== 'number') { if (typeof v === 'string' && secs[3] !== undefined) return secs[3].replace(/@/g, v).replace(/"/g, ''); if (typeof v === 'string' && secs.length === 1 && secs[0].includes('@')) return secs[0].replace(/"([^"]*)"/g, '$1').replace(/@/g, v); return toStr(v); }
+    let sec = secs[0], x = v, signDone = false;
+    if (secs.length >= 2 && v < 0) { sec = secs[1]; x = -v; signDone = true; }
+    if (secs.length >= 3 && v === 0) { sec = secs[2]; }
+    // conditions like [>=100] and colours like [Red]
+    sec = sec.replace(/\[(?:Red|Green|Blue|Black|White|Yellow|Magenta|Cyan|Color\s*\d+)\]/gi, '').replace(/\[[<>=][^\]]*\]/g, '').replace(/\[\$[^\]]*\]/g, m => { const mm = /^\[\$([^-\]]*)/.exec(m); return mm ? '"' + mm[1] + '"' : ''; });
+    const bare = sec.replace(/"[^"]*"/g, '').replace(/\\./g, '');
+    if (/[dy]|h|(?:^|[^0#])m(?![^"]*")|s(?![a-z])/i.test(bare) && !/[0#?]/.test(bare)) return fmtDate(x, sec);
+    if (!/[0#?]/.test(bare)) return sec.replace(/"([^"]*)"/g, '$1').replace(/\\(.)/g, '$1').replace(/_./g, ' ').replace(/\*./g, '');
+    const pct = (bare.match(/%/g) || []).length; if (pct) x = x * Math.pow(100, pct);
+    // scientific
+    const em = /([0#?.,]+)E([+-])([0#]+)/i.exec(sec);
+    if (em) {
+      const mant = em[1], dec = (mant.split('.')[1] || '').replace(/[^0#]/g, '').length;
+      let s = Math.abs(x).toExponential(dec); let [mm, ee] = s.split('e'); const en = +ee;
+      const ed = em[3].length; const es = (en < 0 ? '-' : em[2] === '+' ? '+' : '') + String(Math.abs(en)).padStart(ed, '0');
+      const pre = sec.slice(0, em.index).replace(/"([^"]*)"/g, '$1'), post = sec.slice(em.index + em[0].length).replace(/"([^"]*)"/g, '$1');
+      return (!signDone && v < 0 ? '-' : '') + pre + mm + 'E' + es + post;
+    }
+    // split into literal prefix, number part, literal suffix
+    const tokens = []; let i = 0;
+    while (i < sec.length) {
+      const ch = sec[i];
+      if (ch === '"') { const j = sec.indexOf('"', i + 1); tokens.push({ lit: sec.slice(i + 1, j < 0 ? sec.length : j) }); i = j < 0 ? sec.length : j + 1; continue; }
+      if (ch === '\\') { tokens.push({ lit: sec[i + 1] || '' }); i += 2; continue; }
+      if (ch === '_') { tokens.push({ lit: ' ' }); i += 2; continue; }
+      if (ch === '*') { i += 2; continue; }
+      if ('0#?.,'.includes(ch)) { const last = tokens[tokens.length - 1]; if (last && last.num !== undefined) last.num += ch; else tokens.push({ num: ch }); i++; continue; }
+      tokens.push({ lit: ch }); i++;
+    }
+    const numToks = tokens.filter(t => t.num !== undefined);
+    let pattern = numToks.map(t => t.num).join('');
+    // trailing commas scale by 1000
+    let scale = 0; while (/,$/.test(pattern)) { pattern = pattern.slice(0, -1); scale++; } if (scale) x = x / Math.pow(1000, scale);
+    const [ip, dp = ''] = pattern.split('.');
+    const decMax = dp.replace(/[^0#?]/g, '').length, decMin = dp.replace(/[^0?]/g, '').length;
+    const thousands = /,/.test(ip);
+    const intMin = ip.replace(/[^0?]/g, '').length;
+    let r = roundHalf(Math.abs(x), decMax);
+    let [is, ds = ''] = r.toFixed(decMax).split('.');
+    if (decMax > decMin) { ds = ds.replace(/0+$/, ''); if (ds.length < decMin) ds = ds.padEnd(decMin, '0'); }
+    if (is === '0' && intMin === 0) is = '';
+    if (is.length < intMin) is = is.padStart(intMin, '0');
+    if (thousands) is = is.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    let numStr = is + (pattern.includes('.') ? '.' + ds : '');
+    if (pattern.includes('.') && !ds && /\.$/.test(numStr) && dp === '') numStr = numStr; // keep "0." patterns as written
+    const neg = !signDone && v < 0 && (r !== 0 || /[1-9]/.test(numStr));
+    let out = ''; let placed = false;
+    for (const t of tokens) { if (t.num !== undefined) { if (!placed) { out += numStr; placed = true; } } else out += t.lit; }
+    return (neg ? '-' : '') + out;
+  }
+
+  /* ---------- comparisons ---------- */
+  const typeRank = v => (typeof v === 'number' ? 1 : typeof v === 'string' ? 2 : typeof v === 'boolean' ? 3 : 0);
+  function cmp(a, b) { // returns -1, 0, 1
+    if (a === null || a === undefined) a = typeof b === 'string' ? '' : typeof b === 'boolean' ? false : 0;
+    if (b === null || b === undefined) b = typeof a === 'string' ? '' : typeof a === 'boolean' ? false : 0;
+    const ta = typeRank(a), tb = typeRank(b);
+    if (ta !== tb) return ta < tb ? -1 : 1;
+    if (ta === 2) { const x = a.toLowerCase(), y = b.toLowerCase(); return x < y ? -1 : x > y ? 1 : 0; }
+    if (ta === 1) { const x = fix15(a), y = fix15(b); return x < y ? -1 : x > y ? 1 : 0; }
+    return a === b ? 0 : a ? 1 : -1;
+  }
+  const wildRe = s => new RegExp('^' + s.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/~\*/g, '\u0001').replace(/~\?/g, '\u0002').replace(/\*/g, '.*').replace(/\?/g, '.').replace(/\u0001/g, '\\*').replace(/\u0002/g, '\\?') + '$', 'i');
+  // COUNTIF-style criteria
+  function criteria(c) {
+    if (isErr(c)) return v => isErr(v) && v.e === c.e;
+    if (typeof c === 'number') return v => (typeof v === 'number' && fix15(v) === fix15(c)) || (typeof v === 'string' && v.trim() !== '' && Number(v) === c);
+    if (typeof c === 'boolean') return v => v === c;
+    let s = c === null || c === undefined ? '' : String(c), op = '=';
+    const m = /^(<=|>=|<>|<|>|=)/.exec(s); if (m) { op = m[1]; s = s.slice(op.length); }
+    const n = s.trim() !== '' && Number.isFinite(Number(s)) ? Number(s) : null;
+    const b = /^(TRUE|FALSE)$/i.test(s) ? /^TRUE$/i.test(s) : null;
+    if (op === '=' || op === '<>') {
+      let test;
+      if (s === '') test = v => v === null || v === undefined || v === '';
+      else if (n !== null) test = v => (typeof v === 'number' && fix15(v) === n) || (typeof v === 'string' && v.trim() !== '' && Number(v) === n);
+      else if (b !== null) test = v => v === b;
+      else { const re = wildRe(s); test = v => typeof v === 'string' && re.test(v); }
+      return op === '=' ? test : v => !test(v);
+    }
+    return v => {
+      if (v === null || v === undefined) return false;
+      if (n !== null) { if (typeof v !== 'number') return false; const r = cmp(v, n); return op === '<' ? r < 0 : op === '>' ? r > 0 : op === '<=' ? r <= 0 : r >= 0; }
+      if (typeof v !== 'string') return false; const r = cmp(v, s); return op === '<' ? r < 0 : op === '>' ? r > 0 : op === '<=' ? r <= 0 : r >= 0;
+    };
+  }
+
+  /* ---------- helpers for functions ---------- */
+  const asArr = v => v instanceof Ref ? v.toArr() : v instanceof Arr ? v : new Arr([[v]]);
+  const flat = v => { const a = asArr(v); if (a._flat) return a._flat; const out = []; for (const row of a.rows) for (const x of row) out.push(x); a._flat = out; return out; };
+  const exactIndex = new WeakMap(); // list → Map(key → first index), for repeated exact MATCH / VLOOKUP
+  const lookKey = v => (typeof v === 'string' ? 's' + v.toLowerCase() : typeof v === 'number' ? 'n' + fix15(v) : typeof v === 'boolean' ? 'b' + v : null);
+  // numbers in a range ignore text and booleans; typed arguments are coerced
+  function numsOf(args, opts = {}) {
+    const out = [];
+    for (const a of args) {
+      if (a === undefined) continue;
+      if (a instanceof Ref || a instanceof Arr) { for (const x of flat(a)) { if (isErr(x)) return x; if (typeof x === 'number') out.push(x); else if (opts.countText && x !== null && x !== undefined) out.push(0); } }
+      else { const n = toNum(a); if (isErr(n)) return n; out.push(n); }
+    }
+    return out;
+  }
+  const scalar = (v, ctx) => {
+    if (v instanceof Ref) {
+      if (v.h === 1 && v.w === 1) return v.value(0, 0);
+      // implicit intersection with the formula cell
+      if (ctx && !ctx.array) {
+        if (v.w === 1 && ctx.r >= v.r1 && ctx.r <= v.r2 && v.sheet === ctx.sheet) return v.value(ctx.r - v.r1, 0);
+        if (v.h === 1 && ctx.c >= v.c1 && ctx.c <= v.c2 && v.sheet === ctx.sheet) return v.value(0, ctx.c - v.c1);
+        if (v.w === 1 && ctx.r >= v.r1 && ctx.r <= v.r2) return v.value(ctx.r - v.r1, 0);
+        if (v.h === 1 && ctx.c >= v.c1 && ctx.c <= v.c2) return v.value(0, ctx.c - v.c1);
+        return ERR['#VALUE!'];
+      }
+      return v.value(0, 0);
+    }
+    if (v instanceof Arr) return v.rows[0] ? v.rows[0][0] : null;
+    return v;
+  };
+  // apply a scalar function element by element when an argument is an array (array formulas)
+  function lift(fn, args, ctx, which) {
+    const idx = which || args.map((_, i) => i);
+    const arrs = idx.filter(i => args[i] instanceof Arr || (args[i] instanceof Ref && ctx.array && (args[i].h > 1 || args[i].w > 1)));
+    if (!arrs.length) return fn(...args.map((a, i) => idx.includes(i) ? scalar(a, ctx) : a));
+    const A = arrs.map(i => asArr(args[i]));
+    const H = Math.max(...A.map(a => a.h)), W = Math.max(...A.map(a => a.w));
+    const rows = [];
+    for (let r = 0; r < H; r++) { const row = []; for (let c = 0; c < W; c++) {
+      const call = args.map((a, i) => { if (!arrs.includes(i)) return idx.includes(i) ? scalar(a, ctx) : a; const m = asArr(a); if (m.h === 1 && m.w === 1) return m.rows[0][0]; const rr = m.h === 1 ? 0 : r, cc = m.w === 1 ? 0 : c; return rr < m.h && cc < m.w ? m.rows[rr][cc] : ERR['#N/A']; });
+      row.push(fn(...call)); } rows.push(row); }
+    return new Arr(rows);
+  }
+  const round15 = x => (typeof x === 'number' ? fix15(x) : x);
+  function lookupIndex(val, list, type) {
+    if (type === 0) {
+      if (typeof val === 'string' && /[*?~]/.test(val)) { const re = wildRe(val); for (let i = 0; i < list.length; i++) if (typeof list[i] === 'string' && re.test(list[i])) return i; return -1; }
+      let idx = exactIndex.get(list);
+      if (!idx) { idx = new Map(); for (let i = 0; i < list.length; i++) { const k = lookKey(list[i]); if (k !== null && !idx.has(k)) idx.set(k, i); } exactIndex.set(list, idx); }
+      const k = lookKey(val); return k !== null && idx.has(k) ? idx.get(k) : -1;
+    }
+    let best = -1;
+    for (let i = 0; i < list.length; i++) {
+      const x = list[i]; if (x === null || x === undefined || typeRank(x) !== typeRank(val)) continue;
+      const r = cmp(x, val);
+      if (type > 0) { if (r <= 0) best = i; else break; } else { if (r >= 0) best = i; else break; }
+    }
+    return best;
+  }
+  function ceilingTo(x, s) { if (s === 0) return 0; const q = fix15(x / s); const n = Math.abs(q - Math.round(q)) < 1e-9 ? Math.round(q) : Math.ceil(q); return fix15(n * s); }
+  function floorTo(x, s) { if (s === 0) return 0; const q = fix15(x / s); const n = Math.abs(q - Math.round(q)) < 1e-9 ? Math.round(q) : Math.floor(q); return fix15(n * s); }
+
+  /* ---------- functions ---------- */
+  // each takes (args evaluated, ctx) unless listed in LAZY, where it receives AST nodes and an evaluator
+  const N = v => toNum(v);
+  const F = {};
+  const num1 = f => (args, ctx) => lift(x => { const n = N(x); return isErr(n) ? n : chk(f(n)); }, args, ctx);
+  const chk = n => (typeof n === 'number' && !Number.isFinite(n) ? ERR['#NUM!'] : n);
+  F.ABS = num1(Math.abs); F.SQRT = num1(n => (n < 0 ? ERR['#NUM!'] : Math.sqrt(n))); F.SIN = num1(Math.sin); F.COS = num1(Math.cos); F.TAN = num1(Math.tan);
+  F.ASIN = num1(Math.asin); F.ACOS = num1(Math.acos); F.ATAN = num1(Math.atan); F.EXP = num1(Math.exp); F.SINH = num1(Math.sinh); F.COSH = num1(Math.cosh); F.TANH = num1(Math.tanh);
+  F.LN = num1(n => (n <= 0 ? ERR['#NUM!'] : Math.log(n))); F.LOG10 = num1(n => (n <= 0 ? ERR['#NUM!'] : Math.log10(n)));
+  F.RADIANS = num1(n => n * Math.PI / 180); F.DEGREES = num1(n => n * 180 / Math.PI); F.INT = num1(Math.floor); F.SIGN = num1(Math.sign);
+  F.EVEN = num1(n => { const c = Math.ceil(Math.abs(n) / 2) * 2; return n < 0 ? -c : c; }); F.ODD = num1(n => { let c = Math.ceil(Math.abs(n)); if (c % 2 === 0) c++; return n < 0 ? -c : c; });
+  F.PI = () => Math.PI;
+  const num2 = f => (args, ctx) => lift((a, b) => { const x = N(a), y = b === undefined ? undefined : N(b); if (isErr(x)) return x; if (isErr(y)) return y; return chk(f(x, y)); }, args, ctx);
+  F.LOG = num2((x, b) => (x <= 0 ? ERR['#NUM!'] : Math.log(x) / Math.log(b === undefined ? 10 : b)));
+  F.POWER = num2((x, y) => Math.pow(x, y));
+  F.MOD = num2((a, b) => (b === 0 ? ERR['#DIV/0!'] : fix15(a - b * Math.floor(a / b))));
+  F.ATAN2 = num2((x, y) => (x === 0 && y === 0 ? ERR['#DIV/0!'] : Math.atan2(y, x)));
+  F.QUOTIENT = num2((a, b) => (b === 0 ? ERR['#DIV/0!'] : Math.trunc(a / b)));
+  F.ROUND = num2((x, d) => roundHalf(x, Math.trunc(d || 0)));
+  F.ROUNDUP = num2((x, d) => { const m = Math.pow(10, Math.trunc(d || 0)); return Math.sign(x) * Math.ceil(fix15(Math.abs(x) * m)) / m; });
+  F.ROUNDDOWN = num2((x, d) => { const m = Math.pow(10, Math.trunc(d || 0)); return Math.sign(x) * Math.floor(fix15(Math.abs(x) * m)) / m; });
+  F.TRUNC = F.ROUNDDOWN;
+  F.CEILING = num2((x, s) => { if (s === undefined) s = 1; if (x > 0 && s < 0) return ERR['#NUM!']; if (x < 0 && s > 0) return -floorTo(-x, s); return ceilingTo(x, s); });
+  F['CEILING.MATH'] = num2((x, s) => ceilingTo(x, Math.abs(s === undefined ? 1 : s)));
+  F.FLOOR = num2((x, s) => { if (s === undefined) s = 1; if (x > 0 && s < 0) return ERR['#NUM!']; if (x < 0 && s > 0) return -ceilingTo(-x, s); return floorTo(x, s); });
+  F['FLOOR.MATH'] = num2((x, s) => floorTo(x, Math.abs(s === undefined ? 1 : s)));
+  F.MROUND = num2((x, m) => { if (m === 0) return 0; if (x * m < 0) return ERR['#NUM!']; const q = fix15(x / m); const n = Math.sign(q) * Math.floor(Math.abs(q) + 0.5 + 1e-12); return fix15(n * m); });
+  F.SUM = args => { const n = numsOf(args); return isErr(n) ? n : fix15(n.reduce((a, b) => a + b, 0)); };
+  F.PRODUCT = args => { const n = numsOf(args); return isErr(n) ? n : n.reduce((a, b) => a * b, 1); };
+  F.MIN = args => { const n = numsOf(args); return isErr(n) ? n : n.length ? Math.min(...n) : 0; };
+  F.MAX = args => { const n = numsOf(args); return isErr(n) ? n : n.length ? Math.max(...n) : 0; };
+  F.AVERAGE = args => { const n = numsOf(args); return isErr(n) ? n : n.length ? n.reduce((a, b) => a + b, 0) / n.length : ERR['#DIV/0!']; };
+  F.SUMSQ = args => { const n = numsOf(args); return isErr(n) ? n : n.reduce((a, b) => a + b * b, 0); };
+  F.COUNT = args => { let k = 0; for (const a of args) { if (a instanceof Ref || a instanceof Arr) { for (const x of flat(a)) if (typeof x === 'number') k++; } else if (!isErr(toNum(a)) && a !== null && a !== undefined) k++; } return k; };
+  F.COUNTA = args => { let k = 0; for (const a of args) { if (a instanceof Ref || a instanceof Arr) { for (const x of flat(a)) if (x !== null && x !== undefined) k++; } else if (a !== undefined) k++; } return k; };
+  F.COUNTBLANK = args => flat(args[0]).filter(x => x === null || x === undefined || x === '').length;
+  F.SUMPRODUCT = args => {
+    const A = args.map(asArr); if (!A.length) return 0; const h = A[0].h, w = A[0].w;
+    if (A.some(a => a.h !== h || a.w !== w)) return ERR['#VALUE!'];
+    let s = 0; for (let r = 0; r < h; r++) for (let c = 0; c < w; c++) { let p = 1; for (const a of A) { const x = a.rows[r][c]; if (isErr(x)) return x; p *= typeof x === 'number' ? x : 0; } s += p; }
+    return fix15(s);
+  };
+  const ifsPairs = (args, from) => { const pairs = []; for (let i = from; i + 1 < args.length; i += 2) pairs.push([flat(args[i]), criteria(scalar(args[i + 1]))]); return pairs; };
+  const matchAll = (pairs, i) => pairs.every(([vals, t]) => t(vals[i]));
+  F.COUNTIF = (args, ctx) => lift((rng, c) => { const t = criteria(c); return flat(args[0]).filter(v => t(v)).length; }, [args[0], args[1]], ctx, [1]);
+  F.COUNTIFS = args => { const pairs = ifsPairs(args, 0); const n = pairs.length ? pairs[0][0].length : 0; let k = 0; for (let i = 0; i < n; i++) if (matchAll(pairs, i)) k++; return k; };
+  F.SUMIF = args => { const vals = flat(args[0]), t = criteria(scalar(args[1])), sums = args[2] !== undefined ? flat(args[2]) : vals; let s = 0; vals.forEach((v, i) => { if (t(v) && typeof sums[i] === 'number') s += sums[i]; }); return fix15(s); };
+  F.SUMIFS = args => { const sums = flat(args[0]), pairs = ifsPairs(args, 1); let s = 0; for (let i = 0; i < sums.length; i++) if (matchAll(pairs, i) && typeof sums[i] === 'number') s += sums[i]; return fix15(s); };
+  F.AVERAGEIF = args => { const vals = flat(args[0]), t = criteria(scalar(args[1])), sums = args[2] !== undefined ? flat(args[2]) : vals; let s = 0, k = 0; vals.forEach((v, i) => { if (t(v) && typeof sums[i] === 'number') { s += sums[i]; k++; } }); return k ? s / k : ERR['#DIV/0!']; };
+  F.AVERAGEIFS = args => { const sums = flat(args[0]), pairs = ifsPairs(args, 1); let s = 0, k = 0; for (let i = 0; i < sums.length; i++) if (matchAll(pairs, i) && typeof sums[i] === 'number') { s += sums[i]; k++; } return k ? s / k : ERR['#DIV/0!']; };
+  F.MAXIFS = args => { const vals = flat(args[0]), pairs = ifsPairs(args, 1); const n = vals.filter((v, i) => matchAll(pairs, i) && typeof v === 'number'); return n.length ? Math.max(...n) : 0; };
+  F.MINIFS = args => { const vals = flat(args[0]), pairs = ifsPairs(args, 1); const n = vals.filter((v, i) => matchAll(pairs, i) && typeof v === 'number'); return n.length ? Math.min(...n) : 0; };
+  F.AND = args => { let any = false; for (const a of args) { for (const x of (a instanceof Ref || a instanceof Arr) ? flat(a) : [a]) { if (x === null || x === undefined || (typeof x === 'string' && (a instanceof Ref || a instanceof Arr))) continue; const b = toBool(x); if (isErr(b)) return b; any = true; if (!b) return false; } } return any ? true : ERR['#VALUE!']; };
+  F.OR = args => { let any = false; for (const a of args) { for (const x of (a instanceof Ref || a instanceof Arr) ? flat(a) : [a]) { if (x === null || x === undefined || (typeof x === 'string' && (a instanceof Ref || a instanceof Arr))) continue; const b = toBool(x); if (isErr(b)) return b; any = true; if (b) return true; } } return any ? false : ERR['#VALUE!']; };
+  F.XOR = args => { let k = 0; for (const a of args) for (const x of flat(a)) { const b = toBool(x); if (isErr(b)) return b; if (b) k++; } return k % 2 === 1; };
+  F.NOT = (args, ctx) => lift(x => { const b = toBool(x); return isErr(b) ? b : !b; }, args, ctx);
+  F.TRUE = () => true; F.FALSE = () => false;
+  F.ISNUMBER = (args, ctx) => lift(x => typeof x === 'number', args, ctx);
+  F.ISTEXT = (args, ctx) => lift(x => typeof x === 'string', args, ctx);
+  F.ISNONTEXT = (args, ctx) => lift(x => typeof x !== 'string', args, ctx);
+  F.ISBLANK = (args, ctx) => lift(x => x === null || x === undefined, args, ctx);
+  F.ISERROR = (args, ctx) => lift(x => isErr(x), args, ctx);
+  F.ISERR = (args, ctx) => lift(x => isErr(x) && x.e !== '#N/A', args, ctx);
+  F.ISNA = (args, ctx) => lift(x => isErr(x) && x.e === '#N/A', args, ctx);
+  F.ISLOGICAL = (args, ctx) => lift(x => typeof x === 'boolean', args, ctx);
+  F.ISEVEN = (args, ctx) => lift(x => Math.trunc(N(x)) % 2 === 0, args, ctx);
+  F.ISODD = (args, ctx) => lift(x => Math.abs(Math.trunc(N(x)) % 2) === 1, args, ctx);
+  F.ISREF = (args) => args[0] instanceof Ref;
+  const first = (a, ctx) => (a instanceof Ref && !ctx.array ? a.value(0, 0) : a);
+  F.N = (args, ctx) => lift(x => (typeof x === 'number' ? x : typeof x === 'boolean' ? (x ? 1 : 0) : isErr(x) ? x : 0), [first(args[0], ctx)], ctx);
+  F.T = (args, ctx) => lift(x => (typeof x === 'string' ? x : isErr(x) ? x : ''), [first(args[0], ctx)], ctx);
+  F.NA = () => ERR['#N/A'];
+  const str1 = f => (args, ctx) => lift((...a) => { for (const x of a) if (isErr(x)) return x; return f(...a); }, args, ctx);
+  F.LEN = str1(x => toStr(x).length);
+  F.LEFT = str1((x, n) => toStr(x).slice(0, n === undefined ? 1 : Math.max(0, Math.trunc(N(n)))));
+  F.RIGHT = str1((x, n) => { const s = toStr(x); const k = n === undefined ? 1 : Math.max(0, Math.trunc(N(n))); return k ? s.slice(-k) : ''; });
+  F.MID = str1((x, a, n) => toStr(x).substr(Math.max(0, Math.trunc(N(a)) - 1), Math.max(0, Math.trunc(N(n)))));
+  F.UPPER = str1(x => toStr(x).toUpperCase()); F.LOWER = str1(x => toStr(x).toLowerCase());
+  F.PROPER = str1(x => toStr(x).toLowerCase().replace(/(^|[^a-z])([a-z])/g, (m, a, b) => a + b.toUpperCase()));
+  F.TRIM = str1(x => toStr(x).replace(/ +/g, ' ').trim());
+  F.CLEAN = str1(x => toStr(x).replace(/[\x00-\x1f]/g, ''));
+  F.REPT = str1((x, n) => toStr(x).repeat(Math.max(0, Math.trunc(N(n)))));
+  F.CONCATENATE = args => { let s = ''; for (const a of args) { const v = scalar(a); if (isErr(v)) return v; s += toStr(v); } return s; };
+  F.CONCAT = args => { let s = ''; for (const a of args) for (const v of flat(a)) { if (isErr(v)) return v; s += toStr(v); } return s; };
+  F.TEXTJOIN = args => { const d = toStr(scalar(args[0])), skip = toBool(scalar(args[1])); const parts = []; for (const a of args.slice(2)) for (const v of flat(a)) { if (isErr(v)) return v; const s = toStr(v); if (skip && s === '') continue; parts.push(s); } return parts.join(d); };
+  F.SUBSTITUTE = str1((x, a, b, n) => { const s = toStr(x), f = toStr(a), t = toStr(b); if (!f) return s; if (n === undefined) return s.split(f).join(t); let k = 0, i = -1; const want = Math.trunc(N(n)); while ((i = s.indexOf(f, i + 1)) >= 0) { if (++k === want) return s.slice(0, i) + t + s.slice(i + f.length); } return s; });
+  F.REPLACE = str1((x, a, n, t) => { const s = toStr(x), i = Math.trunc(N(a)) - 1; return s.slice(0, i) + toStr(t) + s.slice(i + Math.trunc(N(n))); });
+  F.FIND = str1((a, b, st) => { const i = toStr(b).indexOf(toStr(a), st === undefined ? 0 : Math.trunc(N(st)) - 1); return i < 0 ? ERR['#VALUE!'] : i + 1; });
+  F.SEARCH = str1((a, b, st) => { const s = toStr(b), start = st === undefined ? 0 : Math.trunc(N(st)) - 1; const re = new RegExp(wildRe(toStr(a)).source.slice(1, -1), 'i'); const m = re.exec(s.slice(start)); return m ? start + m.index + 1 : ERR['#VALUE!']; });
+  F.EXACT = str1((a, b) => toStr(a) === toStr(b));
+  F.CHAR = str1(n => String.fromCharCode(Math.trunc(N(n)))); F.UNICHAR = F.CHAR;
+  F.CODE = str1(x => toStr(x).charCodeAt(0) || ERR['#VALUE!']); F.UNICODE = F.CODE;
+  F.VALUE = str1(x => { if (typeof x === 'number') return x; const n = toNum(toStr(x)); return n; });
+  F.TEXT = str1((x, f) => { if (typeof x === 'string') { const n = x.trim() === '' ? ERR['#VALUE!'] : toNum(x); if (!isErr(n)) x = n; else return formatNumber(x, toStr(f)); } if (x === null || x === undefined) x = 0; if (typeof x === 'boolean') return toStr(x); return formatNumber(x, toStr(f)); });
+  F.FIXED = str1((x, d, nc) => formatNumber(N(x), (toBool(nc) === true ? '0' : '#,##0') + (Math.trunc(N(d === undefined ? 2 : d)) > 0 ? '.' + '0'.repeat(Math.trunc(N(d === undefined ? 2 : d))) : '')));
+  F.DOLLAR = str1((x, d) => formatNumber(N(x), '#,##0.' + '0'.repeat(Math.trunc(N(d === undefined ? 2 : d)))));
+  F.HYPERLINK = (args, ctx) => { const link = toStr(scalar(args[0], ctx)), name = args[1] !== undefined ? scalar(args[1], ctx) : link; if (ctx && ctx.book) ctx.book.links.set(ctx.sheet + '!' + ctx.r + ',' + ctx.c, link); return name; };
+  F.TODAY = (_, ctx) => Math.floor(dateToSerial(ctx && ctx.book && ctx.book.now ? ctx.book.now() : new Date()) - new Date().getTimezoneOffset() / 1440);
+  F.NOW = (_, ctx) => dateToSerial(ctx && ctx.book && ctx.book.now ? ctx.book.now() : new Date()) - new Date().getTimezoneOffset() / 1440;
+  F.DATE = (args) => { const y = N(scalar(args[0])), m = N(scalar(args[1])), d = N(scalar(args[2])); return Math.round(dateToSerial(new Date(Date.UTC(y < 1900 ? y + 1900 : y, m - 1, d)))); };
+  F.YEAR = num1(n => serialToDate(n).getUTCFullYear()); F.MONTH = num1(n => serialToDate(n).getUTCMonth() + 1); F.DAY = num1(n => serialToDate(n).getUTCDate());
+  F.WEEKDAY = num2((n, t) => { const d = serialToDate(n).getUTCDay(); if (!t || t === 1) return d + 1; if (t === 2) return d === 0 ? 7 : d; return d === 0 ? 6 : d - 1; });
+  F.CHOOSE = (args, ctx) => { const i = Math.trunc(N(scalar(args[0], ctx))); return i >= 1 && i < args.length ? args[i] : ERR['#VALUE!']; };
+  F.ROW = (args, ctx) => { const a = args[0]; if (a === undefined) return ctx.r; if (!(a instanceof Ref)) return ERR['#VALUE!']; if (a.h === 1) return a.r1; return new Arr(Array.from({ length: a.h }, (_, i) => [a.r1 + i])); };
+  F.COLUMN = (args, ctx) => { const a = args[0]; if (a === undefined) return ctx.c; if (!(a instanceof Ref)) return ERR['#VALUE!']; if (a.w === 1) return a.c1; return new Arr([Array.from({ length: a.w }, (_, i) => a.c1 + i)]); };
+  F.ROWS = args => (args[0] instanceof Ref || args[0] instanceof Arr ? args[0].h : 1);
+  F.COLUMNS = args => (args[0] instanceof Ref || args[0] instanceof Arr ? args[0].w : 1);
+  F.TRANSPOSE = args => { const a = asArr(args[0]); return new Arr(Array.from({ length: a.w }, (_, c) => Array.from({ length: a.h }, (_, r) => a.rows[r][c]))); };
+  F.MATCH = (args, ctx) => lift((val) => {
+    if (isErr(val)) return val;
+    const list = flat(args[1]); const type = args[2] === undefined ? 1 : Math.sign(N(scalar(args[2], ctx)));
+    if (val === null || val === undefined) val = type === 0 ? '' : 0;
+    const i = lookupIndex(val, list, type); return i < 0 ? ERR['#N/A'] : i + 1;
+  }, [args[0]], ctx);
+  F.INDEX = (args, ctx) => {
+    const a = args[0]; if (isErr(a)) return a;
+    let r = args[1] === undefined ? 0 : N(scalar(args[1], ctx)), c = args[2] === undefined ? 0 : N(scalar(args[2], ctx));
+    if (isErr(r)) return r; if (isErr(c)) return c; r = Math.trunc(r); c = Math.trunc(c);
+    const h = a instanceof Ref || a instanceof Arr ? a.h : 1, w = a instanceof Ref || a instanceof Arr ? a.w : 1;
+    if (args[2] === undefined && h === 1 && w > 1) { c = r; r = 1; }
+    if (args[2] === undefined && w === 1) c = 1;
+    if (r < 0 || c < 0 || r > h || c > w) return ERR['#REF!'];
+    if (a instanceof Ref) {
+      if (r === 0 && c === 0) return a;
+      if (r === 0) return new Ref(a.book, a.sheet, a.r1, a.c1 + c - 1, a.r2, a.c1 + c - 1);
+      if (c === 0) return new Ref(a.book, a.sheet, a.r1 + r - 1, a.c1, a.r1 + r - 1, a.c2);
+      return new Ref(a.book, a.sheet, a.r1 + r - 1, a.c1 + c - 1, a.r1 + r - 1, a.c1 + c - 1);
+    }
+    const A = asArr(a);
+    if (r === 0) return new Arr(A.rows.map(row => [row[(c || 1) - 1]]));
+    if (c === 0) return new Arr([A.rows[r - 1]]);
+    return A.rows[r - 1][c - 1];
+  };
+  function vhlookup(args, ctx, horiz) {
+    return lift((val) => {
+      if (isErr(val)) return val;
+      const tbl = args[1] instanceof Ref || args[1] instanceof Arr ? args[1] : null; if (!tbl) return ERR['#N/A'];
+      const k = Math.trunc(N(scalar(args[2], ctx))); const approx = args[3] === undefined || args[3] === null ? true : toBool(scalar(args[3], ctx));
+      const A = asArr(tbl); if (k < 1 || k > (horiz ? A.h : A.w)) return ERR['#REF!'];
+      const keys = horiz ? A.rows[0] : A.rows.map(r => r[0]);
+      const i = lookupIndex(val === null || val === undefined ? 0 : val, keys, approx === true ? 1 : 0);
+      if (i < 0) return ERR['#N/A'];
+      return horiz ? A.rows[k - 1][i] : A.rows[i][k - 1];
+    }, [args[0]], ctx);
+  }
+  F.VLOOKUP = (args, ctx) => vhlookup(args, ctx, false);
+  F.HLOOKUP = (args, ctx) => vhlookup(args, ctx, true);
+  F.LOOKUP = (args, ctx) => { const val = scalar(args[0], ctx); const look = flat(args[1]); const res = args[2] !== undefined ? flat(args[2]) : look; const i = lookupIndex(val, look, 1); return i < 0 ? ERR['#N/A'] : res[i]; };
+  F.XLOOKUP = (args, ctx) => { const val = scalar(args[0], ctx); const look = flat(args[1]); const res = asArr(args[2]); const i = lookupIndex(val, look, 0); if (i < 0) return args[3] !== undefined ? scalar(args[3], ctx) : ERR['#N/A']; return res.w === 1 ? res.rows[i][0] : res.h === 1 ? res.rows[0][i] : new Arr([res.rows[i]]); };
+  F.OFFSET = (args, ctx) => {
+    const a = args[0]; if (!(a instanceof Ref)) return ERR['#VALUE!'];
+    const dr = Math.trunc(N(scalar(args[1], ctx))), dc = Math.trunc(N(scalar(args[2], ctx)));
+    const h = args[3] !== undefined && args[3] !== null ? Math.trunc(N(scalar(args[3], ctx))) : a.h, w = args[4] !== undefined && args[4] !== null ? Math.trunc(N(scalar(args[4], ctx))) : a.w;
+    const r1 = a.r1 + dr, c1 = a.c1 + dc; if (r1 < 1 || c1 < 1 || h < 1 || w < 1) return ERR['#REF!'];
+    return new Ref(a.book, a.sheet, r1, c1, r1 + h - 1, c1 + w - 1);
+  };
+  F.INDIRECT = (args, ctx) => { const t = toStr(scalar(args[0], ctx)).trim(); if (!t) return ERR['#REF!']; return ctx.book.refFromText(t, ctx.sheet) || ERR['#REF!']; };
+  F.SINGLE = (args, ctx) => scalar(args[0], ctx);
+  F.ANCHORARRAY = (args) => args[0];
+  F['ERROR.TYPE'] = (args, ctx) => { const v = scalar(args[0], ctx); const k = ['#NULL!', '#DIV/0!', '#VALUE!', '#REF!', '#NAME?', '#NUM!', '#N/A'].indexOf(isErr(v) ? v.e : ''); return k < 0 ? ERR['#N/A'] : k + 1; };
+  F.TYPE = (args, ctx) => { const v = args[0] instanceof Arr ? args[0] : scalar(args[0], ctx); return v instanceof Arr ? 64 : typeof v === 'number' || v === null ? 1 : typeof v === 'string' ? 2 : typeof v === 'boolean' ? 4 : 16; };
+  F.FACT = num1(n => { if (n < 0) return ERR['#NUM!']; let f = 1; for (let i = 2; i <= Math.trunc(n); i++) f *= i; return f; });
+  F.GCD = args => { const n = numsOf(args); if (isErr(n)) return n; const g = (a, b) => (b ? g(b, a % b) : a); return n.map(Math.trunc).reduce((a, b) => g(a, b), 0); };
+  F.MEDIAN = args => { const n = numsOf(args); if (isErr(n)) return n; if (!n.length) return ERR['#NUM!']; n.sort((a, b) => a - b); const m = Math.floor(n.length / 2); return n.length % 2 ? n[m] : (n[m - 1] + n[m]) / 2; };
+  F.STDEV = args => { const n = numsOf(args); if (isErr(n)) return n; if (n.length < 2) return ERR['#DIV/0!']; const m = n.reduce((a, b) => a + b, 0) / n.length; return Math.sqrt(n.reduce((a, b) => a + (b - m) * (b - m), 0) / (n.length - 1)); };
+  F['STDEV.S'] = F.STDEV;
+  F.LARGE = args => { const n = numsOf([args[0]]); const k = Math.trunc(N(scalar(args[1]))); if (isErr(n)) return n; n.sort((a, b) => b - a); return k >= 1 && k <= n.length ? n[k - 1] : ERR['#NUM!']; };
+  F.SMALL = args => { const n = numsOf([args[0]]); const k = Math.trunc(N(scalar(args[1]))); if (isErr(n)) return n; n.sort((a, b) => a - b); return k >= 1 && k <= n.length ? n[k - 1] : ERR['#NUM!']; };
+  F.RANDBETWEEN = num2((a, b) => Math.floor(a + Math.random() * (b - a + 1))); F.RAND = () => Math.random();
+  // IF / IFERROR / IFNA / IFS / SWITCH are evaluated lazily
+  const LAZY = {
+    IF(nodes, ev, ctx) {
+      const c = ev(nodes[0]);
+      if (c instanceof Arr || (c instanceof Ref && ctx.array && (c.h > 1 || c.w > 1))) {
+        const A = asArr(c), t = nodes[1] ? ev(nodes[1]) : true, f = nodes[2] ? ev(nodes[2]) : false;
+        return lift((cc, tt, ff) => { const b = toBool(cc); if (isErr(b)) return b; return b ? (nodes[1] && nodes[1].k === 'missing' ? 0 : tt) : (nodes.length < 3 ? false : nodes[2].k === 'missing' ? 0 : ff); }, [A, t, f], ctx);
+      }
+      const b = toBool(scalar(c, ctx)); if (isErr(b)) return b;
+      if (b) return nodes.length < 2 || nodes[1].k === 'missing' ? 0 : ev(nodes[1]);
+      return nodes.length < 3 ? false : nodes[2].k === 'missing' ? 0 : ev(nodes[2]);
+    },
+    IFERROR(nodes, ev, ctx) { const v = ev(nodes[0]); if (v instanceof Arr) { const alt = ev(nodes[1]); return lift((x, y) => (isErr(x) ? y : x), [v, alt], ctx); } const s = v instanceof Ref ? scalar(v, ctx) : v; return isErr(s) ? ev(nodes[1]) : v; },
+    IFNA(nodes, ev, ctx) { const v = ev(nodes[0]); const s = v instanceof Ref ? scalar(v, ctx) : v; return isErr(s) && s.e === '#N/A' ? ev(nodes[1]) : v; },
+    IFS(nodes, ev, ctx) { for (let i = 0; i + 1 < nodes.length; i += 2) { const b = toBool(scalar(ev(nodes[i]), ctx)); if (isErr(b)) return b; if (b) return ev(nodes[i + 1]); } return ERR['#N/A']; },
+    SWITCH(nodes, ev, ctx) { const v = scalar(ev(nodes[0]), ctx); let i = 1; for (; i + 1 < nodes.length; i += 2) if (cmp(v, scalar(ev(nodes[i]), ctx)) === 0) return ev(nodes[i + 1]); return i < nodes.length ? ev(nodes[i]) : ERR['#N/A']; },
+  };
+
+  /* ---------- binary operators ---------- */
+  function binop(op, a, b) {
+    if (op === '&') { if (isErr(a)) return a; if (isErr(b)) return b; return toStr(a) + toStr(b); }
+    if (['=', '<>', '<', '>', '<=', '>='].includes(op)) {
+      if (isErr(a)) return a; if (isErr(b)) return b;
+      const r = cmp(a, b);
+      return op === '=' ? r === 0 : op === '<>' ? r !== 0 : op === '<' ? r < 0 : op === '>' ? r > 0 : op === '<=' ? r <= 0 : r >= 0;
+    }
+    const x = toNum(a), y = toNum(b); if (isErr(x)) return x; if (isErr(y)) return y;
+    switch (op) {
+      case '+': return fix15(x + y);
+      case '-': return fix15(x - y);
+      case '*': return x * y;
+      case '/': return y === 0 ? ERR['#DIV/0!'] : x / y;
+      case '^': { if (x === 0 && y < 0) return ERR['#DIV/0!']; const r = Math.pow(x, y); return Number.isFinite(r) ? r : ERR['#NUM!']; }
+    }
+    return ERR['#VALUE!'];
+  }
+
+  /* ---------- the workbook runtime ---------- */
+  class Book {
+    constructor(model) {
+      this.model = model;
+      this.sheets = new Map(); // name(lower) → sheet
+      this.order = [];
+      model.sheets.forEach((s, idx) => { const sh = { name: s.name, idx, src: s, cells: new Map(), ast: new Map(), vcache: new Map() }; for (const [k, cell] of Object.entries(s.cells || {})) sh.cells.set(k, cell); this.sheets.set(s.name.toLowerCase(), sh); this.order.push(sh); });
+      this.names = new Map(); for (const [n, d] of Object.entries(model.names || {})) this.names.set(n.toLowerCase(), { text: typeof d === 'string' ? d : d.f, sheet: d.sheet || null, ast: null });
+      this.rcache = new Map(); this.stack = new Set(); this.links = new Map(); this.inputs = new Map(); this.now = null;
+    }
+    sheet(name) { return this.sheets.get(String(name).toLowerCase()); }
+    key(r, c) { return r + ',' + c; }
+    cell(sheet, r, c) { const sh = this.sheet(sheet); return sh ? sh.cells.get(r + ',' + c) : undefined; }
+    // the stored input (constant) of a cell, or its computed value
+    value(sheet, r, c) { const sh = typeof sheet === 'object' ? sheet : this.sheet(sheet); return sh ? this.valueSh(sh, r, c) : ERR['#REF!']; }
+    valueSh(sh, r, c) {
+      if (!sh) return ERR['#REF!'];
+      const k = r * 16384 + c;
+      const hit = sh.vcache.get(k); if (hit !== undefined) return hit;
+      const cell = sh.cells.get(r + ',' + c);
+      if (!cell) return null;
+      if (!cell.f) { const v = cell.v === undefined ? null : cell.v; return v && typeof v === 'object' && v.e ? ERR[v.e] || new XErr(v.e) : v; }
+      const sk = sh.idx * 1e11 + k;
+      if (this.stack.has(sk)) return ERR['#CIRC!'];
+      this.stack.add(sk);
+      let v;
+      try {
+        let ast = sh.ast.get(r + ',' + c);
+        if (!ast) { try { ast = parse(cell.f); } catch (e) { ast = { k: 'err', v: '#NAME?', why: e.message }; } sh.ast.set(r + ',' + c, ast); }
+        const ctx = { book: this, sheet: sh.name, r, c, array: !!cell.a };
+        v = this.evalNode(ast, ctx);
+        if (v instanceof Ref) v = cell.a ? v.value(0, 0) : scalar(v, ctx);
+        if (v instanceof Arr) {
+          if (cell.a && cell.a !== true) { const [r1, c1] = cell.a; const rr = r - r1, cc = c - c1; v = rr < v.h && cc < v.w ? v.rows[rr][cc] : ERR['#N/A']; }
+          else v = v.rows[0] ? v.rows[0][0] : null;
+          if (v instanceof Ref) v = v.value(0, 0);
+        }
+        if (v === undefined) v = null;
+        if (v === null) v = 0; // a formula that points at an empty cell shows 0
+      } finally { this.stack.delete(sk); }
+      sh.vcache.set(k, v);
+      return v;
+    }
+    evalNode(n, ctx) {
+      switch (n.k) {
+        case 'num': return n.v; case 'str': return n.v; case 'bool': return n.v; case 'err': return ERR[n.v] || new XErr(n.v);
+        case 'missing': return null;
+        case 'arr': return new Arr(n.rows.map(r => r.slice()));
+        case 'paren': return this.evalNode(n.a, ctx);
+        case 'ref': {
+          if (n.deleted) return ERR['#REF!'];
+          const sheet = n.sheet || ctx.sheet; if (!this.sheet(sheet)) return ERR['#REF!'];
+          const sh = this.sheet(sheet).name; let r2 = n.r2, c2 = n.c2;
+          if (n.wholeCol) r2 = Math.max(1, this.sheet(sheet).src.maxR || 1);
+          if (n.wholeRow) c2 = Math.max(1, this.sheet(sheet).src.maxC || 1);
+          return new Ref(this, sh, n.r1, n.c1, r2, c2);
+        }
+        case 'range': {
+          const a = this.evalNode(n.a, ctx), b = this.evalNode(n.b, ctx);
+          if (!(a instanceof Ref) || !(b instanceof Ref)) return ERR['#REF!'];
+          return new Ref(this, a.sheet, Math.min(a.r1, b.r1), Math.min(a.c1, b.c1), Math.max(a.r2, b.r2), Math.max(a.c2, b.c2));
+        }
+        case 'name': {
+          const d = this.names.get((n.sheet ? n.sheet + '!' : '') + n.v.toLowerCase()) || this.names.get(n.v.toLowerCase());
+          if (!d) return ERR['#NAME?'];
+          if (!d.ast) { try { d.ast = parse(d.text.replace(/^=/, '')); } catch { d.ast = { k: 'err', v: '#REF!' }; } }
+          return this.evalNode(d.ast, { ...ctx, sheet: d.sheet || ctx.sheet });
+        }
+        case 'neg': { const v = this.evalNode(n.a, ctx); return this.mapUnary(v, x => { const y = toNum(x); return isErr(y) ? y : -y; }, ctx); }
+        case 'pct': { const v = this.evalNode(n.a, ctx); return this.mapUnary(v, x => { const y = toNum(x); return isErr(y) ? y : y / 100; }, ctx); }
+        case 'bin': {
+          const a = this.evalNode(n.a, ctx), b = this.evalNode(n.b, ctx);
+          const arrA = a instanceof Arr || (a instanceof Ref && (a.h > 1 || a.w > 1));
+          const arrB = b instanceof Arr || (b instanceof Ref && (b.h > 1 || b.w > 1));
+          if ((arrA || arrB) && (ctx.array || ctx.inFn)) return lift((x, y) => binop(n.op, x, y), [a, b], { ...ctx, array: true });
+          return binop(n.op, scalar(a, ctx), scalar(b, ctx));
+        }
+        case 'fn': {
+          const name = n.name;
+          const plain = ctx.inFn ? { ...ctx, inFn: false } : ctx;
+          if (LAZY[name]) return LAZY[name](n.args, x => this.evalNode(x, plain), plain);
+          const f = F[name]; if (!f) return ERR['#NAME?'];
+          // inside these functions ranges act as arrays even in ordinary formulas
+          const arrayArgs = ARRAY_FNS.has(name);
+          const sub = arrayArgs ? { ...ctx, inFn: true } : plain;
+          const args = n.args.map(a => (a.k === 'missing' ? undefined : this.evalNode(a, sub)));
+          try { const v = f(args, ctx); return v === undefined ? null : v; } catch (e) { return ERR['#VALUE!']; }
+        }
+      }
+      return ERR['#VALUE!'];
+    }
+    mapUnary(v, fn, ctx) { if (v instanceof Arr || (v instanceof Ref && (ctx.array || ctx.inFn) && (v.h > 1 || v.w > 1))) { const A = asArr(v); return new Arr(A.rows.map(r => r.map(fn))); } return fn(scalar(v, ctx)); }
+    // INDIRECT("Sheet!A1:B3") or INDIRECT("NAME")
+    refFromText(t, sheet) {
+      try {
+        const ast = parse(t);
+        const v = this.evalNode(ast, { book: this, sheet, r: 1, c: 1 });
+        return v instanceof Ref ? v : null;
+      } catch { return null; }
+    }
+    /* --- editing --- */
+    setInput(sheet, r, c, v) {
+      const sh = this.sheet(sheet); if (!sh) return;
+      const k = r + ',' + c, cur = sh.cells.get(k) || {};
+      if (cur.f) return; // formulas are not overwritten from the form
+      sh.cells.set(k, { ...cur, v: v === '' ? null : v });
+      this.recalc();
+    }
+    recalc() { for (const sh of this.order) sh.vcache.clear(); this.rcache.clear(); this.links.clear(); }
+    // insert n rows before `at` in a sheet: cells move down and every reference in the workbook follows (like Excel)
+    insertRows(sheet, at, n, expand) { this.shiftRows(sheet, at, n, expand); }
+    deleteRows(sheet, at, n) { this.shiftRows(sheet, at, -n); }
+    // expand: ranges that end on the row just above `at` grow too (adding a row at the end of a table)
+    shiftRows(sheetName, at, n, expand) {
+      const sh = this.sheet(sheetName); if (!sh) return; const target = sh.name.toLowerCase();
+      const moved = new Map();
+      for (const [k, cell] of sh.cells) { const [r, c] = k.split(',').map(Number);
+        if (n < 0 && r >= at && r < at - n) continue;
+        moved.set((r >= at ? r + n : r) + ',' + c, cell); }
+      sh.cells = moved; sh.src.maxR = (sh.src.maxR || 0) + n;
+      const fixRef = (node, homeSheet) => {
+        if (node.k !== 'ref' || node.wholeRow) return;
+        const s = (node.sheet || homeSheet).toLowerCase(); if (s !== target || node.wholeCol) return;
+        if (n > 0) { if (node.r1 >= at) node.r1 += n; if (node.r2 >= at) node.r2 += n; else if (expand && node.r2 === at - 1 && node.r1 < node.r2) node.r2 += n; }
+        else { const d = -n, end = at + d - 1;
+          if (node.r1 >= at && node.r2 <= end) { node.deleted = true; return; }
+          if (node.r1 > end) node.r1 -= d; else if (node.r1 >= at) node.r1 = at;
+          if (node.r2 > end) node.r2 -= d; else if (node.r2 >= at) node.r2 = at - 1; }
+      };
+      // A1:B9 is parsed as two cell references joined by ':' — move it as one block
+      const fixRange = (node, home) => {
+        const a = node.a, b = node.b; const s1 = (a.sheet || home).toLowerCase(); if (s1 !== target || a.wholeRow || a.wholeCol) return false;
+        let start = Math.min(a.r1, b.r1), end = Math.max(a.r2, b.r2);
+        if (n > 0) { if (start >= at) start += n; if (end >= at) end += n; else if (expand && end === at - 1 && start < end) end += n; }
+        else { const d = -n, last = at + d - 1; if (start >= at && end <= last) { a.deleted = true; return true; }
+          const ns = start > last ? start - d : start >= at ? at : start; const ne = end > last ? end - d : end >= at ? at - 1 : end; start = ns; end = ne; }
+        const top = a.r1 <= b.r1 ? a : b, bot = top === a ? b : a; top.r1 = top.r2 = start; bot.r1 = bot.r2 = end; return true;
+      };
+      const walk = (node, home) => {
+        if (!node || typeof node !== 'object') return;
+        if (node.k === 'range' && node.a && node.b && node.a.k === 'ref' && node.b.k === 'ref' && !node.b.sheet && fixRange(node, home)) { if (node.a.deleted) node.b.deleted = true; return; }
+        if (node.k === 'ref') fixRef(node, home); for (const key of ['a', 'b']) if (node[key]) walk(node[key], home); if (node.args) node.args.forEach(x => walk(x, home)); };
+      for (const s of this.order) {
+        for (const [k, cell] of s.cells) {
+          if (!cell.f) continue;
+          let ast; try { ast = parse(cell.f); } catch { continue; }
+          const before = unparse(ast); walk(ast, s.name); const after = unparse(ast);
+          if (after !== before) s.cells.set(k, { ...cell, f: after });
+          if (cell.a && Array.isArray(cell.a) && s.name.toLowerCase() === target && cell.a[0] >= at) s.cells.set(k, { ...s.cells.get(k), a: [cell.a[0] + n, cell.a[1], cell.a[2] + n, cell.a[3]] });
+        }
+        s.ast.clear();
+      }
+      for (const [, d] of this.names) { try { const ast = parse(d.text.replace(/^=/, '')); walk(ast, d.sheet || ''); d.text = unparse(ast); d.ast = null; } catch {} }
+      // merges and validations on this sheet
+      const src = sh.src;
+      src.merges = (src.merges || []).map(m => { const [r1, c1, r2, c2] = m; if (r2 < at) return m; if (n < 0 && r1 >= at && r2 < at - n) return null; return [r1 >= at ? r1 + n : r1, c1, r2 + n, c2]; }).filter(Boolean);
+      src.dv = (src.dv || []).map(d => ({ ...d, ranges: d.ranges.map(([r1, c1, r2, c2]) => [r1 >= at ? r1 + n : r1, c1, r2 >= at ? r2 + n : r2, c2]).filter(([r1, , r2]) => r2 >= r1) })).filter(d => d.ranges.length);
+      if (src.rows) { const rows = {}; for (const [r, v] of Object.entries(src.rows)) { const rr = +r; if (n < 0 && rr >= at && rr < at - n) continue; rows[rr >= at ? rr + n : rr] = v; } src.rows = rows; }
+      this.recalc();
+    }
+    // the list behind a drop-down cell
+    validation(sheet, r, c) {
+      const sh = this.sheet(sheet); if (!sh) return null;
+      const dv = (sh.src.dv || []).find(d => d.ranges.some(([r1, c1, r2, c2]) => r >= r1 && r <= r2 && c >= c1 && c <= c2));
+      if (!dv) return null;
+      if (dv.type !== 'list') return { type: dv.type, op: dv.op, f1: dv.f1, f2: dv.f2 };
+      const f = String(dv.f1 || '');
+      if (/^".*"$/.test(f)) return { type: 'list', list: f.slice(1, -1).split(',').map(x => x.trim()) };
+      let ast; try { ast = parse(f); } catch { return { type: 'list', list: f.split(',').map(x => x.trim()) }; }
+      const v = this.evalNode(ast, { book: this, sheet: sh.name, r, c });
+      const list = (v instanceof Ref || v instanceof Arr ? flat(v) : [v]).filter(x => x !== null && x !== undefined && x !== '' && !isErr(x));
+      return { type: 'list', list };
+    }
+    // the text shown in a cell, using its number format
+    display(sheet, r, c) {
+      const v = this.value(sheet, r, c); const cell = this.cell(sheet, r, c);
+      if (v === null || v === undefined) return '';
+      if (isErr(v)) return v.e;
+      if (typeof v === 'boolean') return v ? 'TRUE' : 'FALSE';
+      const st = cell && cell.s !== undefined && this.model.styles ? this.model.styles[cell.s] : null;
+      if (typeof v === 'number') { try { const t = formatNumber(v, st && st.nf); return /\d\.$/.test(t) ? t.slice(0, -1) : t.replace(/(\d)\.(\s|%|$)/, '$1$2'); } catch { return numGeneral(v, 11); } }
+      return String(v);
+    }
+    // write the edited cells back into the model (for saving and exporting)
+    toModel() {
+      const m = JSON.parse(JSON.stringify(this.model));
+      m.sheets.forEach((s, i) => { s.cells = Object.fromEntries(this.order[i].cells); });
+      m.names = Object.fromEntries([...this.names.entries()].map(([k, d]) => [this.model.names && Object.keys(this.model.names).find(x => x.toLowerCase() === k) || k, d.sheet ? { f: d.text, sheet: d.sheet } : d.text]));
+      return m;
+    }
+  }
+  const ARRAY_FNS = new Set(['SUMPRODUCT', 'SUM', 'MIN', 'MAX', 'AVERAGE', 'COUNT', 'COUNTA', 'MATCH', 'INDEX', 'VLOOKUP', 'HLOOKUP', 'LOOKUP', 'XLOOKUP', 'AND', 'OR', 'PRODUCT', 'LARGE', 'SMALL', 'MEDIAN', 'CONCAT', 'TEXTJOIN', 'SUMSQ', 'STDEV', 'TRANSPOSE', 'ROWS', 'COLUMNS', 'COUNTIF', 'COUNTIFS', 'SUMIF', 'SUMIFS', 'ROW', 'COLUMN', 'MAXIFS', 'MINIFS', 'AVERAGEIF', 'AVERAGEIFS', 'COUNTBLANK']);
+
+  const api = { parse, unparse, tokenize, Book, formatNumber, numGeneral, colName, colNum, addr, parseAddr, ERR, XErr, isErr, toStr, toNum, serialToDate, dateToSerial };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  root.WBE = api;
+})(typeof globalThis !== 'undefined' ? globalThis : this);
+
+/* Workbook converter: an ExcelJS workbook → the plain model the engine runs and the app draws.
+   Model: { v, sheets: [{ name, state, prot, maxR, maxC, cols, rows, merges, cells: { "r,c": { v, f, a, s } }, dv, tab, grid }],
+            styles: [{ bg, fg, b, i, u, sz, ha, va, wrap, ind, bd, nf }], names: { NAME: "Sheet!$A$1:$A$9" } } */
+(function (root) {
+  'use strict';
+  // Office default theme colours (theme index → hex), used when a colour is given as a theme
+  const THEME = ['FFFFFF', '000000', 'E7E6E6', '44546A', '4472C4', 'ED7D31', 'A5A5A5', 'FFC000', '5B9BD5', '70AD47'];
+  const tint = (hex, t) => { if (!t) return hex; const n = parseInt(hex, 16); let r = n >> 16, g = (n >> 8) & 255, b = n & 255; const f = c => Math.round(t < 0 ? c * (1 + t) : c + (255 - c) * t); r = f(r); g = f(g); b = f(b); return ((r << 16) | (g << 8) | b).toString(16).padStart(6, '0').toUpperCase(); };
+  function color(c) {
+    if (!c) return null;
+    if (c.argb) { const a = String(c.argb); return a.length === 8 ? a.slice(2).toUpperCase() : a.toUpperCase(); }
+    if (c.theme !== undefined) return tint(THEME[c.theme] || '000000', c.tint || 0);
+    if (c.indexed !== undefined) return c.indexed === 64 ? null : ({ 8: '000000', 9: 'FFFFFF', 10: 'FF0000', 13: 'FFFF00', 43: 'FFFF99', 22: 'C0C0C0', 64: null }[c.indexed] || null);
+    return null;
+  }
+  const colNum = s => { let n = 0; for (const ch of s.toUpperCase()) n = n * 26 + ch.charCodeAt(0) - 64; return n; };
+  function rangeOf(a) {
+    const m = /^\$?([A-Z]{1,3})\$?(\d+)(?::\$?([A-Z]{1,3})\$?(\d+))?$/i.exec(String(a).trim());
+    if (!m) return null; const r1 = +m[2], c1 = colNum(m[1]); return [r1, c1, m[4] ? +m[4] : r1, m[3] ? colNum(m[3]) : c1];
+  }
+  const serial = d => d.getTime() / 86400000 + 25569;
+
+  function convert(wb, meta) {
+    const styles = [], styleKey = new Map();
+    const styleOf = cell => {
+      const f = cell.fill, ft = cell.font || {}, al = cell.alignment || {}, bd = cell.border || {};
+      const st = {};
+      if (f && f.type === 'pattern' && f.pattern && f.pattern !== 'none') { const c = color(f.fgColor) || color(f.bgColor); if (c) st.bg = c; }
+      if (f && f.type === 'gradient' && f.stops && f.stops[0]) { const c = color(f.stops[0].color); if (c) st.bg = c; }
+      const fc = color(ft.color); if (fc && fc !== '000000') st.fg = fc;
+      if (ft.bold) st.b = 1; if (ft.italic) st.i = 1; if (ft.underline) st.u = 1; if (ft.size && ft.size !== 11) st.sz = ft.size; if (ft.strike) st.st = 1;
+      if (al.horizontal && al.horizontal !== 'general') st.ha = al.horizontal; if (al.vertical) st.va = al.vertical; if (al.wrapText) st.wrap = 1; if (al.indent) st.ind = al.indent;
+      const side = s => (s && s.style ? (s.style === 'thin' || s.style === 'hair' ? 1 : s.style === 'medium' || s.style === 'dashed' || s.style === 'dotted' ? 2 : 3) + ':' + (color(s.color) || '000000') : '');
+      const b = [side(bd.top), side(bd.right), side(bd.bottom), side(bd.left)]; if (b.some(Boolean)) st.bd = b;
+      if (cell.numFmt && cell.numFmt !== 'General') st.nf = cell.numFmt;
+      const key = JSON.stringify(st); if (key === '{}') return undefined;
+      if (!styleKey.has(key)) { styleKey.set(key, styles.length); styles.push(st); }
+      return styleKey.get(key);
+    };
+    const sheets = [];
+    wb.eachSheet(ws => {
+      const cells = {}; let maxR = 0, maxC = 0;
+      ws.eachRow({ includeEmpty: true }, row => {
+        row.eachCell({ includeEmpty: true }, cell => {
+          if (cell.isMerged && cell.master && cell.master.address !== cell.address) return;
+          const r = cell.row, c = cell.col; const out = {};
+          let v = cell.value;
+          if (v && typeof v === 'object' && !(v instanceof Date)) {
+            if (v.formula !== undefined || v.sharedFormula !== undefined) {
+              out.f = String(cell.formula || v.formula || '').replace(/^=/, '');
+              if (v.shareType === 'array') { const rg = rangeOf(v.ref || cell.address); out.a = rg || true; }
+              let res = v.result; if (res && typeof res === 'object') res = res.error ? { e: res.error } : res instanceof Date ? serial(res) : null;
+              out.v = res === undefined ? null : res;
+            } else if (v.richText) out.v = v.richText.map(t => t.text).join('');
+            else if (v.text !== undefined && v.hyperlink !== undefined) { out.v = typeof v.text === 'object' && v.text.richText ? v.text.richText.map(t => t.text).join('') : v.text; out.link = v.hyperlink; }
+            else if (v.error) out.v = { e: v.error };
+            else out.v = null;
+          } else if (v instanceof Date) out.v = serial(v);
+          else out.v = v === undefined ? null : v;
+          const s = styleOf(cell); if (s !== undefined) out.s = s;
+          const empty = (out.v === null || out.v === '') && !out.f;
+          if (empty && out.s === undefined) return;
+          cells[r + ',' + c] = out;
+          if (!empty) { maxR = Math.max(maxR, r); maxC = Math.max(maxC, c); }
+        });
+      });
+      // cut styled-only cells far outside the used area
+      for (const k of Object.keys(cells)) { const [r, c] = k.split(',').map(Number); if (r > maxR + 2 || c > maxC + 2) delete cells[k]; }
+      const cols = []; for (let c = 1; c <= Math.max(maxC, 1); c++) { const col = ws.getColumn(c); cols.push({ w: col.width || 8.43, hidden: !!col.hidden }); }
+      const rows = {}; for (let r = 1; r <= maxR; r++) { const row = ws.getRow(r); if (row.height || row.hidden) rows[r] = { h: row.height || undefined, hidden: !!row.hidden }; }
+      const merges = ((ws.model && ws.model.merges) || []).map(rangeOf).filter(Boolean);
+      const dv = [];
+      const dvm = (ws.dataValidations && ws.dataValidations.model) || {};
+      for (const [k, d] of Object.entries(dvm)) {
+        if (!d) continue;
+        const ranges = k.split(/\s+/).map(x => (/^range:/.test(x) ? x.slice(6) : x)).map(rangeOf).filter(Boolean); if (!ranges.length) continue;
+        const f1 = d.formulae && d.formulae[0] !== undefined ? String(d.formulae[0]) : '', f2 = d.formulae && d.formulae[1] !== undefined ? String(d.formulae[1]) : '';
+        const same = dv.find(x => x.type === d.type && x.f1 === f1 && x.f2 === f2 && x.op === d.operator);
+        if (same) same.ranges.push(...ranges); else dv.push({ ranges, type: d.type, op: d.operator || '', f1, f2, prompt: d.prompt || '', error: d.error || '' });
+      }
+      const view = (ws.views && ws.views[0]) || {};
+      sheets.push({ name: ws.name, state: ws.state || 'visible', prot: !!(ws.sheetProtection && ws.sheetProtection.sheet), maxR, maxC, cols, rows, merges, cells, dv,
+        tab: ws.properties && ws.properties.tabColor ? color(ws.properties.tabColor) : null, grid: view.showGridLines !== false,
+        freeze: view.state === 'frozen' ? { r: view.ySplit || 0, c: view.xSplit || 0 } : null });
+    });
+    const names = {};
+    for (const d of (wb.definedNames && wb.definedNames.model) || []) {
+      if (!d || !d.name || /^_xlnm\./.test(d.name)) continue;
+      const f = (d.ranges || []).join(',');
+      if (f) names[d.name] = d.localSheetId !== undefined && sheets[d.localSheetId] ? { f, sheet: sheets[d.localSheetId].name } : f;
+    }
+    return { v: 1, ...(meta || {}), sheets, styles, names };
+  }
+
+  // the cover-sheet facts shown on the library card: title, subtitle, description, author, revision
+  function describe(model) {
+    const out = { title: '', subtitle: '', about: '', author: '', revision: '', date: '', refs: '' };
+    const cover = model.sheets.find(s => /cover|about|read ?me|info/i.test(s.name)) || model.sheets[0];
+    if (!cover) return out;
+    const text = Object.entries(cover.cells).map(([k, c]) => { const [r, col] = k.split(',').map(Number); return { r, c: col, v: typeof c.v === 'string' ? c.v.trim() : '' }; }).filter(x => x.v).sort((a, b) => a.r - b.r || a.c - b.c);
+    const right = (label) => { const l = text.find(x => new RegExp('^' + label, 'i').test(x.v)); if (!l) return ''; const v = text.find(x => x.r === l.r && x.c > l.c); return v ? v.v : ''; };
+    out.author = right('Author'); out.revision = right('Revision') || right('Version'); out.date = right('Issue Date') || right('Issued'); out.refs = right('Governing References') || right('Data Sources') || right('References');
+    const firsts = text.filter(x => x.v.length > 3 && !/:$/.test(x.v));
+    out.title = (firsts[0] || {}).v || model.name || '';
+    out.subtitle = (firsts[1] || {}).v || '';
+    out.about = (text.find(x => x.v.length > 120) || {}).v || '';
+    return out;
+  }
+
+  // read .xlsx bytes with ExcelJS; drawings, charts and comments are removed first (the tools do not need them
+  // and some files make ExcelJS fail on them)
+  async function read(ExcelJS, JSZip, bytes) {
+    const zip = await JSZip.loadAsync(bytes);
+    for (const name of Object.keys(zip.files)) {
+      if (/^xl\/(drawings|charts|media|comments|threadedComments|persons)\//i.test(name) || /^xl\/comments\d*\.xml$/i.test(name) || /^xl\/vmlDrawing/i.test(name)) { zip.remove(name); continue; }
+      if (/^xl\/worksheets\/sheet\d+\.xml$/i.test(name)) {
+        const x = await zip.file(name).async('string');
+        zip.file(name, x.replace(/<(?:drawing|legacyDrawing|legacyDrawingHF|picture)\b[^>]*\/>/g, ''));
+      }
+      if (/^xl\/worksheets\/_rels\/.*\.rels$/i.test(name)) {
+        const x = await zip.file(name).async('string');
+        zip.file(name, x.replace(/<Relationship\b[^>]*Type="[^"]*\/(?:drawing|vmlDrawing|comments|threadedComment|image)"[^>]*\/>/g, ''));
+      }
+    }
+    const ct = zip.file('[Content_Types].xml');
+    if (ct) { const x = await ct.async('string'); zip.file('[Content_Types].xml', x.replace(/<Override\b[^>]*PartName="\/xl\/(?:drawings|charts|comments|threadedComments|persons)[^"]*"[^>]*\/>/g, '')); }
+    const clean = await zip.generateAsync({ type: 'uint8array' });
+    const wb = new ExcelJS.Workbook();
+    await wb.xlsx.load(clean);
+    return wb;
+  }
+
+  const api = { convert, describe, rangeOf, read };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  root.WBC = api;
+})(typeof globalThis !== 'undefined' ? globalThis : this);
+
 /* ===================== Action Register — core engine =====================
    Pure logic: parsing, extraction, prompt building, evidence verification,
    dedupe. Runs in the browser; also loadable in Node for tests.            */
@@ -1454,8 +2393,9 @@ const CDN = (typeof globalThis !== 'undefined' && globalThis.ETM_CDN) || {
   mammoth: ['https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js'],
   jszip: ['https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js'],
   docx: ['https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js'],
+  exceljs: ['https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js'],
 };
-const GLOBAL = { pdf: 'pdfjsLib', xlsx: 'XLSX', mammoth: 'mammoth', jszip: 'JSZip', docx: 'docx' };
+const GLOBAL = { pdf: 'pdfjsLib', xlsx: 'XLSX', mammoth: 'mammoth', jszip: 'JSZip', docx: 'docx', exceljs: 'ExcelJS' };
 const scriptP = {};
 function loadScript(src) {
   if (scriptP[src]) return scriptP[src];
@@ -2120,6 +3060,8 @@ St.cols = Object.fromEntries(COLS.map(n => [n, new Map()]));
 const colList = n => [...St.cols[n].values()];
 function colPut(n, d) { d.updatedAt = nowISO(); St.cols[n].set(d.id, d); if (St.mode === 'db') writeDoc(St.refs.cols[n].doc(d.id), d); else saveLocal(); }
 function colDel(n, id) { St.cols[n].delete(id); if (St.mode === 'db') St.refs.cols[n].doc(id).delete().catch(dbError); else saveLocal(); }
+// feature files register their own collections before the data loads
+function addCols(...names) { for (const n of names) if (!COLS.includes(n)) { COLS.push(n); St.cols[n] = new Map(); } }
 function putSettings(s) {
   St.settings = s;
   if (St.mode === 'db') writeDoc(St.refs.settings, s); else saveLocal();
@@ -2218,7 +3160,7 @@ const BUCKETS = ['Overdue', 'Today', 'Next 7 days', 'Within 30 days', 'Later', '
 let rq = null;
 function scheduleRender() { if (rq) return; rq = requestAnimationFrame(() => { rq = null; render(); }); }
 // a full re-render would destroy the canvas element being dragged or edited, so it waits until that ends
-const cvHold = () => UI.view === 'todo' && (!!UI.cvEditing || (!!MP.mode && MP.mode !== 'pinch'));
+const cvHold = () => (UI.view === 'todo' && (!!UI.cvEditing || (!!MP.mode && MP.mode !== 'pinch'))) || !!(document.activeElement && document.activeElement.classList && document.activeElement.classList.contains('hold-render'));
 function keepFocus(fn) {
   const a = document.activeElement; const id = a && a.id; let ss = null, se = null;
   try { ss = a.selectionStart; se = a.selectionEnd; } catch {}
@@ -4903,6 +5845,9 @@ function deco(html) {
     if (!part) continue;
     if (part[0] === '<') {
       out += part;
+      // workbook sheets and other raw regions keep their text exactly
+      if (part === '<!--raw-->') { raw = '!raw'; continue; } if (part === '<!--/raw-->') { raw = null; continue; }
+      if (raw === '!raw') continue;
       if (raw) { if (new RegExp('^</' + raw + '\\b', 'i').test(part)) raw = null; }
       else { const m = RAW_TAGS.exec(part); if (m && !/\/>$/.test(part)) raw = m[1]; }
       continue;
@@ -5717,6 +6662,10 @@ document.addEventListener('keydown', e => {
   else if (e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); presentStop(); }
 }, true);
 document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && UI.present) { UI.present = null; render(); } });
+// any action chosen from a menu closes it
+document.addEventListener('click', e => { if (e.target.closest && e.target.closest('.menu-pop [data-act]')) setTimeout(closeMenus, 0); });
+// a menu that was open stays open when the page is drawn again
+HOOKS.afterRender.push(() => { if (!UI.menuOpen) return; const d = document.querySelector(`details.menu[data-menu="${UI.menuOpen}"]`); if (d && !d.open) d.open = true; });
 
 /* ===== features/06-work.js ===== */
 /* ---------- time tracking, Daily drag and drop, Insights (charts, waiting on, time, reports), chasers ---------- */
@@ -6325,13 +7274,13 @@ const CALCS = {
     out: r => [['Mass flow', r.w, 'kg/s', 3], ['Inlet pressure', r.p1, 'kPa abs', 2], ['Discharge pressure', r.p2, 'kPa abs', 2], ['Pressure ratio', r.ratio, '', 3], ['Blower power', r.pw, 'kW', 1]],
     note: 'Adiabatic compression (Metcalf & Eddy): Pw = w·R·T1/(29.7·n·e)·[(p2/p1)^0.283 − 1]. Pressure rise ≈ diffuser submergence × 9.81 kPa/m + diffuser and pipe losses.' },
 };
-UI.toolTab = UI.toolTab || 'calc'; UI.calc = UI.calc || 'pipe'; UI.calcIn = UI.calcIn || {};
-const TOOL_TABS = [['calc', '🧮 Calculators'], ['compare', '⚖️ Compare offers'], ['crs', '📝 CRS responses'], ['minutes', '🗣️ Meeting minutes']];
+UI.toolTab = UI.toolTab || 'wb'; UI.calc = UI.calc || 'pipe'; UI.calcIn = UI.calcIn || {};
+const TOOL_TABS = [['wb', '📗 My workbooks'], ['calc', '🧮 Calculators'], ['compare', '⚖️ Compare offers'], ['crs', '📝 CRS responses'], ['minutes', '🗣️ Meeting minutes']];
 VIEWS.push('tools');
 VIEW_FN.tools = () => `<div class="wrap tools-page">
   <div class="page-head"><div><h1>Tools</h1><div class="sub">Quick engineering checks, offer comparisons, comment responses and meeting actions — linked to your tasks.</div></div></div>
   <div class="seg tabs" role="tablist">${TOOL_TABS.map(([k, l]) => `<button role="tab" data-act="tool-tab" data-tab="${k}" aria-pressed="${UI.toolTab === k}">${l}</button>`).join('')}</div>
-  ${({ calc: toolCalc, compare: toolCompare, crs: toolCRS, minutes: toolMinutes }[UI.toolTab] || toolCalc)()}
+  ${({ wb: () => (UI.wb.open ? wbViewHTML() : wbLibraryHTML()), calc: toolCalc, compare: toolCompare, crs: toolCRS, minutes: toolMinutes }[UI.toolTab] || toolCalc)()}
 </div>`;
 const fmtNum = (v, dp) => v === null || v === undefined || Number.isNaN(v) ? '—' : typeof v === 'string' ? v : Number(v).toLocaleString('en-GB', { maximumFractionDigits: dp ?? 2, minimumFractionDigits: 0 });
 function calcValues(k) { const c = CALCS[k], saved = UI.calcIn[k] || {}; return Object.fromEntries(c.fields.map(([f, , , d]) => [f, saved[f] ?? d])); }
@@ -6577,6 +7526,478 @@ Object.assign(ACT, {
 });
 document.addEventListener('input', e => { if (e.target && e.target.dataset && e.target.dataset.crs !== undefined && UI.crs) { const r = UI.crs.rows[+e.target.dataset.crs]; if (r) r.response = e.target.value; } });
 window.addEventListener('hashchange', () => { const v = location.hash.slice(1); if (St.ready && VIEWS.includes(v) && v !== UI.view) go(v); });
+
+/* ===== features/09-files.js ===== */
+/* ---------- stored files: workbooks, HTML tools, reference documents, email originals, attachments, receipts ---------- */
+// Desktop: files beside the register (desktop/files.js). Browser: IndexedDB in this browser.
+const FILES = (() => {
+  let dbp = null;
+  const idb = () => dbp || (dbp = new Promise((res, rej) => { const r = indexedDB.open('action-register-files', 1); r.onupgradeneeded = () => r.result.createObjectStore('f'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }));
+  const tx = async (mode, fn) => { const db = await idb(); return new Promise((res, rej) => { const t = db.transaction('f', mode); const st = t.objectStore('f'); const out = fn(st); t.oncomplete = () => res(out && out.result !== undefined ? out.result : out); t.onerror = () => rej(t.error); }); };
+  const toBytes = async d => d instanceof Uint8Array ? d : d instanceof ArrayBuffer ? new Uint8Array(d) : d instanceof Blob ? new Uint8Array(await d.arrayBuffer()) : typeof d === 'string' ? new TextEncoder().encode(d) : new Uint8Array(d || []);
+  return {
+    async save(kind, id, data, meta) {
+      const bytes = await toBytes(data);
+      if (DESKTOP) return DK.call('files:save', { kind, id, data: bytes, meta });
+      await tx('readwrite', st => { st.put(bytes, kind + '/' + id); st.put({ ...(meta || {}), size: bytes.length, savedAt: nowISO() }, kind + '/' + id + '.json'); });
+      return { size: bytes.length };
+    },
+    async load(kind, id) {
+      if (DESKTOP) { const r = await DK.call('files:load', { kind, id }); return r ? new Uint8Array(r) : null; }
+      const r = await tx('readonly', st => st.get(kind + '/' + id)); return r || null;
+    },
+    async remove(kind, id) { if (DESKTOP) return DK.call('files:remove', { kind, id }); await tx('readwrite', st => { st.delete(kind + '/' + id); st.delete(kind + '/' + id + '.json'); }); },
+    // open with the program the computer uses for that type (desktop); the browser downloads it instead
+    async open(kind, id, name) {
+      if (DESKTOP) return DK.call('files:open', { kind, id, name });
+      const b = await this.load(kind, id); if (b) offerFile(name || id, new Blob([b]));
+    },
+  };
+})();
+
+/* ===== features/10-workbooks.js ===== */
+/* ---------- Tools › My workbooks: your Excel tools inside the app ---------- */
+// Imported .xlsx files are kept privately (FILES 'workbooks') and run by the workbook engine (src/wb/engine.js):
+// every formula, drop-down and lookup table works as in Excel. Inputs you type and library edits are saved
+// as a list of changes per workbook ('wbedits') and replayed on open; saved calculations go to 'calcruns'.
+// Imported HTML tools (FILES 'htmltools') open in their own window on the desktop.
+addCols('wbs', 'wbedits', 'calcruns');
+UI.wb = UI.wb || { open: null, sheet: 0, edit: false, q: '', allq: '' };
+const WB_OPEN = new Map(); // id → { book, model, meta }
+const isLibSheet = (sh) => /librar|^lists?$|data|table|geometry|curves/i.test(sh.name) || (sh.maxR || 0) > 150;
+
+/* --- import --- */
+async function wbImportFiles(fileList) {
+  const files = [...fileList]; let added = 0, tools = 0, docs = 0; const errs = [];
+  const all = [];
+  for (const f of files) {
+    if (/\.zip$/i.test(f.name)) {
+      try { const Z = await E.need('jszip'); const zip = await Z.loadAsync(await f.arrayBuffer());
+        for (const [name, entry] of Object.entries(zip.files)) { if (entry.dir || /(^|\/)(__MACOSX|\._)/.test(name)) continue; const base = name.split('/').pop(); if (!/\.(xlsx|xlsm|xls|html?|pdf)$/i.test(base)) continue; all.push({ name: base, bytes: await entry.async('uint8array') }); } }
+      catch (e) { errs.push(f.name + ': ' + (e.message || e)); }
+    } else all.push({ name: f.name, bytes: new Uint8Array(await f.arrayBuffer()) });
+  }
+  for (const f of all) {
+    try {
+      if (/\.html?$/i.test(f.name)) { await htmlToolAdd(f.name, f.bytes); tools++; continue; }
+      if (/\.pdf$/i.test(f.name)) { await refDocAdd(f.name, f.bytes); docs++; continue; }
+      await wbAdd(f.name, f.bytes); added++;
+    } catch (e) { errs.push(f.name + ': ' + (e.message || e)); }
+  }
+  render();
+  toast([added && `${added} workbook${added > 1 ? 's' : ''}`, tools && `${tools} web tool${tools > 1 ? 's' : ''}`, docs && `${docs} reference document${docs > 1 ? 's' : ''}`].filter(Boolean).join(', ') + (added || tools || docs ? ' added.' : 'Nothing was added.') + (errs.length ? ' Problems: ' + errs.join('; ') : ''), errs.length ? { err: true } : {});
+}
+async function xlsxBytes(name, bytes) {
+  if (!/\.xls$/i.test(name)) return { bytes, note: '' };
+  // old .xls: SheetJS reads values and formulas; colours and drop-downs are not kept
+  const X = await E.need('xlsx'); const wb = X.read(bytes, { type: 'array', cellFormula: true, cellStyles: true });
+  return { bytes: new Uint8Array(X.write(wb, { type: 'array', bookType: 'xlsx' })), note: 'Converted from .xls — save it as .xlsx in Excel to keep its colours and drop-downs.' };
+}
+async function wbModel(bytes, name) {
+  const [EJ, Z] = await Promise.all([E.need('exceljs'), E.need('jszip')]);
+  return WBC.convert(await WBC.read(EJ, Z, bytes), { name });
+}
+async function wbAdd(name, raw) {
+  const { bytes, note } = await xlsxBytes(name, raw);
+  const model = await wbModel(bytes, name);
+  const d = WBC.describe(model);
+  const same = colList('wbs').find(w => w.name === name);
+  const id = same ? same.id : E.uid('wb');
+  await FILES.save('workbooks', id, bytes, { name });
+  const formulas = model.sheets.reduce((n, s) => n + Object.values(s.cells).filter(c => c.f).length, 0);
+  colPut('wbs', { id, name, title: cleanTitle(d.title) || name.replace(/\.\w+$/, ''), subtitle: d.subtitle, about: d.about, author: d.author, revision: d.revision, refs: d.refs, sheets: model.sheets.map(s => s.name), formulas, note, addedAt: (same && same.addedAt) || nowISO(), size: bytes.length });
+  WB_OPEN.delete(id);
+  return id;
+}
+const cleanTitle = t => String(t || '').replace(/\s{2,}/g, ' ').replace(/\n/g, ' — ').trim();
+async function htmlToolAdd(name, bytes) {
+  const text = new TextDecoder().decode(bytes);
+  const title = (/<title>([^<]*)<\/title>/i.exec(text) || [])[1] || name.replace(/\.html?$/i, '');
+  const about = (/<meta\s+name="description"\s+content="([^"]*)"/i.exec(text) || [])[1] || '';
+  const same = colList('wbs').find(w => w.kind === 'html' && w.name === name);
+  const id = same ? same.id : E.uid('ht');
+  await FILES.save('htmltools', id, bytes, { name });
+  colPut('wbs', { id, kind: 'html', name, title: title.trim(), about, addedAt: (same && same.addedAt) || nowISO(), size: bytes.length });
+}
+async function refDocAdd(name, bytes) {
+  const same = colList('wbs').find(w => w.kind === 'pdf' && w.name === name);
+  const id = same ? same.id : E.uid('rd');
+  await FILES.save('refdocs', id, bytes, { name });
+  let text = '';
+  try { const r = await E.extract({ name, mime: 'application/pdf', bytes }, { vision: false }); text = E.clip(r.text || '', 200000); } catch {}
+  colPut('wbs', { id, kind: 'pdf', name, title: name.replace(/\.pdf$/i, '').replace(/_/g, ' '), about: E.clip((text || '').replace(/\s+/g, ' '), 220), text, addedAt: (same && same.addedAt) || nowISO(), size: bytes.length });
+}
+
+/* --- opening a workbook: original file + your saved changes --- */
+async function wbOpen(id) {
+  if (WB_OPEN.has(id)) return WB_OPEN.get(id);
+  const meta = St.cols.wbs.get(id); if (!meta) throw new Error('Workbook not found');
+  const bytes = await FILES.load('workbooks', id); if (!bytes) throw new Error('The workbook file is not on this computer yet.');
+  const model = await wbModel(bytes, meta.name);
+  const book = new WBE.Book(model);
+  const ed = St.cols.wbedits.get(id);
+  for (const op of (ed && ed.ops) || []) wbApply(book, op);
+  const o = { book, model, meta, inputs: wbInputs(book) };
+  WB_OPEN.set(id, o); return o;
+}
+function wbApply(book, op) {
+  if (op.t === 'set') book.setInput(op.s, op.r, op.c, op.v);
+  else if (op.t === 'ins') { book.shiftRows(op.s, op.at, op.n, op.expand); wbCopyRowStyle(book, op.s, op.at - 1, op.at, op.n); }
+  else if (op.t === 'del') book.deleteRows(op.s, op.at, op.n);
+}
+function wbCopyRowStyle(book, sheet, from, at, n) {
+  const sh = book.sheet(sheet); if (!sh || from < 1) return;
+  for (const [k, cell] of [...sh.cells]) { const [r, c] = k.split(',').map(Number); if (r !== from || cell.s === undefined) continue; for (let i = 0; i < n; i++) { const kk = (at + i) + ',' + c; if (!sh.cells.has(kk)) sh.cells.set(kk, { v: null, s: cell.s }); } }
+}
+function wbRecord(id, op) {
+  const cur = St.cols.wbedits.get(id) || { id, ops: [] };
+  let ops = cur.ops.slice();
+  // a later value for the same cell replaces the earlier one when no rows moved in between
+  if (op.t === 'set') { for (let i = ops.length - 1; i >= 0; i--) { const o = ops[i]; if (o.t !== 'set') break; if (o.s === op.s && o.r === op.r && o.c === op.c) { ops.splice(i, 1); break; } } }
+  ops.push(op);
+  colPut('wbedits', { ...cur, ops });
+}
+// which cells you type into: constants that formulas read (one cell or a small table) or that have a drop-down
+function wbInputs(book) {
+  const refd = new Set();
+  for (const sh of book.order) for (const [, cell] of sh.cells) {
+    if (!cell.f) continue;
+    let ast; try { ast = WBE.parse(cell.f); } catch { continue; }
+    const walk = n => { if (!n || typeof n !== 'object') return; if (n.k === 'ref' && !n.wholeCol && !n.wholeRow) { const size = (n.r2 - n.r1 + 1) * (n.c2 - n.c1 + 1); if (size <= 60) { const s = (n.sheet || sh.name).toLowerCase(); for (let r = n.r1; r <= n.r2; r++) for (let c = n.c1; c <= n.c2; c++) refd.add(s + '!' + r + ',' + c); } } ['a', 'b'].forEach(x => n[x] && walk(n[x])); (n.args || []).forEach(walk); };
+    walk(ast);
+  }
+  const out = new Set();
+  for (const sh of book.order) {
+    const dvCells = new Set(); for (const d of sh.src.dv || []) for (const [r1, c1, r2, c2] of d.ranges) for (let r = r1; r <= Math.min(r2, r1 + 400); r++) for (let c = c1; c <= c2; c++) dvCells.add(r + ',' + c);
+    for (const [k, cell] of sh.cells) { if (cell.f) continue; if (dvCells.has(k) || refd.has(sh.name.toLowerCase() + '!' + k)) out.add(sh.name + '!' + k); }
+    for (const k of dvCells) { if (!sh.cells.has(k)) { const [r, c] = k.split(',').map(Number); if (r <= (sh.src.maxR || 0) + 1) out.add(sh.name + '!' + k); } }
+  }
+  return out;
+}
+
+/* --- the view --- */
+function wbLibraryHTML() {
+  const all = colList('wbs').sort((a, b) => (a.kind || 'x').localeCompare(b.kind || 'x') || (a.title || '').localeCompare(b.title || ''));
+  const books = all.filter(w => !w.kind), html = all.filter(w => w.kind === 'html'), pdfs = all.filter(w => w.kind === 'pdf');
+  const card = w => `<article class="card pad wb-card" data-kind="${esc(w.kind || 'xlsx')}"><div class="row"><span class="wb-ic">${w.kind === 'html' ? '🌐' : w.kind === 'pdf' ? '📕' : '📗'}</span><div class="wb-t"><b dir="auto">${esc(w.title)}</b>${w.subtitle ? `<small dir="auto">${esc(E.clip(cleanTitle(w.subtitle), 120))}</small>` : ''}</div></div>
+    ${w.about ? `<p class="small muted" dir="auto">${esc(E.clip(w.about, 220))}</p>` : ''}
+    <div class="row wb-meta"><span class="small muted">${w.kind ? esc(w.name) : `${(w.sheets || []).length} sheets · ${w.formulas || 0} formulas`}${w.revision ? ' · ' + esc(E.clip(w.revision, 40)) : ''}</span><span class="spacer"></span>
+      ${w.kind === 'html' ? `<button class="btn sm primary" data-act="ht-open" data-id="${esc(w.id)}">Open</button>` : w.kind === 'pdf' ? `<button class="btn sm" data-act="rd-open" data-id="${esc(w.id)}">Open</button>` : `<button class="btn sm primary" data-act="wb-open" data-id="${esc(w.id)}">Open</button>`}
+      <button class="icon-btn" data-act="wb-remove" data-id="${esc(w.id)}" aria-label="Remove ${esc(w.title)}">${I.trash}</button></div>${w.note ? `<p class="small" style="color:var(--warn,#9E6410);margin:4px 0 0">${esc(w.note)}</p>` : ''}</article>`;
+  const hits = UI.wb.allq.trim().length > 1 ? wbSearchAll(UI.wb.allq) : null;
+  return `<section class="card pad wb-drop" id="wb-drop"><div class="row"><div style="flex:1;min-width:220px"><b>Your workbooks and tools</b><div class="small muted">Add Excel workbooks (.xlsx), web tools (.html), reference PDFs, or a .zip of them. They stay private on this computer (and in your cloud account when sync is on). Every formula, drop-down and library table works as in Excel.</div></div>
+      <label class="btn primary">${I.upload} Add files<input type="file" id="wb-file" multiple accept=".xlsx,.xlsm,.xls,.zip,.html,.htm,.pdf" hidden></label></div></section>
+    ${books.length ? `<div class="row doc-bar"><label class="search todo-search">${I.search}<span class="sr">Search all libraries</span><input class="input" id="wb-allq" type="search" placeholder="Search every library table — e.g. DN 300 PN16, PE100 SDR17, 6 mm bars…" value="${esc(UI.wb.allq)}" data-inp-wb="allq"></label></div>` : ''}
+    ${hits ? wbHitsHTML(hits) : ''}
+    ${books.length ? `<div class="wb-grid">${books.map(card).join('')}</div>` : '<div class="empty"><div class="big-emoji">📗</div><h3>No workbooks yet</h3><p>Add your calculation sheets above — your pipe ID tool, bar-screen calculations, pump check sheet and so on.</p></div>'}
+    ${html.length ? `<h3 class="wb-h">Web tools</h3><div class="wb-grid">${html.map(card).join('')}</div>` : ''}
+    ${pdfs.length ? `<h3 class="wb-h">Reference documents</h3><div class="wb-grid">${pdfs.map(card).join('')}</div>` : ''}`;
+}
+function wbSearchAll(q) {
+  const words = E.normMatch(q).split(' ').filter(Boolean), out = [];
+  for (const [id, o] of WB_OPEN) {
+    for (const sh of o.book.order) {
+      if (!isLibSheet(sh.src) && sh.src.maxR < 40) continue;
+      const rows = new Map(); for (const [k, cell] of sh.cells) { if (cell.v === null || cell.v === undefined) continue; const r = +k.split(',')[0]; rows.set(r, (rows.get(r) || '') + ' ' + o.book.display(sh.name, r, +k.split(',')[1])); }
+      for (const [r, text] of rows) { const t = E.normMatch(text); if (words.every(w => t.includes(w))) { out.push({ id, title: o.meta.title, sheet: sh.name, r, text: text.trim() }); if (out.length > 60) return out; } }
+    }
+  }
+  // match the reference PDFs too
+  for (const w of colList('wbs').filter(x => x.kind === 'pdf' && x.text)) { const t = E.normMatch(w.text); if (words.every(x => t.includes(x))) { const i = t.indexOf(words[0]); out.push({ pdf: w.id, title: w.title, text: E.clip(w.text.replace(/\s+/g, ' ').slice(Math.max(0, i - 60)), 200) }); } }
+  return out;
+}
+function wbHitsHTML(hits) {
+  const notOpen = colList('wbs').filter(w => !w.kind && !WB_OPEN.has(w.id)).length;
+  return `<section class="card pad"><div class="section-title"><h2>Found in your libraries</h2><span class="count">${hits.length}</span></div>
+    ${hits.length ? `<div class="dlist">${hits.slice(0, 60).map(h => h.pdf ? `<div class="row"><button class="dtitle" data-act="rd-open" data-id="${esc(h.pdf)}">📕 ${esc(h.title)}</button><span class="small muted" dir="auto">${esc(h.text)}</span></div>` : `<div class="row"><button class="dtitle" data-act="wb-goto" data-id="${esc(h.id)}" data-sheet="${esc(h.sheet)}" data-r="${h.r}">📗 ${esc(h.title)} › ${esc(h.sheet)} row ${h.r}</button><span class="small muted mono" dir="auto">${esc(E.clip(h.text, 160))}</span></div>`).join('')}</div>` : '<p class="small muted">No match.</p>'}
+    ${notOpen ? `<p class="small muted">${notOpen} workbook${notOpen > 1 ? 's are' : ' is'} not loaded yet. <button class="btn sm ghost" data-act="wb-loadall">Search them too</button></p>` : ''}</section>`;
+}
+function wbViewHTML() {
+  const o = WB_OPEN.get(UI.wb.open);
+  if (!o) return `<div class="empty"><div class="big-emoji">⏳</div><h3>Opening the workbook…</h3></div>`;
+  const book = o.book, sheets = book.order.filter(s => s.src.state === 'visible' || UI.wb.hidden);
+  const sh = sheets[Math.min(UI.wb.sheet, sheets.length - 1)] || sheets[0];
+  const lib = isLibSheet(sh.src);
+  const edits = ((St.cols.wbedits.get(o.meta.id) || {}).ops || []).length;
+  const runs = colList('calcruns').filter(x => x.wbId === o.meta.id).sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+  const dvSheets = [...new Set((sh.src.dv || []).filter(d => d.type === 'list').map(d => (/^(?:'([^']+)'|(\w+))!/.exec(d.f1) || [])[1] || (/^(?:'([^']+)'|(\w+))!/.exec(d.f1) || [])[2]).filter(Boolean))];
+  return `<div class="wb-head"><button class="btn sm ghost" data-act="wb-close">‹ All workbooks</button><b class="wb-title" dir="auto">${esc(o.meta.title)}</b><span class="spacer"></span>
+      <label class="search todo-search wb-q">${I.search}<span class="sr">Search this sheet</span><input class="input" id="wb-q" type="search" placeholder="Find in this sheet…" value="${esc(UI.wb.q)}" data-inp-wb="q"></label>
+      ${lib ? `<button class="btn sm ${UI.wb.edit ? 'primary' : ''}" data-act="wb-edit" aria-pressed="${UI.wb.edit}">${UI.wb.edit ? '✓ Done editing' : '✎ Edit this table'}</button>` : ''}
+      <details class="menu" data-menu="wbmore"><summary class="btn sm">⋯ More</summary><div class="menu-pop">
+        <button class="btn sm ghost" data-act="wb-save-run">💾 Save this calculation…</button>
+        <button class="btn sm ghost" data-act="wb-note" data-f="pdf">📄 Calculation note (PDF)</button>
+        <button class="btn sm ghost" data-act="wb-note" data-f="docx">📝 Calculation note (Word)</button>
+        <button class="btn sm ghost" data-act="wb-export">⬇ Download as Excel (with your changes)</button>
+        ${St.sample ? '<button class="btn sm ghost" data-act="wb-ask">✨ Explain this sheet / checks</button>' : ''}
+        <button class="btn sm ghost" data-act="wb-hidden">${UI.wb.hidden ? 'Hide' : 'Show'} hidden sheets</button>
+        ${edits ? `<button class="btn sm ghost danger" data-act="wb-reset">↺ Undo all my changes (${edits})</button>` : ''}
+      </div></details></div>
+    <div class="wb-tabs" role="tablist">${sheets.map((s, i) => `<button role="tab" class="${s === sh ? 'on' : ''}" data-act="wb-sheet" data-i="${i}" style="${s.src.tab ? `--tab:#${s.src.tab}` : ''}">${esc(s.name)}${s.src.state !== 'visible' ? ' (hidden)' : ''}</button>`).join('')}</div>
+    ${UI.wb.edit && lib ? callout('info', `Editing <b>${esc(sh.name)}</b>: click any value to change it. Use <b>＋</b> in the row margin to add a row below (tables that end on that row grow with it) and <b>✕</b> to delete one. Changes are saved and every formula follows at once.${dvSheets.length ? ` If a drop-down should offer a new size, add it to the <b>${esc(dvSheets.join(', '))}</b> sheet too.` : ''}`) : ''}
+    <div class="wb-body ${runs.length ? 'with-runs' : ''}">
+      <div class="wb-scroll" id="wb-scroll">${wbSheetHTML(o, sh, lib && UI.wb.edit)}</div>
+      ${runs.length ? `<aside class="card pad wb-runs"><div class="label">Saved calculations</div>${runs.map(r => `<div class="wb-run"><button class="dtitle" data-act="wb-run-load" data-id="${esc(r.id)}" dir="auto">${esc(r.title)}</button><small class="muted">${esc([r.project, r.tag, r.rev && 'Rev ' + r.rev, fmtDate(dayOf(r.createdAt))].filter(Boolean).join(' · '))}</small>${(r.checks || []).length ? `<small>${r.checks.slice(0, 3).map(c => esc(E.clip(c, 50))).join('<br>')}</small>` : ''}<button class="icon-btn" data-act="wb-run-del" data-id="${esc(r.id)}" aria-label="Delete">${I.x}</button></div>`).join('')}</aside>` : ''}
+    </div>`;
+}
+const pxW = w => Math.round((w || 8.43) * 7 + 5);
+function wbStyleCSS(o) {
+  if (o.css) return o.css;
+  const rules = (o.model.styles || []).map((st, i) => {
+    const r = [];
+    if (st.bg) r.push(`background:#${st.bg}`); if (st.fg) r.push(`color:#${st.fg}`); if (st.b) r.push('font-weight:700'); if (st.i) r.push('font-style:italic'); if (st.u) r.push('text-decoration:underline');
+    if (st.sz) r.push(`font-size:${(st.sz * 1.333).toFixed(1)}px`); if (st.ha) r.push(`text-align:${st.ha === 'centerContinuous' ? 'center' : st.ha === 'justify' || st.ha === 'distributed' ? 'justify' : st.ha === 'fill' ? 'left' : st.ha}`);
+    if (st.va) r.push(`vertical-align:${st.va === 'center' ? 'middle' : st.va === 'top' ? 'top' : 'bottom'}`); if (st.wrap) r.push('white-space:pre-wrap'); if (st.ind) r.push(`padding-left:${4 + st.ind * 9}px`);
+    if (st.bd) ['top', 'right', 'bottom', 'left'].forEach((side, k) => { const b = st.bd[k]; if (b) { const [w, c] = b.split(':'); r.push(`border-${side}:${w}px solid #${c}`); } });
+    return `.wbx-${o.meta.id} .s${i}{${r.join(';')}}`;
+  });
+  return (o.css = rules.join('\n'));
+}
+function wbSheetHTML(o, sh, editLib) {
+  const book = o.book, src = sh.src, maxR = Math.max(src.maxR || 1, 1), maxC = Math.max(src.maxC || 1, 1);
+  const hidC = new Set(src.cols.map((c, i) => (c.hidden ? i + 1 : 0)).filter(Boolean));
+  const span = new Map(), covered = new Set();
+  for (const [r1, c1, r2, c2] of src.merges || []) { span.set(r1 + ',' + c1, [r2 - r1 + 1, c2 - c1 + 1]); for (let r = r1; r <= r2; r++) for (let c = c1; c <= c2; c++) if (r !== r1 || c !== c1) covered.add(r + ',' + c); }
+  const q = E.normMatch(UI.wb.q || ''); const words = q ? q.split(' ') : [];
+  const limit = UI.wb.rows || 400;
+  let rowsOut = 0; const trs = [];
+  for (let r = 1; r <= maxR && rowsOut < limit; r++) {
+    const rh = src.rows && src.rows[r]; if (rh && rh.hidden) continue;
+    if (words.length && r > 1) { let t = ''; for (let c = 1; c <= maxC; c++) { const cell = sh.cells.get(r + ',' + c); if (cell) t += ' ' + book.display(sh.name, r, c); } const nt = E.normMatch(t); if (!words.every(w => nt.includes(w))) continue; }
+    rowsOut++;
+    const tds = [];
+    if (editLib) tds.push(`<td class="wb-rn"><span>${r}</span><button data-act="wb-row-add" data-r="${r}" title="Add a row below" aria-label="Add a row below row ${r}">＋</button><button data-act="wb-row-del" data-r="${r}" title="Delete this row" aria-label="Delete row ${r}">✕</button></td>`);
+    for (let c = 1; c <= maxC; c++) {
+      if (hidC.has(c)) continue;
+      const k = r + ',' + c; if (covered.has(k)) continue;
+      const cell = sh.cells.get(k), sp = span.get(k);
+      let colspan = 1; if (sp) { for (let j = c; j < c + sp[1]; j++) if (!hidC.has(j)) colspan++; colspan--; }
+      const attrs = [sp && sp[0] > 1 ? `rowspan="${sp[0]}"` : '', colspan > 1 ? `colspan="${colspan}"` : ''].filter(Boolean).join(' ');
+      const isInput = !(cell && cell.f) && (o.inputs.has(sh.name + '!' + k) || editLib);
+      const text = cell ? book.display(sh.name, r, c) : '';
+      const v = cell ? book.value(sh.name, r, c) : null;
+      const cls = [cell && cell.s !== undefined ? 's' + cell.s : '', cell && cell.f ? 'f' : '', isInput ? 'in' : '', typeof v === 'number' && !(cell && cell.s !== undefined && (o.model.styles[cell.s] || {}).ha) ? 'num' : '', /^\s*✓/.test(text) ? 'ok' : /^\s*[✗✘]/.test(text) ? 'bad' : /^\s*⚠/.test(text) ? 'warn' : '', WBE.isErr(v) ? 'err' : '', book.links.has(sh.name + '!' + r + ',' + c) ? 'lnk' : ''].filter(Boolean).join(' ');
+      const dv = isInput ? book.validation(sh.name, r, c) : null;
+      tds.push(`<td ${attrs} class="${cls}" data-k="${k}"${isInput ? ` tabindex="0"${dv && dv.type === 'list' ? ' data-dv="1"' : ''}` : ''}>${esc(text)}</td>`);
+    }
+    trs.push(`<tr data-r="${r}" style="${rh && rh.h ? `height:${Math.round(rh.h * 1.333)}px` : ''}">${tds.join('')}</tr>`);
+  }
+  const cols = (editLib ? '<col style="width:58px">' : '') + src.cols.map((c, i) => hidC.has(i + 1) ? '' : `<col style="width:${pxW(c.w)}px">`).join('');
+  const more = rowsOut >= limit ? `<div class="wb-more"><button class="btn sm" data-act="wb-more">Show more rows</button></div>` : '';
+  return `<style>${wbStyleCSS(o)}</style><!--raw--><table class="wb-grid-t wbx-${esc(o.meta.id)} ${src.grid ? 'grid' : ''}" data-sheet="${esc(sh.name)}"><colgroup>${cols}</colgroup><tbody>${trs.join('')}</tbody></table><!--/raw-->${more}`;
+}
+// after an input changes, refresh only the computed cells' text
+function wbRefresh() {
+  const o = WB_OPEN.get(UI.wb.open), t = $('.wb-grid-t'); if (!o || !t) return;
+  const sheet = t.dataset.sheet;
+  t.querySelectorAll('td[data-k]').forEach(td => {
+    const [r, c] = td.dataset.k.split(',').map(Number); const cell = o.book.cell(sheet, r, c); if (!cell) return;
+    if (!cell.f && !td.classList.contains('in')) return;
+    const text = o.book.display(sheet, r, c); if (td.textContent !== text && !td.querySelector('input,select')) td.textContent = text;
+    td.classList.toggle('ok', /^\s*✓/.test(text)); td.classList.toggle('bad', /^\s*[✗✘]/.test(text)); td.classList.toggle('warn', /^\s*⚠/.test(text)); td.classList.toggle('err', WBE.isErr(o.book.value(sheet, r, c)));
+  });
+}
+function wbEditCell(td) {
+  const o = WB_OPEN.get(UI.wb.open), t = td.closest('.wb-grid-t'); if (!o || !t || td.querySelector('input,select')) return;
+  const sheet = t.dataset.sheet, [r, c] = td.dataset.k.split(',').map(Number);
+  const cell = o.book.cell(sheet, r, c) || {}, v = cell.v;
+  const dv = o.book.validation(sheet, r, c);
+  const w = Math.max(60, td.clientWidth - 4);
+  if (dv && dv.type === 'list') {
+    const cur = o.book.display(sheet, r, c);
+    td.innerHTML = `<select class="wb-ed hold-render" style="width:${w}px">${(dv.list.includes(v) ? [] : [v]).concat(dv.list).filter(x => x !== null && x !== undefined).map(x => `<option ${String(x) === String(v) || WBE.toStr(x) === cur ? 'selected' : ''}>${esc(WBE.toStr(x))}</option>`).join('')}</select>`;
+  } else {
+    const raw = typeof v === 'number' && (o.model.styles[cell.s] || {}).nf && /%/.test(o.model.styles[cell.s].nf) ? (v * 100) + '%' : v === null || v === undefined ? '' : String(v);
+    td.innerHTML = `<input class="wb-ed hold-render" style="width:${w}px" value="${esc(raw)}" ${typeof v === 'number' ? 'inputmode="decimal"' : ''}>`;
+  }
+  const ed = td.querySelector('.wb-ed'); ed.focus(); if (ed.select) ed.select();
+  let done = false;
+  const commit = (save) => {
+    if (done) return; done = true;
+    if (save) {
+      let nv = ed.value;
+      if (ed.tagName === 'SELECT') { const hit = dv.list.find(x => WBE.toStr(x) === nv); nv = hit !== undefined ? hit : nv; }
+      // like Excel, an entry that reads as a number is stored as a number
+      if (typeof nv === 'string' && /^\s*-?[\d.,]+\s*%?\s*$/.test(nv) && nv.trim() !== '') { const n = WBE.toNum(nv.replace(/,(?=\d{3}\b)/g, '')); if (!WBE.isErr(n)) nv = n; }
+      if (nv !== v && !(nv === '' && (v === null || v === undefined))) { wbSetCell(o, sheet, r, c, nv === '' ? null : nv); }
+    }
+    td.textContent = o.book.display(sheet, r, c);
+    wbRefresh();
+    // a redraw that waited for the editor runs now (unless the next cell's editor is opening)
+    if (UI.cvPending) setTimeout(() => { if (!(document.activeElement && document.activeElement.classList.contains('hold-render'))) { UI.cvPending = false; render(); } }, 0);
+  };
+  ed.addEventListener('blur', () => commit(true));
+  ed.addEventListener('change', () => { if (ed.tagName === 'SELECT') ed.blur(); });
+  ed.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { e.preventDefault(); commit(false); td.focus(); }
+    if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); commit(true); const all = [...t.querySelectorAll('td.in')]; const i = all.indexOf(td); const next = all[i + (e.shiftKey ? -1 : 1)]; if (next) { next.focus(); wbEditCell(next); } }
+  });
+}
+function wbSetCell(o, sheet, r, c, v) {
+  const before = o.book.cell(sheet, r, c);
+  o.book.setInput(sheet, r, c, v); wbRecord(o.meta.id, { t: 'set', s: sheet, r, c, v });
+  // keep the same library row in step in your other workbooks
+  const sh = o.book.sheet(sheet);
+  if (UI.wb.edit && isLibSheet(sh.src) && before && before.v !== null) wbSyncLibraries(o, sheet, r, c, before.v, v);
+}
+function wbSyncLibraries(o, sheet, r, c, oldV, newV) {
+  const key = [1, 2, 3].map(cc => WBE.toStr(o.book.value(sheet, r, cc))).join('|');
+  const head = col => { for (let rr = 1; rr <= Math.min(r - 1, 12); rr++) { const v = o.book.value(sheet, rr, col); if (typeof v === 'string' && v.trim()) return v.trim(); } return ''; };
+  const h = head(c); let n = 0;
+  for (const [id, other] of WB_OPEN) {
+    if (id === o.meta.id) continue; const sh2 = other.book.sheet(sheet); if (!sh2) continue;
+    for (const [k, cell] of sh2.cells) { const [rr, cc] = k.split(',').map(Number); if (cc !== c || cell.f || WBE.toStr(cell.v) !== WBE.toStr(oldV)) continue;
+      const key2 = [1, 2, 3].map(x => WBE.toStr(other.book.value(sheet, rr, x === c ? -1 : x) ?? '')).join('|');
+      const keyOld = [1, 2, 3].map(x => (x === c ? WBE.toStr(oldV) : WBE.toStr(o.book.value(sheet, r, x)))).join('|');
+      const key2b = [1, 2, 3].map(x => WBE.toStr(other.book.value(sheet, rr, x))).join('|');
+      let h2 = ''; for (let x = 1; x <= Math.min(rr - 1, 12); x++) { const v = other.book.value(sheet, x, c); if (typeof v === 'string' && v.trim()) { h2 = v.trim(); break; } }
+      if ((key2b === keyOld || key2b === key) && h2 === h) { other.book.setInput(sheet, rr, cc, newV); wbRecord(id, { t: 'set', s: sheet, r: rr, c: cc, v: newV }); n++; }
+      void key2; }
+  }
+  if (n) toast(`Also updated in ${n} other workbook${n > 1 ? 's' : ''} that use the same table.`);
+}
+
+/* --- saved calculations, calculation notes, export, AI explain --- */
+function wbCurrentInputs(o) { const out = []; for (const key of o.inputs) { const [s, k] = [key.slice(0, key.lastIndexOf('!')), key.slice(key.lastIndexOf('!') + 1)]; const sh = o.book.sheet(s); if (!sh || isLibSheet(sh.src)) continue; const [r, c] = k.split(',').map(Number); const cell = sh.cells.get(k); out.push({ s, r, c, v: cell ? cell.v : null }); } return out; }
+function wbChecks(o, sheetName) { const sh = o.book.sheet(sheetName); const out = []; if (!sh) return out; for (const [k, cell] of sh.cells) { if (!cell.f) continue; const [r, c] = k.split(',').map(Number); const t = o.book.display(sheetName, r, c); if (/^\s*[✓✗✘⚠➤]/.test(t)) out.push(t.trim()); } return out.slice(0, 12); }
+function wbSheetNow(o) { const sheets = o.book.order.filter(s => s.src.state === 'visible' || UI.wb.hidden); return sheets[Math.min(UI.wb.sheet, sheets.length - 1)] || sheets[0]; }
+function openSaveRun() {
+  const o = WB_OPEN.get(UI.wb.open); if (!o) return; const sh = wbSheetNow(o);
+  const title = (() => { for (let r = 1; r <= 6; r++) for (let c = 1; c <= 4; c++) { const v = o.book.value(sh.name, r, c); if (typeof v === 'string' && v.trim().length > 6) return cleanTitle(v); } return o.meta.title; })();
+  const projects = [...new Set([...St.tasks.values()].map(t => (t.project || '').trim()).filter(Boolean))].sort();
+  const tasks = [...St.tasks.values()].filter(t => t.status !== 'done').sort((a, b) => (a.ref || '').localeCompare(b.ref || ''));
+  const m = $('#modal');
+  m.innerHTML = deco(`<div class="card pad wb-savebox" role="dialog" aria-label="Save calculation"><div class="row"><b>💾 Save this calculation</b><span class="spacer"></span><button class="icon-btn" data-act="close-modal" aria-label="Close">${I.x}</button></div>
+    <label class="field"><span>Title</span><input class="input" id="sr-title" dir="auto" value="${esc(title)}"></label>
+    <div class="grid-2"><label class="field"><span>Project</span><input class="input" id="sr-proj" list="sr-projs" dir="auto"><datalist id="sr-projs">${projects.map(p => `<option value="${esc(p)}">`).join('')}</datalist></label>
+      <label class="field"><span>Equipment tag</span><input class="input" id="sr-tag" placeholder="e.g. P-101A"></label>
+      <label class="field"><span>Revision</span><input class="input" id="sr-rev" value="A"></label>
+      <label class="field"><span>Checked by</span><input class="input" id="sr-chk" dir="auto"></label></div>
+    <label class="field"><span>Link to a task (optional)</span><select class="input" id="sr-task"><option value="">—</option>${tasks.map(t => `<option value="${esc(t.id)}">${esc(t.ref + ' ' + E.clip(t.title, 70))}</option>`).join('')}</select></label>
+    <div class="row end"><button class="btn primary" data-act="wb-save-run-ok">Save</button></div></div>`);
+  m.hidden = false;
+}
+function saveRun() {
+  const o = WB_OPEN.get(UI.wb.open); if (!o) return; const sh = wbSheetNow(o); const v = id => (($('#' + id) || {}).value || '').trim();
+  const run = { id: E.uid('cr'), wbId: o.meta.id, wbTitle: o.meta.title, sheet: sh.name, title: v('sr-title') || o.meta.title, project: v('sr-proj'), tag: v('sr-tag'), rev: v('sr-rev'), checkedBy: v('sr-chk'), taskId: v('sr-task'), by: St.settings.me.name || '', inputs: wbCurrentInputs(o), checks: wbChecks(o, sh.name), createdAt: nowISO() };
+  colPut('calcruns', run);
+  if (run.taskId && St.tasks.has(run.taskId)) { const t = clone(St.tasks.get(run.taskId)); (t.history = t.history || []).push({ at: nowISO(), text: `Calculation saved: ${run.title}${run.rev ? ' Rev ' + run.rev : ''}` }); putTask(t); }
+  $('#modal').hidden = true; render(); toast('Calculation saved.');
+}
+async function loadRun(id) {
+  const run = St.cols.calcruns.get(id); if (!run) return;
+  const o = await wbOpen(run.wbId);
+  for (const x of run.inputs || []) { const cell = o.book.cell(x.s, x.r, x.c); if (!cell || !cell.f) { o.book.setInput(x.s, x.r, x.c, x.v); wbRecord(run.wbId, { t: 'set', s: x.s, r: x.r, c: x.c, v: x.v }); } }
+  UI.view = 'tools'; UI.toolTab = 'wb'; UI.wb.open = run.wbId; const vis = o.book.order.filter(s => s.src.state === 'visible' || UI.wb.hidden); UI.wb.sheet = Math.max(0, vis.findIndex(s => s.name === run.sheet)); UI.wb.edit = false;
+  render(); toast(`Loaded “${run.title}”.`);
+}
+TASK_ACTIONS.push(t => { const runs = colList('calcruns').filter(r => r.taskId === t.id); return runs.length ? runs.map(r => `<button class="btn sm ghost" data-act="wb-run-load" data-id="${esc(r.id)}" title="Open this calculation">🧮 ${esc(E.clip(r.title, 40))}${r.rev ? ' Rev ' + esc(r.rev) : ''}</button>`).join('') : ''; });
+function wbNoteHTML(o, sh, meta) {
+  const t = $('.wb-grid-t'); const grid = t ? t.outerHTML.replace(/<button[^>]*>.*?<\/button>/g, '') : '';
+  const css = wbStyleCSS(o).replace(new RegExp('\\.wbx-' + o.meta.id, 'g'), '.note-grid');
+  const tb = [['Project', meta.project], ['Calculation', meta.title], ['Tag', meta.tag], ['Revision', meta.rev], ['Prepared by', meta.by], ['Checked by', meta.checkedBy], ['Date', fmtDate(T(), { day: 'numeric', month: 'short', year: 'numeric' })]].filter(x => x[1]);
+  return `<style>${css} .note-grid{border-collapse:collapse;table-layout:fixed;font-size:8.5pt} .note-grid td{padding:2px 4px;overflow:hidden;border:0} .tb{width:100%;border-collapse:collapse;margin-bottom:10pt} .tb td{border:1px solid #999;padding:3pt 6pt;font-size:9pt}</style>
+    <table class="tb"><tbody>${tb.map(([a, b]) => `<tr><td style="width:28%;background:#EEF3F2"><b>${esc(a)}</b></td><td dir="auto">${esc(b)}</td></tr>`).join('')}</tbody></table>
+    ${grid.replace(/class="wb-grid-t[^"]*"/, 'class="note-grid"')}<p class="muted" style="font-size:8pt;margin-top:8pt">From ${esc(o.meta.name)}, sheet “${esc(sh.name)}”. Calculated with Action Register.</p>`;
+}
+async function wbNote(fmt) {
+  const o = WB_OPEN.get(UI.wb.open); if (!o) return; const sh = wbSheetNow(o);
+  const last = colList('calcruns').filter(r => r.wbId === o.meta.id && r.sheet === sh.name).sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''))[0] || {};
+  const meta = { title: last.title || o.meta.title, project: last.project, tag: last.tag, rev: last.rev, by: St.settings.me.name, checkedBy: last.checkedBy };
+  const base = (meta.title || 'calculation').replace(/[^\w؀-ۿ -]+/g, '').replace(/\s+/g, '-').slice(0, 60) + '-' + T();
+  if (fmt === 'pdf') return printDoc(wbNoteHTML(o, sh, meta), base + '.pdf', (sh.src.cols || []).reduce((a, c) => a + (c.hidden ? 0 : pxW(c.w)), 0) > 760, meta.title);
+  try {
+    const d = await E.need('docx'); const P = (text, o2 = {}) => new d.Paragraph({ children: [new d.TextRun({ text: String(text ?? ''), ...o2 })] });
+    const rows = []; const src = sh.src; const hid = new Set(src.cols.map((c, i) => (c.hidden ? i + 1 : 0)).filter(Boolean));
+    for (let r = 1; r <= Math.min(src.maxR, 400); r++) { const cells = []; let any = false; for (let c = 1; c <= src.maxC; c++) { if (hid.has(c)) continue; const t = o.book.display(sh.name, r, c); if (t) any = true; cells.push(t); } if (any) rows.push(cells); }
+    const width = Math.max(...rows.map(r => r.length), 1);
+    const doc = new d.Document({ sections: [{ properties: { page: { size: { orientation: width > 6 ? d.PageOrientation.LANDSCAPE : d.PageOrientation.PORTRAIT } } }, children: [
+      new d.Paragraph({ text: meta.title, heading: d.HeadingLevel.TITLE }),
+      P([meta.project, meta.tag, meta.rev && 'Rev ' + meta.rev, meta.by && 'Prepared by ' + meta.by, meta.checkedBy && 'Checked by ' + meta.checkedBy, fmtDate(T(), { day: 'numeric', month: 'short', year: 'numeric' })].filter(Boolean).join('   ·   '), { color: '5B6B68' }),
+      new d.Table({ width: { size: 100, type: d.WidthType.PERCENTAGE }, rows: rows.map(cells => new d.TableRow({ children: cells.map(t => new d.TableCell({ children: [P(t, { size: 16 })] })) })) }),
+      P('From ' + o.meta.name + ', sheet “' + sh.name + '”.', { size: 14, color: '7A8A87' }),
+    ] }] });
+    await offerFile(base + '.docx', await d.Packer.toBlob(doc));
+  } catch (e) { toast('Could not create the Word file: ' + (e.message || e), { err: true }); }
+}
+async function wbExport() {
+  const o = WB_OPEN.get(UI.wb.open); if (!o) return;
+  try {
+    const [EJ, Z] = await Promise.all([E.need('exceljs'), E.need('jszip')]);
+    const bytes = await FILES.load('workbooks', o.meta.id); const wb = await WBC.read(EJ, Z, bytes);
+    const ops = ((St.cols.wbedits.get(o.meta.id) || {}).ops) || [];
+    const structural = ops.some(x => x.t !== 'set');
+    for (const sh of o.book.order) {
+      const ws = wb.getWorksheet(sh.name); if (!ws) continue;
+      if (structural) { for (const op of ops.filter(x => x.s === sh.name && x.t !== 'set')) { if (op.t === 'ins') ws.spliceRows(op.at, 0, ...Array.from({ length: op.n }, () => [])); else ws.spliceRows(op.at, op.n); } }
+      for (const [k, cell] of sh.cells) {
+        const [r, c] = k.split(',').map(Number); const x = ws.getCell(r, c);
+        if (cell.f) { if (structural) x.value = { formula: cell.f }; continue; }
+        const cur = x.value; const curV = cur && typeof cur === 'object' && !(cur instanceof Date) ? (cur.richText ? cur.richText.map(t => t.text).join('') : cur.result) : cur;
+        if (cell.v !== curV && !(cell.v === null && (curV === null || curV === undefined))) x.value = cell.v;
+      }
+    }
+    const out = await wb.xlsx.writeBuffer();
+    await offerFile(o.meta.name.replace(/\.(xlsx|xlsm|xls)$/i, '') + (ops.length ? ' (edited)' : '') + '.xlsx', new Blob([out]));
+    if (structural) toast('Rows you added or deleted are in the file; check the formulas that read them once in Excel.');
+  } catch (e) { toast('Could not export: ' + (e.message || e), { err: true }); }
+}
+async function wbAsk() {
+  const o = WB_OPEN.get(UI.wb.open); if (!o || !St.sample) return; const sh = wbSheetNow(o);
+  const lines = []; for (let r = 1; r <= Math.min(sh.src.maxR, 160); r++) { const cells = []; for (let c = 1; c <= Math.min(sh.src.maxC, 12); c++) { const t = o.book.display(sh.name, r, c); if (t) cells.push(t); } if (cells.length) lines.push(r + ': ' + cells.join(' | ')); }
+  const m = $('#modal'); m.innerHTML = deco(`<div class="card pad ask-card"><div class="row"><b>✨ ${esc(sh.name)}</b><span class="spacer"></span><button class="icon-btn" data-act="close-modal" aria-label="Close">${I.x}</button></div><p class="muted">Reading the sheet…</p></div>`); m.hidden = false;
+  const prompt = `You are checking an engineer's calculation sheet (water / wastewater). Using ONLY the rows below (row: cells), explain in plain words: what the sheet calculates, the key results, every check that is not OK (✗ or ⚠) and which inputs to change to fix it. Do not invent numbers.
+SHEET: ${o.meta.title} › ${sh.name}
+${E.clip(lines.join('\n'), 60000)}
+Reply with JSON only: {"summary":"…","issues":[{"check":"…","why":"…","fix":"…"}]}`;
+  try { const r = await St.sample.json(prompt, { modelTier: 'quick' });
+    m.innerHTML = deco(`<div class="card pad ask-card"><div class="row"><b>✨ ${esc(sh.name)}</b><span class="spacer"></span><button class="icon-btn" data-act="close-modal" aria-label="Close">${I.x}</button></div><p dir="auto" style="white-space:pre-wrap">${esc((r && r.summary) || '')}</p>${((r && r.issues) || []).map(x => `<div class="callout warn"><div><b dir="auto">${esc(x.check)}</b><div dir="auto">${esc(x.why)}</div><div dir="auto"><b>Fix:</b> ${esc(x.fix)}</div></div></div>`).join('')}<p class="small muted">Check the advice against the sheet and your specification.</p></div>`);
+  } catch (e) { m.innerHTML = deco(`<div class="card pad"><p>Could not explain the sheet: ${esc(e.message || e)}</p><button class="btn" data-act="close-modal">Close</button></div>`); }
+}
+
+/* --- events --- */
+async function wbShow(id, sheetName, row) {
+  UI.view = 'tools'; UI.toolTab = 'wb'; UI.wb.open = id; UI.wb.q = ''; UI.wb.edit = false; UI.wb.rows = 400; render();
+  try { const o = await wbOpen(id); if (sheetName) { const vis = o.book.order.filter(s => s.src.state === 'visible' || UI.wb.hidden); let i = vis.findIndex(s => s.name === sheetName); if (i < 0) { UI.wb.hidden = true; i = o.book.order.findIndex(s => s.name === sheetName); } UI.wb.sheet = Math.max(0, i); if (row) UI.wb.rows = Math.max(400, row + 50); } else UI.wb.sheet = 0; }
+  catch (e) { UI.wb.open = null; toast(e.message || String(e), { err: true }); }
+  render();
+  if (row) requestAnimationFrame(() => { const tr = document.querySelector(`.wb-grid-t tr[data-r="${row}"]`); if (tr) { tr.scrollIntoView({ block: 'center' }); tr.classList.add('flash'); } });
+}
+Object.assign(ACT, {
+  'wb-open': el => wbShow(el.dataset.id),
+  'wb-goto': el => wbShow(el.dataset.id, el.dataset.sheet, +el.dataset.r),
+  'wb-close': () => { UI.wb.open = null; UI.wb.q = ''; render(); },
+  'wb-sheet': el => { UI.wb.sheet = +el.dataset.i; UI.wb.q = ''; UI.wb.edit = false; UI.wb.rows = 400; render(); },
+  'wb-edit': () => { UI.wb.edit = !UI.wb.edit; render(); },
+  'wb-hidden': () => { UI.wb.hidden = !UI.wb.hidden; UI.wb.sheet = 0; render(); },
+  'wb-more': () => { UI.wb.rows = (UI.wb.rows || 400) + 600; render(); },
+  'wb-remove': el => { const w = St.cols.wbs.get(el.dataset.id); if (!w) return; if (!confirm(`Remove “${w.title}” from the app? Your changes and saved calculations for it are removed too.`)) return; colDel('wbs', w.id); colDel('wbedits', w.id); FILES.remove(w.kind === 'html' ? 'htmltools' : w.kind === 'pdf' ? 'refdocs' : 'workbooks', w.id).catch(() => {}); WB_OPEN.delete(w.id); render(); },
+  'wb-reset': () => { const o = WB_OPEN.get(UI.wb.open); if (!o || !confirm('Undo every change you made to this workbook (inputs and library edits)?')) return; colDel('wbedits', o.meta.id); WB_OPEN.delete(o.meta.id); wbShow(o.meta.id); },
+  'wb-row-add': el => { const o = WB_OPEN.get(UI.wb.open); if (!o) return; const sh = wbSheetNow(o), r = +el.dataset.r; const op = { t: 'ins', s: sh.name, at: r + 1, n: 1, expand: true }; wbApply(o.book, op); wbRecord(o.meta.id, op); o.inputs = wbInputs(o.book); render(); },
+  'wb-row-del': el => { const o = WB_OPEN.get(UI.wb.open); if (!o) return; const sh = wbSheetNow(o), r = +el.dataset.r; if (!confirm(`Delete row ${r} of ${sh.name}? Formulas that pointed only at it will show #REF!.`)) return; const op = { t: 'del', s: sh.name, at: r, n: 1 }; wbApply(o.book, op); wbRecord(o.meta.id, op); o.inputs = wbInputs(o.book); render(); },
+  'wb-save-run': () => openSaveRun(), 'wb-save-run-ok': () => saveRun(),
+  'wb-run-load': el => { $('#modal').hidden = true; closeDrawer(); loadRun(el.dataset.id); },
+  'wb-run-del': el => { colDel('calcruns', el.dataset.id); render(); },
+  'wb-note': el => wbNote(el.dataset.f), 'wb-export': () => wbExport(), 'wb-ask': () => wbAsk(),
+  'wb-loadall': async () => { toast('Loading your workbooks…'); for (const w of colList('wbs').filter(x => !x.kind)) { try { await wbOpen(w.id); } catch {} } render(); },
+  'ht-open': el => { const w = St.cols.wbs.get(el.dataset.id); if (!w) return; if (DESKTOP) DK.call('htmltool:open', { id: w.id, title: w.title, user: St.settings.me.name || '' }).catch(e => toast(e.message || 'Could not open the tool', { err: true })); else htmlToolBrowser(w); },
+  'rd-open': el => { const w = St.cols.wbs.get(el.dataset.id); if (w) FILES.open('refdocs', w.id, w.name).catch(e => toast(e.message || 'Could not open', { err: true })); },
+});
+// in the browser build an HTML tool opens in a new tab from a local copy
+async function htmlToolBrowser(w) { const b = await FILES.load('htmltools', w.id); if (!b) return; const url = URL.createObjectURL(new Blob([b], { type: 'text/html' })); const win = window.open(url, '_blank'); if (!win) offerFile(w.name, new Blob([b], { type: 'text/html' })); }
+document.addEventListener('change', e => { if (e.target && e.target.id === 'wb-file' && e.target.files.length) { wbImportFiles(e.target.files); e.target.value = ''; } });
+document.addEventListener('click', e => {
+  const td = e.target.closest && e.target.closest('.wb-grid-t td.in'); if (td) { wbEditCell(td); return; }
+  const lk = e.target.closest && e.target.closest('.wb-grid-t td.lnk');
+  if (lk) { const o = WB_OPEN.get(UI.wb.open); const sheet = lk.closest('.wb-grid-t').dataset.sheet; const link = o && o.book.links.get(sheet + '!' + lk.dataset.k); const m = link && /^#'?([^'!]+)'?!([A-Z]+)(\d+)/i.exec(link); if (m) wbShow(o.meta.id, m[1], +m[3]); }
+});
+document.addEventListener('keydown', e => { const td = e.target.closest && e.target.closest('.wb-grid-t td.in'); if (td && (e.key === 'Enter' || e.key === 'F2' || (e.key.length === 1 && !e.ctrlKey && !e.metaKey))) { e.preventDefault(); wbEditCell(td); const ed = td.querySelector('input.wb-ed'); if (ed && e.key.length === 1) { ed.value = e.key; } } });
+let wbqTimer = null;
+document.addEventListener('input', e => { const k = e.target.dataset && e.target.dataset.inpWb; if (!k) return; UI.wb[k] = e.target.value; clearTimeout(wbqTimer); wbqTimer = setTimeout(() => { const id = e.target.id, pos = e.target.selectionStart; render(); const n = document.getElementById(id); if (n) { n.focus(); try { n.setSelectionRange(pos, pos); } catch {} } }, 220); });
+// dropping workbook files on the Tools page imports them
+document.addEventListener('drop', e => { if (UI.view !== 'tools' || UI.toolTab !== 'wb' || !e.dataTransfer || !e.dataTransfer.files.length) return; e.preventDefault(); e.stopImmediatePropagation(); wbImportFiles(e.dataTransfer.files); }, true);
+document.addEventListener('dragenter', e => { if (UI.view === 'tools' && UI.toolTab === 'wb') e.stopImmediatePropagation(); }, true);
+window.__wbForget = () => WB_OPEN.clear(); // tests: reopen from storage
 
 /* ---------- boot ---------- */
 const startView = (location.hash || '').replace('#', '');

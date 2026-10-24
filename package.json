@@ -12,7 +12,7 @@
     "dist:win": "node build.js desktop && electron-builder --win",
     "dist:mac": "node build.js desktop && electron-builder --mac",
     "dist:linux": "node build.js desktop && electron-builder --linux",
-    "test:unit": "node test/unit/parse.test.js && node test/unit/ai.test.js",
+    "test:unit": "node test/unit/parse.test.js && node test/unit/ai.test.js && node test/unit/wb.test.js",
     "test:desktop": "node build.js desktop && node test/desktop/e2e.js",
     "test:e2e": "python3 test/e2e_final.py && python3 test/e2e_gmail.py && python3 test/e2e_3d.py && python3 test/e2e_map.py && python3 test/e2e_canvas.py && python3 test/e2e_work.py && python3 test/e2e_tools.py"
   },
@@ -24,6 +24,7 @@
     "docx": "8.5.0",
     "electron": "44.9.3",
     "electron-builder": "26.18.0",
+    "exceljs": "4.4.0",
     "hoodiecrow-imap": "3.3.1",
     "jszip": "3.10.1",
     "mammoth": "1.8.0",

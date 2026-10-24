@@ -44,13 +44,13 @@ const CALCS = {
     out: r => [['Mass flow', r.w, 'kg/s', 3], ['Inlet pressure', r.p1, 'kPa abs', 2], ['Discharge pressure', r.p2, 'kPa abs', 2], ['Pressure ratio', r.ratio, '', 3], ['Blower power', r.pw, 'kW', 1]],
     note: 'Adiabatic compression (Metcalf & Eddy): Pw = w·R·T1/(29.7·n·e)·[(p2/p1)^0.283 − 1]. Pressure rise ≈ diffuser submergence × 9.81 kPa/m + diffuser and pipe losses.' },
 };
-UI.toolTab = UI.toolTab || 'calc'; UI.calc = UI.calc || 'pipe'; UI.calcIn = UI.calcIn || {};
-const TOOL_TABS = [['calc', '🧮 Calculators'], ['compare', '⚖️ Compare offers'], ['crs', '📝 CRS responses'], ['minutes', '🗣️ Meeting minutes']];
+UI.toolTab = UI.toolTab || 'wb'; UI.calc = UI.calc || 'pipe'; UI.calcIn = UI.calcIn || {};
+const TOOL_TABS = [['wb', '📗 My workbooks'], ['calc', '🧮 Calculators'], ['compare', '⚖️ Compare offers'], ['crs', '📝 CRS responses'], ['minutes', '🗣️ Meeting minutes']];
 VIEWS.push('tools');
 VIEW_FN.tools = () => `<div class="wrap tools-page">
   <div class="page-head"><div><h1>Tools</h1><div class="sub">Quick engineering checks, offer comparisons, comment responses and meeting actions — linked to your tasks.</div></div></div>
   <div class="seg tabs" role="tablist">${TOOL_TABS.map(([k, l]) => `<button role="tab" data-act="tool-tab" data-tab="${k}" aria-pressed="${UI.toolTab === k}">${l}</button>`).join('')}</div>
-  ${({ calc: toolCalc, compare: toolCompare, crs: toolCRS, minutes: toolMinutes }[UI.toolTab] || toolCalc)()}
+  ${({ wb: () => (UI.wb.open ? wbViewHTML() : wbLibraryHTML()), calc: toolCalc, compare: toolCompare, crs: toolCRS, minutes: toolMinutes }[UI.toolTab] || toolCalc)()}
 </div>`;
 const fmtNum = (v, dp) => v === null || v === undefined || Number.isNaN(v) ? '—' : typeof v === 'string' ? v : Number(v).toLocaleString('en-GB', { maximumFractionDigits: dp ?? 2, minimumFractionDigits: 0 });
 function calcValues(k) { const c = CALCS[k], saved = UI.calcIn[k] || {}; return Object.fromEntries(c.fields.map(([f, , , d]) => [f, saved[f] ?? d])); }

@@ -495,8 +495,9 @@ const CDN = (typeof globalThis !== 'undefined' && globalThis.ETM_CDN) || {
   mammoth: ['https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js'],
   jszip: ['https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js'],
   docx: ['https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js'],
+  exceljs: ['https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js'],
 };
-const GLOBAL = { pdf: 'pdfjsLib', xlsx: 'XLSX', mammoth: 'mammoth', jszip: 'JSZip', docx: 'docx' };
+const GLOBAL = { pdf: 'pdfjsLib', xlsx: 'XLSX', mammoth: 'mammoth', jszip: 'JSZip', docx: 'docx', exceljs: 'ExcelJS' };
 const scriptP = {};
 function loadScript(src) {
   if (scriptP[src]) return scriptP[src];

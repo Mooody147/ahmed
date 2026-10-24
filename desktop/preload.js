@@ -5,7 +5,8 @@ const { contextBridge, ipcRenderer } = require('electron');
 const CHANNELS = new Set(['db:load', 'db:get', 'db:set', 'db:delete', 'sample:json', 'sample:abort', 'claude:test', 'config:claude',
   'gmail:call', 'gmail:connect', 'gmail:connect-imap', 'gmail:disconnect', 'downloads:save', 'shell:openData', 'shell:openPath', 'shell:openExternal',
   'sys:prefs', 'sys:choose-folder', 'sys:notify', 'backup:write', 'data:move', 'lock:set', 'lock:check', 'update:install',
-  'ui:titlebar', 'ui:zoom', 'print:pdf', 'capture:png', 'watch:ready', 'watch:done']);
+  'ui:titlebar', 'ui:zoom', 'print:pdf', 'capture:png', 'watch:ready', 'watch:done',
+  'files:save', 'files:load', 'files:info', 'files:remove', 'files:list', 'files:open', 'files:copyTo', 'files:pickFolder', 'files:openFolder', 'htmltool:open']);
 const EVENTS = new Set(['sample:text', 'sample:usage', 'quick-add', 'gmail-check', 'nav', 'import:file', 'update:ready']);
 
 contextBridge.exposeInMainWorld('arDesktop', {

@@ -129,6 +129,8 @@ St.cols = Object.fromEntries(COLS.map(n => [n, new Map()]));
 const colList = n => [...St.cols[n].values()];
 function colPut(n, d) { d.updatedAt = nowISO(); St.cols[n].set(d.id, d); if (St.mode === 'db') writeDoc(St.refs.cols[n].doc(d.id), d); else saveLocal(); }
 function colDel(n, id) { St.cols[n].delete(id); if (St.mode === 'db') St.refs.cols[n].doc(id).delete().catch(dbError); else saveLocal(); }
+// feature files register their own collections before the data loads
+function addCols(...names) { for (const n of names) if (!COLS.includes(n)) { COLS.push(n); St.cols[n] = new Map(); } }
 function putSettings(s) {
   St.settings = s;
   if (St.mode === 'db') writeDoc(St.refs.settings, s); else saveLocal();
@@ -227,7 +229,7 @@ const BUCKETS = ['Overdue', 'Today', 'Next 7 days', 'Within 30 days', 'Later', '
 let rq = null;
 function scheduleRender() { if (rq) return; rq = requestAnimationFrame(() => { rq = null; render(); }); }
 // a full re-render would destroy the canvas element being dragged or edited, so it waits until that ends
-const cvHold = () => UI.view === 'todo' && (!!UI.cvEditing || (!!MP.mode && MP.mode !== 'pinch'));
+const cvHold = () => (UI.view === 'todo' && (!!UI.cvEditing || (!!MP.mode && MP.mode !== 'pinch'))) || !!(document.activeElement && document.activeElement.classList && document.activeElement.classList.contains('hold-render'));
 function keepFocus(fn) {
   const a = document.activeElement; const id = a && a.id; let ss = null, se = null;
   try { ss = a.selectionStart; se = a.selectionEnd; } catch {}

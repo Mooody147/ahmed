@@ -15,11 +15,13 @@ function appSource() {
   const parts = fs.existsSync(dir) ? fs.readdirSync(dir).filter(f => f.endsWith('.js')).sort().map(f => `/* ===== features/${f} ===== */\n` + read(path.join(dir, f))) : [];
   return app.slice(0, i) + parts.join('\n') + '\n' + app.slice(i);
 }
+// the workbook engine and converter run next to core.js (they set globalThis.WBE / WBC)
+const coreSource = () => read('src/wb/engine.js') + '\n' + read('src/wb/convert.js') + '\n' + read('src/core.js');
 let h = read('src/shell.html');
 for (const [k, v] of Object.entries(ic)) h = h.split('/*' + k + '*/').join(v);
 
 if (process.argv[2] !== 'desktop') {
-  const out = h.replace('/*STYLE*/', () => read('src/style.css')).replace('/*CORE*/', () => read('src/core.js')).replace('/*APP*/', () => appSource());
+  const out = h.replace('/*STYLE*/', () => read('src/style.css')).replace('/*CORE*/', () => coreSource()).replace('/*APP*/', () => appSource());
   fs.mkdirSync('dist', { recursive: true }); fs.writeFileSync('dist/action-register.html', out); console.log('built dist/action-register.html', out.length);
   return;
 }
@@ -29,7 +31,7 @@ const OUT = 'app';
 fs.rmSync(OUT, { recursive: true, force: true });
 fs.mkdirSync(path.join(OUT, 'vendor'), { recursive: true });
 fs.mkdirSync(path.join(OUT, 'fonts', 'files'), { recursive: true });
-const VENDOR = ['pdfjs-dist/build/pdf.min.js', 'pdfjs-dist/build/pdf.worker.min.js', 'xlsx/dist/xlsx.full.min.js', 'mammoth/mammoth.browser.min.js', 'jszip/dist/jszip.min.js', 'docx/build/index.umd.js'];
+const VENDOR = ['pdfjs-dist/build/pdf.min.js', 'pdfjs-dist/build/pdf.worker.min.js', 'xlsx/dist/xlsx.full.min.js', 'mammoth/mammoth.browser.min.js', 'jszip/dist/jszip.min.js', 'docx/build/index.umd.js', 'exceljs/dist/exceljs.min.js'];
 // resolved by path (some packages, e.g. docx, do not export their browser bundle)
 for (const v of VENDOR) fs.copyFileSync(path.join(__dirname, 'node_modules', v), path.join(OUT, 'vendor', path.basename(v)));
 
@@ -53,6 +55,7 @@ let d = h.replace(/<link rel="preconnect"[^\n]*\n/, '').replace(/<link rel="styl
 if (/\/\*(STYLE|CORE|APP)\*\/|fonts\.googleapis/.test(d)) throw new Error('desktop shell: placeholder not replaced');
 d = `<!doctype html>\n<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">\n<meta http-equiv="Content-Security-Policy" content="${CSP}">\n<style>[hidden]{display:none!important}body{margin:0}</style>\n${d.replace('<div class="app">', '</head><body>\n<div class="app">')}\n</body></html>\n`;
 fs.writeFileSync(path.join(OUT, 'index.html'), d);
-for (const f of ['style.css', 'core.js', 'platform.js']) fs.copyFileSync(path.join('src', f), path.join(OUT, f));
+for (const f of ['style.css', 'platform.js']) fs.copyFileSync(path.join('src', f), path.join(OUT, f));
+fs.writeFileSync(path.join(OUT, 'core.js'), coreSource());
 fs.writeFileSync(path.join(OUT, 'app.js'), appSource());
 console.log('built app/ (desktop renderer)');

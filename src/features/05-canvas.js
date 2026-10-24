@@ -196,3 +196,7 @@ document.addEventListener('keydown', e => {
   else if (e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); presentStop(); }
 }, true);
 document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && UI.present) { UI.present = null; render(); } });
+// any action chosen from a menu closes it
+document.addEventListener('click', e => { if (e.target.closest && e.target.closest('.menu-pop [data-act]')) setTimeout(closeMenus, 0); });
+// a menu that was open stays open when the page is drawn again
+HOOKS.afterRender.push(() => { if (!UI.menuOpen) return; const d = document.querySelector(`details.menu[data-menu="${UI.menuOpen}"]`); if (d && !d.open) d.open = true; });

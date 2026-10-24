@@ -18,7 +18,7 @@
  window.claude={use:async(name)=>{
    if(name==='db') return {doc:docRef,collection:colRef};
    if(name==='user') return {me:async()=>({id:'u123',name:'Mahmoud Sobeah',email:null}),id:async()=>'u123',isOwner:async()=>true,canEdit:async()=>true,can:async()=>true};
-   if(name==='downloads') return {save:async(r)=>{window.__saves.push({filename:r.filename,len:(r.data.length||r.data.size)}); return {status:'saved'};}};
+   if(name==='downloads') return {save:async(r)=>{window.__saves.push({filename:r.filename,len:(r.data.length||r.data.size)}); (window.__saveData=window.__saveData||{})[r.filename]=r.data; return {status:'saved'};}};
    if(name==='sample'){ const f=async(i,o)=>({text:'x',truncated:false});
      f.limits=async()=>({maxPromptBytes:262144,images:{maxCount:20,maxInputBytes:20e6,mediaTypes:['image/jpeg','image/png','image/webp','image/gif']}});
      f.json=async(prompt,opts)=>{ window.__prompts.push({prompt,images:(opts.images||[]).length,tier:opts.modelTier});

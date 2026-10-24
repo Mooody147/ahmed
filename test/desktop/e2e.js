@@ -251,6 +251,28 @@ async function reloaded(pg, action) {
     await waitFor(pg, 'window.__AR.St.ready'); await pg.waitForTimeout(3000); await idle(pg);
     assert.strictEqual(await ev(pg, 'window.__AR.UI.staging.length'), 0, 'no re-import after restart');
 
+    step('workbooks and an HTML tool: imported into the app, the tool opens in its own window with its own saved cases');
+    require('child_process').execFileSync('node', [path.join(FX, 'mkwb.js')]);
+    await pg.click('.rail [data-nav="tools"]'); await pg.waitForSelector('#wb-file', { state: 'attached' });
+    await pg.setInputFiles('#wb-file', [path.join(FX, 'out', 'demo-pipe-tool.xlsx'), path.join(FX, 'out', 'demo-tool.html')]);
+    await waitFor(pg, "document.querySelectorAll('.wb-card').length >= 2", 30000);
+    const stored = fs.readdirSync(path.join(data2, 'data', 'files', 'workbooks')).filter(f => !f.endsWith('.json'));
+    assert.strictEqual(stored.length, 1, 'workbook kept in the data folder');
+    await pg.click('.wb-card:has-text("DEMO PIPE TOOL") [data-act="wb-open"]'); await pg.waitForSelector('.wb-grid-t');
+    await pg.click('[data-act="wb-sheet"] >> text=Calc'); await pg.waitForTimeout(200);
+    assert.strictEqual(await pg.textContent('.wb-grid-t td[data-k="8,3"]'), '158.0');
+    await pg.click('[data-act="wb-close"]');
+    const toolWin = app.waitForEvent('window', { timeout: 20000 });
+    await pg.click('.wb-card:has-text("Demo Web Tool") [data-act="ht-open"]');
+    const tw = await toolWin; await tw.waitForSelector('#save'); await tw.waitForFunction("document.querySelector('#n').textContent.startsWith('0 cases')", null, { timeout: 10000 });
+    await tw.click('#save'); await tw.waitForFunction("document.querySelector('#n').textContent.startsWith('1 cases by local')", null, { timeout: 10000 });
+    assert.ok(!(await tw.evaluate('typeof require !== "undefined" || typeof process !== "undefined"')), 'the tool has no Node access');
+    await pg.screenshot({ path: path.join(OUT, '09-workbooks.png') });
+    await tw.close();
+    await waitFor(pg, 'true'); await new Promise(r => setTimeout(r, 400));
+    const reg = JSON.parse(fs.readFileSync(path.join(data2, 'data', 'register.json'), 'utf8'));
+    assert.ok(Object.keys(reg.docs).some(k => /\/tools\/[^/]+\/cases\//.test(k)), 'the tool case is stored with the register');
+
     errors.splice(0, errors.length, ...errors.filter(e => !/Failed to load resource|Content Security Policy/.test(e)));
     assert.deepStrictEqual(errors, [], 'no page or console errors');
     console.log('\nDESKTOP E2E PASSED');

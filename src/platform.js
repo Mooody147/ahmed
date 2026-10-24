@@ -14,6 +14,7 @@ globalThis.ETM_CDN = {
   mammoth: ['vendor/mammoth.browser.min.js'],
   jszip: ['vendor/jszip.min.js'],
   docx: ['vendor/index.umd.js'],
+  exceljs: ['vendor/exceljs.min.js'],
 };
 
 let ST = B.status();

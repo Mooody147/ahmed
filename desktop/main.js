@@ -13,6 +13,7 @@ const claude = require('./claude');
 const gmail = require('./gmail');
 const gmailImap = require('./gmail-imap');
 const sys = require('./system');
+const filesMod = require('./files');
 
 const ROOT = path.join(__dirname, '..', 'app');
 const PARTITION = 'persist:action-register';
@@ -20,11 +21,13 @@ const PARTITION = 'persist:action-register';
 if (process.env.AR_DATA_DIR) app.setPath('userData', path.resolve(process.env.AR_DATA_DIR));
 const DATA_DIR = sys.resolveDataDir();
 
-protocol.registerSchemesAsPrivileged([{ scheme: 'app', privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true } }]);
+protocol.registerSchemesAsPrivileged([{ scheme: 'app', privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true } }, { scheme: 'artool', privileges: { standard: true, secure: true, supportFetchAPI: true } }]);
 
 if (!process.env.AR_TEST && !app.requestSingleInstanceLock()) app.quit();
 
-let win = null, store = null, config = null, updater = null, rendererReady = false;
+let win = null, store = null, config = null, updater = null, rendererReady = false, files = null;
+// folders the user picked in a dialog this session (or earlier, saved in the prefs); files may be copied only there
+const pickedFolders = new Set();
 const ctx = {
   show() { if (!win) return; if (win.isMinimized()) win.restore(); win.show(); win.focus(); },
   send(ch, data) { if (win && !win.isDestroyed()) win.webContents.send(ch, data); },
@@ -167,6 +170,23 @@ function registerIpc() {
   handle('gmail:disconnect', async () => { gmailImap.disconnect(config); await gmail.disconnect(config); config.set({ gmail: { ...config.get().gmail, mode: '' } }); return status(); });
 
   handle('downloads:save', ({ filename, data }) => saveFile(filename, data));
+  /* stored files: workbooks, HTML tools, reference documents, email originals, attachments, receipts, photos */
+  handle('files:save', ({ kind, id, data, meta }) => files.save(kind, id, data, meta));
+  handle('files:load', ({ kind, id }) => files.load(kind, id));
+  handle('files:info', ({ kind, id }) => files.info(kind, id));
+  handle('files:remove', ({ kind, id }) => files.remove(kind, id));
+  handle('files:list', ({ kind }) => files.list(kind));
+  handle('files:open', ({ kind, id, name }) => files.open(kind, id, name));
+  handle('files:copyTo', ({ kind, id, folder, name }) => { const ok = [...pickedFolders, ...(sys.prefs(config).serverRoots || [])].some(f => f && path.resolve(folder).startsWith(path.resolve(f))); if (!ok) throw { code: 'forbidden', message: 'Choose the folder first' }; return files.copyTo(kind, id, folder, name); });
+  handle('files:pickFolder', async ({ title, defaultPath } = {}) => {
+    if (process.env.AR_TEST_FOLDER) { pickedFolders.add(process.env.AR_TEST_FOLDER); return process.env.AR_TEST_FOLDER; }
+    const r = await dialog.showOpenDialog(win, { title: title || 'Choose a folder', defaultPath, properties: ['openDirectory', 'createDirectory'] });
+    if (r.canceled || !r.filePaths[0]) throw { code: 'cancelled', message: 'Cancelled' };
+    pickedFolders.add(r.filePaths[0]); return r.filePaths[0];
+  });
+  handle('files:openFolder', ({ folder }) => { const ok = [...pickedFolders, ...(sys.prefs(config).serverRoots || [])].some(f => f && path.resolve(folder).startsWith(path.resolve(f))); if (!ok) throw { code: 'forbidden', message: 'Folder not allowed' }; fs.mkdirSync(folder, { recursive: true }); return shell.openPath(folder); });
+  handle('htmltool:open', ({ id, title, user }) => filesMod.openTool(files, id, title, user));
+  filesMod.toolDbIpc(ipcMain, store, filesMod.notifyToolWindows);
   handle('shell:openData', () => shell.openPath(DATA_DIR));
   handle('shell:openPath', p => { if (typeof p === 'string' && [sys.prefs(config).watchDir, sys.prefs(config).backupDir, DATA_DIR].some(d => d && p.startsWith(d))) return shell.openPath(p); throw { code: 'forbidden', message: 'Path not allowed' }; });
   handle('shell:openExternal', url => { if (/^(https:\/\/(console\.anthropic\.com|console\.cloud\.google\.com|docs\.anthropic\.com|platform\.claude\.com|myaccount\.google\.com|support\.google\.com|mail\.google\.com|github\.com\/Mooody147)\/|mailto:)/.test(url)) return shell.openExternal(url); throw { code: 'forbidden', message: 'URL not allowed' }; });
@@ -218,6 +238,7 @@ function registerIpc() {
 app.whenReady().then(() => {
   fs.mkdirSync(DATA_DIR, { recursive: true });
   store = new Store(DATA_DIR);
+  files = new filesMod.Files(DATA_DIR);
   config = new Config(DATA_DIR);
   setupSession();
   registerIpc();

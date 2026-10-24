@@ -59,7 +59,8 @@ jobs:
   # installed copies update themselves (electron-updater reads latest.yml from that release).
   release:
     needs: build
-    if: github.event_name == 'push'
+    # publish only when the commit asks for it, so work in progress never reaches installed copies
+    if: github.event_name == 'push' && contains(github.event.head_commit.message, '[release]')
     runs-on: ubuntu-latest
     permissions:
       contents: write

@@ -4,3 +4,4 @@ __pycache__/
 app/
 release/
 test/desktop/out/
+test/fixtures/out/

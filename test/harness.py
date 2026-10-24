@@ -8,7 +8,8 @@ CDN = {'pdfjs-dist@3.11.174/build/pdf.min.js': 'node_modules/pdfjs-dist/build/pd
        'xlsx@0.18.5/dist/xlsx.full.min.js': 'node_modules/xlsx/dist/xlsx.full.min.js',
        'mammoth@1.8.0/mammoth.browser.min.js': 'node_modules/mammoth/mammoth.browser.min.js',
        'jszip@3.10.1/dist/jszip.min.js': 'node_modules/jszip/dist/jszip.min.js',
-       'docx@8.5.0/build/index.umd.js': 'node_modules/docx/build/index.umd.js'}
+       'docx@8.5.0/build/index.umd.js': 'node_modules/docx/build/index.umd.js',
+       'exceljs@4.4.0/dist/exceljs.min.js': 'node_modules/exceljs/dist/exceljs.min.js'}
 FX = os.path.join(HERE, 'fixtures')
 def gmail_fixtures_js():
     fx = {}

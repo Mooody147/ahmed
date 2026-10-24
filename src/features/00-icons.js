@@ -102,6 +102,9 @@ function deco(html) {
     if (!part) continue;
     if (part[0] === '<') {
       out += part;
+      // workbook sheets and other raw regions keep their text exactly
+      if (part === '<!--raw-->') { raw = '!raw'; continue; } if (part === '<!--/raw-->') { raw = null; continue; }
+      if (raw === '!raw') continue;
       if (raw) { if (new RegExp('^</' + raw + '\\b', 'i').test(part)) raw = null; }
       else { const m = RAW_TAGS.exec(part); if (m && !/\/>$/.test(part)) raw = m[1]; }
       continue;
