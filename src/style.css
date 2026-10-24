@@ -964,3 +964,26 @@ details.menu > summary.on { background: var(--accent-soft); color: var(--accent)
 .filing { width: min(720px, calc(100vw - 32px)); display: grid; gap: 12px; max-height: calc(100vh - 60px); overflow: auto; }
 .file-row { display: grid; gap: 6px; padding: 10px; border: 1px solid var(--line); border-radius: 10px; }
 .file-row .input { flex: 1; }
+
+/* ---------- Money ---------- */
+.money .mon-month { gap: 8px; align-items: center; }
+.money .mon-month b { min-width: 150px; text-align: center; }
+.mon-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+.mon-tile { display: grid; gap: 4px; }
+.mon-tile b { font-size: 24px; font-variant-numeric: tabular-nums; }
+.mon-tile.neg b { color: var(--crit); }
+.mon-budgets { display: grid; gap: 10px; }
+.mon-bud .crit { color: var(--crit); } .mon-bud .warn { color: var(--warn); }
+.mon-bud-edit { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+.mon-tbl td.num, .mon-tbl th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.mon-tbl td.pos { color: var(--ok, #1e8449); }
+.mon-tbl tr.dup { opacity: .55; }
+.mon-tbl .nowrap, .nowrap { white-space: nowrap; }
+.mon-tbl input.input { height: 30px; min-width: 140px; }
+.mon-imp-wrap { max-height: 60vh; overflow: auto; }
+.mon-form { width: min(640px, calc(100vw - 32px)); display: grid; gap: 12px; }
+.mon-charts { align-items: start; }
+@media (max-width: 640px) { .mon-tbl th:nth-child(4), .mon-tbl td:nth-child(4) { display: none; } }
+.money > * { min-width: 0; }
+.mon-scroll { overflow-x: auto; max-width: 100%; }
+.money .mon-tiles .mon-tile b { overflow-wrap: anywhere; }

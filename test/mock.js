@@ -27,6 +27,8 @@
      return f; }
    return null; }};
  window.__mockAnswer=function(prompt){
+   if(/^Read this receipt or invoice/.test(prompt)) return {payee:'Carrefour Maadi',date:'2026-10-20',total:'1,245.50',currency:'EGP',category:'Food & groceries',note:'Groceries'};
+   if(/^Put each bank statement line into one category/.test(prompt)) { const lines=prompt.split('Lines (i, type, description):\n')[1].split('\nAnswer JSON')[0].split('\n'); return {items:lines.map(l=>l.split('\t')).map(([i,k,d])=>({i:+i,category:/VODAFONE/i.test(d)?'Phone & internet':/PHARM/i.test(d)?'Health':''}))}; }
    if(/^You are preparing a technical bid evaluation/.test(prompt)) return {parameters:[{name:'Duty flow',unit:'m3/h',requirement:'410',values:['410','400'],status:['ok','deviation']},{name:'NPSHr',unit:'m',requirement:'<= 4',values:['3.8','not stated'],status:['ok','missing']}],summary:'Offer A meets the duty; offer B is short on flow.',recommendation:'Ask vendor B to confirm NPSHr.'};
    if(/^Draft contractor responses for a comment response sheet/.test(prompt)) { const n=(prompt.split('COMMENTS:\n')[1]||'').split('\nRules')[0].split('\n').filter(Boolean).length; return {responses:Array.from({length:n},(_,i)=>({i:i+1,response:'Noted, will be incorporated in Rev B. [TO CONFIRM: vendor data]',basis:''}))}; }
    if(/^Extract the action items from these meeting notes/.test(prompt)) return {tasks:[{title:'Send revised valve schedule to the consultant',owner:'me',deadline:'2026-10-30',note:'Agreed in the meeting'},{title:'Confirm channel width for fine screens',owner:'Omar Saleh',deadline:null,note:''}]};
