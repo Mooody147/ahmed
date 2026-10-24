@@ -51,3 +51,34 @@ jobs:
             release/*.exe
             release/*.dmg
           if-no-files-found: error
+
+  # Publishes the installers as the "latest" GitHub Release, so they can be
+  # downloaded from https://github.com/<owner>/<repo>/releases/latest without
+  # signing in (workflow artifacts need a GitHub login and a desktop browser).
+  release:
+    needs: build
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: action-register-*
+          path: installers
+          merge-multiple: true
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ls -l installers
+          gh release delete latest --repo "$GITHUB_REPOSITORY" --yes --cleanup-tag || true
+          gh release create latest installers/* \
+            --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --latest \
+            --title "Action Register — latest build" \
+            --notes "Built from ${GITHUB_SHA::7} on ${GITHUB_REF_NAME}.
+
+          Windows: download Action-Register-Setup-*.exe (installer) or Action-Register-Portable-*.exe (no install needed).
+          macOS: download the .dmg.
+
+          The app is not code-signed. Windows: More info › Run anyway. macOS: right-click › Open the first time."
