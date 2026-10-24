@@ -1633,7 +1633,7 @@ function dayCard(it, D) {
       <button class="dtitle" data-act="open-task" data-id="${esc(t.id)}" dir="auto">${esc(t.title)}</button></div>
     <div class="dmeta"><span class="mono">${esc(t.ref || '')}</span>${t.project ? `<span class="chip proj">${esc(t.project)}</span>` : '<span class="chip warn" title="Claude or you will place it">No project yet</span>'}${topicOf(t) ? `<span class="chip">🧩 ${esc(topicOf(t))}</span>` : ''}
       ${mgr ? `<span class="chip wait">👔 ${esc(t.requestedBy || managerName() || 'Manager')}</span>` : ''}${carried ? `<span class="chip" title="Planned earlier and not finished">↪ since ${esc(fmtDate(carried, { weekday: 'short', day: 'numeric', month: 'short' }))}</span>` : ''}
-      ${doneLater ? `<span class="chip ok">✓ done ${esc(fmtDate(dayOf(t.completedAt)))}</span>` : t.status !== 'done' && t.deadline ? `<span class="duepill ${d.cls}">${dueEmoji(d)}${esc(d.txt)}</span>` : ''}${subsOf(t).length ? `<span class="small muted">🗂️ ${subsDone(t)}/${subsOf(t).length}</span>` : ''}</div>
+      ${doneLater ? `<span class="chip ok">✓ done ${esc(fmtDate(dayOf(t.completedAt)))}</span>` : t.status !== 'done' && t.deadline ? `<span class="duepill ${d.cls}">${dueEmoji(d)}${esc(d.txt)}</span>` : ''}${subsOf(t).length ? `<span class="small muted">🗂️ ${subsDone(t)}/${subsOf(t).length}</span>` : ''}${timeChipHTML(t)}</div>
     <div class="dbtns">
       ${t.status === 'done' ? `<button class="btn ghost sm" data-act="day-ach-task" data-id="${esc(t.id)}" title="Record as an achievement">⭐</button>` : t.status === 'in_progress' ? `<button class="btn ghost sm" data-act="set-status" data-id="${esc(t.id)}" data-status="todo" title="Pause">⏸ Pause</button>` : `<button class="btn ghost sm" data-act="set-status" data-id="${esc(t.id)}" data-status="in_progress" title="Start working on it">▶ Start</button>`}
       <button class="btn ghost sm" data-act="show-on-map" data-id="${esc(t.id)}" title="Show on the canvas">🧠</button>
@@ -1654,7 +1654,7 @@ function viewDaily() {
       <input class="input" type="date" id="day-date" data-chg="day-date" value="${esc(D)}" aria-label="Day">
       <button class="btn sm" data-act="day-shift" data-d="1" aria-label="Next day">›</button>
       ${m.isToday ? '<span class="chip accent">Today</span>' : `<button class="btn sm ghost" data-act="day-today">Today</button>`}
-      <b class="day-title">${esc(fmtDate(D, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }))}</b>
+      <b class="day-title">${esc(fmtDate(D, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }))}</b>${dayProgressHTML(L)}
       <span class="spacer"></span>
       <button class="btn sm" data-act="day-map" title="Highlight this day’s work on the canvas">🧠 Show on canvas</button>
     </div>
