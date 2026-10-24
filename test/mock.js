@@ -27,6 +27,8 @@
      return f; }
    return null; }};
  window.__mockAnswer=function(prompt){
+   if(/^You are a research assistant for the user's own notebook/.test(prompt)) { const ex=prompt.split('EXCERPTS:\n')[1]||''; const i=ex.split(/\n\n(?=\[\d+\] )/).findIndex(x=>/IP68/.test(x)); return i>=0?{answer:'Valve actuators must be IP68 [' + (i+1) + '].',citations:[i+1],notFound:false,followUps:['What coating is required?']}:{answer:'The files do not say.',citations:[],notFound:true,followUps:[]}; }
+   if(/^You are a research assistant\. Below are the opening passages/.test(prompt)) return {answer:'- Valve specification for ELM [1]\n- Pump calculation [2]',citations:[1,2],followUps:['What IP rating is required?']};
    if(/^Read this receipt or invoice/.test(prompt)) return {payee:'Carrefour Maadi',date:'2026-10-20',total:'1,245.50',currency:'EGP',category:'Food & groceries',note:'Groceries'};
    if(/^Put each bank statement line into one category/.test(prompt)) { const lines=prompt.split('Lines (i, type, description):\n')[1].split('\nAnswer JSON')[0].split('\n'); return {items:lines.map(l=>l.split('\t')).map(([i,k,d])=>({i:+i,category:/VODAFONE/i.test(d)?'Phone & internet':/PHARM/i.test(d)?'Health':''}))}; }
    if(/^You are preparing a technical bid evaluation/.test(prompt)) return {parameters:[{name:'Duty flow',unit:'m3/h',requirement:'410',values:['410','400'],status:['ok','deviation']},{name:'NPSHr',unit:'m',requirement:'<= 4',values:['3.8','not stated'],status:['ok','missing']}],summary:'Offer A meets the duty; offer B is short on flow.',recommendation:'Ask vendor B to confirm NPSHr.'};

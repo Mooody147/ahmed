@@ -87,7 +87,7 @@ const PAL = { open: false, q: '', i: 0, items: [] };
 function paletteItems(q) {
   const nq = E.normMatch(q), out = [];
   const add = (group, label, run, hint) => out.push({ group, label, run, hint });
-  const views = [['todo', 'To-do'], ['daily', 'Daily'], ['review', 'Review'], ['import', 'Add emails'], ['emails', 'Emails'], ['docs', 'Documents'], ['insights', 'Insights'], ['money', 'Money'], ['tools', 'Tools'], ['setup', 'Setup']];
+  const views = [['todo', 'To-do'], ['daily', 'Daily'], ['review', 'Review'], ['import', 'Add emails'], ['emails', 'Emails'], ['docs', 'Documents'], ['insights', 'Insights'], ['notebook', 'Notebook'], ['money', 'Money'], ['tools', 'Tools'], ['setup', 'Setup']];
   const acts = [
     ['New task', () => ACT['new-task']()], ['Quick add for today', () => openQuickAdd()], ['Check Gmail now', () => checkGmail(true)],
     ['Focus mode', () => openFocus()], ['Morning briefing — write again', () => { go('todo'); makeBrief(true); }],
@@ -215,7 +215,7 @@ Object.assign(ACT, {
   'more-menu': () => {
     const m = $('#modal');
     m.innerHTML = deco(`<div class="card more-sheet" role="dialog" aria-label="More"><div class="row"><b>More</b><span class="spacer"></span><button class="icon-btn" data-act="close-modal" aria-label="Close">${I.x}</button></div>
-      ${[['docs', '📄 Documents'], ['insights', '📊 Insights'], ['money', '💰 Money'], ['tools', '🛠 Tools'], ['setup', '⚙ Setup']].map(([v, l]) => `<button class="btn more-btn" data-act="more-go" data-view="${v}">${l}</button>`).join('')}
+      ${[['docs', '📄 Documents'], ['insights', '📊 Insights'], ['notebook', '📓 Notebook'], ['money', '💰 Money'], ['tools', '🛠 Tools'], ['setup', '⚙ Setup']].map(([v, l]) => `<button class="btn more-btn" data-act="more-go" data-view="${v}">${l}</button>`).join('')}
       <button class="btn more-btn" data-act="palette">🔎 Search and commands</button></div>`);
     m.hidden = false;
   },

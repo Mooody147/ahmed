@@ -373,6 +373,32 @@ async function reloaded(pg, action) {
     assert.match(usage, /ChatGPT/); assert.match(usage, /Gemini/); assert.match(usage, /Local.*free/s);
     await pg.screenshot({ path: path.join(OUT, '12-ai-usage.png'), fullPage: true });
 
+    step('notebook: a linked folder is read from disk, answers cite the file, a new file is picked up after a restart');
+    await ev(pg, "window.claude.desktop.call('ai:config', { budget: 0 })");
+    await app.close();
+    const nbDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ar-nb-'));
+    fs.mkdirSync(path.join(nbDir, 'Specs')); fs.copyFileSync(path.join(FX, 'CRS_valves.xlsx'), path.join(nbDir, 'Specs', 'CRS_valves.xlsx'));
+    fs.copyFileSync(path.join(FX, 'transmittal.pdf'), path.join(nbDir, 'transmittal.pdf')); fs.writeFileSync(path.join(nbDir, 'program.exe'), 'MZ');
+    const env4 = { ...env3, AR_TEST_FOLDER: nbDir, AR_START_VIEW: 'notebook' };
+    ({ app, pg } = await launch(env4));
+    await pg.fill('#nb-new-name', 'Site files'); await pg.click('[data-act="nb-create"]'); await pg.waitForSelector('.nb-page');
+    await pg.click('[data-act="nb-folder"]');
+    await waitFor(pg, "(n => n && n.counts && n.counts.files === 2)([...window.__AR.St.cols.notebooks.values()][0])", 30000);
+    assert.deepStrictEqual(await ev(pg, "window.claude.desktop.status().desktop.notebookRoots"), [nbDir], 'the folder is remembered');
+    await pg.fill('#nb-q', 'What IP rating do the valve actuators need?'); await pg.click('[data-act="nb-send"]');
+    await waitFor(pg, "document.querySelectorAll('.nb-turn').length >= 1 && !window.__AR.UI.nb.asking", 30000);
+    assert.match(await pg.textContent('.nb-turn:last-child .nb-ans'), /IP68/);
+    await pg.click('.nb-turn:last-child .nb-cite'); await pg.waitForSelector('.nb-cite-panel');
+    assert.match(await pg.textContent('.nb-cite-panel'), /Specs\/CRS_valves\.xlsx/);
+    assert.strictEqual(await ev(pg, "window.claude.desktop.call('nb:read', { file: '/etc/passwd' }).then(() => 'read', e => e.code)"), 'forbidden', 'only files in the linked folder can be read');
+    await pg.screenshot({ path: path.join(OUT, '13-notebook.png') });
+    await app.close();
+    fs.copyFileSync(path.join(FX, 'MOM-17.docx'), path.join(nbDir, 'MOM-17.docx'));
+    ({ app, pg } = await launch({ ...env4, AR_TEST_FOLDER: '' }));
+    await waitFor(pg, 'window.__AR.St.ready'); await pg.click('[data-act="nb-open"]');
+    await waitFor(pg, "(n => n && n.counts && n.counts.files === 3)([...window.__AR.St.cols.notebooks.values()][0])", 30000);
+    assert.strictEqual(await ev(pg, "[...window.__AR.St.cols.notebooks.values()][0].chat.length"), 1, 'the conversation is kept');
+
     errors.splice(0, errors.length, ...errors.filter(e => !/Failed to load resource|Content Security Policy/.test(e)));
     assert.deepStrictEqual(errors, [], 'no page or console errors');
     console.log('\nDESKTOP E2E PASSED');

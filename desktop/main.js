@@ -16,6 +16,7 @@ const gmailImap = require('./gmail-imap');
 const sys = require('./system');
 const filesMod = require('./files');
 const outlook = require('./outlook');
+const notebook = require('./notebook');
 
 const ROOT = path.join(__dirname, '..', 'app');
 const PARTITION = 'persist:action-register';
@@ -98,7 +99,7 @@ function status() {
     claude: { hasKey: !!config.secret('anthropicKey'), models: config.models(), maxPromptKB: config.get().maxPromptKB },
     ai: ai.status(config),
     gmail: { mode: gmailMode(), clientId: config.get().gmail.clientId || '', hasSecret: !!config.secret('gmailClientSecret'), connected: !!gmailMode(), account: config.get().gmail.account || '' },
-    desktop: { closeToTray: d.closeToTray, startWithWindows: d.startWithWindows, startHidden: d.startHidden, hotkey: d.hotkey, notify: d.notify, autoUpdate: d.autoUpdate, watchDir: d.watchDir, backupDir: d.backupDir, backupKeep: d.backupKeep, serverRoots: d.serverRoots || [], locked: !!d.pin },
+    desktop: { closeToTray: d.closeToTray, startWithWindows: d.startWithWindows, startHidden: d.startHidden, hotkey: d.hotkey, notify: d.notify, autoUpdate: d.autoUpdate, watchDir: d.watchDir, backupDir: d.backupDir, backupKeep: d.backupKeep, serverRoots: d.serverRoots || [], notebookRoots: d.notebookRoots || [], locked: !!d.pin },
     usage: config.get().usage || {},
     update: sys.updateReady(),
     secure: config.encrypted(),
@@ -204,6 +205,11 @@ function registerIpc() {
     if (fileId && await files.info('emails', fileId)) { const p = await files.open('emails', fileId, name); return { how: 'file', path: p, why: r }; }
     return { how: 'none', why: r };
   });
+  // notebook: folders you picked (kept in the prefs so they can be read again after a restart)
+  const nbRoots = () => [...pickedFolders, ...(sys.prefs(config).notebookRoots || [])];
+  handle('nb:scan', ({ folder }) => { if (!notebook.inside(folder, nbRoots())) throw { code: 'forbidden', message: 'Choose the folder first' }; return notebook.scan(folder); });
+  handle('nb:read', async ({ file }) => { if (!notebook.inside(file, nbRoots()) || !notebook.EXTS.test(file)) throw { code: 'forbidden', message: 'File not allowed' }; return new Uint8Array(await fs.promises.readFile(file)); });
+  handle('nb:open', ({ file }) => { if (!notebook.inside(file, nbRoots())) throw { code: 'forbidden', message: 'File not allowed' }; if (process.env.AR_TEST) return 'test'; return shell.openPath(file); });
   filesMod.toolDbIpc(ipcMain, store, filesMod.notifyToolWindows);
   handle('shell:openData', () => shell.openPath(DATA_DIR));
   handle('shell:openPath', p => { if (typeof p === 'string' && [sys.prefs(config).watchDir, sys.prefs(config).backupDir, DATA_DIR].some(d => d && p.startsWith(d))) return shell.openPath(p); throw { code: 'forbidden', message: 'Path not allowed' }; });
@@ -211,9 +217,10 @@ function registerIpc() {
 
   /* desktop extras */
   handle('sys:prefs', patch => {
-    const allowed = ['closeToTray', 'startWithWindows', 'startHidden', 'hotkey', 'notify', 'autoUpdate', 'watchDir', 'backupDir', 'backupKeep', 'serverRoots'];
+    const allowed = ['closeToTray', 'startWithWindows', 'startHidden', 'hotkey', 'notify', 'autoUpdate', 'watchDir', 'backupDir', 'backupKeep', 'serverRoots', 'notebookRoots'];
     const clean = Object.fromEntries(Object.entries(patch || {}).filter(([k]) => allowed.includes(k)));
     // server folders may only be ones the user picked in a dialog
+    if (clean.notebookRoots) clean.notebookRoots = (Array.isArray(clean.notebookRoots) ? clean.notebookRoots : []).filter(f => typeof f === 'string' && (pickedFolders.has(f) || (sys.prefs(config).notebookRoots || []).includes(f))).slice(0, 50);
     if (clean.serverRoots) clean.serverRoots = (Array.isArray(clean.serverRoots) ? clean.serverRoots : []).filter(f => typeof f === 'string' && (pickedFolders.has(f) || (sys.prefs(config).serverRoots || []).includes(f))).slice(0, 20);
     sys.setPrefs(config, clean);
     if ('startWithWindows' in clean || 'startHidden' in clean) sys.applyLoginItem(config);
