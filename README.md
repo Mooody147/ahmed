@@ -54,6 +54,44 @@ Open **Setup › Connections**.
 Without Gmail you can still drag `.msg` / `.eml` / `.zip` files or loose PDF, Word, Excel and image files
 onto the window, or paste email text.
 
+## Canvas (To-do › Map)
+
+The map lays your tasks out automatically: My work → Project → Topic → Task → Items. You can rearrange
+and add to it freely:
+
+| Tool (key) | What it does |
+|---|---|
+| Select (V) | Drag empty space to pan, or hold Space / use the middle mouse button. Drag a project or topic to move its whole branch, or drag a task to move it. Drop a task on a project, topic or another task to re-file or link it. Drag the handle on a node's right edge to widen it. Shift+drag selects notes and drawings. |
+| Task (K) | Click empty canvas to create a task there, or click a project or topic to add the task inside it. |
+| Sticky (N), Text (T), Rectangle (R), Ellipse (O), Diamond (D), Frame (F) | Click to place one, or drag to size it, then type. Double-click to edit the text again. |
+| Arrow (A), Line (L) | Drag to draw. |
+| Connector (C) | Drag from one item to another. Between two tasks it creates a real task link, which also shows in the task's details. |
+| Pen (P), Highlighter (M), Eraser (E) | Draw freehand. The eraser removes any ink, note, shape or connector it touches. |
+
+- **Selection bar:** recolour, change thickness, duplicate (Ctrl+D), bring to front, delete (Del), and **→ Task**, which turns a note into a to-do task.
+- **Undo/redo:** Ctrl+Z / Ctrl+Shift+Z covers every canvas change, including moving tasks between projects.
+- **Rename:** the ✎ button on a project or topic renames it on all its tasks.
+- **Tidy layout** puts every node back in its automatic place.
+- **Full screen:** ⤢ or Shift+F. Esc leaves it.
+
+**History.**
+- **📌 Day** highlights the tasks worked on that day and filters the activity feed.
+- **🕒 As of** shows the map as it was on a past date. Tasks created later are hidden, and work finished later shows as still open.
+- Completed tasks stay on the map, with their links.
+
+## Daily tracker (Daily tab)
+
+- Add **My task**, **From manager** (records who asked), **Achievement** or **Note** for any day. Press Enter to add.
+- New tasks are real to-do tasks. They are matched to a project, topic and related task straight away from your project list and existing tasks, Claude refines that, and they appear on the canvas immediately. If the same work is already in your to-do list, that task is added to the day instead of creating a duplicate.
+- **Lanes:** To do / In progress / Completed. ▶ Start and ✓ update the task everywhere. Anything you finish elsewhere that day lands in Completed.
+- **Carry-over:** unfinished tasks from earlier days carry into today, tagged with the day they were first planned.
+- **Side panels:**
+  - Achievements, with ✨ suggestions drafted from the day's completed work.
+  - Open requests from your manager. Set the manager's name in Setup so emailed requests from them are tagged too.
+  - Tasks worth planning today.
+  - A day-by-day history.
+- **🧠 Show on canvas** opens the map with that day highlighted, as it was on that day.
+
 ## How it works
 
 | Part | File | Role |
@@ -95,7 +133,7 @@ Setup › Full backup (.json).
 ```bash
 npm run test:unit                       # parsing, prompts, evidence verification, dedupe (Node)
 xvfb-run -a npm run test:desktop        # Electron end-to-end (drop xvfb-run on Windows/macOS)
-npm run build && npm run test:e2e       # original web-build browser tests (Python Playwright)
+npm run build && npm run test:e2e       # web-build browser tests incl. test/e2e_canvas.py (Python Playwright)
 ```
 
 The desktop test (`test/desktop/e2e.js`) launches the real app against local mock Anthropic, Google
@@ -106,6 +144,7 @@ OAuth and Gmail servers (`test/desktop/mock-servers.js`). It checks:
 - Gmail import, labelling and de-duplication across restarts;
 - streamed analysis, the model, effort and fallback settings sent, and page images reaching Claude;
 - review › Add all, the to-do views, and offline parsing of `.msg`, `.eml`, PDF (text, scanned, A3 drawing), XLSX, DOCX and PNG;
+- the canvas (sticky note, pen, moved branch) and the daily tracker, and that both survive a restart;
 - CSV, ICS and JSON export, dark mode, and a clear error for a rejected key.
 
 Screenshots go to `test/desktop/out/`.

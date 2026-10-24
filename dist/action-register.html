@@ -293,7 +293,7 @@ details.more > summary::-webkit-details-marker { display: none; }
 .todo-item.is-done .ttl { text-decoration: line-through; color: var(--ink-3); }
 .todo-item.is-done .tick { background: var(--ok); border-color: var(--ok); color: var(--surface); }
 .over-txt { color: var(--crit); font-weight: 600; }
-@media (max-width: 860px) { .tabbar { grid-template-columns: repeat(4, 1fr); } }
+@media (max-width: 860px) { .tabbar { grid-template-columns: repeat(5, 1fr); } }
 @media (max-width: 560px) { .todo-gh .gstats .muted { display: none; } }
 
 .todo-search { position: relative; flex: 1 1 220px; min-width: 0; }
@@ -541,11 +541,122 @@ textarea.ptitle { resize: none; overflow: hidden; min-height: 36px; line-height:
 .mnode.topic .mtxt b { font-size: 14px; font-weight: 650; }
 .chip.topic-chip { background: var(--wait-soft); color: var(--ink); }
 
+/* ---------- editable canvas ---------- */
+body.map-full-on { overflow: hidden; }
+.map-wrap.full { position: fixed; inset: 0; z-index: 35; background: var(--bg); padding: max(10px, env(safe-area-inset-top, 0px)) 14px 12px; display: flex; flex-direction: column; overflow: hidden; }
+.map-wrap.full .map-body { flex: 1; min-height: 0; }
+.map-wrap.full .map-viewport { height: 100%; }
+.map-wrap.full .map-activity { max-height: 100%; }
+.map-date { display: inline-flex; align-items: center; gap: 4px; color: var(--ink-2); }
+.map-date .input { height: 30px; width: auto; padding: 0 6px; font-size: 12.5px; }
+.map-viewport[data-tool="pen"], .map-viewport[data-tool="highlighter"], .map-viewport[data-tool="sticky"], .map-viewport[data-tool="rect"], .map-viewport[data-tool="ellipse"], .map-viewport[data-tool="diamond"], .map-viewport[data-tool="arrow"], .map-viewport[data-tool="line"], .map-viewport[data-tool="frame"], .map-viewport[data-tool="task"], .map-viewport[data-tool="connector"] { cursor: crosshair; }
+.map-viewport[data-tool="text"] { cursor: text; }
+.map-viewport[data-tool="eraser"] { cursor: cell; }
+.map-viewport[data-tool="hand"], .map-viewport[data-tool="hand"] * { cursor: grab !important; }
+.map-viewport:not([data-tool="select"]) .mnode, .map-viewport:not([data-tool="select"]) .bel { cursor: inherit; }
+.map-empty { position: absolute; inset: 0; display: grid; place-content: center; z-index: 3; }
+.map-ink { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; }
+.map-ink .hit { fill: none; stroke: transparent; pointer-events: stroke; }
+.map-viewport:not([data-tool="select"]):not([data-tool="eraser"]) .map-ink .hit { pointer-events: none; }
+.map-ink .ink.sel path:not(.hit) { filter: drop-shadow(0 0 2.5px var(--accent)) drop-shadow(0 0 1px var(--accent)); }
+.live-box { fill: color-mix(in srgb, var(--accent) 10%, transparent); stroke: var(--accent); stroke-width: 1.5; stroke-dasharray: 5 4; vector-effect: non-scaling-stroke; }
+.bel { position: absolute; box-sizing: border-box; }
+.bel.sel { outline: 2px solid var(--accent); outline-offset: 3px; }
+.bel.hit { outline: 3px solid var(--warn); outline-offset: 3px; }
+.bel .btxt { outline: none; white-space: pre-wrap; overflow-wrap: anywhere; }
+.bel.sticky { background: var(--c); color: #1E2423; border-radius: 4px 4px 4px 18px; padding: 14px 14px 18px; font-size: 16px; line-height: 1.35; display: flex; box-shadow: 0 8px 16px -6px rgba(0,0,0,.28), 0 1px 2px rgba(0,0,0,.18); }
+.bel.sticky .btxt { flex: 1; overflow: hidden; }
+.bel.btext { padding: 2px 4px; line-height: 1.3; font-family: var(--f-body); font-weight: 500; }
+.bel.btext .btxt { min-height: 1.2em; }
+.bel.shape { display: grid; }
+.bel.shape svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.bel.shape svg * { fill: color-mix(in srgb, var(--c) 16%, var(--surface)); stroke: var(--c); stroke-width: 2.5; vector-effect: non-scaling-stroke; }
+.bel.shape .btxt { position: relative; display: grid; place-items: center; text-align: center; padding: 10px 14px; color: var(--ink); font-size: 15px; line-height: 1.3; }
+.bel.frame { border: 2px dashed color-mix(in srgb, var(--c) 75%, var(--line)); background: color-mix(in srgb, var(--c) 9%, transparent); border-radius: 14px; }
+.bel.frame .ftitle { position: absolute; top: -28px; left: 2px; font: 600 14px var(--f-display); color: var(--ink-2); white-space: nowrap; }
+.map-viewport [contenteditable] { user-select: text; -webkit-user-select: text; cursor: text; outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
+.rz { position: absolute; right: -7px; bottom: -7px; width: 13px; height: 13px; border-radius: 4px; background: var(--surface); border: 2px solid var(--accent); cursor: nwse-resize; display: none; z-index: 3; touch-action: none; }
+.mnode .rz { top: 50%; bottom: auto; transform: translateY(-50%); cursor: ew-resize; }
+.bel.sel .rz, .map-viewport[data-tool="select"] .mnode.sel .rz, .map-viewport[data-tool="select"] .mnode.project:hover .rz, .map-viewport[data-tool="select"] .mnode.topic:hover .rz, .map-viewport[data-tool="select"] .mnode.task:hover .rz { display: block; }
+.mnode .mren { right: 20px; }
+.mnode.topic .mfocus { opacity: 0; }
+.mnode.project:hover .mren, .mnode.topic:hover .mren { opacity: 1; }
+.mnode.dragging { pointer-events: none; opacity: .88; box-shadow: var(--elev-3); z-index: 6; transition: none; }
+.mnode.dayhit { box-shadow: 0 0 0 3px var(--accent), var(--elev-2); z-index: 2; }
+.mnode.fresh { animation: cvfresh 1.4s ease-out 1; }
+@keyframes cvfresh { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 65%, transparent), var(--elev-2); } 100% { box-shadow: 0 0 0 16px transparent, var(--elev-1); } }
+.cv-tools { position: absolute; left: 10px; top: 10px; display: flex; flex-direction: column; gap: 2px; padding: 6px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--elev-2); z-index: 4; max-height: calc(100% - 20px); overflow: auto; scrollbar-width: none; cursor: default; }
+.cv-sub { position: absolute; left: 10px; bottom: 10px; display: flex; align-items: center; gap: 4px; padding: 4px 8px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--elev-2); z-index: 4; cursor: default; }
+.cv-sub .cvt { width: 30px; height: 30px; }
+.cvt { width: 32px; height: 32px; flex: none; display: grid; place-items: center; border-radius: 9px; border: 0; background: none; color: var(--ink-2); cursor: pointer; padding: 0; }
+.cvt:hover { background: var(--sunken); color: var(--ink); }
+.cvt.on { background: var(--accent-soft); color: var(--accent); }
+.cvt:disabled { opacity: .35; cursor: default; background: none; }
+.cvt-sep { flex: none; width: 1px; align-self: stretch; background: var(--line); margin: 3px 4px; }
+.cvt-colors { display: flex; gap: 5px; align-items: center; }
+.cv-tools { max-height: calc(100% - 70px); }
+.map-viewport .map-hint { left: auto; right: 12px; max-width: min(60%, 640px); text-align: right; }
+.sw { width: 15px; height: 15px; border-radius: 50%; border: 2px solid var(--surface); box-shadow: 0 0 0 1px var(--line); background: var(--c); cursor: pointer; padding: 0; flex: none; }
+.sw.on, .sw:hover { box-shadow: 0 0 0 2px var(--accent); }
+.cv-ctx { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 6px; padding: 6px 10px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--elev-2); z-index: 4; flex-wrap: wrap; max-width: calc(100% - 120px); cursor: default; }
+@media (max-width: 560px) {
+  .cv-tools { top: auto; bottom: 56px; left: 8px; right: 8px; flex-direction: row; max-height: none; overflow-x: auto; }
+  .cv-sub { left: 8px; right: 8px; bottom: 8px; overflow-x: auto; }
+  .cv-ctx { max-width: calc(100% - 20px); }
+}
+
+/* ---------- daily tracker ---------- */
+.day-nav { align-items: center; gap: 8px; margin-bottom: 12px; }
+.day-nav .input { width: auto; height: 34px; }
+.day-title { font-family: var(--f-display); font-size: 16px; }
+.day-add { display: grid; gap: 10px; margin-bottom: 14px; }
+.day-add .seg { flex-wrap: wrap; justify-self: start; }
+.day-tiles { margin-bottom: 14px; }
+.day-tiles .tile { cursor: default; }
+.day-grid { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 14px; align-items: start; }
+@media (max-width: 1100px) { .day-grid { grid-template-columns: minmax(0, 1fr); } }
+.day-lanes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; align-items: start; }
+@media (max-width: 860px) { .day-lanes { grid-template-columns: minmax(0, 1fr); } }
+.dlane { background: var(--sunken); border: 1px solid var(--line); border-radius: 16px; padding: 10px; display: grid; gap: 8px; align-content: start; min-height: 160px; }
+.dlane.done { background: color-mix(in srgb, var(--ok-soft) 55%, var(--sunken)); }
+.dlane.wip { background: color-mix(in srgb, var(--accent-soft) 45%, var(--sunken)); }
+.dlane-h { display: flex; justify-content: space-between; align-items: center; font: 600 13px var(--f-display); letter-spacing: .02em; color: var(--ink-2); padding: 2px 4px; }
+.dlane-h .count { font-variant-numeric: tabular-nums; min-width: 22px; padding: 0 6px; border-radius: 99px; background: var(--surface); text-align: center; }
+.dempty { margin: 4px; }
+.dcard { background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--med); border-radius: 12px; padding: 10px; display: grid; gap: 6px; box-shadow: var(--elev-1); min-width: 0; }
+.dcard.p-critical { border-left-color: var(--crit); } .dcard.p-high { border-left-color: var(--high); } .dcard.p-low { border-left-color: var(--low); }
+.dcard.done .dtitle { text-decoration: line-through; color: var(--ink-3); }
+.dtop { display: flex; gap: 8px; align-items: flex-start; min-width: 0; }
+.dtick { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--line); display: grid; place-items: center; background: none; color: transparent; flex: none; cursor: pointer; margin-top: 1px; padding: 0; }
+.dtick:hover { border-color: var(--ok); color: var(--ok); }
+.dtick[aria-pressed="true"] { background: var(--ok); border-color: var(--ok); color: #fff; }
+.dtitle { border: 0; background: none; padding: 0; text-align: left; font: inherit; font-weight: 600; color: var(--ink); cursor: pointer; line-height: 1.3; min-width: 0; overflow-wrap: anywhere; }
+.dtitle:hover { text-decoration: underline; }
+.dmeta { display: flex; flex-wrap: wrap; gap: 4px 6px; align-items: center; font-size: 12px; }
+.dbtns { display: flex; gap: 4px; justify-content: flex-end; }
+.day-side { display: grid; gap: 12px; min-width: 0; }
+.day-side .card { display: grid; gap: 8px; }
+.ach { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.ach li { display: flex; gap: 6px; align-items: center; }
+.ach li span { flex: 1; min-width: 0; }
+.ach-sug { display: grid; gap: 6px; padding: 8px; border: 1px dashed var(--line); border-radius: 10px; }
+.dlist { display: grid; gap: 6px; }
+.dlist .row { flex-wrap: nowrap; }
+.dlist .dtitle { flex: 1; font-weight: 500; font-size: 13.5px; }
+.dhist { display: grid; gap: 2px; max-height: 320px; overflow: auto; }
+.dhist button { display: flex; justify-content: space-between; gap: 8px; border: 0; background: none; padding: 6px 8px; border-radius: 8px; cursor: pointer; font: inherit; color: var(--ink); text-align: left; }
+.dhist button:hover { background: var(--sunken); }
+.dhist button.on { background: var(--accent-soft); }
+/* "show this day": the day's tasks stand out, the rest steps back */
+.map-viewport.dayon .mnode.task:not(.dayhit) { opacity: .4; }
+.map-viewport.dayon .mnode.task.dayhit { box-shadow: 0 0 0 3px var(--accent), 0 6px 18px -6px color-mix(in srgb, var(--accent) 60%, transparent); }
+
 </style>
 <div class="app">
   <aside class="rail" aria-label="Main">
     <div class="brand"><span class="brand-mark"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c3.3 4 6 7.2 6 10.4a6 6 0 0 1-12 0C6 10.2 8.7 7 12 3z"/><path d="m9.3 13.6 1.9 1.9 3.6-4.1"/></svg></span><div><div class="brand-name">Action Register</div><div class="brand-sub">Email → tasks, with evidence</div></div></div>
     <button class="nav" data-nav="todo"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="m8 12 3 3 5-6"/></svg>To-do<span class="count" data-count="todo" hidden></span></button>
+    <button class="nav" data-nav="daily"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/><path d="m9 15 2 2 4-4"/></svg>Daily</button>
     <button class="nav" data-nav="review"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16v12H5.5L4 17.5z"/><path d="m8.5 10 2.2 2.2L15.5 7.5"/></svg>Review<span class="count" data-count="review" hidden></span></button>
     <button class="nav" data-nav="import"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>Add emails</button>
     <button class="nav" data-nav="emails"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>Emails</button>
@@ -558,6 +669,7 @@ textarea.ptitle { resize: none; overflow: hidden; min-height: 36px; line-height:
   </div>
   <nav class="tabbar" aria-label="Main">
     <button class="tab" data-nav="todo"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="m8 12 3 3 5-6"/></svg>To-do</button>
+    <button class="tab" data-nav="daily"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/><path d="m9 15 2 2 4-4"/></svg>Daily</button>
     <button class="tab" data-nav="review"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16v12H5.5L4 17.5z"/><path d="m8.5 10 2.2 2.2L15.5 7.5"/></svg>Review<span class="badge" data-count="review" hidden></span></button>
     <button class="tab" data-nav="import"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>Add</button>
     <button class="tab" data-nav="emails"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>Emails</button>
@@ -1644,8 +1756,8 @@ const CATEGORY = { submittal_review: 'Submittal review', technical_query: 'Techn
 const CHECK = { verified: 'Verified', partial: 'Partly matched', visual: 'Read from image', not_found: 'Not found in source', unknown_source: 'Source unclear', no_quote: 'No quote' };
 const FLAG = { missing_attachment: 'Missing attachment', unreadable: 'Not readable', truncated: 'Partly analysed', ambiguous: 'Ambiguous', uncertain_deadline: 'Deadline uncertain', conflict: 'Conflicting instructions', owner_unclear: 'Owner unclear', revision_mismatch: 'Revision mismatch', excluded: 'Not sent', images: 'Images not sent' };
 /* ---------- state ---------- */
-const DEFAULTS = { me: { name: '', emails: [], aliases: '', role: 'Mechanical design engineer — water & wastewater treatment', org: '', scope: '' }, projects: [], tier: 'complex', mask: false, storeText: true, vision: true, drawings: true, titleBlocks: true, maxPageImages: 8, setupDone: false };
-const St = { mcp: null, mode: 'starting', uid: null, refs: null, db: null, tasks: new Map(), emails: new Map(), settings: clone(DEFAULTS), ready: false, profileName: '', sample: null, limits: null, downloads: null, capsResolved: false };
+const DEFAULTS = { me: { name: '', emails: [], aliases: '', role: 'Mechanical design engineer — water & wastewater treatment', org: '', scope: '', manager: '' }, projects: [], tier: 'complex', mask: false, storeText: true, vision: true, drawings: true, titleBlocks: true, maxPageImages: 8, setupDone: false };
+const St = { mcp: null, mode: 'starting', uid: null, refs: null, db: null, tasks: new Map(), emails: new Map(), board: new Map(), daily: new Map(), layout: { off: {}, size: {} }, settings: clone(DEFAULTS), ready: false, profileName: '', sample: null, limits: null, downloads: null, capsResolved: false };
 const UI = { view: 'todo', todoQ: '', drawer: null, staging: [], analyzing: false, abort: null, pasteOpen: false, emailQ: '', previews: new Set(), confirm: null };
 
 function mergeSettings(d) {
@@ -1687,13 +1799,13 @@ let lsTimer = null;
 function saveLocal() {
   clearTimeout(lsTimer);
   lsTimer = setTimeout(() => {
-    try { localStorage.setItem(LS_KEY, JSON.stringify({ tasks: [...St.tasks.values()], emails: [...St.emails.values()], settings: St.settings })); }
+    try { localStorage.setItem(LS_KEY, JSON.stringify({ tasks: [...St.tasks.values()], emails: [...St.emails.values()], settings: St.settings, board: [...St.board.values()], daily: [...St.daily.values()], layout: St.layout })); }
     catch { toast('This browser refused to save (storage full or blocked). Export a backup from Setup.', { err: true }); }
   }, 250);
 }
 function putTask(t) {
   t.updatedAt = nowISO();
-  St.tasks.set(t.id, t);
+  St.tasks.set(t.id, t); FRESH.set(t.id, Date.now());
   if (St.mode === 'db') writeDoc(St.refs.tasks.doc(t.id), t); else saveLocal();
 }
 function delTask(id) {
@@ -1709,6 +1821,14 @@ function delEmail(id) {
   if (St.mode === 'db') { St.refs.emails.doc(id).delete().catch(dbError); St.refs.texts.doc(id).delete().catch(() => {}); }
   else { saveLocal(); try { const m = JSON.parse(localStorage.getItem(LS_TEXT) || '{}'); delete m[id]; localStorage.setItem(LS_TEXT, JSON.stringify(m)); } catch {} }
 }
+// canvas elements, canvas layout overrides and daily-tracker entries
+const FRESH = new Map();
+function putBoard(el) { el.updatedAt = nowISO(); St.board.set(el.id, el); if (St.mode === 'db') writeDoc(St.refs.board.doc(el.id), el); else saveLocal(); }
+function delBoard(id) { St.board.delete(id); if (St.mode === 'db') St.refs.board.doc(id).delete().catch(dbError); else saveLocal(); }
+function putLayout(l) { St.layout = l; if (St.mode === 'db') writeDoc(St.refs.layout, l); else saveLocal(); }
+function putDaily(d) { d.updatedAt = nowISO(); St.daily.set(d.id, d); if (St.mode === 'db') writeDoc(St.refs.daily.doc(d.id), d); else saveLocal(); }
+function delDaily(id) { St.daily.delete(id); if (St.mode === 'db') St.refs.daily.doc(id).delete().catch(dbError); else saveLocal(); }
+const mergeLayout = l => ({ off: {}, size: {}, ...(l || {}) });
 function putSettings(s) {
   St.settings = s;
   if (St.mode === 'db') writeDoc(St.refs.settings, s); else saveLocal();
@@ -1741,17 +1861,20 @@ async function initStore() {
   if (db && St.uid) {
     St.db = db; St.mode = 'db';
     const base = db.doc('data/users/' + St.uid + '/register');
-    St.refs = { tasks: base.collection('tasks'), emails: base.collection('emails'), texts: base.collection('texts'), settings: db.doc('data/users/' + St.uid + '/settings'), seen: db.doc('data/users/' + St.uid + '/gmailseen') };
+    St.refs = { tasks: base.collection('tasks'), emails: base.collection('emails'), texts: base.collection('texts'), board: base.collection('board'), daily: base.collection('daily'), settings: db.doc('data/users/' + St.uid + '/settings'), layout: db.doc('data/users/' + St.uid + '/canvaslayout'), seen: db.doc('data/users/' + St.uid + '/gmailseen') };
     let got = 0; const done = () => { if (++got >= 3 && !St.ready) { St.ready = true; setTimeout(() => { maybeAutoCheck(); if (UI.view === 'todo') maybeAutoCategorize(); }, 300); } render(); };
     const fail = e => { if (e && e.code === 'revoked') toast('Access to saved data ended for this view. Reload the page.', { err: true }); else toast('Live sync stopped (' + (e && e.code || 'error') + '). Reload to reconnect.', { err: true }); };
     St.refs.tasks.onSnapshot(s => { St.tasks = new Map(s.docs.map(d => [d.id, { ...clone(d.data()), id: d.id }])); if (!St._t) { St._t = 1; done(); } else scheduleRender(); }, fail);
     St.refs.emails.onSnapshot(s => { St.emails = new Map(s.docs.map(d => [d.id, { ...clone(d.data()), id: d.id }])); if (!St._e) { St._e = 1; done(); } else scheduleRender(); }, fail);
     St.refs.settings.onSnapshot(d => { St.settings = mergeSettings(d.exists ? clone(d.data()) : null); if (!St._s) { St._s = 1; done(); } else scheduleRender(); }, fail);
+    St.refs.board.onSnapshot(s => { St.board = new Map(s.docs.map(d => [d.id, { ...clone(d.data()), id: d.id }])); scheduleRender(); }, fail);
+    St.refs.daily.onSnapshot(s => { St.daily = new Map(s.docs.map(d => [d.id, { ...clone(d.data()), id: d.id }])); scheduleRender(); }, fail);
+    St.refs.layout.onSnapshot(d => { St.layout = mergeLayout(d.exists ? clone(d.data()) : null); scheduleRender(); }, fail);
   } else {
     St.mode = 'local';
     try {
       const raw = JSON.parse(localStorage.getItem(LS_KEY) || 'null');
-      if (raw) { (raw.tasks || []).forEach(t => St.tasks.set(t.id, t)); (raw.emails || []).forEach(e => St.emails.set(e.id, e)); St.settings = mergeSettings(raw.settings); }
+      if (raw) { (raw.tasks || []).forEach(t => St.tasks.set(t.id, t)); (raw.emails || []).forEach(e => St.emails.set(e.id, e)); (raw.board || []).forEach(b => St.board.set(b.id, b)); (raw.daily || []).forEach(d => St.daily.set(d.id, d)); St.layout = mergeLayout(raw.layout); St.settings = mergeSettings(raw.settings); }
     } catch {}
     St.ready = true; render(); setTimeout(() => { maybeAutoCheck(); if (UI.view === 'todo') maybeAutoCategorize(); }, 300);
   }
@@ -1801,6 +1924,8 @@ const BUCKETS = ['Overdue', 'Today', 'Next 7 days', 'Within 30 days', 'Later', '
 /* ---------- render scheduling ---------- */
 let rq = null;
 function scheduleRender() { if (rq) return; rq = requestAnimationFrame(() => { rq = null; render(); }); }
+// a full re-render would destroy the canvas element being dragged or edited, so it waits until that ends
+const cvHold = () => UI.view === 'todo' && (!!UI.cvEditing || (!!MP.mode && MP.mode !== 'pinch'));
 function keepFocus(fn) {
   const a = document.activeElement; const id = a && a.id; let ss = null, se = null;
   try { ss = a.selectionStart; se = a.selectionEnd; } catch {}
@@ -1808,6 +1933,7 @@ function keepFocus(fn) {
   if (id) { const n = document.getElementById(id); if (n && n !== document.activeElement) { n.focus({ preventScroll: true }); try { if (ss !== null) n.setSelectionRange(ss, se); } catch {} } }
 }
 function render() {
+  if (cvHold()) { UI.cvPending = true; return; }
   const c = counts();
   document.querySelectorAll('[data-nav]').forEach(b => b.setAttribute('aria-current', b.dataset.nav === UI.view ? 'page' : 'false'));
   const rc = c.review;
@@ -1819,7 +1945,7 @@ function render() {
   keepFocus(() => {
     const main = $('#main');
     if (!St.ready) { main.innerHTML = `<div class="wrap"><div class="empty"><div class="progress indet" style="width:180px"><i></i></div><p>Opening your register…</p></div></div>`; return; }
-    main.innerHTML = ({ todo: viewTodo, review: viewReview, import: viewImport, emails: viewEmails, setup: viewSetup })[UI.view]();
+    main.innerHTML = ({ todo: viewTodo, daily: viewDaily, review: viewReview, import: viewImport, emails: viewEmails, setup: viewSetup })[UI.view]();
   });
   if (UI.view === 'todo' && UI.todoMode === 'map') afterMapRender();
   document.querySelectorAll('#main textarea.autogrow').forEach(autosize);
@@ -2033,7 +2159,10 @@ async function aiCategorize(ids, quiet) {
   } catch (e) {
     CAT.error = e && e.code === 'not_granted' ? 'Claude access was not allowed for this page.' : e && e.code === 'rate_limited' ? 'Usage limit reached — try categorising later.' : 'Categorising failed' + (e && e.code ? ' (' + e.code + ')' : '') + '. Try again.';
     if (!quiet) toast(CAT.error, { err: true });
-  } finally { CAT.running = false; render(); }
+  } finally {
+    CAT.running = false; render();
+    if (CAT.queue && CAT.queue.length) { const q = [...new Set(CAT.queue)]; CAT.queue = []; setTimeout(() => aiCategorize(q, true), 50); }
+  }
 }
 function maybeAutoCategorize() {
   // runs when the viewer opens the To-do tab; only for tasks Claude has not categorised yet
@@ -2272,17 +2401,46 @@ function toggleSub(id, sid) {
 })();
 
 /* ---------- MIND MAP canvas ---------- */
+// The tree (My work → project → topic → task → items) is laid out automatically from the tasks.
+// The user can override it: St.layout.off moves a node and its whole branch, St.layout.size widens it.
+// Free board elements (stickies, text, shapes, frames, arrows, connectors, ink) live in St.board.
 UI.map = { x: 30, y: 30, k: 0.85, fitted: false }; UI.mapCollapsed = new Set(); UI.mapItems = new Set(); UI.mapSel = null;
 UI.mapShowDone = true; UI.mapFocus = 'all'; UI.mapQ = ''; UI.mapActivity = true;
+UI.tool = 'select'; UI.cvColor = 'ink'; UI.cvWidth = 3; UI.cvSel = new Set(); UI.cvUndo = []; UI.cvRedo = []; UI.cvTemp = null; UI.cvDrop = null;
+UI.mapFull = false; UI.mapAsOf = ''; UI.mapDay = '';
 const MX = { root: 0, project: 250, topic: 540, task: 830, item: 1190 };
 const MW = { root: 200, project: 250, topic: 250, task: 320, item: 280 };
 const MH = { root: 78, project: 72, topic: 52, task: 82, item: 34 };
 const MGAP = { project: 20, topic: 14, task: 12, item: 6, root: 0 };
 const MGAP_AFTER = { root: 0, project: 34, topic: 16, task: 8 };
 const relIds = t => Array.isArray(t.relatedIds) ? t.relatedIds : [];
+const dayOf = iso => { if (!iso) return ''; if (/^\d{4}-\d{2}-\d{2}$/.test(iso)) return iso; const d = new Date(iso); return isNaN(d) ? '' : d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
 function projKeyLabel(t) { const p = (t.project || '').trim(); return p ? ['p:' + E.normMatch(p), p] : ['p:~', 'No project']; }
+const topicKey = t => { const tp = topicOf(t); return 'tp:' + projKeyLabel(t)[0] + ':' + (tp ? E.normMatch(tp) : '~'); };
+// "As of" a past date: tasks created later are hidden, work finished later shows as still open.
+function asOfTask(t) {
+  const a = UI.mapAsOf; if (!a) return t;
+  const subs = subsOf(t).map(x => x.done && x.doneAt && dayOf(x.doneAt) > a ? { ...x, done: false } : x);
+  if (t.status === 'done' && t.completedAt && dayOf(t.completedAt) > a) return { ...t, status: 'in_progress', completedAt: null, subtasks: subs };
+  return { ...t, subtasks: subs };
+}
 function mapTasks() {
-  return [...St.tasks.values()].filter(t => (UI.mapShowDone || t.status !== 'done') && (UI.mapFocus === 'all' || projKeyLabel(t)[0] === UI.mapFocus));
+  const a = UI.mapAsOf;
+  return [...St.tasks.values()].filter(t => !a || !t.createdAt || dayOf(t.createdAt) <= a).map(asOfTask)
+    .filter(t => (UI.mapShowDone || t.status !== 'done') && (UI.mapFocus === 'all' || projKeyLabel(t)[0] === UI.mapFocus));
+}
+// tasks touched on a day: planned for it, created, completed, edited, or an item ticked
+function dayTaskIds(day) {
+  const s = new Set(); if (!day) return s;
+  for (const t of St.tasks.values()) {
+    if ((t.days || []).includes(day) || dayOf(t.createdAt) === day || (t.completedAt && dayOf(t.completedAt) === day) || (t.history || []).some(h => dayOf(h.at) === day) || subsOf(t).some(x => x.doneAt && dayOf(x.doneAt) === day)) s.add(t.id);
+  }
+  return s;
+}
+function nodeW(n) {
+  const tmp = UI.cvTemp;
+  if (tmp && tmp.kind === 'size' && tmp.id === n.id) return tmp.w;
+  const o = (St.layout.size || {})[n.id]; return o && o.w ? o.w : MW[n.type];
 }
 function buildMap() {
   const tasks = mapTasks();
@@ -2315,8 +2473,8 @@ function buildMap() {
   const place = (n) => {
     const hidden = UI.mapCollapsed.has(n.id);
     n.hiddenKids = hidden ? n.children.length : 0;
-    const kids = hidden ? [] : n.children;
-    n.x = MX[n.type]; n.w = MW[n.type]; n.h = Math.max(MH[n.type], measureNode(n));
+    const kids = hidden ? [] : n.children; n.kids = kids;
+    n.x = MX[n.type]; n.w = nodeW(n); n.h = Math.max(MH[n.type], measureNode(n));
     if (!kids.length) { n.y = cursor; cursor += n.h + MGAP[n.type]; }
     else {
       kids.forEach(place);
@@ -2328,40 +2486,58 @@ function buildMap() {
     nodes.push(n);
   };
   place(root);
+  // manual positions: a node's offset also moves everything branching from it
+  const off = St.layout.off || {}, tmp = UI.cvTemp && UI.cvTemp.kind === 'node' ? UI.cvTemp : null;
+  const shift = (n, dx, dy) => {
+    const o = off[n.id]; let x = dx + (o ? o.dx : 0), y = dy + (o ? o.dy : 0);
+    if (tmp && tmp.id === n.id) { x += tmp.dx; y += tmp.dy; }
+    n.x += x; n.y += y; n.kids.forEach(k => shift(k, x, y));
+  };
+  shift(root, 0, 0);
   const byTask = new Map(nodes.filter(n => n.type === 'task').map(n => [n.t.id, n]));
   const links = [];
   for (const n of byTask.values()) for (const rid of relIds(n.t)) { const m = byTask.get(rid); if (m) links.push({ from: m, to: n }); }
-  const wide = nodes.some(n => n.type === 'item');
-  return { nodes, edges, links, root, projects, w: (wide ? MX.item + MW.item : MX.task + MW.task) + 220, h: Math.max(cursor, 200) + 40 };
+  const byId = new Map(nodes.map(n => [n.id, n]));
+  // world bounds cover the tree and every board element
+  let x0 = 0, y0 = 0, x1 = 400, y1 = 200;
+  const grow = b => { x0 = Math.min(x0, b.x); y0 = Math.min(y0, b.y); x1 = Math.max(x1, b.x + b.w); y1 = Math.max(y1, b.y + b.h); };
+  nodes.forEach(grow);
+  for (const el of boardEls()) grow(elBox(el));
+  return { nodes, edges, links, root, projects, byId, byTask, x0: x0 - 40, y0: y0 - 40, w: x1 - x0 + 260, h: y1 - y0 + 80 };
 }
-function mapNodeHTML(n, hits) {
+function mapNodeHTML(n, hits, day) {
   const st = `left:${n.x || 0}px;top:${n.y || 0}px;width:${n.w}px;${n.h ? `height:${n.h}px;` : ''}--h:${n.hue ?? 186}`;
   const more = n.hiddenKids ? `<span class="mmore">+${n.hiddenKids}</span>` : '';
+  const rz = `<span class="rz" data-rz="${esc(n.id)}" data-kind="node" title="Drag to resize" aria-hidden="true"></span>`;
+  const drag = UI.cvTemp && UI.cvTemp.kind === 'node' && UI.cvTemp.id === n.id ? ' dragging' : '';
+  const drop = UI.cvDrop === n.id ? ' drop' : '';
   if (n.type === 'root') {
     const all = [...St.tasks.values()]; const open = all.filter(t => t.status !== 'done').length;
-    return `<div class="mnode root" data-node="root" style="${st}"><span class="brand-mark">${I.brand}</span><div><b>My work</b><small>${open} open · ${all.length - open} done</small></div></div>`;
+    return `<div class="mnode root${drag}" data-node="root" style="${st}"><span class="brand-mark">${I.brand}</span><div><b>My work</b><small>${open} open · ${all.length - open} done</small></div></div>`;
   }
   if (n.type === 'project') {
     const pct = n.n ? 100 * n.done / n.n : 0;
-    return `<div class="mnode project" data-node="${esc(n.id)}" data-type="project" data-pk="${esc(n.id)}" data-label="${esc(n.label)}" style="${st}">
+    return `<div class="mnode project${drag}${drop}" data-node="${esc(n.id)}" data-type="project" data-pk="${esc(n.id)}" data-label="${esc(n.label)}" style="${st}">
       ${n.id === 'p:~' ? '<span class="gicon">🗂️</span>' : projBadge(n.label)}
-      <div class="mtxt"><b dir="auto">${esc(n.label)}</b><small>${n.n - n.done} open · ${n.done} done</small></div>${ring(pct, 34)}${more}
-      <button class="mfocus" data-map="focus" title="Show only this project" aria-label="Show only this project">⤢</button></div>`;
+      <div class="mtxt"><b dir="auto" data-edit="${esc(n.id)}">${esc(n.label)}</b><small>${n.n - n.done} open · ${n.done} done</small></div>${ring(pct, 34)}${more}
+      <button class="mfocus" data-map="focus" title="Show only this project" aria-label="Show only this project">⤢</button>${n.id === 'p:~' ? '' : '<button class="mfocus mren" data-map="rename" title="Rename project" aria-label="Rename project">✎</button>'}${rz}</div>`;
   }
   if (n.type === 'topic') {
     const open = n.tasks.filter(t => t.status !== 'done').length;
-    return `<div class="mnode topic" data-node="${esc(n.id)}" data-type="topic" data-topic="${esc(n.key === '~' ? '' : n.label)}" data-plabel="${esc(n.tasks[0] ? projKeyLabel(n.tasks[0])[1] : '')}" style="${st}">
-      <span class="cicon">${n.key === '~' ? '🗂️' : '🧩'}</span><div class="mtxt"><b dir="auto">${esc(n.label)}</b><small>${open} open · ${n.tasks.length - open} done</small></div>${more}</div>`;
+    return `<div class="mnode topic${drag}${drop}" data-node="${esc(n.id)}" data-type="topic" data-topic="${esc(n.key === '~' ? '' : n.label)}" data-plabel="${esc(n.tasks[0] ? projKeyLabel(n.tasks[0])[1] : '')}" style="${st}">
+      <span class="cicon">${n.key === '~' ? '🗂️' : '🧩'}</span><div class="mtxt"><b dir="auto" data-edit="${esc(n.id)}">${esc(n.label)}</b><small>${open} open · ${n.tasks.length - open} done</small></div>${more}${n.key === '~' ? '' : '<button class="mfocus mren" data-map="rename" title="Rename topic" aria-label="Rename topic">✎</button>'}${rz}</div>`;
   }
   if (n.type === 'task') {
     const t = n.t, d = dueInfo(t), subs = subsOf(t).length, links = relIds(t).length + [...St.tasks.values()].filter(x => relIds(x).includes(t.id)).length;
     const sug = t.placement && t.placement.status === 'suggested';
-    const cls = ['mnode', 'task', 'p-' + (t.priority || 'medium'), t.status === 'done' ? 'done' : '', UI.mapSel === t.id ? 'sel' : '', hits && hits.has(t.id) ? 'hit' : '', sug ? 'suggest' : ''].join(' ');
+    const ach = [...St.daily.values()].filter(a => a.kind === 'achievement' && a.taskId === t.id).length;
+    const fresh = Date.now() - (FRESH.get(t.id) || 0) < 2500;
+    const cls = ['mnode', 'task', 'p-' + (t.priority || 'medium'), t.status === 'done' ? 'done' : '', UI.mapSel === t.id ? 'sel' : '', hits && hits.has(t.id) ? 'hit' : '', day && day.has(t.id) ? 'dayhit' : '', sug ? 'suggest' : '', fresh ? 'fresh' : ''].join(' ') + drag + drop;
     return `<div class="${cls}" data-node="${esc(n.id)}" data-type="task" data-tid="${esc(t.id)}" style="${st}">
       <button class="mtick" data-map="tick" aria-label="${t.status === 'done' ? 'Reopen' : 'Mark done'}">${I.check}</button>
       <div class="mtxt"><b dir="auto">${esc(t.title)}</b>
         <small><span class="mono">${esc(t.ref || '')}</span>${t.status === 'done' ? `<span class="mdone">✓ ${esc(fmtDate((t.completedAt || t.updatedAt || '').slice(0, 10)))}</span>` : `<span class="duepill ${d.cls}">${dueEmoji(d)}${esc(d.txt)}</span>`}
-        ${subs ? `<button class="mitems" data-map="items" title="Show items">🗂️ ${subsDone(t)}/${subs}</button>` : ''}${links ? `<span title="Linked tasks">🔗 ${links}</span>` : ''}${t.status === 'waiting' || t.ownership === 'waiting' ? '<span>⏳</span>' : ''}${t.status === 'blocked' ? '<span>⛔</span>' : ''}${sug ? '<span class="msug" title="Claude needs your confirmation">❓ Confirm</span>' : ''}</small></div></div>`;
+        ${t.status === 'in_progress' ? '<span title="In progress">▶</span>' : ''}${subs ? `<button class="mitems" data-map="items" title="Show items">🗂️ ${subsDone(t)}/${subs}</button>` : ''}${links ? `<span title="Linked tasks">🔗 ${links}</span>` : ''}${isFromManager(t) ? '<span title="Assigned by your manager">👔</span>' : ''}${(t.days || []).includes(T()) ? '<span title="On today’s plan">📌</span>' : ''}${ach ? `<span title="Achievements">⭐ ${ach}</span>` : ''}${t.status === 'waiting' || t.ownership === 'waiting' ? '<span>⏳</span>' : ''}${t.status === 'blocked' ? '<span>⛔</span>' : ''}${sug ? '<span class="msug" title="Claude needs your confirmation">❓ Confirm</span>' : ''}</small></div>${rz}</div>`;
   }
   const s = n.s;
   return `<div class="mnode item ${s.done ? 'done' : ''}" data-node="${esc(n.id)}" data-type="item" data-tid="${esc(n.t.id)}" data-sid="${esc(s.id)}" style="${st}"><span class="subtick" aria-pressed="${!!s.done}">${I.check}</span><span class="itxt" dir="auto">${esc(s.text)}</span></div>`;
@@ -2370,7 +2546,7 @@ function mapNodeHTML(n, hits) {
 const measureCache = new Map();
 function measureNode(n) {
   if (n.type === 'root') return MH.root;
-  const saved = n.h; n.h = 0; n.w = MW[n.type];
+  const saved = n.h; n.h = 0; n.w = nodeW(n);
   const html = mapNodeHTML(n, null); n.h = saved;
   const key = n.w + '|' + html;
   if (measureCache.has(key)) return measureCache.get(key);
@@ -2391,52 +2567,219 @@ function activityList() {
     for (const h of (t.history || [])) ev.push({ at: h.at, t, text: h.text });
     for (const s of subsOf(t)) if (s.done && s.doneAt) ev.push({ at: s.doneAt, t, text: 'Item done: ' + s.text });
   }
-  return ev.filter(e => e.at).sort((a, b) => b.at.localeCompare(a.at)).slice(0, 80);
+  for (const a of St.daily.values()) if (a.kind === 'achievement' && a.taskId && St.tasks.has(a.taskId)) ev.push({ at: a.createdAt, t: St.tasks.get(a.taskId), text: 'Achievement: ' + a.text });
+  const day = UI.mapDay, until = UI.mapAsOf;
+  return ev.filter(e => e.at && (!day || dayOf(e.at) === day) && (!until || dayOf(e.at) <= until)).sort((a, b) => b.at.localeCompare(a.at)).slice(0, 80);
 }
 function evEmoji(txt) {
-  if (/^Created/.test(txt)) return '🆕'; if (/→ Done|Item done/.test(txt)) return '✅'; if (/^Status/.test(txt)) return '🔄'; if (/Deadline|deadline/.test(txt)) return '📅';
-  if (/Linked|link/.test(txt)) return '🔗'; if (/Project|Moved|Category|placement/i.test(txt)) return '🧭'; if (/email/i.test(txt)) return '📨'; return '✏️';
+  if (/^Created|^Added in the daily/.test(txt)) return '🆕'; if (/→ Done|Item done/.test(txt)) return '✅'; if (/^Achievement/.test(txt)) return '⭐'; if (/^Assigned by/.test(txt)) return '👔'; if (/^Status/.test(txt)) return '🔄'; if (/Deadline|deadline/.test(txt)) return '📅';
+  if (/Linked|link/.test(txt)) return '🔗'; if (/Project|Moved|Category|placement|renamed/i.test(txt)) return '🧭'; if (/email/i.test(txt)) return '📨'; if (/daily plan/i.test(txt)) return '📌'; return '✏️';
+}
+
+/* --- board elements --- */
+const PALETTE = ['ink', '#FFD966', '#FFB27A', '#F7A1C4', '#9EE0A7', '#8EC5FF', '#C9B3FF', '#E5484D', '#0A6B74'];
+const colorCss = c => !c || c === 'ink' ? 'var(--ink)' : c;
+const TOOLS = [
+  ['select', 'V', 'Select and move', '<path d="M5 3l13 8-6 1.5L9 19z"/>'],
+  ['hand', 'H', 'Pan (or hold Space)', '<path d="M8 12V5.5a1.5 1.5 0 0 1 3 0V11m0-6.5a1.5 1.5 0 0 1 3 0V11m0-5a1.5 1.5 0 0 1 3 0v7c0 4-2.5 7-6 7s-5-1.5-7-5l-1.5-3a1.5 1.5 0 0 1 2.6-1.4L8 13"/>'],
+  ['task', 'K', 'New task node — click on the canvas, or on a project or topic', '<rect x="4" y="5" width="16" height="14" rx="3"/><path d="m8 12 2.5 2.5L16 9"/>'],
+  ['sticky', 'N', 'Sticky note', '<path d="M5 4h14v10l-5 6H5z"/><path d="M14 20v-6h5"/>'],
+  ['text', 'T', 'Text', '<path d="M5 6V4h14v2M12 4v16M9 20h6"/>'],
+  ['rect', 'R', 'Rectangle', '<rect x="4" y="6" width="16" height="12" rx="1.5"/>'],
+  ['ellipse', 'O', 'Ellipse', '<ellipse cx="12" cy="12" rx="8.5" ry="6.5"/>'],
+  ['diamond', 'D', 'Diamond (decision)', '<path d="M12 3l9 9-9 9-9-9z"/>'],
+  ['arrow', 'A', 'Arrow', '<path d="M5 19 19 5M10 5h9v9"/>'],
+  ['line', 'L', 'Line', '<path d="M5 19 19 5"/>'],
+  ['connector', 'C', 'Connector — drag from one item to another. Between two tasks it links them.', '<circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="5.5" r="2.5"/><path d="M7.5 16.5c2-5 4-7 9-9"/>'],
+  ['pen', 'P', 'Pen', '<path d="M4 20l1-4L16 5l3 3L8 19z"/><path d="m14 7 3 3"/>'],
+  ['highlighter', 'M', 'Highlighter', '<path d="m9 15-3 5h5l2-3"/><path d="M9 15 17 4l3 3-8 11z"/>'],
+  ['eraser', 'E', 'Eraser — removes ink, shapes, notes and connectors it touches', '<path d="M4 16 14 6l6 6-8 8H8z"/><path d="M11 9l6 6M8 20h12"/>'],
+  ['frame', 'F', 'Frame (group an area)', '<path d="M7 3v18M17 3v18M3 7h18M3 17h18"/>'],
+];
+const TOOL_KEY = Object.fromEntries(TOOLS.map(t => [t[1].toLowerCase(), t[0]]));
+const CREATE_TOOLS = ['sticky', 'text', 'rect', 'ellipse', 'diamond', 'arrow', 'line', 'frame'];
+const STAY_TOOLS = ['pen', 'highlighter', 'eraser', 'connector', 'hand'];
+function boardEls() {
+  const a = UI.mapAsOf;
+  return [...St.board.values()].filter(el => !a || !el.createdAt || dayOf(el.createdAt) <= a)
+    .sort((x, y) => (x.z || 0) - (y.z || 0) || (x.createdAt || '').localeCompare(y.createdAt || ''));
+}
+// element with the in-progress move / resize applied
+function liveEl(el) {
+  const tmp = UI.cvTemp; if (!tmp) return el;
+  if (tmp.kind === 'els' && tmp.ids.has(el.id)) return moveEl(el, tmp.dx, tmp.dy);
+  if (tmp.kind === 'elsize' && tmp.id === el.id) return { ...el, w: tmp.w, h: tmp.h };
+  return el;
+}
+function moveEl(el, dx, dy) {
+  if (el.type === 'stroke') return { ...el, pts: el.pts.map(p => [Math.round((p[0] + dx) * 10) / 10, Math.round((p[1] + dy) * 10) / 10]) };
+  if (el.type === 'line') return { ...el, x1: el.x1 + dx, y1: el.y1 + dy, x2: el.x2 + dx, y2: el.y2 + dy };
+  if (el.type === 'connector') return el;
+  return { ...el, x: el.x + dx, y: el.y + dy };
+}
+function elBox(el) {
+  el = liveEl(el);
+  if (el.type === 'stroke') { const xs = el.pts.map(p => p[0]), ys = el.pts.map(p => p[1]); const x = Math.min(...xs), y = Math.min(...ys); return { x, y, w: Math.max(...xs) - x || 1, h: Math.max(...ys) - y || 1 }; }
+  if (el.type === 'line') { const x = Math.min(el.x1, el.x2), y = Math.min(el.y1, el.y2); return { x, y, w: Math.abs(el.x2 - el.x1) || 1, h: Math.abs(el.y2 - el.y1) || 1 }; }
+  if (el.type === 'connector') return { x: 0, y: 0, w: 0, h: 0 };
+  return { x: el.x, y: el.y, w: el.w, h: el.h };
+}
+const strokePath = pts => {
+  if (pts.length < 3) return `M${pts[0][0]} ${pts[0][1]} L${(pts[1] || pts[0])[0]} ${(pts[1] || pts[0])[1]}`;
+  let d = `M${pts[0][0]} ${pts[0][1]}`;
+  for (let i = 1; i < pts.length - 1; i++) { const mx = (pts[i][0] + pts[i + 1][0]) / 2, my = (pts[i][1] + pts[i + 1][1]) / 2; d += ` Q${pts[i][0]} ${pts[i][1]} ${mx.toFixed(1)} ${my.toFixed(1)}`; }
+  const l = pts[pts.length - 1]; return d + ` L${l[0]} ${l[1]}`;
+};
+function shapeSVG(kind) {
+  if (kind === 'ellipse') return '<ellipse cx="50" cy="50" rx="49" ry="49"/>';
+  if (kind === 'diamond') return '<path d="M50 1 99 50 50 99 1 50z"/>';
+  return '<rect x="1" y="1" width="98" height="98" rx="4"/>';
+}
+function belHTML(el, hits) {
+  el = liveEl(el);
+  const sel = UI.cvSel.has(el.id) ? ' sel' : '', hit = hits && hits.has(el.id) ? ' hit' : '';
+  const st = `left:${el.x}px;top:${el.y}px;width:${el.w}px;height:${el.h}px`;
+  const rz = UI.cvSel.size === 1 && sel ? `<span class="rz" data-rz="${esc(el.id)}" data-kind="el" aria-hidden="true"></span>` : '';
+  const txt = `<div class="btxt" dir="auto">${esc(el.text || '')}</div>`;
+  if (el.type === 'sticky') return `<div class="bel sticky${sel}${hit}" data-el="${esc(el.id)}" style="${st};--c:${colorCss(el.color === 'ink' ? '#FFD966' : el.color)}">${txt}${rz}</div>`;
+  if (el.type === 'text') return `<div class="bel btext${sel}${hit}" data-el="${esc(el.id)}" style="${st};color:${colorCss(el.color)};font-size:${el.size || 20}px">${txt}${rz}</div>`;
+  if (el.type === 'shape') return `<div class="bel shape${sel}${hit}" data-el="${esc(el.id)}" style="${st};--c:${colorCss(el.color)}"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${shapeSVG(el.kind)}</svg>${txt}${rz}</div>`;
+  if (el.type === 'frame') return `<div class="bel frame${sel}${hit}" data-el="${esc(el.id)}" style="${st};--c:${colorCss(el.color === 'ink' ? '#8EC5FF' : el.color)}"><div class="ftitle btxt" dir="auto">${esc(el.text || 'Frame')}</div>${rz}</div>`;
+  return '';
+}
+function inkSVG(el, M) {
+  el = liveEl(el);
+  const sel = UI.cvSel.has(el.id) ? ' sel' : '';
+  if (el.type === 'stroke') { const d = strokePath(el.pts); return `<g class="ink${sel}" data-el="${esc(el.id)}"><path d="${d}" stroke="${colorCss(el.color)}" stroke-width="${el.width}" ${el.alpha ? `stroke-opacity="${el.alpha}"` : ''} fill="none" stroke-linecap="round" stroke-linejoin="round"/><path class="hit" d="${d}" stroke-width="${Math.max(14, el.width + 10)}"/></g>`; }
+  if (el.type === 'line') { const d = `M${el.x1} ${el.y1} L${el.x2} ${el.y2}`; return `<g class="ink${sel}" data-el="${esc(el.id)}" style="color:${colorCss(el.color)}"><path d="${d}" stroke="currentColor" stroke-width="${el.width || 3}" fill="none" stroke-linecap="round" ${el.arrow ? 'marker-end="url(#cv-arrow)"' : ''}/><path class="hit" d="${d}" stroke-width="16"/></g>`; }
+  if (el.type === 'connector') {
+    const a = refBox(el.from, M), b = refBox(el.to, M); if (!a || !b) return '';
+    const [p, q] = clipBoxes(a, b); const d = `M${p.x} ${p.y} L${q.x} ${q.y}`;
+    return `<g class="ink conn${sel}" data-el="${esc(el.id)}" style="color:${colorCss(el.color)}"><path d="${d}" stroke="currentColor" stroke-width="${el.width || 2.5}" fill="none" stroke-dasharray="${el.dash ? '7 6' : ''}" marker-end="url(#cv-arrow)"/><path class="hit" d="${d}" stroke-width="16"/></g>`;
+  }
+  return '';
+}
+function refBox(ref, M) {
+  if (!ref) return null;
+  if (ref.k === 'n') { const n = M.byId.get(ref.id); return n ? { x: n.x, y: n.y, w: n.w, h: n.h } : null; }
+  const el = St.board.get(ref.id); return el && !['stroke', 'line', 'connector'].includes(el.type) ? elBox(el) : null;
+}
+// line between two boxes, from edge to edge along the centre line
+function clipBoxes(a, b) {
+  const ca = { x: a.x + a.w / 2, y: a.y + a.h / 2 }, cb = { x: b.x + b.w / 2, y: b.y + b.h / 2 };
+  const clip = (box, c, toward) => {
+    const dx = toward.x - c.x, dy = toward.y - c.y; if (!dx && !dy) return c;
+    const s = Math.min(dx ? (box.w / 2) / Math.abs(dx) : Infinity, dy ? (box.h / 2) / Math.abs(dy) : Infinity);
+    return { x: Math.round((c.x + dx * Math.min(1, s)) * 10) / 10, y: Math.round((c.y + dy * Math.min(1, s)) * 10) / 10 };
+  };
+  return [clip(a, ca, cb), clip(b, cb, ca)];
+}
+function mapHits() {
+  const q = E.normMatch(UI.mapQ || ''); if (!q) return null;
+  const hits = new Set(); const words = q.split(' ');
+  for (const t of St.tasks.values()) { const h = E.normMatch([t.ref, t.title, t.action, t.project, topicOf(t), subsOf(t).map(x => x.text).join(' ')].join(' ')); if (words.every(w => h.includes(w))) hits.add(t.id); }
+  for (const el of St.board.values()) if (el.text && words.every(w => E.normMatch(el.text).includes(w))) hits.add(el.id);
+  return hits;
+}
+function worldHTML(M) {
+  const hits = mapHits(); const day = UI.mapDay ? dayTaskIds(UI.mapDay) : null;
+  const sel = UI.mapSel;
+  const els = boardEls();
+  const frames = els.filter(e => e.type === 'frame'), blocks = els.filter(e => ['sticky', 'text', 'shape'].includes(e.type)), ink = els.filter(e => ['stroke', 'line', 'connector'].includes(e.type));
+  return `${frames.map(e => belHTML(e, hits)).join('')}
+    <svg class="map-edges" width="${M.w}" height="${M.h}" aria-hidden="true">
+      <defs><marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="arrowhead"/></marker></defs>
+      ${M.edges.map(e => `<path class="edge ${e.b.type === 'task' && e.b.t.status === 'done' ? 'done' : ''}" style="--h:${e.hue}" d="${edgePath(e.a, e.b)}"/>`).join('')}
+      ${M.links.map(l => `<path class="link ${sel && (l.from.t.id === sel || l.to.t.id === sel) ? 'hot' : ''}" d="${linkPath(l.from, l.to)}" marker-end="url(#arrow)"/>`).join('')}
+    </svg>
+    ${blocks.map(e => belHTML(e, hits)).join('')}
+    ${M.nodes.map(n => mapNodeHTML(n, hits, day)).join('')}
+    <svg class="map-ink" width="${M.w}" height="${M.h}">
+      <defs><marker id="cv-arrow" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>
+      ${ink.map(e => inkSVG(e, M)).join('')}
+      <g id="cv-live"></g>
+    </svg>`;
+}
+function ctxHTML() {
+  const ids = [...UI.cvSel].filter(id => St.board.has(id)); if (!ids.length) return '';
+  const els = ids.map(id => St.board.get(id)); const one = els.length === 1 ? els[0] : null;
+  const canTask = one && ['sticky', 'text', 'shape'].includes(one.type) && (one.text || '').trim();
+  const inked = els.some(e => ['stroke', 'line', 'connector'].includes(e.type));
+  return `<div class="cv-ctx" role="toolbar" aria-label="Selection">
+    <span class="small muted">${els.length} selected</span>
+    ${PALETTE.map(c => `<button class="sw" data-act="cv-recolor" data-c="${c}" style="--c:${colorCss(c)}" aria-label="Colour ${c}"></button>`).join('')}
+    ${inked ? `<button class="btn sm ghost" data-act="cv-width" data-d="-1" aria-label="Thinner">−</button><button class="btn sm ghost" data-act="cv-width" data-d="1" aria-label="Thicker">＋</button>` : ''}
+    ${canTask ? `<button class="btn sm" data-act="cv-to-task" title="Turn this note into a task in your to-do list">→ Task</button>` : ''}
+    <button class="btn sm ghost" data-act="cv-front" title="Bring to front">⬆</button><button class="btn sm ghost" data-act="cv-dup" title="Duplicate (Ctrl+D)">⧉</button>
+    <button class="btn sm ghost danger" data-act="cv-del" title="Delete (Del)">${I.trash}</button></div>`;
+}
+function toolsHTML() {
+  return `<div class="cv-tools" role="toolbar" aria-label="Canvas tools">
+    ${TOOLS.map(([k, key, label, d]) => `<button class="cvt ${UI.tool === k ? 'on' : ''}" data-act="cv-tool" data-tool="${k}" title="${esc(label)} (${key})" aria-label="${esc(label)}" aria-pressed="${UI.tool === k}">${svg(d, 18)}</button>`).join('')}
+  </div>
+  <div class="cv-sub" role="toolbar" aria-label="Colour and history">
+    <div class="cvt-colors">${PALETTE.map(c => `<button class="sw ${UI.cvColor === c ? 'on' : ''}" data-act="cv-color" data-c="${c}" style="--c:${colorCss(c)}" aria-label="Colour ${c}" aria-pressed="${UI.cvColor === c}"></button>`).join('')}</div>
+    <span class="cvt-sep"></span>
+    <button class="cvt" data-act="cv-undo" title="Undo (Ctrl+Z)" aria-label="Undo" ${UI.cvUndo.length ? '' : 'disabled'}>${svg('<path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/>', 18)}</button>
+    <button class="cvt" data-act="cv-redo" title="Redo (Ctrl+Shift+Z)" aria-label="Redo" ${UI.cvRedo.length ? '' : 'disabled'}>${svg('<path d="m15 14 5-5-5-5"/><path d="M20 9H9a5 5 0 0 0 0 10h3"/>', 18)}</button>
+  </div>`;
 }
 function viewMap() {
   const M = buildMap(); UI.mapLayout = M;
-  const q = E.normMatch(UI.mapQ || ''); let hits = null;
-  if (q) { hits = new Set(); for (const t of St.tasks.values()) { const h = E.normMatch([t.ref, t.title, t.action, t.project, topicOf(t), subsOf(t).map(x => x.text).join(' ')].join(' ')); if (q.split(' ').every(w => h.includes(w))) hits.add(t.id); } }
+  const hits = mapHits();
   const allProjects = [...new Map([...St.tasks.values()].map(t => projKeyLabel(t))).entries()].sort((a, b) => (a[0] === 'p:~') - (b[0] === 'p:~') || a[1].localeCompare(b[1]));
   const sugN = [...St.tasks.values()].filter(t => t.placement && t.placement.status === 'suggested').length;
-  const sel = UI.mapSel;
-  const selSet = new Set(); if (sel) { selSet.add(sel); const t = St.tasks.get(sel); relIds(t || {}).forEach(x => selSet.add(x)); for (const x of St.tasks.values()) if (relIds(x).includes(sel)) selSet.add(x.id); }
   const act = UI.mapActivity ? activityList() : [];
-  return `<div class="map-wrap">
+  const offN = Object.keys(St.layout.off || {}).length + Object.keys(St.layout.size || {}).length;
+  return `<div class="map-wrap ${UI.mapFull ? 'full' : ''}">
     ${sugN ? callout('info', `<div class="row"><span>❓ Claude wasn’t sure where ${sugN} task${sugN > 1 ? 's belong' : ' belongs'}. Pick the right place from its suggestions.</span><span class="spacer"></span><button class="btn sm primary" data-act="map-next-suggest">Review</button></div>`) : ''}
+    ${UI.mapAsOf ? callout('info', `<div class="row"><span>🕒 Showing the map as it was on <b>${esc(fmtDate(UI.mapAsOf, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }))}</b>: later tasks are hidden and work finished later shows as open. Projects and topics are shown as they are now.</span><span class="spacer"></span><button class="btn sm" data-act="map-now">Back to now</button></div>`) : ''}
     <div class="map-toolbar">
       <div class="map-projects" role="toolbar" aria-label="Projects">
         <button class="mp-chip ${UI.mapFocus === 'all' ? 'on' : ''}" data-act="map-focus" data-pk="all">🌐 All projects</button>
         ${allProjects.map(([k, l]) => `<button class="mp-chip ${UI.mapFocus === k ? 'on' : ''}" data-act="map-focus" data-pk="${esc(k)}">${k === 'p:~' ? '🗂️' : projBadge(l, 'xs')}<span dir="auto">${esc(l)}</span></button>`).join('')}
       </div>
       <div class="row map-tools">
-        <label class="search todo-search">${I.search}<span class="sr">Find on map</span><input class="input" id="map-q" type="search" placeholder="Find a task or item…" value="${esc(UI.mapQ)}" data-inp="mapQ"></label>
+        <label class="search todo-search">${I.search}<span class="sr">Find on map</span><input class="input" id="map-q" type="search" placeholder="Find a task, item or note…" value="${esc(UI.mapQ)}" data-inp="mapQ"></label>
         ${hits ? `<span class="small muted">${hits.size} found</span>` : ''}
         <label class="check small"><input type="checkbox" id="map-done" data-chg="map-opt" data-key="mapShowDone" ${UI.mapShowDone ? 'checked' : ''}>Completed (history)</label>
         <label class="check small"><input type="checkbox" id="map-act" data-chg="map-opt" data-key="mapActivity" ${UI.mapActivity ? 'checked' : ''}>Activity</label>
+        <label class="small map-date" title="Highlight the tasks worked on that day">📌 Day <input class="input" type="date" id="map-day" data-chg="map-day" value="${esc(UI.mapDay)}" max="${T()}"></label>
+        <label class="small map-date" title="Show the map as it was on a past date">🕒 As of <input class="input" type="date" id="map-asof" data-chg="map-asof" value="${esc(UI.mapAsOf)}" max="${T()}"></label>
+        ${offN ? `<button class="btn sm ghost" data-act="map-reset-layout" title="Put every node back in its automatic place">↺ Tidy layout</button>` : ''}
         <div class="seg zoom"><button data-act="map-zoom" data-z="-1" aria-label="Zoom out">−</button><button data-act="map-fit" aria-label="Fit to screen">Fit</button><button data-act="map-zoom" data-z="1" aria-label="Zoom in">+</button></div>
+        <button class="btn sm" data-act="map-full" aria-pressed="${UI.mapFull}" title="${UI.mapFull ? 'Exit full screen (Esc)' : 'Full screen (Shift+F)'}">${UI.mapFull ? '⤡ Exit full screen' : '⤢ Full screen'}</button>
       </div>
     </div>
     <div class="map-body ${UI.mapActivity ? 'with-act' : ''}">
-      <div class="map-viewport" id="map-vp" tabindex="0" aria-label="Task map. Drag to move around, scroll or pinch to zoom.">
-        ${M.projects.length ? `<div class="map-world" id="map-world" style="width:${M.w}px;height:${M.h}px;transform:translate(${UI.map.x}px,${UI.map.y}px) scale(${UI.map.k})">
-          <svg class="map-edges" width="${M.w}" height="${M.h}" aria-hidden="true">
-            <defs><marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="arrowhead"/></marker></defs>
-            ${M.edges.map(e => `<path class="edge ${e.b.type === 'task' && e.b.t.status === 'done' ? 'done' : ''}" style="--h:${e.hue}" d="${edgePath(e.a, e.b)}"/>`).join('')}
-            ${M.links.map(l => `<path class="link ${selSet.has(l.from.t.id) && selSet.has(l.to.t.id) && sel && (l.from.t.id === sel || l.to.t.id === sel) ? 'hot' : ''}" d="${linkPath(l.from, l.to)}" marker-end="url(#arrow)"/>`).join('')}
-          </svg>
-          ${M.nodes.map(n => mapNodeHTML(n, hits)).join('')}
-        </div>` : `<div class="empty"><div class="big-emoji">🧠</div><h3>Your map is empty</h3><p>Approved tasks appear here, branching from projects and categories.</p><button class="btn primary" data-act="nav" data-view="import">${I.upload} Add emails</button></div>`}
-        <div class="map-hint">Drag to move · scroll or pinch to zoom · drag a task onto a project, topic or another task to move or link it</div>
+      <div class="map-viewport ${UI.mapDay ? 'dayon' : ''}" id="map-vp" data-tool="${esc(UI.tool)}" tabindex="0" aria-label="Task canvas. Drag to move around, scroll or pinch to zoom.">
+        <div class="map-world" id="map-world" style="width:${M.w}px;height:${M.h}px;transform:translate(${UI.map.x}px,${UI.map.y}px) scale(${UI.map.k})">${worldHTML(M)}</div>
+        ${M.projects.length || St.board.size ? '' : `<div class="empty map-empty"><div class="big-emoji">🧠</div><h3>Your canvas is empty</h3><p>Approved tasks appear here, branching from projects and topics. Use the tools on the left to add notes, shapes and drawings.</p><button class="btn primary" data-act="nav" data-view="import">${I.upload} Add emails</button></div>`}
+        ${toolsHTML()}
+        <div id="cv-ctx-slot">${ctxHTML()}</div>
+        <div class="map-hint">${esc(TOOL_HINT[UI.tool] || TOOL_HINT.select)}</div>
       </div>
-      ${UI.mapActivity ? `<aside class="map-activity"><div class="label" style="padding:12px 14px 6px">Activity</div>${act.length ? `<ol>${act.map(e => `<li><button data-act="map-goto" data-id="${esc(e.t.id)}"><span class="ae">${evEmoji(e.text)}</span><span class="atxt"><b>${esc(e.t.ref || '')}</b> <span dir="auto">${esc(E.clip(e.t.title, 60))}</span><small dir="auto">${esc(e.text)}</small></span><time>${esc(fmtDate(e.at.slice(0, 10)))}</time></button></li>`).join('')}</ol>` : '<p class="small muted" style="padding:0 14px">No activity yet.</p>'}</aside>` : ''}
+      ${UI.mapActivity ? `<aside class="map-activity"><div class="label" style="padding:12px 14px 6px">Activity${UI.mapDay ? ' · ' + esc(fmtDate(UI.mapDay)) : ''}</div>${act.length ? `<ol>${act.map(e => `<li><button data-act="map-goto" data-id="${esc(e.t.id)}"><span class="ae">${evEmoji(e.text)}</span><span class="atxt"><b>${esc(e.t.ref || '')}</b> <span dir="auto">${esc(E.clip(e.t.title, 60))}</span><small dir="auto">${esc(e.text)}</small></span><time>${esc(fmtDate(e.at.slice(0, 10)))}</time></button></li>`).join('')}</ol>` : '<p class="small muted" style="padding:0 14px">No activity yet.</p>'}</aside>` : ''}
     </div>
   </div>`;
 }
+const TOOL_HINT = {
+  select: 'Drag empty space to move around · scroll or pinch to zoom · drag a node to move it (its branch follows) · drop a task on a project, topic or task to move or link it · Shift+drag to select notes',
+  hand: 'Drag to move around the canvas', task: 'Click empty canvas for a new task, or click a project or topic to add the task there',
+  sticky: 'Click to place a sticky note, then type', text: 'Click to add text', rect: 'Drag to draw a rectangle', ellipse: 'Drag to draw an ellipse', diamond: 'Drag to draw a diamond',
+  arrow: 'Drag to draw an arrow', line: 'Drag to draw a line', connector: 'Drag from one task, node or note to another to connect them',
+  pen: 'Draw freehand', highlighter: 'Highlight freehand', eraser: 'Drag over ink, notes, shapes or connectors to erase them', frame: 'Drag to frame an area',
+};
+// re-render only the world (fast path for dragging, drawing and selection)
+let worldRaf = null;
+function renderWorld() {
+  const w = $('#map-world'); if (!w) return;
+  const M = buildMap(); UI.mapLayout = M;
+  w.style.width = M.w + 'px'; w.style.height = M.h + 'px';
+  w.innerHTML = worldHTML(M);
+  const c = $('#cv-ctx-slot'); if (c) c.innerHTML = ctxHTML();
+}
+function renderWorldSoon() { if (worldRaf) return; worldRaf = requestAnimationFrame(() => { worldRaf = null; renderWorld(); }); }
 /* --- camera --- */
 function applyCam(animate) {
   const w = $('#map-world'); if (!w) return;
@@ -2446,26 +2789,26 @@ function applyCam(animate) {
 function mapFit(smart) {
   const vp = $('#map-vp'), M = UI.mapLayout; if (!vp || !M) return;
   const W = vp.clientWidth, H = vp.clientHeight;
-  const fitK = Math.min(1, (W - 40) / M.w, (H - 60) / M.h);
-  const k = smart === true ? Math.max(W < 600 ? 0.5 : 0.6, Math.min(1, fitK)) : Math.max(0.25, fitK);
+  const fitK = Math.min(1, (W - 120) / M.w, (H - 60) / M.h);
+  const k = smart === true ? Math.max(W < 600 ? 0.5 : 0.6, Math.min(1, fitK)) : Math.max(0.2, fitK);
   UI.map.k = k;
-  UI.map.x = M.w * k <= W ? (W - M.w * k) / 2 : 16;
-  if (M.h * k <= H) UI.map.y = (H - M.h * k) / 2;
+  UI.map.x = M.w * k <= W - 60 ? (W + 60 - M.w * k) / 2 - M.x0 * k : 70 - M.x0 * k;
+  if (M.h * k <= H) UI.map.y = (H - M.h * k) / 2 - M.y0 * k;
   else { const r = M.nodes.find(n => n.type === 'root'); UI.map.y = H / 2 - (r ? r.y + r.h / 2 : 0) * k; }
   UI.map.fitted = true; applyCam(true);
 }
 function mapZoom(f, cx, cy) {
   const vp = $('#map-vp'); if (!vp) return;
   const r = vp.getBoundingClientRect(); cx = cx ?? r.width / 2; cy = cy ?? r.height / 2;
-  const k2 = Math.max(0.25, Math.min(2.2, UI.map.k * f));
+  const k2 = Math.max(0.2, Math.min(3, UI.map.k * f));
   UI.map.x = cx - (cx - UI.map.x) * (k2 / UI.map.k); UI.map.y = cy - (cy - UI.map.y) * (k2 / UI.map.k); UI.map.k = k2; applyCam(false);
 }
 function centerOnTask(id) {
   const t = St.tasks.get(id); if (!t) return;
-  let changed = false;
-  if (t.status === 'done' && !UI.mapShowDone) { UI.mapShowDone = true; changed = true; }
-  const [pk] = projKeyLabel(t); if (UI.mapFocus !== 'all' && UI.mapFocus !== pk) { UI.mapFocus = 'all'; changed = true; }
-  for (const k of [pk, 'tp:' + pk + ':' + (topicOf(t) ? E.normMatch(topicOf(t)) : '~'), 'root']) if (UI.mapCollapsed.delete(k)) changed = true;
+  if (t.status === 'done' && !UI.mapShowDone) UI.mapShowDone = true;
+  const [pk] = projKeyLabel(t); if (UI.mapFocus !== 'all' && UI.mapFocus !== pk) UI.mapFocus = 'all';
+  if (UI.mapAsOf && t.createdAt && dayOf(t.createdAt) > UI.mapAsOf) UI.mapAsOf = '';
+  for (const k of [pk, topicKey(t), 'root']) UI.mapCollapsed.delete(k);
   UI.mapSel = id;
   if (UI.view !== 'todo' || UI.todoMode !== 'map') { UI.todoMode = 'map'; saveTodoPrefs(); if (UI.view !== 'todo') { UI.view = 'todo'; closeDrawer(); } }
   render();
@@ -2481,95 +2824,603 @@ function afterMapRender() {
   if (!UI.map.fitted) requestAnimationFrame(() => mapFit(true));
   vp.addEventListener('wheel', e => { e.preventDefault(); const r = vp.getBoundingClientRect(); mapZoom(Math.exp(-e.deltaY * (e.ctrlKey ? 0.01 : 0.0015)), e.clientX - r.left, e.clientY - r.top); }, { passive: false });
 }
-/* --- pointer: pan, pinch, click, drag-to-move/link --- */
-const MP = { ptrs: new Map(), start: null, mode: null, node: null, ghost: null, pinch: null };
+
+/* --- changes with undo / redo --- */
+// A change lists the new value (or null to delete) for board elements and tasks, and/or a new layout.
+function cvSnapshot(ch) {
+  const inv = {};
+  if (ch.els) { inv.els = {}; for (const id of Object.keys(ch.els)) inv.els[id] = St.board.has(id) ? clone(St.board.get(id)) : null; }
+  if (ch.tasks) { inv.tasks = {}; for (const id of Object.keys(ch.tasks)) inv.tasks[id] = St.tasks.has(id) ? clone(St.tasks.get(id)) : null; }
+  if (ch.layout) inv.layout = clone(St.layout);
+  return inv;
+}
+function cvApplyRaw(ch) {
+  for (const [id, v] of Object.entries(ch.els || {})) v ? putBoard(clone(v)) : delBoard(id);
+  for (const [id, v] of Object.entries(ch.tasks || {})) v ? putTask(clone(v)) : delTask(id);
+  if (ch.layout) putLayout(clone(ch.layout));
+  for (const id of UI.cvSel) if (!St.board.has(id)) UI.cvSel.delete(id);
+}
+function cvApply(ch) {
+  const inv = cvSnapshot(ch); cvApplyRaw(ch);
+  UI.cvUndo.push(inv); if (UI.cvUndo.length > 150) UI.cvUndo.shift(); UI.cvRedo = [];
+}
+function cvUndo() { const op = UI.cvUndo.pop(); if (!op) { toast('Nothing to undo.'); return; } UI.cvRedo.push(cvSnapshot(op)); cvApplyRaw(op); render(); }
+function cvRedo() { const op = UI.cvRedo.pop(); if (!op) return; UI.cvUndo.push(cvSnapshot(op)); cvApplyRaw(op); render(); }
+const newLayout = () => ({ off: { ...(St.layout.off || {}) }, size: { ...(St.layout.size || {}) } });
+function newEl(type, props) { return { id: E.uid('b'), type, color: UI.cvColor, createdAt: nowISO(), ...props }; }
+
+/* --- pointer: tools, pan, pinch, select, move, resize, draw, erase, connect --- */
+const MP = { ptrs: new Map(), mode: null, pinch: null };
+function toWorld(cx, cy) { const vp = $('#map-vp'); const r = vp.getBoundingClientRect(); return { x: (cx - r.left - UI.map.x) / UI.map.k, y: (cy - r.top - UI.map.y) / UI.map.k }; }
+function refAt(el) {
+  const n = el && el.closest && el.closest('.mnode'); if (n && n.dataset.type !== 'item') return { k: 'n', id: n.dataset.node, tid: n.dataset.tid || null };
+  const b = el && el.closest && el.closest('[data-el]'); if (b) { const x = St.board.get(b.dataset.el); if (x && !['stroke', 'line', 'connector'].includes(x.type)) return { k: 'e', id: x.id }; }
+  return null;
+}
+function underPointer(e) { return document.elementFromPoint(e.clientX, e.clientY); }
+function dropTargetAt(e) {
+  const el = underPointer(e); const n = el && el.closest && el.closest('.mnode');
+  if (!n || n.classList.contains('dragging') || !['project', 'topic', 'task'].includes(n.dataset.type)) return null;
+  return n;
+}
+function live(html) { const g = $('#cv-live'); if (g) g.innerHTML = html; }
+function eraseAt(e) {
+  const el = underPointer(e); const b = el && el.closest && el.closest('[data-el]');
+  if (b && !MP.erased.has(b.dataset.el)) { MP.erased.add(b.dataset.el); b.style.opacity = '.15'; }
+}
 document.addEventListener('pointerdown', e => {
-  const vp = e.target.closest && e.target.closest('#map-vp'); if (!vp || e.button > 0) return;
-  if (e.target.closest('button,a,input,.map-hint')) { if (!e.target.closest('.mnode')) return; }
+  const vp = e.target.closest && e.target.closest('#map-vp'); if (!vp || e.button > 1) return;
+  if (e.target.closest('.cv-tools,.cv-sub,.cv-ctx,.map-empty,[contenteditable],input,textarea,select')) return;
+  if (UI.cvEditing) commitEdit();
   MP.ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
-  if (MP.ptrs.size === 2) { const [a, b] = [...MP.ptrs.values()]; MP.pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), k: UI.map.k }; MP.mode = 'pinch'; return; }
-  MP.start = { x: e.clientX, y: e.clientY, mx: UI.map.x, my: UI.map.y }; MP.mode = 'press'; MP.node = e.target.closest('.mnode'); MP.target = e.target;
+  if (MP.ptrs.size === 2) { const [a, b] = [...MP.ptrs.values()]; MP.pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), k: UI.map.k }; MP.mode = 'pinch'; UI.cvTemp = null; live(''); return; }
+  const tool = e.button === 1 || UI.spaceDown ? 'hand' : UI.tool;
+  const node = e.target.closest('.mnode'), bel = e.target.closest('[data-el]'), rz = e.target.closest('[data-rz]');
+  Object.assign(MP, { sx: e.clientX, sy: e.clientY, w0: toWorld(e.clientX, e.clientY), mx: UI.map.x, my: UI.map.y, tool, node, bel, target: e.target, shift: e.shiftKey, far: false });
   vp.setPointerCapture && vp.setPointerCapture(e.pointerId);
+  if (e.button === 1) e.preventDefault();
+  if (tool === 'hand') { MP.mode = 'pan'; return; }
+  if (tool === 'pen' || tool === 'highlighter') { MP.mode = 'draw'; MP.pts = [[MP.w0.x, MP.w0.y]]; return; }
+  if (tool === 'eraser') { MP.mode = 'erase'; MP.erased = new Set(); eraseAt(e); return; }
+  if (CREATE_TOOLS.includes(tool)) { MP.mode = 'create'; return; }
+  if (tool === 'connector') { const ref = refAt(e.target); MP.mode = ref ? 'connect' : 'press-empty'; MP.from = ref; return; }
+  if (tool === 'task') { MP.mode = 'task'; return; }
+  if (rz) { MP.mode = 'resize'; MP.rz = rz.dataset.rz; MP.rzKind = rz.dataset.kind; if (MP.rzKind === 'el') { const x = St.board.get(MP.rz); MP.base = { w: x.w, h: x.h }; } else { const n = UI.mapLayout.byId.get(MP.rz); MP.base = { w: n ? n.w : 250 }; } return; }
+  if (bel && !node) {
+    const id = bel.dataset.el;
+    if (e.shiftKey) { UI.cvSel.has(id) ? UI.cvSel.delete(id) : UI.cvSel.add(id); MP.mode = 'press-el'; renderWorld(); return; }
+    if (!UI.cvSel.has(id)) { UI.cvSel = new Set([id]); renderWorld(); }
+    MP.mode = 'press-el'; MP.elId = id; return;
+  }
+  if (node) { MP.mode = 'press-node'; return; }
+  MP.mode = e.shiftKey ? 'marquee' : 'press-empty';
 });
 document.addEventListener('pointermove', e => {
   if (!MP.ptrs.has(e.pointerId)) return;
   MP.ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
-  const vp = $('#map-vp'); if (!vp) return;
-  if (MP.mode === 'pinch' && MP.ptrs.size === 2) { const [a, b] = [...MP.ptrs.values()]; const d = Math.hypot(a.x - b.x, a.y - b.y); const r = vp.getBoundingClientRect(); mapZoom((MP.pinch.k * d / MP.pinch.d) / UI.map.k, (a.x + b.x) / 2 - r.left, (a.y + b.y) / 2 - r.top); return; }
-  if (!MP.start) return;
-  const dx = e.clientX - MP.start.x, dy = e.clientY - MP.start.y;
-  if (MP.mode === 'press' && Math.hypot(dx, dy) > 6) {
-    if (MP.node && MP.node.dataset.type === 'task') { MP.mode = 'drag'; MP.ghost = MP.node.cloneNode(true); MP.ghost.classList.add('ghost'); document.body.appendChild(MP.ghost); MP.node.classList.add('dragging'); }
-    else MP.mode = 'pan';
-  }
-  if (MP.mode === 'pan') { UI.map.x = MP.start.mx + dx; UI.map.y = MP.start.my + dy; applyCam(false); }
-  if (MP.mode === 'drag') {
-    MP.ghost.style.left = (e.clientX + 8) + 'px'; MP.ghost.style.top = (e.clientY + 8) + 'px'; MP.ghost.style.transform = `scale(${Math.min(1, UI.map.k)})`;
-    document.querySelectorAll('.mnode.drop').forEach(n => n.classList.remove('drop'));
-    const over = dropTarget(e); if (over) over.classList.add('drop');
+  const vp = $('#map-vp'); if (!vp || !MP.mode) return;
+  if (MP.mode === 'pinch') { if (MP.ptrs.size === 2) { const [a, b] = [...MP.ptrs.values()]; const d = Math.hypot(a.x - b.x, a.y - b.y); const r = vp.getBoundingClientRect(); mapZoom((MP.pinch.k * d / MP.pinch.d) / UI.map.k, (a.x + b.x) / 2 - r.left, (a.y + b.y) / 2 - r.top); } return; }
+  const dx = e.clientX - MP.sx, dy = e.clientY - MP.sy, k = UI.map.k;
+  if (!MP.far && Math.hypot(dx, dy) > 5) MP.far = true;
+  const w = toWorld(e.clientX, e.clientY), w0 = MP.w0;
+  switch (MP.mode) {
+    case 'press-empty': if (!MP.far) return; MP.mode = 'pan'; // falls through
+    case 'pan': UI.map.x = MP.mx + dx; UI.map.y = MP.my + dy; applyCam(false); return;
+    case 'draw': {
+      const l = MP.pts[MP.pts.length - 1]; if (Math.hypot(w.x - l[0], w.y - l[1]) * k < 2) return;
+      MP.pts.push([Math.round(w.x * 10) / 10, Math.round(w.y * 10) / 10]);
+      const hl = MP.tool === 'highlighter';
+      live(`<path d="${strokePath(MP.pts)}" stroke="${colorCss(hl && UI.cvColor === 'ink' ? '#FFD966' : UI.cvColor)}" stroke-width="${hl ? 18 : UI.cvWidth}" ${hl ? 'stroke-opacity=".45"' : ''} fill="none" stroke-linecap="round" stroke-linejoin="round"/>`); return;
+    }
+    case 'erase': eraseAt(e); return;
+    case 'create': {
+      if (!MP.far) return;
+      if (MP.tool === 'arrow' || MP.tool === 'line') live(`<path d="M${w0.x} ${w0.y} L${w.x} ${w.y}" stroke="${colorCss(UI.cvColor)}" stroke-width="3" fill="none" ${MP.tool === 'arrow' ? 'marker-end="url(#cv-arrow)"' : ''} style="color:${colorCss(UI.cvColor)}"/>`);
+      else live(`<rect x="${Math.min(w0.x, w.x)}" y="${Math.min(w0.y, w.y)}" width="${Math.abs(w.x - w0.x)}" height="${Math.abs(w.y - w0.y)}" rx="${MP.tool === 'ellipse' ? 999 : 6}" class="live-box"/>`);
+      return;
+    }
+    case 'connect': {
+      const a = refBox(MP.from, UI.mapLayout); if (!a) return;
+      const over = refAt(underPointer(e)); UI.cvDrop = over && over.k === 'n' && over.id !== MP.from.id ? over.id : null;
+      live(`<path d="M${a.x + a.w / 2} ${a.y + a.h / 2} L${w.x} ${w.y}" stroke="var(--accent)" stroke-width="2.5" stroke-dasharray="6 5" fill="none" marker-end="url(#cv-arrow)" style="color:var(--accent)"/>`); return;
+    }
+    case 'marquee': if (MP.far) live(`<rect x="${Math.min(w0.x, w.x)}" y="${Math.min(w0.y, w.y)}" width="${Math.abs(w.x - w0.x)}" height="${Math.abs(w.y - w0.y)}" class="live-box sel"/>`); return;
+    case 'resize': {
+      const ddx = dx / k, ddy = dy / k;
+      UI.cvTemp = MP.rzKind === 'el' ? { kind: 'elsize', id: MP.rz, w: Math.max(40, MP.base.w + ddx), h: Math.max(30, MP.base.h + ddy) } : { kind: 'size', id: MP.rz, w: Math.max(160, Math.min(720, MP.base.w + ddx)) };
+      renderWorldSoon(); return;
+    }
+    case 'press-el': if (!MP.far) return; MP.mode = 'move-els'; // falls through
+    case 'move-els': UI.cvTemp = { kind: 'els', ids: new Set(UI.cvSel), dx: dx / k, dy: dy / k }; renderWorldSoon(); return;
+    case 'press-node': {
+      if (!MP.far) return;
+      const type = MP.node.dataset.type || 'root'; if (type === 'item') { MP.mode = 'pan'; return; }
+      MP.mode = type === 'task' ? 'move-task' : 'move-node'; MP.nodeId = MP.node.dataset.node;
+    } // falls through
+    case 'move-task': case 'move-node': {
+      UI.cvTemp = { kind: 'node', id: MP.nodeId, dx: dx / k, dy: dy / k };
+      if (MP.mode === 'move-task') { const over = dropTargetAt(e); UI.cvDrop = over ? over.dataset.node : null; }
+      renderWorldSoon(); return;
+    }
   }
 }, { passive: true });
-function dropTarget(e) {
-  if (MP.ghost) MP.ghost.style.display = 'none';
-  const el = document.elementFromPoint(e.clientX, e.clientY);
-  if (MP.ghost) MP.ghost.style.display = '';
-  const n = el && el.closest && el.closest('.mnode');
-  if (!n || n === MP.node || !['project', 'topic', 'task'].includes(n.dataset.type)) return null;
-  return n;
-}
 function endPointer(e) {
   if (!MP.ptrs.has(e.pointerId)) return;
   MP.ptrs.delete(e.pointerId);
   if (MP.mode === 'pinch') { if (MP.ptrs.size === 0) MP.mode = null; return; }
-  const mode = MP.mode, node = MP.node, target = MP.target; MP.mode = null; MP.start = null;
-  if (mode === 'drag') {
-    const over = e.type === 'pointerup' ? dropTarget(e) : null;
-    MP.ghost && MP.ghost.remove(); MP.ghost = null; node && node.classList.remove('dragging');
-    document.querySelectorAll('.mnode.drop').forEach(n => n.classList.remove('drop'));
-    if (over) mapDrop(node.dataset.tid, over);
-    return;
+  const mode = MP.mode, up = e.type === 'pointerup'; MP.mode = null;
+  const tmp = UI.cvTemp, drop = UI.cvDrop; UI.cvTemp = null; UI.cvDrop = null; live('');
+  const w = MP.w0 ? toWorld(e.clientX, e.clientY) : null;
+  let handled = false;
+  if (up) handled = finishPointer(mode, e, w, tmp, drop);
+  if (UI.cvPending) { UI.cvPending = false; render(); }
+  else if (!handled && ['move-els', 'move-task', 'move-node', 'resize', 'erase', 'connect'].includes(mode)) renderWorld();
+}
+function finishPointer(mode, e, w, tmp, drop) {
+  const w0 = MP.w0, k = UI.map.k;
+  switch (mode) {
+    case 'press-empty': if (UI.cvSel.size || UI.mapSel) { UI.cvSel.clear(); UI.mapSel = null; renderWorld(); } return true;
+    case 'pan': return true;
+    case 'draw': {
+      if (MP.pts.length < 2) MP.pts.push([MP.pts[0][0] + 0.5, MP.pts[0][1] + 0.5]);
+      const hl = MP.tool === 'highlighter';
+      const pts = MP.pts.length > 1500 ? MP.pts.filter((_, i) => i % Math.ceil(MP.pts.length / 1500) === 0) : MP.pts;
+      const el = newEl('stroke', { pts, width: hl ? 18 : UI.cvWidth, alpha: hl ? 0.45 : 0, color: hl && UI.cvColor === 'ink' ? '#FFD966' : UI.cvColor, kind: MP.tool });
+      cvApply({ els: { [el.id]: el } }); render(); return true;
+    }
+    case 'erase': {
+      const ids = [...MP.erased]; if (!ids.length) return false;
+      const ch = { els: {}, tasks: {} };
+      for (const id of ids) if (St.board.has(id)) ch.els[id] = null;
+      // connectors attached to erased notes go with them
+      for (const c of St.board.values()) if (c.type === 'connector' && (ids.includes(c.from.id) || ids.includes(c.to.id))) ch.els[c.id] = null;
+      if (!Object.keys(ch.els).length) return false;
+      cvApply(ch); render(); return true;
+    }
+    case 'create': {
+      const t = MP.tool, x0 = Math.min(w0.x, w.x), y0 = Math.min(w0.y, w.y), bw = Math.abs(w.x - w0.x), bh = Math.abs(w.y - w0.y), far = MP.far;
+      let el;
+      if (t === 'arrow' || t === 'line') el = newEl('line', { x1: w0.x, y1: w0.y, x2: far ? w.x : w0.x + 160, y2: far ? w.y : w0.y, arrow: t === 'arrow', width: UI.cvWidth });
+      else if (t === 'sticky') el = newEl('sticky', { x: w0.x - (far ? 0 : 100), y: w0.y - (far ? 0 : 100), w: far ? Math.max(80, bw) : 200, h: far ? Math.max(80, bh) : 200, text: '', ...(far ? { x: x0, y: y0 } : {}) });
+      else if (t === 'text') el = newEl('text', { x: w0.x, y: w0.y - 14, w: far ? Math.max(80, bw) : 260, h: 40, text: '', size: 20 });
+      else if (t === 'frame') el = newEl('frame', { x: far ? x0 : w0.x, y: far ? y0 : w0.y, w: far ? Math.max(120, bw) : 640, h: far ? Math.max(90, bh) : 420, text: 'Frame' });
+      else el = newEl('shape', { kind: t, x: far ? x0 : w0.x - 100, y: far ? y0 : w0.y - 60, w: far ? Math.max(30, bw) : 200, h: far ? Math.max(30, bh) : 120, text: '' });
+      cvApply({ els: { [el.id]: el } });
+      UI.cvSel = new Set([el.id]); UI.tool = 'select'; render();
+      if (['sticky', 'text', 'shape', 'frame'].includes(el.type)) startEdit(el.id, true);
+      return true;
+    }
+    case 'connect': {
+      const to = refAt(underPointer(e)), from = MP.from;
+      if (!to || !from || to.id === from.id) return false;
+      if (from.tid && to.tid) { linkTasks(from.tid, to.tid); return true; }
+      const el = newEl('connector', { from: { k: from.k, id: from.id }, to: { k: to.k, id: to.id }, width: 2.5 });
+      cvApply({ els: { [el.id]: el } }); render(); return true;
+    }
+    case 'task': createTaskAt(w, MP.node); return true;
+    case 'marquee': {
+      const x0 = Math.min(w0.x, w.x), y0 = Math.min(w0.y, w.y), x1 = Math.max(w0.x, w.x), y1 = Math.max(w0.y, w.y);
+      UI.cvSel = new Set(boardEls().filter(el => { if (el.type === 'connector') return false; const b = elBox(el); return b.x < x1 && b.x + b.w > x0 && b.y < y1 && b.y + b.h > y0; }).map(el => el.id));
+      renderWorld(); return true;
+    }
+    case 'resize': {
+      if (!tmp) return false;
+      if (tmp.kind === 'elsize') { const el = St.board.get(tmp.id); if (el) cvApply({ els: { [el.id]: { ...el, w: Math.round(tmp.w), h: Math.round(tmp.h) } } }); }
+      else { const L = newLayout(); L.size[tmp.id] = { w: Math.round(tmp.w) }; cvApply({ layout: L }); }
+      render(); return true;
+    }
+    case 'press-el': {
+      const id = MP.elId; if (!id) return true;
+      const now = Date.now();
+      if (MP.lastClick && MP.lastClick.id === id && now - MP.lastClick.at < 450) { MP.lastClick = null; startEdit(id); }
+      else MP.lastClick = { id, at: now };
+      return true;
+    }
+    case 'move-els': {
+      if (!tmp) return false;
+      const ch = { els: {} };
+      for (const id of tmp.ids) { const el = St.board.get(id); if (el) ch.els[id] = moveEl(el, Math.round(tmp.dx), Math.round(tmp.dy)); }
+      cvApply(ch); render(); return true;
+    }
+    case 'move-task': {
+      if (!tmp) return false;
+      const tid = MP.node.dataset.tid, over = drop && document.querySelector(`.mnode[data-node="${CSS.escape(drop)}"]`);
+      if (over) { mapDrop(tid, over); return true; }
+      const L = newLayout(); const o = L.off[tmp.id] || { dx: 0, dy: 0 };
+      L.off[tmp.id] = { dx: Math.round(o.dx + tmp.dx), dy: Math.round(o.dy + tmp.dy) };
+      cvApply({ layout: L }); render(); return true;
+    }
+    case 'move-node': {
+      if (!tmp) return false;
+      const L = newLayout(); const o = L.off[tmp.id] || { dx: 0, dy: 0 };
+      L.off[tmp.id] = { dx: Math.round(o.dx + tmp.dx), dy: Math.round(o.dy + tmp.dy) };
+      cvApply({ layout: L }); render(); return true;
+    }
+    case 'press-node': return clickNode(MP.node, MP.target);
   }
-  if (mode !== 'press' || e.type !== 'pointerup') return;
-  // click
-  if (!node) { return; }
+  return false;
+}
+// a click on a tree node (no drag)
+function clickNode(node, target) {
   const kind = node.dataset.type, btn = target && target.closest && target.closest('[data-map]');
-  if (node.dataset.node === 'root') { mapFit(); return; }
-  if (kind === 'project' && btn && btn.dataset.map === 'focus') { UI.mapFocus = node.dataset.pk; UI.map.fitted = false; render(); return; }
-  if (kind === 'project' || kind === 'topic') { const id = node.dataset.node; UI.mapCollapsed.has(id) ? UI.mapCollapsed.delete(id) : UI.mapCollapsed.add(id); render(); return; }
-  if (kind === 'item') { toggleSub(node.dataset.tid, node.dataset.sid); render(); return; }
+  if (node.dataset.node === 'root') { mapFit(); return true; }
+  if ((kind === 'project' || kind === 'topic') && btn && btn.dataset.map === 'rename') { startNodeEdit(node.dataset.node); return true; }
+  if (kind === 'project' && btn && btn.dataset.map === 'focus') { UI.mapFocus = node.dataset.pk; UI.map.fitted = false; render(); return true; }
+  if (kind === 'project' || kind === 'topic') { const id = node.dataset.node; UI.mapCollapsed.has(id) ? UI.mapCollapsed.delete(id) : UI.mapCollapsed.add(id); render(); return true; }
+  if (kind === 'item') { toggleSub(node.dataset.tid, node.dataset.sid); render(); return true; }
   if (kind === 'task') {
     const id = node.dataset.tid;
-    if (btn && btn.dataset.map === 'tick') { ACT['toggle-done']({ dataset: { id } }); return; }
-    if (btn && btn.dataset.map === 'items') { UI.mapItems.has(id) ? UI.mapItems.delete(id) : UI.mapItems.add(id); render(); return; }
-    UI.mapSel = id; render(); openDrawer('task', id);
+    if (btn && btn.dataset.map === 'tick') { ACT['toggle-done']({ dataset: { id } }); return true; }
+    if (btn && btn.dataset.map === 'items') { UI.mapItems.has(id) ? UI.mapItems.delete(id) : UI.mapItems.add(id); render(); return true; }
+    UI.mapSel = id; UI.cvSel.clear(); render(); openDrawer('task', id); return true;
   }
+  return false;
 }
 document.addEventListener('pointerup', endPointer);
 document.addEventListener('pointercancel', endPointer);
-document.addEventListener('dblclick', e => { if (e.target.closest && e.target.closest('#map-vp') && !e.target.closest('.mnode')) mapFit(); });
+document.addEventListener('dblclick', e => { if (e.target.closest && e.target.closest('#map-vp') && !e.target.closest('.mnode,[data-el],.cv-tools,.cv-sub,.cv-ctx') && UI.tool === 'select') mapFit(); });
+function linkTasks(aId, bId) {
+  const t0 = St.tasks.get(bId), o = St.tasks.get(aId); if (!t0 || !o || aId === bId) return;
+  if (relIds(t0).includes(aId) || relIds(o).includes(bId)) { toast('Already linked.'); return; }
+  const t = clone(t0); t.relatedIds = [...relIds(t), aId];
+  (t.history = t.history || []).push({ at: nowISO(), text: `Linked to ${o.ref} (on the map)` });
+  cvApply({ tasks: { [t.id]: t } }); UI.mapSel = t.id; render();
+  toast(`🔗 ${o.ref} → ${t.ref} linked.`, { action: 'Undo', fn: cvUndo });
+}
 function mapDrop(tid, over) {
   const t0 = St.tasks.get(tid); if (!t0) return;
-  const prev = clone(t0); const t = clone(t0); const now = nowISO(); let msg = '';
-  if (over.dataset.type === 'task') {
-    const oid = over.dataset.tid; if (oid === tid) return;
-    if (relIds(t).includes(oid)) { toast('Already linked.'); return; }
-    t.relatedIds = [...relIds(t), oid];
-    const o = St.tasks.get(oid);
-    (t.history = t.history || []).push({ at: now, text: `Linked to ${o ? o.ref : 'task'} (on the map)` });
-    msg = `🔗 ${t.ref} linked to ${o ? o.ref : 'task'}.`;
-  } else {
-    const label = over.dataset.type === 'project' ? over.dataset.label : over.dataset.plabel;
-    const newProj = label === 'No project' ? '' : label;
-    const notes = [];
-    if ((t.project || '') !== newProj) { notes.push(`Project: ${t.project || '—'} → ${newProj || '—'}`); t.project = newProj; t.projectLocked = true; }
-    if (over.dataset.type === 'topic') { const tp = over.dataset.topic || ''; if (topicOf(t) !== tp) { notes.push(`Topic: ${topicOf(t) || '—'} → ${tp || '—'}`); t.topic = tp; t.topicLocked = true; } }
-    if (!notes.length) return;
-    if (t.placement) t.placement = { ...t.placement, status: 'confirmed' };
-    (t.history = t.history || []).push({ at: now, text: 'Moved on the map — ' + notes.join('; ') });
-    msg = `🧭 ${t.ref} moved.`;
+  if (over.dataset.type === 'task') { linkTasks(over.dataset.tid, tid); return; }
+  const t = clone(t0); const now = nowISO();
+  const label = over.dataset.type === 'project' ? over.dataset.label : over.dataset.plabel;
+  const newProj = label === 'No project' ? '' : label;
+  const notes = [];
+  if ((t.project || '') !== newProj) { notes.push(`Project: ${t.project || '—'} → ${newProj || '—'}`); t.project = newProj; t.projectLocked = true; }
+  if (over.dataset.type === 'topic') { const tp = over.dataset.topic || ''; if (topicOf(t) !== tp) { notes.push(`Topic: ${topicOf(t) || '—'} → ${tp || '—'}`); t.topic = tp; t.topicLocked = true; } }
+  if (!notes.length) { renderWorld(); return; }
+  if (t.placement) t.placement = { ...t.placement, status: 'confirmed' };
+  (t.history = t.history || []).push({ at: now, text: 'Moved on the map — ' + notes.join('; ') });
+  const L = newLayout(); delete L.off['t:' + tid]; // it takes its natural place in the new branch
+  cvApply({ tasks: { [tid]: t }, layout: L }); UI.mapSel = tid; render();
+  toast(`🧭 ${t.ref} moved.`, { action: 'Undo', fn: cvUndo });
+}
+function makeTask(over) {
+  const now = nowISO();
+  return { id: E.uid('t'), ref: nextRefs(1)[0], title: 'New task', action: '', type: 'do', ownership: 'mine', owner: 'me', requestedBy: '', project: '', priority: 'medium', deadline: null, deadlineText: '', deadlineBasis: 'none', status: 'todo', nextStep: '', dependsOn: '', blockedReason: '', tags: [], notes: '', evidence: [], emailIds: [], threadKey: '', createdAt: now, updatedAt: now, completedAt: null, history: [{ at: now, text: 'Created manually' }], ...over };
+}
+// where would this task's node sit with no offset of its own?
+function autoPos(t) {
+  St.tasks.set(t.id, t);
+  try { const M = buildMap(); const n = M.byId.get('t:' + t.id); return n ? { x: n.x, y: n.y } : null; }
+  finally { St.tasks.delete(t.id); }
+}
+function createTaskAt(w, node) {
+  const t = makeTask({ history: [{ at: nowISO(), text: 'Created on the canvas' }] });
+  const kind = node && node.dataset.type;
+  if (kind === 'project' && node.dataset.label !== 'No project') { t.project = node.dataset.label; t.projectLocked = true; }
+  if (kind === 'topic') { if (node.dataset.plabel !== 'No project') { t.project = node.dataset.plabel; t.projectLocked = true; } if (node.dataset.topic) { t.topic = node.dataset.topic; t.topicLocked = true; } }
+  if (kind === 'task') { const o = St.tasks.get(node.dataset.tid); if (o) { t.project = o.project || ''; t.topic = o.topic || ''; t.relatedIds = [o.id]; t.projectLocked = !!o.project; t.topicLocked = !!o.topic; } }
+  const ch = { tasks: { [t.id]: t } };
+  if (!kind) { const p = autoPos(t); if (p) { const L = newLayout(); L.off['t:' + t.id] = { dx: Math.round(w.x - p.x), dy: Math.round(w.y - p.y) }; ch.layout = L; } }
+  cvApply(ch); UI.mapSel = t.id; UI.tool = 'select'; render();
+  openDrawer('task', t.id); setTimeout(() => { const ta = $('#d-title'); if (ta) { ta.focus(); ta.select(); } }, 50);
+}
+function noteToTask() {
+  const el = St.board.get([...UI.cvSel][0]); if (!el || !(el.text || '').trim()) return;
+  const lines = el.text.trim().split('\n'); const title = E.clip(lines[0].trim(), 160);
+  const t = makeTask({ title, action: lines.slice(1).join('\n').trim(), history: [{ at: nowISO(), text: 'Created from a canvas note' }] });
+  localPlace(t);
+  const ch = { tasks: { [t.id]: t }, els: { [el.id]: null } };
+  for (const c of St.board.values()) if (c.type === 'connector' && (c.from.id === el.id || c.to.id === el.id)) ch.els[c.id] = null;
+  if (!t.project) { const p = autoPos(t); if (p) { const L = newLayout(); L.off['t:' + t.id] = { dx: Math.round(el.x - p.x), dy: Math.round(el.y - p.y) }; ch.layout = L; } }
+  cvApply(ch); UI.cvSel.clear(); UI.mapSel = t.id; render();
+  if (St.sample) queueCategorize([t.id]);
+  toast(`✅ ${t.ref} added to your to-do${t.project ? ' under ' + t.project : ''}.`, { action: 'Undo', fn: cvUndo });
+}
+/* --- inline text editing --- */
+function startEdit(id, fresh) {
+  const box = document.querySelector(`[data-el="${CSS.escape(id)}"] .btxt`); if (!box) return;
+  UI.cvEditing = { kind: 'el', id, fresh };
+  box.setAttribute('contenteditable', 'plaintext-only'); box.setAttribute('spellcheck', 'true');
+  box.focus();
+  const r = document.createRange(); r.selectNodeContents(box); const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+  box.addEventListener('blur', commitEdit, { once: true });
+}
+function startNodeEdit(nodeId) {
+  const b = document.querySelector(`.mnode[data-node="${CSS.escape(nodeId)}"] [data-edit]`); if (!b) return;
+  UI.cvEditing = { kind: 'node', id: nodeId, old: b.textContent };
+  b.setAttribute('contenteditable', 'plaintext-only'); b.focus();
+  const r = document.createRange(); r.selectNodeContents(b); const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+  b.addEventListener('blur', commitEdit, { once: true });
+}
+function commitEdit() {
+  const ed = UI.cvEditing; if (!ed) return; UI.cvEditing = null;
+  if (ed.kind === 'el') {
+    const box = document.querySelector(`[data-el="${CSS.escape(ed.id)}"] .btxt`); const el = St.board.get(ed.id);
+    if (el && box) {
+      const text = box.innerText.replace(/\n+$/, '');
+      // typing into a note just created belongs to the same undo step as creating it
+      if (el.type === 'text' && !text.trim()) { if (ed.fresh) { cvApplyRaw({ els: { [el.id]: null } }); UI.cvUndo.pop(); } else cvApply({ els: { [el.id]: null } }); }
+      else if (text !== (el.text || '')) {
+        const v = { ...el, text, h: el.type === 'text' ? Math.max(el.h, Math.ceil(box.scrollHeight)) : el.h };
+        if (ed.fresh) cvApplyRaw({ els: { [el.id]: v } }); else cvApply({ els: { [el.id]: v } });
+      }
+    }
+  } else if (ed.kind === 'node') {
+    const b = document.querySelector(`.mnode[data-node="${CSS.escape(ed.id)}"] [data-edit]`);
+    const name = b ? b.innerText.trim() : '';
+    if (name && name !== ed.old) renameNode(ed.id, ed.old, name);
   }
-  putTask(t); UI.mapSel = tid; render();
-  toast(msg, { action: 'Undo', fn: () => { putTask(prev); render(); } });
+  render();
+}
+function renameNode(nodeId, oldName, name) {
+  const ch = { tasks: {} }; const L = newLayout(); const now = nowISO();
+  const isProj = nodeId.startsWith('p:');
+  for (const t0 of St.tasks.values()) {
+    const hit = isProj ? projKeyLabel(t0)[0] === nodeId : topicKey(t0) === nodeId;
+    if (!hit) continue;
+    const t = clone(t0);
+    if (isProj) { t.project = name; t.projectLocked = true; } else { t.topic = name; t.topicLocked = true; }
+    (t.history = t.history || []).push({ at: now, text: `${isProj ? 'Project' : 'Topic'} renamed: ${oldName} → ${name}` });
+    ch.tasks[t.id] = t;
+  }
+  if (!Object.keys(ch.tasks).length) return;
+  // keep manual positions under the new name
+  const newPk = 'p:' + E.normMatch(name);
+  for (const key of ['off', 'size']) for (const id of Object.keys(L[key])) {
+    if (isProj && (id === nodeId || id.startsWith('tp:' + nodeId + ':'))) { const nid = id === nodeId ? newPk : id.replace('tp:' + nodeId + ':', 'tp:' + newPk + ':'); L[key][nid] = L[key][id]; delete L[key][id]; }
+    if (!isProj && id === nodeId) { const nid = nodeId.slice(0, nodeId.lastIndexOf(':') + 1) + E.normMatch(name); L[key][nid] = L[key][id]; delete L[key][id]; }
+  }
+  if (isProj && UI.mapFocus === nodeId) UI.mapFocus = newPk;
+  ch.layout = L; cvApply(ch);
+  toast(`✎ Renamed to “${name}” on ${Object.keys(ch.tasks).length} task${Object.keys(ch.tasks).length > 1 ? 's' : ''}.`, { action: 'Undo', fn: cvUndo });
+}
+function deleteSelection() {
+  const ids = [...UI.cvSel].filter(id => St.board.has(id));
+  if (ids.length) {
+    const ch = { els: {} }; ids.forEach(id => { ch.els[id] = null; });
+    for (const c of St.board.values()) if (c.type === 'connector' && (ids.includes(c.from.id) || ids.includes(c.to.id))) ch.els[c.id] = null;
+    cvApply(ch); UI.cvSel.clear(); render(); return;
+  }
+  const t = UI.mapSel && St.tasks.get(UI.mapSel);
+  if (t) { cvApply({ tasks: { [t.id]: null } }); UI.mapSel = null; closeDrawer(); render(); toast(`${t.ref} deleted.`, { action: 'Undo', fn: cvUndo }); }
+}
+function duplicateSelection() {
+  const ids = [...UI.cvSel].filter(id => St.board.has(id) && St.board.get(id).type !== 'connector'); if (!ids.length) return;
+  const ch = { els: {} }; const fresh = new Set();
+  for (const id of ids) { const c = moveEl(clone(St.board.get(id)), 24, 24); c.id = E.uid('b'); c.createdAt = nowISO(); ch.els[c.id] = c; fresh.add(c.id); }
+  cvApply(ch); UI.cvSel = fresh; render();
+}
+function toggleFull(on) {
+  UI.mapFull = on === undefined ? !UI.mapFull : on;
+  document.body.classList.toggle('map-full-on', UI.mapFull);
+  try {
+    if (UI.mapFull && !document.fullscreenElement && document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => {});
+    if (!UI.mapFull && document.fullscreenElement) document.exitFullscreen().catch(() => {});
+  } catch {}
+  UI.map.fitted = false; render();
+}
+document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && UI.mapFull) toggleFull(false); });
+// keyboard: tools, undo/redo, delete, duplicate, full screen
+document.addEventListener('keydown', e => {
+  if (UI.view !== 'todo' || UI.todoMode !== 'map') return;
+  if (UI.cvEditing) { if (e.key === 'Escape' || (e.key === 'Enter' && (e.ctrlKey || e.metaKey || (UI.cvEditing.kind === 'node')))) { e.preventDefault(); document.activeElement && document.activeElement.blur(); } return; }
+  if (e.target.closest && e.target.closest('input,textarea,select,[contenteditable]') || UI.drawer || !$('#modal').hidden) return;
+  const mod = e.ctrlKey || e.metaKey, k = e.key.toLowerCase();
+  if (mod && k === 'z') { e.preventDefault(); e.shiftKey ? cvRedo() : cvUndo(); return; }
+  if (mod && k === 'y') { e.preventDefault(); cvRedo(); return; }
+  if (mod && k === 'd') { e.preventDefault(); duplicateSelection(); return; }
+  if (mod && k === 'a') { e.preventDefault(); UI.cvSel = new Set(boardEls().filter(x => x.type !== 'connector').map(x => x.id)); renderWorld(); return; }
+  if (mod || e.altKey) return;
+  // Backspace removes selected board items only; deleting a task needs the Delete key
+  if (e.key === 'Delete' || (e.key === 'Backspace' && UI.cvSel.size)) { e.preventDefault(); deleteSelection(); return; }
+  if (e.key === 'Escape') { if (UI.tool !== 'select') { UI.tool = 'select'; render(); } else if (UI.cvSel.size) { UI.cvSel.clear(); renderWorld(); } else if (UI.mapFull) toggleFull(false); return; }
+  if (e.key === ' ') { if (!UI.spaceDown) { UI.spaceDown = true; const vp = $('#map-vp'); if (vp) vp.dataset.tool = 'hand'; } e.preventDefault(); return; }
+  if (e.shiftKey && k === 'f') { toggleFull(); return; }
+  if (!e.shiftKey && TOOL_KEY[k]) { UI.tool = TOOL_KEY[k]; render(); }
+});
+document.addEventListener('keyup', e => { if (e.key === ' ' && UI.spaceDown) { UI.spaceDown = false; const vp = $('#map-vp'); if (vp) vp.dataset.tool = UI.tool; } });
+
+/* ---------- DAILY work tracker ---------- */
+// Daily tasks are ordinary tasks (t.days = the dates they were planned for, t.fromManager), so they
+// appear on the canvas under their project and topic and share status with the To-do views.
+// Achievements and notes are St.daily entries, optionally linked to a task.
+UI.dayDate = null; UI.dayKind = 'mine'; UI.daySuggest = null;
+const DAY_KINDS = [['mine', '✅ My task'], ['manager', '👔 From manager'], ['achievement', '⭐ Achievement'], ['note', '📝 Note']];
+const managerName = () => (St.settings.me.manager || '').trim();
+function isFromManager(t) {
+  if (t.fromManager) return true;
+  const m = E.normMatch(managerName()); if (!m || !t.requestedBy) return false;
+  const r = E.normMatch(t.requestedBy); return r.includes(m) || m.split(' ').filter(w => w.length > 2).every(w => r.includes(w));
+}
+// Best local guess of project, topic and related task, used straight away; Claude refines it when available.
+function localPlace(t) {
+  const words = ' ' + E.normMatch(t.title + ' ' + (t.action || '')) + ' ';
+  const has = k => { k = E.normMatch(k); return k.length >= 2 && words.includes(' ' + k + ' '); };
+  if (!t.project) {
+    for (const p of St.settings.projects) if ([p.code, p.name, ...String(p.aliases || '').split(/[,;]/)].some(x => x && has(x))) { t.project = p.code || p.name; break; }
+    if (!t.project) for (const label of projectsList()) { const first = label.split(/\s+[—–-]\s+|\s+/)[0]; if (has(label) || (first.length >= 3 && has(first))) { t.project = label; break; } }
+  }
+  const tokens = s => new Set(E.normMatch(s).split(' ').filter(w => w.length >= 4));
+  const mine = tokens(t.title + ' ' + (t.action || ''));
+  if (!t.topic && mine.size) {
+    let best = null, score = 0;
+    for (const x of allTopics()) {
+      if (t.project && x.project && E.normMatch(x.project) !== E.normMatch(t.project)) continue;
+      const pool = tokens(x.topic + ' ' + [...St.tasks.values()].filter(o => topicOf(o) === x.topic).map(o => o.title).join(' '));
+      let s = 0; for (const w of mine) if (pool.has(w)) s++;
+      if (s > score) { score = s; best = x; }
+    }
+    if (best && score >= 2) { t.topic = best.topic; if (!t.project && best.project) t.project = best.project; }
+  }
+  if (!relIds(t).length) {
+    const d = E.findDuplicate({ title: t.title, action: t.action || '', project: t.project }, [...St.tasks.values()].filter(o => o.id !== t.id), '');
+    if (d) t.relatedIds = [d.task.id];
+  }
+  return t;
+}
+function queueCategorize(ids) {
+  if (!St.sample) return;
+  if (CAT.running) { CAT.queue = [...(CAT.queue || []), ...ids]; return; }
+  aiCategorize(ids, true);
+}
+function dayModel(D) {
+  const today = T(), isToday = D === today;
+  const all = [...St.tasks.values()];
+  const items = new Map();
+  const add = (t, why) => { if (!items.has(t.id)) items.set(t.id, { t, why }); };
+  all.filter(t => (t.days || []).includes(D)).forEach(t => add(t, 'planned'));
+  all.filter(t => t.completedAt && dayOf(t.completedAt) === D).forEach(t => add(t, 'done'));
+  if (isToday) {
+    all.filter(t => t.status !== 'done' && (t.days || []).some(d => d < D)).forEach(t => add(t, 'carried'));
+    all.filter(t => t.status === 'in_progress').forEach(t => add(t, 'wip'));
+  }
+  const lanes = { todo: [], wip: [], done: [] };
+  for (const it of items.values()) {
+    const t = it.t;
+    if (t.completedAt && dayOf(t.completedAt) === D && t.status === 'done') lanes.done.push(it);
+    else if (t.status === 'in_progress') lanes.wip.push(it);
+    else lanes.todo.push(it);
+  }
+  const order = (a, b) => (PRIO_RANK[a.t.priority] ?? 2) - (PRIO_RANK[b.t.priority] ?? 2) || (a.t.deadline || '9').localeCompare(b.t.deadline || '9');
+  Object.values(lanes).forEach(l => l.sort(order));
+  const entries = [...St.daily.values()].filter(a => a.date === D).sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || ''));
+  const manager = all.filter(t => t.status !== 'done' && isFromManager(t)).sort((a, b) => (a.deadline || '9').localeCompare(b.deadline || '9'));
+  const suggest = isToday ? all.filter(t => t.status !== 'done' && !items.has(t.id) && isMine(t) && t.status !== 'waiting' && ((t.deadline && t.deadline <= E.addDays(today, 1)) || t.priority === 'critical' || isFromManager(t))).sort(order.bind(null)).slice(0, 8) : [];
+  return { isToday, items, lanes, achievements: entries.filter(a => a.kind === 'achievement'), notes: entries.filter(a => a.kind === 'note'), manager, suggest };
+}
+function dayHistory() {
+  const days = new Map(); const bump = (d, k) => { if (!d) return; const x = days.get(d) || { planned: 0, done: 0, ach: 0 }; x[k]++; days.set(d, x); };
+  for (const t of St.tasks.values()) { (t.days || []).forEach(d => bump(d, 'planned')); if (t.completedAt) bump(dayOf(t.completedAt), 'done'); }
+  for (const a of St.daily.values()) if (a.kind === 'achievement') bump(a.date, 'ach');
+  return [...days.entries()].sort((a, b) => b[0].localeCompare(a[0])).slice(0, 30);
+}
+function dayCard(it, D) {
+  const t = it.t, d = dueInfo(t); const mgr = isFromManager(t);
+  const carried = it.why === 'carried' ? (t.days || []).filter(x => x < D).sort().pop() : '';
+  const doneLater = t.status === 'done' && dayOf(t.completedAt) !== D;
+  return `<div class="dcard p-${esc(t.priority || 'medium')} ${t.status === 'done' ? 'done' : ''}" data-tid="${esc(t.id)}">
+    <div class="dtop"><button class="dtick" data-act="toggle-done" data-id="${esc(t.id)}" aria-pressed="${t.status === 'done'}" aria-label="${t.status === 'done' ? 'Reopen' : 'Mark done'}">${I.check}</button>
+      <button class="dtitle" data-act="open-task" data-id="${esc(t.id)}" dir="auto">${esc(t.title)}</button></div>
+    <div class="dmeta"><span class="mono">${esc(t.ref || '')}</span>${t.project ? `<span class="chip proj">${esc(t.project)}</span>` : '<span class="chip warn" title="Claude or you will place it">No project yet</span>'}${topicOf(t) ? `<span class="chip">🧩 ${esc(topicOf(t))}</span>` : ''}
+      ${mgr ? `<span class="chip wait">👔 ${esc(t.requestedBy || managerName() || 'Manager')}</span>` : ''}${carried ? `<span class="chip" title="Planned earlier and not finished">↪ since ${esc(fmtDate(carried, { weekday: 'short', day: 'numeric', month: 'short' }))}</span>` : ''}
+      ${doneLater ? `<span class="chip ok">✓ done ${esc(fmtDate(dayOf(t.completedAt)))}</span>` : t.status !== 'done' && t.deadline ? `<span class="duepill ${d.cls}">${dueEmoji(d)}${esc(d.txt)}</span>` : ''}${subsOf(t).length ? `<span class="small muted">🗂️ ${subsDone(t)}/${subsOf(t).length}</span>` : ''}</div>
+    <div class="dbtns">
+      ${t.status === 'done' ? `<button class="btn ghost sm" data-act="day-ach-task" data-id="${esc(t.id)}" title="Record as an achievement">⭐</button>` : t.status === 'in_progress' ? `<button class="btn ghost sm" data-act="set-status" data-id="${esc(t.id)}" data-status="todo" title="Pause">⏸ Pause</button>` : `<button class="btn ghost sm" data-act="set-status" data-id="${esc(t.id)}" data-status="in_progress" title="Start working on it">▶ Start</button>`}
+      <button class="btn ghost sm" data-act="show-on-map" data-id="${esc(t.id)}" title="Show on the canvas">🧠</button>
+      ${(t.days || []).includes(D) && t.status !== 'done' ? `<button class="btn ghost sm" data-act="day-unplan" data-id="${esc(t.id)}" title="Remove from this day’s plan (the task stays in your to-do)">✕</button>` : ''}
+    </div></div>`;
+}
+function viewDaily() {
+  const D = UI.dayDate || T(); UI.dayDate = D;
+  const m = dayModel(D), L = m.lanes;
+  const mgrN = [...m.items.values()].filter(it => isFromManager(it.t)).length;
+  const kind = UI.dayKind;
+  const lane = (key, title, emoji, list, empty) => `<section class="dlane ${key}" data-lane="${key}"><div class="dlane-h"><span>${emoji} ${title}</span><span class="count">${list.length}</span></div>${list.length ? list.map(it => dayCard(it, D)).join('') : `<p class="small muted dempty">${empty}</p>`}</section>`;
+  const hist = dayHistory();
+  return `<div class="wrap daily">
+    <div class="page-head"><div><h1>Daily work</h1><div class="sub">Plan the day, log what your manager asks for, track progress and keep a record of what you achieved. Everything here also appears on the canvas.</div></div></div>
+    <div class="row day-nav">
+      <button class="btn sm" data-act="day-shift" data-d="-1" aria-label="Previous day">‹</button>
+      <input class="input" type="date" id="day-date" data-chg="day-date" value="${esc(D)}" aria-label="Day">
+      <button class="btn sm" data-act="day-shift" data-d="1" aria-label="Next day">›</button>
+      ${m.isToday ? '<span class="chip accent">Today</span>' : `<button class="btn sm ghost" data-act="day-today">Today</button>`}
+      <b class="day-title">${esc(fmtDate(D, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }))}</b>
+      <span class="spacer"></span>
+      <button class="btn sm" data-act="day-map" title="Highlight this day’s work on the canvas">🧠 Show on canvas</button>
+    </div>
+    <section class="card pad day-add">
+      <div class="seg" role="group" aria-label="What are you adding?">${DAY_KINDS.map(([k, l]) => `<button data-act="day-kind" data-kind="${k}" aria-pressed="${kind === k}">${l}</button>`).join('')}</div>
+      <div class="row" style="flex-wrap:nowrap">
+        <input class="input" id="day-in" dir="auto" autocomplete="off" placeholder="${kind === 'achievement' ? 'e.g. Issued RAS pump calc Rev B to the consultant' : kind === 'note' ? 'A note for this day' : kind === 'manager' ? 'What did your manager ask for?' : 'What will you work on? e.g. Check NPSH for ELM RAS pumps'}">
+        ${kind === 'manager' ? `<input class="input" id="day-mgr" style="max-width:200px" dir="auto" placeholder="Manager’s name" value="${esc(managerName())}">` : ''}
+        <button class="btn primary" data-act="day-add">Add</button>
+      </div>
+      <p class="small muted" style="margin:0">${kind === 'mine' || kind === 'manager' ? `Tasks get a project, topic and links to related work automatically${St.sample ? ' (Claude checks and refines them)' : ''}, and appear on the canvas.` : kind === 'achievement' ? 'Achievements are kept in your daily history and shown as ⭐ on linked tasks.' : 'Notes stay with this day.'}</p>
+    </section>
+    <div class="tiles day-tiles">
+      <div class="tile"><span class="tile-e">📋</span><span class="tile-n num">${L.todo.length}</span><span class="tile-l">To do</span></div>
+      <div class="tile"><span class="tile-e">👔</span><span class="tile-n num">${mgrN}</span><span class="tile-l">From manager</span></div>
+      <div class="tile"><span class="tile-e">▶️</span><span class="tile-n num">${L.wip.length}</span><span class="tile-l">In progress</span></div>
+      <div class="tile"><span class="tile-e">✅</span><span class="tile-n num">${L.done.length}</span><span class="tile-l">Completed</span></div>
+      <div class="tile"><span class="tile-e">⭐</span><span class="tile-n num">${m.achievements.length}</span><span class="tile-l">Achievements</span></div>
+    </div>
+    <div class="day-grid">
+      <div class="day-lanes">
+        ${lane('todo', 'To do', '📋', L.todo, m.isToday ? 'Nothing planned yet. Add a task above or pick from the suggestions.' : 'Nothing was planned.')}
+        ${lane('wip', 'In progress', '▶️', L.wip, 'Press ▶ Start on a task to show it here.')}
+        ${lane('done', 'Completed', '✅', L.done, 'Tasks you finish this day appear here, wherever you tick them.')}
+      </div>
+      <aside class="day-side">
+        <section class="card pad"><div class="section-title"><h2>⭐ Achievements</h2></div>
+          ${m.achievements.length ? `<ul class="ach">${m.achievements.map(a => { const t = a.taskId && St.tasks.get(a.taskId); return `<li><span dir="auto">${esc(a.text)}</span>${t ? `<button class="btn ghost sm" data-act="show-on-map" data-id="${esc(t.id)}">${esc(t.ref)}</button>` : ''}<button class="icon-btn" data-act="day-entry-del" data-id="${esc(a.id)}" aria-label="Remove">${I.x}</button></li>`; }).join('')}</ul>` : '<p class="small muted" style="margin:0">None recorded yet.</p>'}
+          ${UI.daySuggest ? `<div class="ach-sug"><div class="label">Suggested</div>${UI.daySuggest.map((s, i) => `<div class="row"><span dir="auto" style="flex:1">${esc(s.text)}</span><button class="btn sm" data-act="day-sug-add" data-i="${i}">Add</button></div>`).join('')}<button class="btn ghost sm" data-act="day-sug-clear">Dismiss</button></div>` : ''}
+          ${L.done.length ? `<button class="btn sm" data-act="day-suggest" ${UI.daySuggesting ? 'disabled' : ''}>${UI.daySuggesting ? 'Thinking…' : St.sample ? '✨ Suggest from completed work' : '⭐ Suggest from completed work'}</button>` : ''}
+        </section>
+        ${m.notes.length ? `<section class="card pad"><div class="section-title"><h2>📝 Notes</h2></div><ul class="ach">${m.notes.map(a => `<li><span dir="auto">${esc(a.text)}</span><button class="icon-btn" data-act="day-entry-del" data-id="${esc(a.id)}" aria-label="Remove">${I.x}</button></li>`).join('')}</ul></section>` : ''}
+        ${m.manager.length ? `<section class="card pad"><div class="section-title"><h2>👔 Open from your manager</h2></div><div class="dlist">${m.manager.slice(0, 10).map(t => `<div class="row"><button class="dtitle" data-act="open-task" data-id="${esc(t.id)}" dir="auto">${esc(E.clip(t.title, 80))}</button>${(t.days || []).includes(D) ? '<span class="chip ok">planned</span>' : `<button class="btn sm" data-act="day-plan" data-id="${esc(t.id)}">+ Day</button>`}</div>`).join('')}</div>${managerName() ? '' : '<p class="small muted">Add your manager’s name in Setup so tasks they request by email are tagged too.</p>'}</section>` : ''}
+        ${m.suggest.length ? `<section class="card pad"><div class="section-title"><h2>💡 Worth planning today</h2></div><div class="dlist">${m.suggest.map(t => { const d = dueInfo(t); return `<div class="row"><button class="dtitle" data-act="open-task" data-id="${esc(t.id)}" dir="auto">${esc(E.clip(t.title, 80))}</button><span class="duepill ${d.cls}">${esc(d.txt)}</span><button class="btn sm" data-act="day-plan" data-id="${esc(t.id)}">+ Today</button></div>`; }).join('')}</div></section>` : ''}
+        <section class="card pad"><div class="section-title"><h2>🗓️ History</h2></div>
+          ${hist.length ? `<div class="dhist">${hist.map(([d, x]) => `<button class="${d === D ? 'on' : ''}" data-act="day-go" data-d="${esc(d)}"><span>${esc(fmtDate(d, { weekday: 'short', day: 'numeric', month: 'short' }))}</span><span class="small muted">${x.done ? `✅ ${x.done}` : ''} ${x.planned ? `📋 ${x.planned}` : ''} ${x.ach ? `⭐ ${x.ach}` : ''}</span></button>`).join('')}</div>` : '<p class="small muted" style="margin:0">Your days appear here as you work.</p>'}
+        </section>
+      </aside>
+    </div>
+  </div>`;
+}
+function dayAdd() {
+  const inp = $('#day-in'); const text = (inp && inp.value || '').trim(); if (!text) { inp && inp.focus(); return; }
+  const D = UI.dayDate || T(), kind = UI.dayKind, now = nowISO();
+  if (kind === 'achievement' || kind === 'note') {
+    putDaily({ id: E.uid('d'), kind, date: D, text, taskId: null, createdAt: now });
+    render(); setTimeout(() => $('#day-in')?.focus(), 30); return;
+  }
+  const mgr = kind === 'manager' ? (($('#day-mgr') || {}).value || managerName()).trim() : '';
+  if (kind === 'manager' && mgr && !managerName()) { const s = clone(St.settings); s.me.manager = mgr; putSettings(s); }
+  // the same work already in the to-do list: plan that task instead of creating a duplicate
+  const dup = E.findDuplicate({ title: text, action: '', project: '' }, [...St.tasks.values()].filter(t => t.status !== 'done'), '');
+  if (dup && dup.score >= 0.6) {
+    planTask(dup.task.id, D, kind === 'manager' ? mgr : null);
+    toast(`📌 ${dup.task.ref} is already in your to-do, so it was added to this day.`, { action: 'Create new instead', fn: () => createDailyTask(text, D, kind, mgr) });
+  } else createDailyTask(text, D, kind, mgr);
+  if (inp) inp.value = '';
+  render(); setTimeout(() => $('#day-in')?.focus(), 30);
+}
+function createDailyTask(text, D, kind, mgr) {
+  const now = nowISO();
+  const t = makeTask({ title: E.clip(text, 200), source: 'daily', days: [D], fromManager: kind === 'manager', requestedBy: kind === 'manager' ? mgr : '',
+    history: [{ at: now, text: kind === 'manager' ? `Assigned by ${mgr || 'my manager'} (daily tracker, ${D})` : `Added in the daily tracker for ${D}` }] });
+  localPlace(t);
+  const notes = [t.project ? 'Project: ' + t.project : '', topicOf(t) ? 'Topic: ' + topicOf(t) : '', relIds(t).length ? 'Linked to ' + St.tasks.get(relIds(t)[0]).ref : ''].filter(Boolean);
+  if (notes.length) t.history.push({ at: now, text: notes.join('; ') + ' (matched automatically)' });
+  putTask(t); render();
+  queueCategorize([t.id]);
+  return t;
+}
+function planTask(id, D, mgr) {
+  const t = clone(St.tasks.get(id)); if (!t) return;
+  if (!(t.days || []).includes(D)) { t.days = [...(t.days || []), D].sort(); (t.history = t.history || []).push({ at: nowISO(), text: `Added to the daily plan for ${D}` }); }
+  if (mgr) { t.fromManager = true; if (!t.requestedBy) t.requestedBy = mgr; }
+  putTask(t);
+}
+function unplanTask(id, D) {
+  const t = clone(St.tasks.get(id)); if (!t) return;
+  t.days = (t.days || []).filter(x => x !== D); (t.history = t.history || []).push({ at: nowISO(), text: `Removed from the daily plan for ${D}` });
+  putTask(t);
+}
+async function suggestAchievements() {
+  const D = UI.dayDate || T(); const done = dayModel(D).lanes.done.map(it => it.t);
+  if (!done.length) return;
+  const have = new Set([...St.daily.values()].filter(a => a.date === D && a.kind === 'achievement').map(a => a.taskId));
+  const local = done.filter(t => !have.has(t.id)).map(t => ({ text: `Completed ${t.title}${t.project ? ' (' + t.project + ')' : ''}`, taskId: t.id }));
+  if (!St.sample) { UI.daySuggest = local; render(); return; }
+  UI.daySuggesting = true; render();
+  try {
+    const lines = done.map(t => JSON.stringify({ id: t.id, ref: t.ref, title: t.title, project: t.project || '', topic: topicOf(t), items: subsOf(t).filter(x => x.done).map(x => x.text).slice(0, 8), requestedBy: t.requestedBy || '' })).join('\n');
+    const prompt = `You write short, factual work-log achievements for a mechanical design engineer (water and wastewater treatment).\nToday is ${D}. These tasks were completed today (one JSON object per line):\n${lines}\n\nWrite one achievement per task, at most 20 words each, past tense, specific (name the document, equipment or project). Do not invent facts that are not in the data.\nReply with JSON only: [{"taskId":"<id>","text":"<achievement>"}]`;
+    const ans = await St.sample.json(prompt, { modelTier: 'quick' });
+    const list = (Array.isArray(ans) ? ans : []).filter(a => a && typeof a.text === 'string' && a.text.trim()).map(a => ({ text: E.clip(a.text.trim(), 200), taskId: St.tasks.has(String(a.taskId)) ? String(a.taskId) : null }));
+    UI.daySuggest = list.length ? list : local;
+  } catch (e) { UI.daySuggest = local; toast('Claude could not draft achievements (' + ((e && e.code) || 'error') + '). Showing simple suggestions instead.', { err: true }); }
+  finally { UI.daySuggesting = false; render(); }
 }
 
 /* ---------- REVIEW view ---------- */
@@ -3300,6 +4151,7 @@ function viewSetup() {
         <label class="field"><span>Role</span><input class="input" id="s-role" value="${esc(me.role)}"></label>
         <label class="field"><span>Company / team</span><input class="input" id="s-org" value="${esc(me.org)}"></label>
         <label class="field"><span>What you are responsible for</span><input class="input" id="s-scope" value="${esc(me.scope)}" placeholder="e.g. pumps, blowers, valves, piping, mechanical submittals"></label>
+        <label class="field"><span>Your manager (tasks they request are tagged in Daily)</span><input class="input" id="s-manager" value="${esc(me.manager || '')}" placeholder="e.g. Eng. Khaled Mansour" dir="auto"></label>
       </div>
       <label class="field"><span>Projects — one per line: CODE | Name | other names</span><textarea class="input" id="s-projects" rows="4" placeholder="ELM | El Mahsama WWTP Expansion | Mahsama, EM-WWTP" dir="auto">${esc(projText)}</textarea></label>
       <div class="row end"><button class="btn primary" data-act="save-setup">Save</button></div>
@@ -3354,7 +4206,7 @@ function viewSetup() {
 function readSetupForm() {
   const v = id => ($('#' + id) || {}).value || '';
   const s = clone(St.settings);
-  s.me = { ...s.me, name: v('s-name').trim(), emails: v('s-emails').split(/[,;\s]+/).map(x => x.trim().toLowerCase()).filter(x => x.includes('@')), aliases: v('s-aliases').trim(), role: v('s-role').trim(), org: v('s-org').trim(), scope: v('s-scope').trim() };
+  s.me = { ...s.me, name: v('s-name').trim(), emails: v('s-emails').split(/[,;\s]+/).map(x => x.trim().toLowerCase()).filter(x => x.includes('@')), aliases: v('s-aliases').trim(), role: v('s-role').trim(), org: v('s-org').trim(), scope: v('s-scope').trim(), manager: v('s-manager').trim() };
   s.projects = v('s-projects').split('\n').map(l => l.split('|').map(x => x.trim())).filter(p => p[0] || p[1]).map(p => ({ code: p[0] || '', name: p[1] || p[0] || '', aliases: p[2] || '' }));
   s.setupDone = !!s.me.name;
   return s;
@@ -3396,7 +4248,7 @@ async function exportJSON() {
   const emails = [...St.emails.values()];
   const texts = {};
   if (St.settings.storeText) for (const e of emails) { const t = await getTexts(e.id); if (t) texts[e.id] = t; }
-  offerFile(`action-register-backup-${stamp()}.json`, JSON.stringify({ app: 'action-register', version: 1, exportedAt: nowISO(), settings: St.settings, tasks: [...St.tasks.values()], emails, texts }, null, 1));
+  offerFile(`action-register-backup-${stamp()}.json`, JSON.stringify({ app: 'action-register', version: 1, exportedAt: nowISO(), settings: St.settings, tasks: [...St.tasks.values()], emails, texts, board: [...St.board.values()], daily: [...St.daily.values()], layout: St.layout }, null, 1));
 }
 async function importJSON(file) {
   try {
@@ -3406,6 +4258,9 @@ async function importJSON(file) {
     for (const t of d.tasks || []) { if (t && t.id) { St.tasks.set(t.id, t); if (St.mode === 'db') await writeDoc(St.refs.tasks.doc(t.id), t); nt++; } }
     for (const e of d.emails || []) { if (e && e.id) { St.emails.set(e.id, e); if (St.mode === 'db') await writeDoc(St.refs.emails.doc(e.id), e); ne++; } }
     for (const [id, t] of Object.entries(d.texts || {})) await putTexts(id, t);
+    for (const b of d.board || []) if (b && b.id) putBoard(b);
+    for (const x of d.daily || []) if (x && x.id) putDaily(x);
+    if (d.layout) putLayout(mergeLayout({ off: { ...(d.layout.off || {}), ...St.layout.off }, size: { ...(d.layout.size || {}), ...St.layout.size } }));
     if (d.settings && !St.settings.setupDone) putSettings(mergeSettings(d.settings));
     if (St.mode !== 'db') saveLocal();
     toast(`Restored ${nt} tasks and ${ne} emails.`); render();
@@ -3415,6 +4270,9 @@ async function wipeAll() {
   const tids = [...St.tasks.keys()], eids = [...St.emails.keys()];
   for (const id of tids) delTask(id);
   for (const id of eids) delEmail(id);
+  for (const id of [...St.board.keys()]) delBoard(id);
+  for (const id of [...St.daily.keys()]) delDaily(id);
+  putLayout(mergeLayout()); UI.cvUndo = []; UI.cvRedo = [];
   if (St.mode !== 'db') { try { localStorage.removeItem(LS_TEXT); } catch {} }
   UI.confirm = null; toast('All data deleted.'); render();
 }
@@ -3429,7 +4287,7 @@ function toast(msg, o = {}) {
 }
 
 /* ---------- navigation ---------- */
-const VIEWS = ['todo', 'review', 'import', 'emails', 'setup'];
+const VIEWS = ['todo', 'daily', 'review', 'import', 'emails', 'setup'];
 function go(view) { if (!VIEWS.includes(view)) view = 'todo'; if (view === 'todo') setTimeout(maybeAutoCategorize, 400); UI.view = view; UI.confirm = null; closeDrawer(); render(); window.scrollTo(0, 0); try { history.replaceState(null, '', '#' + view); } catch {} }
 
 /* ---------- events ---------- */
@@ -3445,7 +4303,7 @@ const ACT = {
   'delete-task': el => { delTask(el.dataset.id); UI.confirm = null; closeDrawer(); render(); toast('Task deleted.'); },
   'cancel-confirm': () => { UI.confirm = null; render(); if (UI.drawer) renderDrawer(); },
   'new-task': () => {
-    const now = nowISO(); const t = { id: E.uid('t'), ref: nextRefs(1)[0], title: 'New task', action: '', type: 'do', ownership: 'mine', owner: 'me', requestedBy: '', project: '', priority: 'medium', deadline: null, deadlineText: '', deadlineBasis: 'none', status: 'todo', nextStep: '', dependsOn: '', blockedReason: '', tags: [], notes: '', evidence: [], emailIds: [], threadKey: '', createdAt: now, updatedAt: now, completedAt: null, history: [{ at: now, text: 'Created manually' }] };
+    const t = makeTask({});
     putTask(t); render(); openDrawer('task', t.id); setTimeout(() => { const ta = $('#d-title'); if (ta) { ta.focus(); ta.select(); } }, 50);
   },
   'save-quick-setup': () => {
@@ -3476,6 +4334,32 @@ const ACT = {
     catch { const n = $('#fwd-addr-text'); if (n) { const r = document.createRange(); r.selectNodeContents(n); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); } toast('Address selected. Press Ctrl+C (or long-press › Copy) to copy it.'); }
   },
   'map-focus': el => { UI.mapFocus = el.dataset.pk; UI.map.fitted = false; render(); },
+  'map-full': () => toggleFull(),
+  'map-now': () => { UI.mapAsOf = ''; UI.map.fitted = false; render(); },
+  'map-reset-layout': () => { cvApply({ layout: { off: {}, size: {} } }); UI.map.fitted = false; render(); toast('↺ Layout tidied.', { action: 'Undo', fn: cvUndo }); },
+  'cv-tool': el => { UI.tool = el.dataset.tool; if (UI.tool !== 'select') UI.cvSel.clear(); render(); },
+  'cv-color': el => { UI.cvColor = el.dataset.c; render(); },
+  'cv-recolor': el => { const ch = { els: {} }; for (const id of UI.cvSel) { const x = St.board.get(id); if (x) ch.els[id] = { ...x, color: el.dataset.c }; } UI.cvColor = el.dataset.c; cvApply(ch); render(); },
+  'cv-width': el => { const d = +el.dataset.d; const ch = { els: {} }; for (const id of UI.cvSel) { const x = St.board.get(id); if (x && ['stroke', 'line', 'connector'].includes(x.type)) ch.els[id] = { ...x, width: Math.max(1, Math.min(24, (x.width || 3) + d)) }; } UI.cvWidth = Math.max(1, Math.min(24, UI.cvWidth + d)); cvApply(ch); render(); },
+  'cv-front': () => { const ch = { els: {} }; let z = Date.now(); for (const id of UI.cvSel) { const x = St.board.get(id); if (x) ch.els[id] = { ...x, z: z++ }; } cvApply(ch); render(); },
+  'cv-dup': () => duplicateSelection(),
+  'cv-del': () => deleteSelection(),
+  'cv-to-task': () => noteToTask(),
+  'cv-undo': () => cvUndo(),
+  'cv-redo': () => cvRedo(),
+  'day-kind': el => { UI.dayKind = el.dataset.kind; render(); setTimeout(() => $('#day-in')?.focus(), 30); },
+  'day-add': () => dayAdd(),
+  'day-shift': el => { UI.dayDate = E.addDays(UI.dayDate || T(), +el.dataset.d); UI.daySuggest = null; render(); },
+  'day-today': () => { UI.dayDate = T(); UI.daySuggest = null; render(); },
+  'day-go': el => { UI.dayDate = el.dataset.d; UI.daySuggest = null; render(); window.scrollTo(0, 0); },
+  'day-plan': el => { planTask(el.dataset.id, UI.dayDate || T()); render(); },
+  'day-unplan': el => { unplanTask(el.dataset.id, UI.dayDate || T()); render(); },
+  'day-entry-del': el => { const x = St.daily.get(el.dataset.id); delDaily(el.dataset.id); render(); if (x) toast('Removed.', { action: 'Undo', fn: () => { putDaily(x); render(); } }); },
+  'day-ach-task': el => { const t = St.tasks.get(el.dataset.id); if (!t) return; putDaily({ id: E.uid('d'), kind: 'achievement', date: UI.dayDate || T(), text: `Completed ${t.title}`, taskId: t.id, createdAt: nowISO() }); render(); toast('⭐ Achievement recorded.'); },
+  'day-suggest': () => suggestAchievements(),
+  'day-sug-add': el => { const sg = (UI.daySuggest || [])[+el.dataset.i]; if (!sg) return; putDaily({ id: E.uid('d'), kind: 'achievement', date: UI.dayDate || T(), text: sg.text, taskId: sg.taskId || null, createdAt: nowISO(), by: St.sample ? 'ai' : 'auto' }); UI.daySuggest = UI.daySuggest.filter((_, i) => i !== +el.dataset.i); if (!UI.daySuggest.length) UI.daySuggest = null; render(); },
+  'day-sug-clear': () => { UI.daySuggest = null; render(); },
+  'day-map': () => { const D = UI.dayDate || T(); UI.mapDay = D; UI.mapAsOf = D < T() ? D : ''; UI.mapShowDone = true; UI.map.fitted = false; UI.todoMode = 'map'; saveTodoPrefs(); go('todo'); },
   'map-zoom': el => mapZoom(+el.dataset.z > 0 ? 1.2 : 1 / 1.2),
   'map-fit': () => mapFit(false),
   'map-goto': el => centerOnTask(el.dataset.id),
@@ -3513,6 +4397,9 @@ const ACT = {
 const CHG = {
   'sub-text': el => { const t = clone(St.tasks.get(UI.drawer && UI.drawer.id)); if (!t) return; const x = subsOf(t).find(y => y.id === el.dataset.sid); if (!x || x.text === el.value.trim()) return; if (!el.value.trim()) { t.subtasks = subsOf(t).filter(y => y.id !== x.id); } else x.text = el.value.trim(); putTask(t); render(); },
   'map-opt': el => { UI[el.dataset.key] = el.checked; UI.map.fitted = false; render(); },
+  'map-day': el => { UI.mapDay = el.value || ''; render(); },
+  'map-asof': el => { UI.mapAsOf = el.value && el.value < T() ? el.value : ''; UI.map.fitted = false; render(); },
+  'day-date': el => { if (el.value) { UI.dayDate = el.value; UI.daySuggest = null; render(); } },
   'todo-opt': el => { UI[el.dataset.key] = el.checked; saveTodoPrefs(); render(); },
   'task-field': el => { if (UI.drawer && UI.drawer.kind === 'task') setTaskField(UI.drawer.id, el.dataset.field, el.value); },
   prop: el => updateProposal(el.dataset.eid, el.dataset.pid, el.dataset.field, el.type === 'checkbox' ? el.checked : el.value),
@@ -3555,7 +4442,7 @@ document.addEventListener('input', e => {
     qTimer = setTimeout(() => { if (el.dataset.inp === 'mapQ') { render(); const ids = [...(document.querySelectorAll('.mnode.task.hit'))].map(n => n.dataset.tid); if (ids.length && UI.mapQ) { const vp = $('#map-vp'), n = UI.mapLayout.nodes.find(x => x.id === 't:' + ids[0]); if (vp && n) { UI.map.x = vp.clientWidth / 2 - (n.x + n.w / 2) * UI.map.k; UI.map.y = vp.clientHeight / 2 - (n.y + n.h / 2) * UI.map.k; applyCam(true); } } return; } if (el.dataset.inp === 'todoQ') { const n = $('#todo-groups'); if (n) n.innerHTML = todoGroupsHTML(); } else render(); }, 120);
   }
 });
-document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.classList && e.target.classList.contains('title-edit')) { e.preventDefault(); e.target.blur(); } if (e.key === 'Enter' && e.target.id === 'd-sub-new') { e.preventDefault(); addSub(); } });
+document.addEventListener('keydown', e => { if (e.key === 'Enter' && (e.target.id === 'day-in' || e.target.id === 'day-mgr')) { e.preventDefault(); dayAdd(); return; } if (e.key === 'Enter' && e.target.classList && e.target.classList.contains('title-edit')) { e.preventDefault(); e.target.blur(); } if (e.key === 'Enter' && e.target.id === 'd-sub-new') { e.preventDefault(); addSub(); } });
 // drag & drop
 let dragDepth = 0;
 document.addEventListener('dragenter', e => { if (![...(e.dataTransfer?.types || [])].includes('Files')) return; e.preventDefault(); dragDepth++; if (UI.view !== 'import') go('import'); $('#drop')?.classList.add('over'); });

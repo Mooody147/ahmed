@@ -111,6 +111,29 @@ async function reloaded(pg, action) {
     console.log('categorise calls', cat.map(c => [c.model, c.effort, c.fallbacks]));
     assert.ok(cat.length && cat.every(c => c.model === 'claude-haiku-5-5' && c.effort === 'low' && !c.fallbacks), 'categorisation uses the quick model without fallbacks');
 
+    step('canvas: sticky note, pen stroke and a moved branch; daily tracker task and achievement');
+    await pg.click('.rail [data-nav="todo"]'); await pg.click('[data-act="todo-mode"][data-mode="map"]'); await pg.waitForTimeout(800);
+    await pg.click('[data-act="map-full"]'); await pg.waitForTimeout(500);
+    const vp = await (await pg.$('#map-vp')).boundingBox();
+    await pg.click('[data-act="cv-tool"][data-tool="sticky"]'); await pg.mouse.click(vp.x + vp.width - 260, vp.y + 140); await pg.waitForTimeout(200);
+    await pg.keyboard.type('Call pump vendor'); await pg.keyboard.press('Escape'); await pg.waitForTimeout(200);
+    await pg.click('[data-act="cv-tool"][data-tool="pen"]');
+    await pg.mouse.move(vp.x + vp.width - 400, vp.y + vp.height - 120); await pg.mouse.down(); await pg.mouse.move(vp.x + vp.width - 200, vp.y + vp.height - 80, { steps: 15 }); await pg.mouse.up(); await pg.waitForTimeout(200);
+    await pg.click('[data-act="cv-tool"][data-tool="select"]');
+    const pb = await (await pg.$('.mnode.project')).boundingBox();
+    await pg.mouse.move(pb.x + 20, pb.y + pb.height / 2); await pg.mouse.down(); await pg.mouse.move(pb.x + 20, pb.y + pb.height / 2 + 90, { steps: 8 }); await pg.mouse.up(); await pg.waitForTimeout(300);
+    const cv = await ev(pg, "({board:[...window.__AR.St.board.values()].map(e=>e.type).sort(), off:Object.keys(window.__AR.St.layout.off).length})");
+    assert.deepStrictEqual(cv.board, ['sticky', 'stroke']); assert.strictEqual(cv.off, 1);
+    await pg.screenshot({ path: path.join(OUT, '04-canvas-full.png') });
+    await pg.keyboard.press('Escape'); await pg.waitForTimeout(300);
+    await pg.click('.rail [data-nav="daily"]'); await pg.waitForSelector('#day-in');
+    await pg.fill('#day-in', 'Check NPSH margin for ELM RAS pumps'); await pg.keyboard.press('Enter'); await pg.waitForTimeout(500); await idle(pg);
+    await pg.click('[data-act="day-kind"][data-kind="achievement"]'); await pg.fill('#day-in', 'Closed the valves CRS round'); await pg.keyboard.press('Enter'); await pg.waitForTimeout(300);
+    await waitFor(pg, '!window.__AR.UI.analyzing', 20000); await pg.waitForTimeout(800);
+    const dt = await ev(pg, "[...window.__AR.St.tasks.values()].filter(t=>t.source==='daily').map(t=>({days:t.days,project:t.project}))");
+    assert.strictEqual(dt.length, 1); assert.ok(dt[0].project, 'daily task placed in a project');
+    await pg.screenshot({ path: path.join(OUT, '04-daily.png'), fullPage: true });
+
     step('files are parsed offline with the bundled libraries');
     await pg.click('.rail [data-nav="import"]'); await pg.waitForTimeout(300);
     await pg.click('[data-act="clear-staging"]').catch(() => {});
@@ -138,6 +161,7 @@ async function reloaded(pg, action) {
     const backup = JSON.parse(fs.readFileSync(path.join(downloads, saved.find(f => f.endsWith('.json'))), 'utf8'));
     assert.strictEqual(backup.tasks.length, await ev(pg, 'window.__AR.St.tasks.size'));
     assert.ok(Object.keys(backup.texts).length > 0, 'extracted texts are included in the backup');
+    assert.ok(backup.board.length === 2 && backup.daily.length === 1 && backup.layout && Object.keys(backup.layout.off).length === 1, 'canvas and daily data are in the backup');
     await pg.screenshot({ path: path.join(OUT, '05-setup-connected.png'), fullPage: true });
 
     step('dark mode');
@@ -157,6 +181,9 @@ async function reloaded(pg, action) {
     await waitFor(pg, 'window.__AR.St.ready'); await pg.waitForTimeout(2500); await idle(pg);
     assert.strictEqual(await ev(pg, 'window.__AR.St.tasks.size'), total);
     assert.strictEqual(await ev(pg, 'window.__AR.St.emails.size'), emails);
+    assert.deepStrictEqual(await ev(pg, "[...window.__AR.St.board.values()].map(e=>e.type).sort()"), ['sticky', 'stroke'], 'canvas elements persist');
+    assert.strictEqual(await ev(pg, "Object.keys(window.__AR.St.layout.off).length"), 1, 'manual node position persists');
+    assert.strictEqual(await ev(pg, "[...window.__AR.St.daily.values()].filter(a=>a.kind==='achievement').length"), 1, 'achievement persists');
     assert.strictEqual(await ev(pg, 'window.__AR.UI.staging.filter(b=>b.gmailId).length'), 0);
     const tx = await ev(pg, `(async()=>{const id=[...window.__AR.St.emails.keys()][0]; const d=await (await window.claude.use('db')).doc('data/users/local/register/texts/'+id).get(); return d.exists})()`);
     assert.strictEqual(tx, true, 'texts are read back from disk');

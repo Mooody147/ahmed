@@ -14,7 +14,7 @@
     "dist:linux": "node build.js desktop && electron-builder --linux",
     "test:unit": "node test/unit/parse.test.js && node test/unit/ai.test.js",
     "test:desktop": "node build.js desktop && node test/desktop/e2e.js",
-    "test:e2e": "python3 test/e2e_final.py && python3 test/e2e_gmail.py && python3 test/e2e_3d.py && python3 test/e2e_map.py"
+    "test:e2e": "python3 test/e2e_final.py && python3 test/e2e_gmail.py && python3 test/e2e_3d.py && python3 test/e2e_map.py && python3 test/e2e_canvas.py"
   },
   "devDependencies": {
     "@fontsource/ibm-plex-mono": "5.3.0",
