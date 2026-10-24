@@ -956,3 +956,11 @@ details.menu > summary.on { background: var(--accent-soft); color: var(--accent)
 .wb-run { display: grid; grid-template-columns: 1fr auto; gap: 2px 6px; border-top: 1px solid var(--line-2, var(--line)); padding-top: 6px; }
 .wb-run small { grid-column: 1; } .wb-run .icon-btn { grid-column: 2; grid-row: 1; }
 .wb-savebox { width: min(560px, calc(100vw - 32px)); display: grid; gap: 10px; }
+
+/* ---------- email files & filing ---------- */
+.mnode .mmail, .mnode .mfile { border: 0; background: var(--sunken); color: var(--ink-2); border-radius: 6px; font-size: 11px; padding: 0 5px; cursor: pointer; line-height: 18px; }
+.mnode .mfile.todo { background: #FFF1CC; color: #7A4A00; }
+[data-theme="dark"] .mnode .mfile.todo { background: #3A2B12; color: #E3A84A; }
+.filing { width: min(720px, calc(100vw - 32px)); display: grid; gap: 12px; max-height: calc(100vh - 60px); overflow: auto; }
+.file-row { display: grid; gap: 6px; padding: 10px; border: 1px solid var(--line); border-radius: 10px; }
+.file-row .input { flex: 1; }

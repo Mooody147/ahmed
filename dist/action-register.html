@@ -962,6 +962,14 @@ details.menu > summary.on { background: var(--accent-soft); color: var(--accent)
 .wb-run small { grid-column: 1; } .wb-run .icon-btn { grid-column: 2; grid-row: 1; }
 .wb-savebox { width: min(560px, calc(100vw - 32px)); display: grid; gap: 10px; }
 
+/* ---------- email files & filing ---------- */
+.mnode .mmail, .mnode .mfile { border: 0; background: var(--sunken); color: var(--ink-2); border-radius: 6px; font-size: 11px; padding: 0 5px; cursor: pointer; line-height: 18px; }
+.mnode .mfile.todo { background: #FFF1CC; color: #7A4A00; }
+[data-theme="dark"] .mnode .mfile.todo { background: #3A2B12; color: #E3A84A; }
+.filing { width: min(720px, calc(100vw - 32px)); display: grid; gap: 12px; max-height: calc(100vh - 60px); overflow: auto; }
+.file-row { display: grid; gap: 6px; padding: 10px; border: 1px solid var(--line); border-radius: 10px; }
+.file-row .input { flex: 1; }
+
 </style>
 <div class="titlestrip" id="titlestrip"><span class="ts-brand"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c3.3 4 6 7.2 6 10.4a6 6 0 0 1-12 0C6 10.2 8.7 7 12 3z"/><path d="m9.3 13.6 1.9 1.9 3.6-4.1"/></svg> Action Register</span><button class="ts-search" data-act="palette" title="Search and commands (Ctrl+K)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg><span>Search or type a command</span><kbd>Ctrl K</kbd></button><span class="ts-space"></span></div>
 <div class="app">
@@ -3772,7 +3780,7 @@ function mapNodeHTML(n, hits, day) {
       <button class="mtick" data-map="tick" aria-label="${t.status === 'done' ? 'Reopen' : 'Mark done'}">${I.check}</button>
       <div class="mtxt"><b dir="auto">${esc(t.title)}</b>
         <small><span class="mono">${esc(t.ref || '')}</span>${t.status === 'done' ? `<span class="mdone">✓ ${esc(fmtDate((t.completedAt || t.updatedAt || '').slice(0, 10)))}</span>` : `<span class="duepill ${d.cls}">${dueEmoji(d)}${esc(d.txt)}</span>`}
-        ${t.status === 'in_progress' ? '<span title="In progress">▶</span>' : ''}${subs ? `<button class="mitems" data-map="items" title="Show items">🗂️ ${subsDone(t)}/${subs}</button>` : ''}${links ? `<span title="Linked tasks">🔗 ${links}</span>` : ''}${isFromManager(t) ? '<span title="Assigned by your manager">👔</span>' : ''}${(t.days || []).includes(T()) ? '<span title="On today’s plan">📌</span>' : ''}${ach ? `<span title="Achievements">⭐ ${ach}</span>` : ''}${t.status === 'waiting' || t.ownership === 'waiting' ? '<span>⏳</span>' : ''}${t.status === 'blocked' ? '<span>⛔</span>' : ''}${sug ? '<span class="msug" title="Claude needs your confirmation">❓ Confirm</span>' : ''}</small></div>${rz}</div>`;
+        ${t.status === 'in_progress' ? '<span title="In progress">▶</span>' : ''}${subs ? `<button class="mitems" data-map="items" title="Show items">🗂️ ${subsDone(t)}/${subs}</button>` : ''}${links ? `<span title="Linked tasks">🔗 ${links}</span>` : ''}${isFromManager(t) ? '<span title="Assigned by your manager">👔</span>' : ''}${(t.days || []).includes(T()) ? '<span title="On today’s plan">📌</span>' : ''}${ach ? `<span title="Achievements">⭐ ${ach}</span>` : ''}${t.status === 'waiting' || t.ownership === 'waiting' ? '<span>⏳</span>' : ''}${t.status === 'blocked' ? '<span>⛔</span>' : ''}${sug ? '<span class="msug" title="Claude needs your confirmation">❓ Confirm</span>' : ''}${NODE_EXTRA.map(f => { try { return f(t) || ''; } catch { return ''; } }).join('')}</small></div>${rz}</div>`;
   }
   const s = n.s;
   return `<div class="mnode item ${s.done ? 'done' : ''}" data-node="${esc(n.id)}" data-type="item" data-tid="${esc(n.t.id)}" data-sid="${esc(s.id)}" style="${st}"><span class="subtick" aria-pressed="${!!s.done}">${I.check}</span><span class="itxt" dir="auto">${esc(s.text)}</span></div>`;
@@ -4304,6 +4312,8 @@ function finishPointer(mode, e, w, tmp, drop) {
   }
   return false;
 }
+// feature files add small buttons to task nodes (NODE_EXTRA: t → html with data-map="name") and handle them (MAP_BTN[name](taskId, button))
+const NODE_EXTRA = [], MAP_BTN = {};
 // a click on a tree node (no drag)
 function clickNode(node, target) {
   const kind = node.dataset.type, btn = target && target.closest && target.closest('[data-map]');
@@ -4316,6 +4326,7 @@ function clickNode(node, target) {
     const id = node.dataset.tid;
     if (btn && btn.dataset.map === 'tick') { ACT['toggle-done']({ dataset: { id } }); return true; }
     if (btn && btn.dataset.map === 'items') { UI.mapItems.has(id) ? UI.mapItems.delete(id) : UI.mapItems.add(id); render(); return true; }
+    if (btn && MAP_BTN[btn.dataset.map]) { MAP_BTN[btn.dataset.map](id, btn); return true; }
     UI.mapSel = id; UI.cvSel.clear(); render(); openDrawer('task', id); return true;
   }
   return false;
@@ -4947,7 +4958,7 @@ async function intakeFiles(fileList, target) {
     const bytes = new Uint8Array(await f.arrayBuffer());
     const kind = E.kindOf(f.name, f.type);
     if (!target && (kind === 'eml' || kind === 'msg')) {
-      try { const em = await parseEmailFile(bytes, kind); newBundles.push(await bundleFromEmail(em, kind, f.name)); }
+      try { const em = await parseEmailFile(bytes, kind); const nb = await bundleFromEmail(em, kind, f.name); nb.original = { bytes, kind, name: f.name }; newBundles.push(nb); }
       catch (e) { toast(`${f.name}: could not be opened as an email (${e.message || 'damaged file'}).`, { err: true }); }
     } else if (!target && kind === 'zip') {
       try {
@@ -4955,7 +4966,7 @@ async function intakeFiles(fileList, target) {
         for (const zf of Object.values(zip.files)) {
           if (zf.dir || /(^|\/)(__MACOSX|\.DS_Store|Thumbs\.db)/.test(zf.name)) continue;
           const zb = await zf.async('uint8array'); const nm = zf.name.split('/').pop(); const zk = E.kindOf(nm, '');
-          if (zk === 'eml' || zk === 'msg') { try { newBundles.push(await bundleFromEmail(await parseEmailFile(zb, zk), zk, f.name + ' › ' + nm)); } catch { loose.push({ name: f.name + ' › ' + nm, bytes: zb }); } }
+          if (zk === 'eml' || zk === 'msg') { try { const nb = await bundleFromEmail(await parseEmailFile(zb, zk), zk, f.name + ' › ' + nm); nb.original = { bytes: zb, kind: zk, name: nm }; newBundles.push(nb); } catch { loose.push({ name: f.name + ' › ' + nm, bytes: zb }); } }
           else loose.push({ name: f.name + ' › ' + nm, bytes: zb });
         }
       } catch (e) { toast(`${f.name}: ${e.message || 'could not open ZIP'}`, { err: true }); }
@@ -5177,6 +5188,7 @@ async function analyzeBundle(b, signal, onProgress) {
   };
   if (s.storeText) await saveTexts(id, em.body || '', b.atts.map(a => ({ name: a.name, include: a.include, status: a.res && a.res.status, kindLabel: a.res && a.res.kindLabel, note: a.res && a.res.note, text: (a.res && a.res.text) || '' })));
   putEmail(rec);
+  runHooks('emailStored', rec, b); // feature files keep the original email and its attachments
   if (b.gmailId) { markSeen(b.gmailId, id); labelImported(b.gmailId); }
   return rec;
 }
@@ -5296,8 +5308,10 @@ async function checkGmail(manual) {
       try {
         const raw = payloadOf(await gmCall('get_message', { messageId: m.id, messageFormat: 'RAW' })).raw;
         if (!raw) throw { code: 'tool_error', message: 'empty message' };
-        const em = E.unwrapForward(E.parseEml(E.b64urlToBytes(raw)));
+        const rawBytes = E.b64urlToBytes(raw);
+        const em = E.unwrapForward(E.parseEml(rawBytes));
         b = await bundleFromEmail(em, 'gmail', 'Forwarded · Gmail');
+        b.original = { bytes: rawBytes, kind: 'eml', name: (em.subject || 'email') + '.eml' };
       } catch (e) {
         if (e && ['needs_reauth', 'server_not_connected', 'not_in_manifest', 'approval_required', 'consent_required', 'blocked_by_policy', 'selection_required'].includes(e.code)) throw e;
         // fallback: text only
@@ -5381,7 +5395,7 @@ function emailDrawerHTML(e) {
   return `<div class="drawer-h"><span class="label">Email</span><span class="spacer"></span><button class="icon-btn" data-act="close-drawer" aria-label="Close">${I.x}</button></div>
   <div class="drawer-b">
     <div style="display:grid;gap:4px"><h2 style="font-size:20px" dir="auto">${esc(e.subject || '(no subject)')}</h2>
-      <dl class="kv">${e.from ? `<dt>From</dt><dd dir="auto">${esc(e.from)}</dd>` : ''}${e.to ? `<dt>To</dt><dd dir="auto">${esc(e.to)}</dd>` : ''}${e.cc ? `<dt>Cc</dt><dd dir="auto">${esc(e.cc)}</dd>` : ''}<dt>Sent</dt><dd>${esc(fmtDateTime(e.date) || 'unknown')}</dd><dt>Imported</dt><dd>${esc(fmtDateTime(e.importedAt))}${e.fileName ? ' · ' + esc(e.fileName) : ''}</dd>${e.forwardedBy ? `<dt>Forwarded by</dt><dd dir="auto">${esc(e.forwardedBy)}${e.forwardMode === 'inline' ? ' <span class="small muted">(original header read from the forwarded text)</span>' : ''}</dd>` : ''}</dl>${/^https:\/\/mail\.google\.com\//.test(e.gmailUrl || '') ? `<a class="btn ghost sm" style="justify-self:start" href="${esc(e.gmailUrl)}" target="_blank" rel="noopener">${I.mail} Open in Gmail</a>` : ''}</div>
+      <dl class="kv">${e.from ? `<dt>From</dt><dd dir="auto">${esc(e.from)}</dd>` : ''}${e.to ? `<dt>To</dt><dd dir="auto">${esc(e.to)}</dd>` : ''}${e.cc ? `<dt>Cc</dt><dd dir="auto">${esc(e.cc)}</dd>` : ''}<dt>Sent</dt><dd>${esc(fmtDateTime(e.date) || 'unknown')}</dd><dt>Imported</dt><dd>${esc(fmtDateTime(e.importedAt))}${e.fileName ? ' · ' + esc(e.fileName) : ''}</dd>${e.forwardedBy ? `<dt>Forwarded by</dt><dd dir="auto">${esc(e.forwardedBy)}${e.forwardMode === 'inline' ? ' <span class="small muted">(original header read from the forwarded text)</span>' : ''}</dd>` : ''}</dl><div class="row">${/^https:\/\/mail\.google\.com\//.test(e.gmailUrl || '') ? `<a class="btn ghost sm" href="${esc(e.gmailUrl)}" target="_blank" rel="noopener">${I.mail} Open in Gmail</a>` : ''}${typeof openMail === 'function' && (DESKTOP || e.original) ? `<button class="btn ghost sm" data-act="email-file-open" data-id="${esc(e.id)}">✉ Open in Outlook</button>` : ''}${tasks.length && typeof openFiling === 'function' ? `<button class="btn ghost sm" data-act="file-email" data-id="${esc(e.id)}">📁 ${e.filed ? 'Filed on the server' : 'Save to company server…'}</button>` : ''}</div></div>
     ${a.summary ? `<div><div class="label" style="margin-bottom:4px">Summary</div><p style="margin:0" dir="auto">${esc(a.summary)}</p>${a.actionRequired === false ? `<p class="small" style="margin:6px 0 0"><span class="chip ok">No action for you</span> ${esc(a.noActionReason || '')}</p>` : ''}</div>` : ''}
     ${(a.flags || []).length ? callout('warn', `<ul style="margin:0">${a.flags.map(f => `<li><b>${esc(FLAG[f.kind] || f.kind)}</b>${f.source ? ` <span class="mono">(${esc(srcName(e, f.source))})</span>` : ''}: ${esc(f.detail)}</li>`).join('')}</ul>`) : ''}
     ${tasks.length ? `<div><div class="label" style="margin-bottom:6px">Tasks from this email</div><div class="register">${tasks.map(taskRow).join('')}</div></div>` : ''}
@@ -5389,7 +5403,7 @@ function emailDrawerHTML(e) {
       const st = ATT_STATUS[x.status] || [x.status, ''];
       const t = attText(x.name); const pk = `em:${e.id}:${i}`;
       return `<div class="att"><span>${I.file}</span><div style="min-width:0"><div class="name" dir="auto">${esc(x.name)}</div><div class="note">${esc([x.kindLabel, x.pages ? x.pages + ' p.' : '', x.images ? x.images + ' image(s) sent' : '', x.size ? fmtBytes(x.size) : ''].filter(Boolean).join(' · '))}${x.note ? ' — ' + esc(x.note) : ''}</div></div>
-        <div class="att-side"><span class="chip ${st[1]}">${esc(st[0])}</span>${t ? `<button class="btn ghost sm" data-act="preview" data-key="${esc(pk)}">${UI.previews.has(pk) ? 'Hide' : 'Text'}</button>` : ''}</div>
+        <div class="att-side"><span class="chip ${st[1]}">${esc(st[0])}</span>${x.fileId ? `<button class="btn ghost sm" data-act="att-open" data-id="${esc(x.fileId)}" data-name="${esc(x.name.split(' › ').pop())}">Open</button>` : ''}${t ? `<button class="btn ghost sm" data-act="preview" data-key="${esc(pk)}">${UI.previews.has(pk) ? 'Hide' : 'Text'}</button>` : ''}</div>
         ${t && UI.previews.has(pk) ? `<div class="preview">${esc(E.clip(t, 30000))}</div>` : ''}</div>`;
     }).join('')}</div>` : '<p class="muted small">None.</p>'}</div>
     <div><div class="label" style="margin-bottom:6px">Email text</div>${tx === 'loading' || tx === undefined ? '<p class="muted small">Loading…</p>' : tx ? `<div class="bodytext" dir="auto">${esc(tx.body || '(empty)')}</div>${tx.trimmed ? '<p class="small muted">Long content was trimmed for storage.</p>' : ''}` : `<p class="muted small">${e.hasText ? 'Saved text not found.' : 'Text was not kept (Setup › Privacy).'} Preview: ${esc(e.snippet || '')}</p>`}</div>
@@ -5568,7 +5582,7 @@ const DRAWER_FN = {};
 const TASK_ACTIONS = [];
 function taskActionsHTML(t) { const parts = TASK_ACTIONS.map(f => { try { return f(t) || ''; } catch { return ''; } }).filter(Boolean); return parts.length ? `<div class="row task-actions">${parts.join('')}</div>` : ''; }
 // feature hooks: beforeRender / afterRender (every full render), ready (data loaded), analysed (after a run), taskChanged (old, new)
-const HOOKS = { beforeRender: [], afterRender: [], ready: [], analysed: [], taskChanged: [], deleted: [], proposals: [], approved: [] };
+const HOOKS = { beforeRender: [], afterRender: [], ready: [], analysed: [], taskChanged: [], deleted: [], proposals: [], approved: [], emailStored: [] };
 const runHooks = (k, ...a) => { for (const f of HOOKS[k]) { try { f(...a); } catch (e) { console.warn('hook ' + k, e); } } };
 function go(view) { if (!VIEWS.includes(view)) view = 'todo'; if (view === 'todo') setTimeout(maybeAutoCategorize, 400); UI.view = view; UI.confirm = null; closeDrawer(); render(); window.scrollTo(0, 0); try { history.replaceState(null, '', '#' + view); } catch {} }
 
@@ -6240,7 +6254,7 @@ Object.assign(ACT, { print: () => window.print() });
 /* ===== features/04-setup.js ===== */
 /* ---------- Setup: section index and the extra sections ---------- */
 VIEW_FN.setup = () => {
-  const extra = [projectMetaHTML(), rulesHTML(), typeof learnedHTML === 'function' ? learnedHTML() : '', workweekHTML(), appearanceHTML(), automationHTML(), templatesHTML(), recurringHTML(), DESKTOP ? usageHTML() : '', binHTML()].join('');
+  const extra = [projectMetaHTML(), rulesHTML(), typeof learnedHTML === 'function' ? learnedHTML() : '', workweekHTML(), appearanceHTML(), automationHTML(), templatesHTML(), recurringHTML(), typeof serverHTML === 'function' ? serverHTML() : '', DESKTOP ? usageHTML() : '', binHTML()].join('');
   const h = viewSetup().replace('<!--SETUP-EXTRA-->', extra);
   const secs = [...h.matchAll(/<section[^>]*\bid="([^"]+)"[^>]*\bdata-sec="([^"]+)"/g)].map(m => [m[1], m[2]]);
   return `<div class="set-layout"><nav class="set-index" aria-label="Setup sections">${secs.map(([id, l]) => `<button data-act="set-jump" data-id="${esc(id)}">${esc(l)}</button>`).join('')}</nav><div class="set-main">${h}</div></div>`;
@@ -7052,12 +7066,12 @@ HOOKS.approved.push(e => {
 });
 
 UI.docTab = UI.docTab || 'register'; UI.docQ = ''; UI.docProj = ''; UI.docCode = '';
-const DOC_TABS = [['register', '📑 Register'], ['timeline', '🗓️ Timeline'], ['files', '📎 Attachments'], ['tags', '🏷️ Equipment tags'], ['lessons', '💡 Lessons']];
+const DOC_TABS = [['register', '📑 Register'], ['tofile', '📁 To file'], ['timeline', '🗓️ Timeline'], ['files', '📎 Attachments'], ['tags', '🏷️ Equipment tags'], ['lessons', '💡 Lessons']];
 VIEWS.push('docs');
 VIEW_FN.docs = () => `<div class="wrap docs">
   <div class="page-head"><div><h1>Documents</h1><div class="sub">Every drawing, datasheet and calculation your emails mention, with its revision and review code, plus the files, equipment and lessons behind your work.</div></div></div>
   <div class="seg tabs" role="tablist">${DOC_TABS.map(([k, l]) => `<button role="tab" data-act="doc-tab" data-tab="${k}" aria-pressed="${UI.docTab === k}">${l}</button>`).join('')}</div>
-  ${({ register: docRegister, timeline: docTimeline, files: docFiles, tags: docTags, lessons: docLessons }[UI.docTab] || docRegister)()}
+  ${({ register: docRegister, tofile: docToFile, timeline: docTimeline, files: docFiles, tags: docTags, lessons: docLessons }[UI.docTab] || docRegister)()}
 </div>`;
 const codeChip = c => c ? `<span class="chip ${c === '1' ? 'ok' : c === '2' ? 'accent' : 'crit'}" title="${esc(DOC_CODE[c] || '')}">Code ${esc(c)}</span>` : '';
 function docRows() {
@@ -7133,7 +7147,7 @@ function docFiles() {
   for (const e of St.emails.values()) for (const a of e.attachments || []) rows.push({ a, e });
   const list = rows.filter(r => !q || E.normMatch([r.a.name, r.e.subject, r.e.from].join(' ')).includes(q)).sort((x, y) => (y.e.date || '').localeCompare(x.e.date || ''));
   return `<div class="row doc-bar"><label class="search todo-search">${I.search}<span class="sr">Search files</span><input class="input" id="doc-q" type="search" placeholder="File name, email subject or sender…" value="${esc(UI.docQ)}" data-inp="docQ"></label><span class="small muted">${list.length} file${list.length === 1 ? '' : 's'}</span></div>
-    ${list.length ? `<div class="card tbl-wrap"><table class="tbl"><thead><tr><th>File</th><th>Type</th><th>Email</th><th>Date</th><th>Read</th></tr></thead><tbody>${list.slice(0, 400).map(({ a, e }) => `<tr><td dir="auto">📎 ${esc(a.name)}${a.pages ? ` <span class="small muted">${a.pages} p</span>` : ''}</td><td>${esc(a.kindLabel || '')}</td><td><button class="dtitle" data-act="open-email" data-id="${esc(e.id)}" dir="auto">${esc(E.clip(e.subject || '(no subject)', 70))}</button><div class="small muted" dir="auto">${esc(e.from || '')}</div></td><td class="nowrap">${esc(e.date ? fmtDate(e.date.slice(0, 10)) : '')}</td><td>${(ATT_STATUS[a.status] || [a.status])[0] ? `<span class="chip ${(ATT_STATUS[a.status] || [])[1] || ''}">${esc((ATT_STATUS[a.status] || [a.status])[0])}</span>` : ''}</td></tr>`).join('')}</tbody></table></div>`
+    ${list.length ? `<div class="card tbl-wrap"><table class="tbl"><thead><tr><th>File</th><th>Type</th><th>Email</th><th>Date</th><th>Read</th><th></th></tr></thead><tbody>${list.slice(0, 400).map(({ a, e }) => `<tr><td dir="auto">📎 ${esc(a.name)}${a.pages ? ` <span class="small muted">${a.pages} p</span>` : ''}</td><td>${esc(a.kindLabel || '')}</td><td><button class="dtitle" data-act="open-email" data-id="${esc(e.id)}" dir="auto">${esc(E.clip(e.subject || '(no subject)', 70))}</button><div class="small muted" dir="auto">${esc(e.from || '')}</div></td><td class="nowrap">${esc(e.date ? fmtDate(e.date.slice(0, 10)) : '')}</td><td>${(ATT_STATUS[a.status] || [a.status])[0] ? `<span class="chip ${(ATT_STATUS[a.status] || [])[1] || ''}">${esc((ATT_STATUS[a.status] || [a.status])[0])}</span>` : ''}</td><td class="nowrap">${a.fileId ? `<button class="btn sm ghost" data-act="att-open" data-id="${esc(a.fileId)}" data-name="${esc(a.name.split(' › ').pop())}">Open</button>` : ''}</td></tr>`).join('')}</tbody></table></div>`
       : '<div class="empty"><div class="big-emoji">📎</div><h3>No attachments</h3><p>Files attached to your analysed emails are listed here, so you can find “that datasheet from last month” quickly.</p></div>'}`;
 }
 
@@ -7998,6 +8012,173 @@ document.addEventListener('input', e => { const k = e.target.dataset && e.target
 document.addEventListener('drop', e => { if (UI.view !== 'tools' || UI.toolTab !== 'wb' || !e.dataTransfer || !e.dataTransfer.files.length) return; e.preventDefault(); e.stopImmediatePropagation(); wbImportFiles(e.dataTransfer.files); }, true);
 document.addEventListener('dragenter', e => { if (UI.view === 'tools' && UI.toolTab === 'wb') e.stopImmediatePropagation(); }, true);
 window.__wbForget = () => WB_OPEN.clear(); // tests: reopen from storage
+
+/* ===== features/11-emailfiles.js ===== */
+/* ---------- email files: originals and attachments kept, filing on the company server, open in Outlook ---------- */
+// Every analysed email keeps its original (.msg / .eml, FILES 'emails') and each attachment (FILES 'attachments').
+// Emails with tasks ask to be filed on the company server: a folder name with the email's date is suggested,
+// and on the desktop the email and its attachments can be copied there in one click.
+const srvPrefs = () => Object.assign({ root: '', byProject: true, pattern: '{date} - {project} - {subject} - {from}', dateFmt: 'YYYY-MM-DD', keep: true }, St.settings.server || {});
+const extOf = (kind, name) => { const m = /\.(msg|eml)$/i.exec(name || ''); return m ? m[1].toLowerCase() : kind === 'msg' ? 'msg' : 'eml'; };
+HOOKS.emailStored.push(async (rec, b) => {
+  if (srvPrefs().keep === false) return;
+  try {
+    const e = clone(St.emails.get(rec.id) || rec); let changed = false;
+    if (b.original && b.original.bytes) {
+      const ext = extOf(b.original.kind, b.original.name), fileId = rec.id + '.' + ext;
+      await FILES.save('emails', fileId, b.original.bytes, { name: b.original.name });
+      e.original = { fileId, name: /\.(msg|eml)$/i.test(b.original.name) ? b.original.name : (b.original.name || 'email') + '.' + ext, kind: ext, size: b.original.bytes.length }; changed = true;
+    }
+    for (let i = 0; i < b.atts.length; i++) {
+      const a = b.atts[i]; if (!a.bytes || !e.attachments || !e.attachments[i]) continue;
+      const fileId = rec.id + '_' + i; await FILES.save('attachments', fileId, a.bytes, { name: a.name.split(' › ').pop(), emailId: rec.id });
+      e.attachments[i] = { ...e.attachments[i], fileId }; changed = true;
+    }
+    if (changed) putEmail(e);
+  } catch (err) { console.warn('keeping email files', err); }
+});
+
+/* --- the folder name --- */
+const winSafe = s => String(s || '').replace(/[\\/:*?"<>|\u0000-\u001f]+/g, '-').replace(/\s+/g, ' ').replace(/[ .]+$/, '').trim();
+function fmtFolderDate(iso, f) { const [y, m, d] = (iso || T()).split('-'); return f === 'DD.MM.YYYY' ? `${d}.${m}.${y}` : f === 'YYYYMMDD' ? y + m + d : f === 'DD-MM-YYYY' ? `${d}-${m}-${y}` : `${y}-${m}-${d}`; }
+function folderName(e, t) {
+  const p = srvPrefs();
+  const subject = String(e.subject || '').replace(/^\s*((re|fw|fwd|aw|wg)\s*:\s*|\[external\]\s*)+/gi, '').replace(/\[external\]\s*/gi, '').trim();
+  const from = (String(e.from || '').replace(/<[^>]*>/g, '').replace(/"/g, '').trim()) || (e.fromEmail || '').split('@')[0];
+  const project = (t && t.project) || (e.analysis && e.analysis.project) || '';
+  const parts = { date: fmtFolderDate(dayOf(e.date || e.importedAt), p.dateFmt), project, subject: E.clip(subject, 70).replace(/…$/, ''), from, ref: t ? t.ref : '' };
+  let name = p.pattern.replace(/\{(\w+)\}/g, (_, k) => parts[k] || '');
+  name = name.replace(/(\s*-\s*){2,}/g, ' - ').replace(/^\s*-\s*|\s*-\s*$/g, '');
+  return winSafe(name).slice(0, 140);
+}
+const isFiled = e => !!(e && (e.filed || e.filedSkip));
+const taskEmails = t => (t.emailIds || []).map(id => St.emails.get(id)).filter(Boolean);
+const unfiled = t => taskEmails(t).filter(e => !isFiled(e));
+
+/* --- filing panel --- */
+function openFiling(taskId, emailId) {
+  const t = taskId && St.tasks.get(taskId);
+  const list = emailId ? [St.emails.get(emailId)].filter(Boolean) : t ? taskEmails(t) : [];
+  if (!list.length) { toast('This task has no email to file.'); return; }
+  const p = srvPrefs(), m = $('#modal');
+  m.innerHTML = deco(`<div class="card pad filing" role="dialog" aria-label="File on the company server"><div class="row"><b>📁 Saved on the company server?</b><span class="spacer"></span><button class="icon-btn" data-act="close-modal" aria-label="Close">${I.x}</button></div>
+    <p class="small muted" style="margin:0">Suggested folder for each email — named with the date it arrived. ${DESKTOP ? (p.root ? `Saving goes to <span class="mono">${esc(p.root)}</span>${p.byProject ? ' › project' : ''}.` : 'Choose your server folder once and the app makes the folder and copies the email and its attachments into it.') : 'Copy the name, make the folder on the server and put the email in it — or download the email and attachments as a ZIP.'}</p>
+    ${list.map(e => { const name = folderName(e, t); const files = 1 + (e.attachments || []).filter(a => a.fileId).length; return `<section class="file-row" data-eid="${esc(e.id)}">
+      <div class="small"><b dir="auto">${esc(e.subject || '(no subject)')}</b> <span class="muted" dir="auto">· ${esc(e.from || '')} · ${esc(fmtDate(dayOf(e.date || e.importedAt), { day: 'numeric', month: 'short', year: 'numeric' }))}</span></div>
+      ${e.filed ? `<div class="chip ok">✓ Filed ${esc(fmtDate(dayOf(e.filed.at)))}${e.filed.path ? ' · ' + esc(e.filed.path) : ''}</div>` : e.filedSkip ? '<div class="chip">Not needed</div>' : ''}
+      <div class="row" style="flex-wrap:nowrap"><input class="input mono" data-fname="${esc(e.id)}" value="${esc(name)}" aria-label="Folder name"><button class="btn sm" data-act="file-copy" data-id="${esc(e.id)}">Copy name</button></div>
+      <div class="row">${DESKTOP ? `<button class="btn sm primary" data-act="file-save" data-id="${esc(e.id)}" ${e.original ? '' : 'title="Only the attachments were kept for this email"'}>Save to server (${files} file${files > 1 ? 's' : ''})</button>` : ''}
+        <button class="btn sm" data-act="file-zip" data-id="${esc(e.id)}">⬇ ZIP with this name</button>
+        ${e.filed ? '' : `<button class="btn sm ghost" data-act="file-mark" data-id="${esc(e.id)}">I saved it</button><button class="btn sm ghost" data-act="file-skip" data-id="${esc(e.id)}">Not needed</button>`}
+        ${e.filed && e.filed.path && DESKTOP ? `<button class="btn sm ghost" data-act="file-openfolder" data-id="${esc(e.id)}">Open folder</button>` : ''}</div></section>`; }).join('')}
+    <div class="row end"><button class="btn ghost sm" data-act="nav-setup-server">Folder name and server settings</button></div></div>`);
+  m.hidden = false;
+}
+const fnameOf = id => { const i = document.querySelector(`[data-fname="${CSS.escape(id)}"]`); return winSafe(i ? i.value : ''); };
+function markFiled(id, patch) { const e = clone(St.emails.get(id)); if (!e) return; Object.assign(e, patch); putEmail(e); }
+async function emailFiles(e) {
+  const out = [];
+  if (e.original && e.original.fileId) { const b = await FILES.load('emails', e.original.fileId); if (b) out.push({ name: e.original.name || 'email.' + e.original.kind, bytes: b }); }
+  for (const a of e.attachments || []) { if (!a.fileId) continue; const b = await FILES.load('attachments', a.fileId); if (b) out.push({ name: a.name.split(' › ').pop(), bytes: b }); }
+  return out;
+}
+async function fileToServer(id) {
+  const e = St.emails.get(id); if (!e) return;
+  const name = fnameOf(id) || folderName(e); let p = srvPrefs();
+  try {
+    if (!p.root) { const root = await DK.call('files:pickFolder', { title: 'Choose the company server folder (e.g. the project correspondence folder)' }); saveSettings(s => { s.server = { ...srvPrefs(), root }; }); await DK.call('sys:prefs', { serverRoots: [...new Set([...((DK.status().desktop || {}).serverRoots || []), root])] }).catch(() => {}); p = srvPrefs(); }
+    const t = [...St.tasks.values()].find(x => (x.emailIds || []).includes(id));
+    const proj = winSafe((t && t.project) || (e.analysis && e.analysis.project) || '');
+    const sep = /\\/.test(p.root) || DK.status().platform === 'win32' ? '\\' : '/';
+    const folder = p.root.replace(/[\\/]+$/, '') + (p.byProject && proj ? sep + proj : '') + sep + name;
+    let n = 0;
+    if (e.original && e.original.fileId) { await DK.call('files:copyTo', { kind: 'emails', id: e.original.fileId, folder, name: e.original.name }); n++; }
+    for (const a of e.attachments || []) if (a.fileId) { await DK.call('files:copyTo', { kind: 'attachments', id: a.fileId, folder, name: a.name.split(' › ').pop() }); n++; }
+    if (!n) { toast('No email file or attachments were kept for this email — save it from Outlook instead.', { err: true }); return; }
+    markFiled(id, { filed: { at: nowISO(), path: folder, by: 'app' }, filedSkip: false });
+    toast(`Saved ${n} file${n > 1 ? 's' : ''} to ${folder}`, { action: 'Open folder', fn: () => DK.call('files:openFolder', { folder }) });
+    const t2 = t && t.id; openFiling(t2, t2 ? null : id);
+  } catch (err) { if (!err || err.code !== 'cancelled') toast('Could not save to the server: ' + ((err && err.message) || err), { err: true }); }
+}
+async function fileZip(id) {
+  const e = St.emails.get(id); if (!e) return; const name = fnameOf(id) || folderName(e);
+  const files = await emailFiles(e); if (!files.length) { toast('No email file or attachments were kept for this email.', { err: true }); return; }
+  const Z = await E.need('jszip'); const zip = new Z(); const dir = zip.folder(name); for (const f of files) dir.file(f.name, f.bytes);
+  await offerFile(name + '.zip', await zip.generateAsync({ type: 'blob' }));
+}
+
+/* --- open in Outlook --- */
+async function openMail(emailId) {
+  const e = St.emails.get(emailId); if (!e) return;
+  if (DESKTOP) {
+    toast('Looking for the email in Outlook…');
+    try {
+      const r = await DK.call('outlook:open', { messageId: e.messageId || '', subject: e.subject || '', from: e.fromEmail || '', date: e.date || '', fileId: e.original && e.original.fileId, name: e.original && e.original.name });
+      if (r.how === 'outlook') toast('Opened in Outlook.');
+      else if (r.how === 'file') toast(r.why === 'NO_OUTLOOK' || r.why === 'NOT_WINDOWS' ? 'Opened the saved copy of the email.' : 'Not found in your Outlook folders — opened the saved copy instead.');
+      else if (e.gmailUrl) { DK.call('shell:openExternal', e.gmailUrl).catch(() => {}); toast('Opened the forward in Gmail.'); }
+      else toast('No copy of this email was kept, and it was not found in Outlook.', { err: true });
+    } catch (err) { toast('Could not open the email: ' + ((err && err.message) || err), { err: true }); }
+    return;
+  }
+  if (e.original && e.original.fileId) return FILES.open('emails', e.original.fileId, e.original.name);
+  if (e.gmailUrl) { window.open(e.gmailUrl, '_blank'); return; }
+  openDrawer('email', e.id);
+}
+const latestEmail = t => taskEmails(t).sort((a, b) => (b.date || '').localeCompare(a.date || ''))[0];
+
+/* --- on the canvas, the task panel and after approving --- */
+NODE_EXTRA.push(t => { const em = taskEmails(t); if (!em.length) return ''; const todo = em.filter(e => !isFiled(e)).length;
+  return `<button class="mmail" data-map="mail" title="Open the email in Outlook">✉</button>${todo ? `<button class="mfile todo" data-map="file" title="Saved on the company server? (${todo} not yet)">📁?</button>` : '<button class="mfile" data-map="file" title="Filed on the company server">📁✓</button>'}`; });
+MAP_BTN.mail = id => { const t = St.tasks.get(id); const e = t && latestEmail(t); if (e) openMail(e.id); };
+MAP_BTN.file = id => openFiling(id);
+TASK_ACTIONS.push(t => { const em = taskEmails(t); if (!em.length) return ''; const todo = em.filter(e => !isFiled(e)).length;
+  return `<button class="btn sm ghost" data-act="mail-open-outlook" data-id="${esc(t.id)}">✉ Open email in Outlook</button><button class="btn sm ${todo ? '' : 'ghost'}" data-act="file-task" data-id="${esc(t.id)}">📁 ${todo ? 'Save to company server…' : 'Filed on the server'}</button>`; });
+let filePromptQ = new Set(), filePromptT = null;
+HOOKS.approved.push(e => {
+  if (!e || !(e.attachments || e.original)) return;
+  const hasTask = [...St.tasks.values()].some(t => (t.emailIds || []).includes(e.id)); if (!hasTask) return;
+  filePromptQ.add(e.id); clearTimeout(filePromptT);
+  filePromptT = setTimeout(() => { const ids = [...filePromptQ].filter(id => !isFiled(St.emails.get(id))); filePromptQ = new Set(); if (!ids.length) return;
+    toast(`Save ${ids.length === 1 ? 'this email' : ids.length + ' emails'} on the company server?`, { action: 'File now', fn: () => { const t = [...St.tasks.values()].find(x => (x.emailIds || []).includes(ids[0])); ids.length === 1 ? openFiling(t && t.id, t ? null : ids[0]) : (UI.view = 'docs', UI.docTab = 'tofile', render()); } }); }, 600);
+});
+
+/* --- Documents › To file --- */
+function docToFile() {
+  const rows = [...St.emails.values()].filter(e => !isFiled(e) && [...St.tasks.values()].some(t => (t.emailIds || []).includes(e.id))).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+  const done = [...St.emails.values()].filter(e => e.filed).length;
+  return rows.length ? `<p class="small muted">${rows.length} email${rows.length > 1 ? 's' : ''} with tasks are not on the company server yet${done ? ` · ${done} filed` : ''}.</p><div class="card tbl-wrap"><table class="tbl"><thead><tr><th>Email</th><th>Suggested folder</th><th></th></tr></thead><tbody>${rows.map(e => { const t = [...St.tasks.values()].find(x => (x.emailIds || []).includes(e.id)); return `<tr><td><button class="dtitle" data-act="open-email" data-id="${esc(e.id)}" dir="auto">${esc(E.clip(e.subject || '(no subject)', 70))}</button><div class="small muted" dir="auto">${esc(e.from || '')}</div></td><td class="mono small" dir="auto">${esc(folderName(e, t))}</td><td class="nowrap"><button class="btn sm" data-act="file-email" data-id="${esc(e.id)}">📁 File…</button></td></tr>`; }).join('')}</tbody></table></div>`
+    : `<div class="empty"><div class="big-emoji">📁</div><h3>Everything is filed</h3><p>Emails that create tasks appear here until they are saved on the company server.${done ? ` ${done} filed so far.` : ''}</p></div>`;
+}
+
+/* --- Setup › Company server --- */
+function serverHTML() {
+  const p = srvPrefs(); const sample = folderName({ subject: 'RE: [EXTERNAL] Valves spec CRS', from: 'Rania Hassan <rania@consultant.example>', date: T() + 'T08:00:00Z' }, { project: 'ELM', ref: 'T-0001' });
+  return `<section class="card pad set-sec" id="set-server" data-sec="Company server"><div class="section-title"><h2>Company server and email files</h2></div>
+    <div class="set-rows">
+      <div class="set-row"><div><b>Keep email files and attachments</b><div class="small muted">So you can open them later, find them in Documents and copy them to the server.</div></div><label class="switch"><input type="checkbox" data-chg="srv-pref" data-k="keep" ${p.keep !== false ? 'checked' : ''}><span></span></label></div>
+      ${DESKTOP ? `<div class="set-row"><div><b>Server folder</b><div class="small muted mono">${esc(p.root || 'not chosen yet')}</div></div><div class="row"><button class="btn sm" data-act="srv-pick">Choose…</button>${p.root ? '<button class="btn sm ghost" data-act="srv-clear">Clear</button>' : ''}</div></div>
+      <div class="set-row"><div><b>Put each email in its project folder</b><div class="small muted">Server folder › project › email folder.</div></div><label class="switch"><input type="checkbox" data-chg="srv-pref" data-k="byProject" ${p.byProject ? 'checked' : ''}><span></span></label></div>` : ''}
+      <div class="set-row"><div><b>Folder name</b><div class="small muted">Use {date}, {project}, {subject}, {from} and {ref}. Example: <span class="mono">${esc(sample)}</span></div></div><input class="input mono" style="max-width:360px" value="${esc(p.pattern)}" data-chg="srv-pref" data-k="pattern"></div>
+      <div class="set-row"><div><b>Date style</b></div><select class="input" style="max-width:180px" data-chg="srv-pref" data-k="dateFmt">${['YYYY-MM-DD', 'DD.MM.YYYY', 'DD-MM-YYYY', 'YYYYMMDD'].map(f => `<option ${p.dateFmt === f ? 'selected' : ''}>${f}</option>`).join('')}</select></div>
+    </div></section>`;
+}
+
+Object.assign(ACT, {
+  'file-task': el => openFiling(el.dataset.id), 'file-email': el => openFiling(null, el.dataset.id),
+  'file-copy': async el => { const n = fnameOf(el.dataset.id); try { await navigator.clipboard.writeText(n); toast('Folder name copied.'); } catch { toast(n); } },
+  'file-save': el => fileToServer(el.dataset.id), 'file-zip': el => fileZip(el.dataset.id),
+  'file-mark': el => { markFiled(el.dataset.id, { filed: { at: nowISO(), by: 'me' }, filedSkip: false }); const t = [...St.tasks.values()].find(x => (x.emailIds || []).includes(el.dataset.id)); openFiling(t && t.id, t ? null : el.dataset.id); render(); },
+  'file-skip': el => { markFiled(el.dataset.id, { filedSkip: true }); const t = [...St.tasks.values()].find(x => (x.emailIds || []).includes(el.dataset.id)); openFiling(t && t.id, t ? null : el.dataset.id); render(); },
+  'file-openfolder': el => { const e = St.emails.get(el.dataset.id); if (e && e.filed && e.filed.path) DK.call('files:openFolder', { folder: e.filed.path }).catch(err => toast(err.message || 'Could not open the folder', { err: true })); },
+  'mail-open-outlook': el => { const t = St.tasks.get(el.dataset.id); const e = t && latestEmail(t); if (e) openMail(e.id); },
+  'att-open': el => FILES.open('attachments', el.dataset.id, el.dataset.name).catch(err => toast(err.message || 'Could not open', { err: true })),
+  'email-file-open': el => openMail(el.dataset.id),
+  'srv-pick': async () => { try { const root = await DK.call('files:pickFolder', { title: 'Choose the company server folder' }); saveSettings(s => { s.server = { ...srvPrefs(), root }; }); await DK.call('sys:prefs', { serverRoots: [...new Set([...((DK.status().desktop || {}).serverRoots || []), root])] }).catch(() => {}); render(); } catch {} },
+  'srv-clear': () => { saveSettings(s => { s.server = { ...srvPrefs(), root: '' }; }); render(); },
+  'nav-setup-server': () => { $('#modal').hidden = true; go('setup'); setTimeout(() => document.getElementById('set-server')?.scrollIntoView({ block: 'start' }), 60); },
+});
+Object.assign(CHG, { 'srv-pref': el => { const k = el.dataset.k; const v = el.type === 'checkbox' ? el.checked : el.value; saveSettings(s => { s.server = { ...srvPrefs(), [k]: v }; }); render(); } });
 
 /* ---------- boot ---------- */
 const startView = (location.hash || '').replace('#', '');

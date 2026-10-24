@@ -39,6 +39,7 @@ class Files {
     const dir = path.join(this.root, '_open', safeId(id)); await fs.promises.mkdir(dir, { recursive: true });
     const base = String(name || id).replace(/[\\/:*?"<>|]+/g, '_').slice(0, 150) || id;
     const dst = path.join(dir, base); await fs.promises.copyFile(src, dst);
+    if (process.env.AR_TEST) return dst; // tests check the copy instead of launching a program
     const err = await shell.openPath(dst); if (err) throw { code: 'open_failed', message: err };
     return dst;
   }

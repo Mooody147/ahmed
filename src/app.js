@@ -841,7 +841,7 @@ function mapNodeHTML(n, hits, day) {
       <button class="mtick" data-map="tick" aria-label="${t.status === 'done' ? 'Reopen' : 'Mark done'}">${I.check}</button>
       <div class="mtxt"><b dir="auto">${esc(t.title)}</b>
         <small><span class="mono">${esc(t.ref || '')}</span>${t.status === 'done' ? `<span class="mdone">✓ ${esc(fmtDate((t.completedAt || t.updatedAt || '').slice(0, 10)))}</span>` : `<span class="duepill ${d.cls}">${dueEmoji(d)}${esc(d.txt)}</span>`}
-        ${t.status === 'in_progress' ? '<span title="In progress">▶</span>' : ''}${subs ? `<button class="mitems" data-map="items" title="Show items">🗂️ ${subsDone(t)}/${subs}</button>` : ''}${links ? `<span title="Linked tasks">🔗 ${links}</span>` : ''}${isFromManager(t) ? '<span title="Assigned by your manager">👔</span>' : ''}${(t.days || []).includes(T()) ? '<span title="On today’s plan">📌</span>' : ''}${ach ? `<span title="Achievements">⭐ ${ach}</span>` : ''}${t.status === 'waiting' || t.ownership === 'waiting' ? '<span>⏳</span>' : ''}${t.status === 'blocked' ? '<span>⛔</span>' : ''}${sug ? '<span class="msug" title="Claude needs your confirmation">❓ Confirm</span>' : ''}</small></div>${rz}</div>`;
+        ${t.status === 'in_progress' ? '<span title="In progress">▶</span>' : ''}${subs ? `<button class="mitems" data-map="items" title="Show items">🗂️ ${subsDone(t)}/${subs}</button>` : ''}${links ? `<span title="Linked tasks">🔗 ${links}</span>` : ''}${isFromManager(t) ? '<span title="Assigned by your manager">👔</span>' : ''}${(t.days || []).includes(T()) ? '<span title="On today’s plan">📌</span>' : ''}${ach ? `<span title="Achievements">⭐ ${ach}</span>` : ''}${t.status === 'waiting' || t.ownership === 'waiting' ? '<span>⏳</span>' : ''}${t.status === 'blocked' ? '<span>⛔</span>' : ''}${sug ? '<span class="msug" title="Claude needs your confirmation">❓ Confirm</span>' : ''}${NODE_EXTRA.map(f => { try { return f(t) || ''; } catch { return ''; } }).join('')}</small></div>${rz}</div>`;
   }
   const s = n.s;
   return `<div class="mnode item ${s.done ? 'done' : ''}" data-node="${esc(n.id)}" data-type="item" data-tid="${esc(n.t.id)}" data-sid="${esc(s.id)}" style="${st}"><span class="subtick" aria-pressed="${!!s.done}">${I.check}</span><span class="itxt" dir="auto">${esc(s.text)}</span></div>`;
@@ -1373,6 +1373,8 @@ function finishPointer(mode, e, w, tmp, drop) {
   }
   return false;
 }
+// feature files add small buttons to task nodes (NODE_EXTRA: t → html with data-map="name") and handle them (MAP_BTN[name](taskId, button))
+const NODE_EXTRA = [], MAP_BTN = {};
 // a click on a tree node (no drag)
 function clickNode(node, target) {
   const kind = node.dataset.type, btn = target && target.closest && target.closest('[data-map]');
@@ -1385,6 +1387,7 @@ function clickNode(node, target) {
     const id = node.dataset.tid;
     if (btn && btn.dataset.map === 'tick') { ACT['toggle-done']({ dataset: { id } }); return true; }
     if (btn && btn.dataset.map === 'items') { UI.mapItems.has(id) ? UI.mapItems.delete(id) : UI.mapItems.add(id); render(); return true; }
+    if (btn && MAP_BTN[btn.dataset.map]) { MAP_BTN[btn.dataset.map](id, btn); return true; }
     UI.mapSel = id; UI.cvSel.clear(); render(); openDrawer('task', id); return true;
   }
   return false;
@@ -2016,7 +2019,7 @@ async function intakeFiles(fileList, target) {
     const bytes = new Uint8Array(await f.arrayBuffer());
     const kind = E.kindOf(f.name, f.type);
     if (!target && (kind === 'eml' || kind === 'msg')) {
-      try { const em = await parseEmailFile(bytes, kind); newBundles.push(await bundleFromEmail(em, kind, f.name)); }
+      try { const em = await parseEmailFile(bytes, kind); const nb = await bundleFromEmail(em, kind, f.name); nb.original = { bytes, kind, name: f.name }; newBundles.push(nb); }
       catch (e) { toast(`${f.name}: could not be opened as an email (${e.message || 'damaged file'}).`, { err: true }); }
     } else if (!target && kind === 'zip') {
       try {
@@ -2024,7 +2027,7 @@ async function intakeFiles(fileList, target) {
         for (const zf of Object.values(zip.files)) {
           if (zf.dir || /(^|\/)(__MACOSX|\.DS_Store|Thumbs\.db)/.test(zf.name)) continue;
           const zb = await zf.async('uint8array'); const nm = zf.name.split('/').pop(); const zk = E.kindOf(nm, '');
-          if (zk === 'eml' || zk === 'msg') { try { newBundles.push(await bundleFromEmail(await parseEmailFile(zb, zk), zk, f.name + ' › ' + nm)); } catch { loose.push({ name: f.name + ' › ' + nm, bytes: zb }); } }
+          if (zk === 'eml' || zk === 'msg') { try { const nb = await bundleFromEmail(await parseEmailFile(zb, zk), zk, f.name + ' › ' + nm); nb.original = { bytes: zb, kind: zk, name: nm }; newBundles.push(nb); } catch { loose.push({ name: f.name + ' › ' + nm, bytes: zb }); } }
           else loose.push({ name: f.name + ' › ' + nm, bytes: zb });
         }
       } catch (e) { toast(`${f.name}: ${e.message || 'could not open ZIP'}`, { err: true }); }
@@ -2246,6 +2249,7 @@ async function analyzeBundle(b, signal, onProgress) {
   };
   if (s.storeText) await saveTexts(id, em.body || '', b.atts.map(a => ({ name: a.name, include: a.include, status: a.res && a.res.status, kindLabel: a.res && a.res.kindLabel, note: a.res && a.res.note, text: (a.res && a.res.text) || '' })));
   putEmail(rec);
+  runHooks('emailStored', rec, b); // feature files keep the original email and its attachments
   if (b.gmailId) { markSeen(b.gmailId, id); labelImported(b.gmailId); }
   return rec;
 }
@@ -2365,8 +2369,10 @@ async function checkGmail(manual) {
       try {
         const raw = payloadOf(await gmCall('get_message', { messageId: m.id, messageFormat: 'RAW' })).raw;
         if (!raw) throw { code: 'tool_error', message: 'empty message' };
-        const em = E.unwrapForward(E.parseEml(E.b64urlToBytes(raw)));
+        const rawBytes = E.b64urlToBytes(raw);
+        const em = E.unwrapForward(E.parseEml(rawBytes));
         b = await bundleFromEmail(em, 'gmail', 'Forwarded · Gmail');
+        b.original = { bytes: rawBytes, kind: 'eml', name: (em.subject || 'email') + '.eml' };
       } catch (e) {
         if (e && ['needs_reauth', 'server_not_connected', 'not_in_manifest', 'approval_required', 'consent_required', 'blocked_by_policy', 'selection_required'].includes(e.code)) throw e;
         // fallback: text only
@@ -2450,7 +2456,7 @@ function emailDrawerHTML(e) {
   return `<div class="drawer-h"><span class="label">Email</span><span class="spacer"></span><button class="icon-btn" data-act="close-drawer" aria-label="Close">${I.x}</button></div>
   <div class="drawer-b">
     <div style="display:grid;gap:4px"><h2 style="font-size:20px" dir="auto">${esc(e.subject || '(no subject)')}</h2>
-      <dl class="kv">${e.from ? `<dt>From</dt><dd dir="auto">${esc(e.from)}</dd>` : ''}${e.to ? `<dt>To</dt><dd dir="auto">${esc(e.to)}</dd>` : ''}${e.cc ? `<dt>Cc</dt><dd dir="auto">${esc(e.cc)}</dd>` : ''}<dt>Sent</dt><dd>${esc(fmtDateTime(e.date) || 'unknown')}</dd><dt>Imported</dt><dd>${esc(fmtDateTime(e.importedAt))}${e.fileName ? ' · ' + esc(e.fileName) : ''}</dd>${e.forwardedBy ? `<dt>Forwarded by</dt><dd dir="auto">${esc(e.forwardedBy)}${e.forwardMode === 'inline' ? ' <span class="small muted">(original header read from the forwarded text)</span>' : ''}</dd>` : ''}</dl>${/^https:\/\/mail\.google\.com\//.test(e.gmailUrl || '') ? `<a class="btn ghost sm" style="justify-self:start" href="${esc(e.gmailUrl)}" target="_blank" rel="noopener">${I.mail} Open in Gmail</a>` : ''}</div>
+      <dl class="kv">${e.from ? `<dt>From</dt><dd dir="auto">${esc(e.from)}</dd>` : ''}${e.to ? `<dt>To</dt><dd dir="auto">${esc(e.to)}</dd>` : ''}${e.cc ? `<dt>Cc</dt><dd dir="auto">${esc(e.cc)}</dd>` : ''}<dt>Sent</dt><dd>${esc(fmtDateTime(e.date) || 'unknown')}</dd><dt>Imported</dt><dd>${esc(fmtDateTime(e.importedAt))}${e.fileName ? ' · ' + esc(e.fileName) : ''}</dd>${e.forwardedBy ? `<dt>Forwarded by</dt><dd dir="auto">${esc(e.forwardedBy)}${e.forwardMode === 'inline' ? ' <span class="small muted">(original header read from the forwarded text)</span>' : ''}</dd>` : ''}</dl><div class="row">${/^https:\/\/mail\.google\.com\//.test(e.gmailUrl || '') ? `<a class="btn ghost sm" href="${esc(e.gmailUrl)}" target="_blank" rel="noopener">${I.mail} Open in Gmail</a>` : ''}${typeof openMail === 'function' && (DESKTOP || e.original) ? `<button class="btn ghost sm" data-act="email-file-open" data-id="${esc(e.id)}">✉ Open in Outlook</button>` : ''}${tasks.length && typeof openFiling === 'function' ? `<button class="btn ghost sm" data-act="file-email" data-id="${esc(e.id)}">📁 ${e.filed ? 'Filed on the server' : 'Save to company server…'}</button>` : ''}</div></div>
     ${a.summary ? `<div><div class="label" style="margin-bottom:4px">Summary</div><p style="margin:0" dir="auto">${esc(a.summary)}</p>${a.actionRequired === false ? `<p class="small" style="margin:6px 0 0"><span class="chip ok">No action for you</span> ${esc(a.noActionReason || '')}</p>` : ''}</div>` : ''}
     ${(a.flags || []).length ? callout('warn', `<ul style="margin:0">${a.flags.map(f => `<li><b>${esc(FLAG[f.kind] || f.kind)}</b>${f.source ? ` <span class="mono">(${esc(srcName(e, f.source))})</span>` : ''}: ${esc(f.detail)}</li>`).join('')}</ul>`) : ''}
     ${tasks.length ? `<div><div class="label" style="margin-bottom:6px">Tasks from this email</div><div class="register">${tasks.map(taskRow).join('')}</div></div>` : ''}
@@ -2458,7 +2464,7 @@ function emailDrawerHTML(e) {
       const st = ATT_STATUS[x.status] || [x.status, ''];
       const t = attText(x.name); const pk = `em:${e.id}:${i}`;
       return `<div class="att"><span>${I.file}</span><div style="min-width:0"><div class="name" dir="auto">${esc(x.name)}</div><div class="note">${esc([x.kindLabel, x.pages ? x.pages + ' p.' : '', x.images ? x.images + ' image(s) sent' : '', x.size ? fmtBytes(x.size) : ''].filter(Boolean).join(' · '))}${x.note ? ' — ' + esc(x.note) : ''}</div></div>
-        <div class="att-side"><span class="chip ${st[1]}">${esc(st[0])}</span>${t ? `<button class="btn ghost sm" data-act="preview" data-key="${esc(pk)}">${UI.previews.has(pk) ? 'Hide' : 'Text'}</button>` : ''}</div>
+        <div class="att-side"><span class="chip ${st[1]}">${esc(st[0])}</span>${x.fileId ? `<button class="btn ghost sm" data-act="att-open" data-id="${esc(x.fileId)}" data-name="${esc(x.name.split(' › ').pop())}">Open</button>` : ''}${t ? `<button class="btn ghost sm" data-act="preview" data-key="${esc(pk)}">${UI.previews.has(pk) ? 'Hide' : 'Text'}</button>` : ''}</div>
         ${t && UI.previews.has(pk) ? `<div class="preview">${esc(E.clip(t, 30000))}</div>` : ''}</div>`;
     }).join('')}</div>` : '<p class="muted small">None.</p>'}</div>
     <div><div class="label" style="margin-bottom:6px">Email text</div>${tx === 'loading' || tx === undefined ? '<p class="muted small">Loading…</p>' : tx ? `<div class="bodytext" dir="auto">${esc(tx.body || '(empty)')}</div>${tx.trimmed ? '<p class="small muted">Long content was trimmed for storage.</p>' : ''}` : `<p class="muted small">${e.hasText ? 'Saved text not found.' : 'Text was not kept (Setup › Privacy).'} Preview: ${esc(e.snippet || '')}</p>`}</div>
@@ -2637,7 +2643,7 @@ const DRAWER_FN = {};
 const TASK_ACTIONS = [];
 function taskActionsHTML(t) { const parts = TASK_ACTIONS.map(f => { try { return f(t) || ''; } catch { return ''; } }).filter(Boolean); return parts.length ? `<div class="row task-actions">${parts.join('')}</div>` : ''; }
 // feature hooks: beforeRender / afterRender (every full render), ready (data loaded), analysed (after a run), taskChanged (old, new)
-const HOOKS = { beforeRender: [], afterRender: [], ready: [], analysed: [], taskChanged: [], deleted: [], proposals: [], approved: [] };
+const HOOKS = { beforeRender: [], afterRender: [], ready: [], analysed: [], taskChanged: [], deleted: [], proposals: [], approved: [], emailStored: [] };
 const runHooks = (k, ...a) => { for (const f of HOOKS[k]) { try { f(...a); } catch (e) { console.warn('hook ' + k, e); } } };
 function go(view) { if (!VIEWS.includes(view)) view = 'todo'; if (view === 'todo') setTimeout(maybeAutoCategorize, 400); UI.view = view; UI.confirm = null; closeDrawer(); render(); window.scrollTo(0, 0); try { history.replaceState(null, '', '#' + view); } catch {} }
 

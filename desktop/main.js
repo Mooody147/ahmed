@@ -14,6 +14,7 @@ const gmail = require('./gmail');
 const gmailImap = require('./gmail-imap');
 const sys = require('./system');
 const filesMod = require('./files');
+const outlook = require('./outlook');
 
 const ROOT = path.join(__dirname, '..', 'app');
 const PARTITION = 'persist:action-register';
@@ -95,7 +96,7 @@ function status() {
     user: { id: 'local', name: config.get().profileName || userName() },
     claude: { hasKey: !!config.secret('anthropicKey'), models: config.models(), maxPromptKB: config.get().maxPromptKB },
     gmail: { mode: gmailMode(), clientId: config.get().gmail.clientId || '', hasSecret: !!config.secret('gmailClientSecret'), connected: !!gmailMode(), account: config.get().gmail.account || '' },
-    desktop: { closeToTray: d.closeToTray, startWithWindows: d.startWithWindows, startHidden: d.startHidden, hotkey: d.hotkey, notify: d.notify, autoUpdate: d.autoUpdate, watchDir: d.watchDir, backupDir: d.backupDir, backupKeep: d.backupKeep, locked: !!d.pin },
+    desktop: { closeToTray: d.closeToTray, startWithWindows: d.startWithWindows, startHidden: d.startHidden, hotkey: d.hotkey, notify: d.notify, autoUpdate: d.autoUpdate, watchDir: d.watchDir, backupDir: d.backupDir, backupKeep: d.backupKeep, serverRoots: d.serverRoots || [], locked: !!d.pin },
     usage: config.get().usage || {},
     update: sys.updateReady(),
     secure: config.encrypted(),
@@ -186,6 +187,13 @@ function registerIpc() {
   });
   handle('files:openFolder', ({ folder }) => { const ok = [...pickedFolders, ...(sys.prefs(config).serverRoots || [])].some(f => f && path.resolve(folder).startsWith(path.resolve(f))); if (!ok) throw { code: 'forbidden', message: 'Folder not allowed' }; fs.mkdirSync(folder, { recursive: true }); return shell.openPath(folder); });
   handle('htmltool:open', ({ id, title, user }) => filesMod.openTool(files, id, title, user));
+  // open an email in Outlook (the message in your mailbox), else its saved .msg / .eml copy
+  handle('outlook:open', async ({ messageId, subject, from, date, fileId, name }) => {
+    const r = process.env.AR_TEST ? 'NOT_WINDOWS' : await outlook.findInOutlook({ messageId, subject, from, date });
+    if (r === 'FOUND') return { how: 'outlook' };
+    if (fileId && await files.info('emails', fileId)) { const p = await files.open('emails', fileId, name); return { how: 'file', path: p, why: r }; }
+    return { how: 'none', why: r };
+  });
   filesMod.toolDbIpc(ipcMain, store, filesMod.notifyToolWindows);
   handle('shell:openData', () => shell.openPath(DATA_DIR));
   handle('shell:openPath', p => { if (typeof p === 'string' && [sys.prefs(config).watchDir, sys.prefs(config).backupDir, DATA_DIR].some(d => d && p.startsWith(d))) return shell.openPath(p); throw { code: 'forbidden', message: 'Path not allowed' }; });
@@ -193,8 +201,10 @@ function registerIpc() {
 
   /* desktop extras */
   handle('sys:prefs', patch => {
-    const allowed = ['closeToTray', 'startWithWindows', 'startHidden', 'hotkey', 'notify', 'autoUpdate', 'watchDir', 'backupDir', 'backupKeep'];
+    const allowed = ['closeToTray', 'startWithWindows', 'startHidden', 'hotkey', 'notify', 'autoUpdate', 'watchDir', 'backupDir', 'backupKeep', 'serverRoots'];
     const clean = Object.fromEntries(Object.entries(patch || {}).filter(([k]) => allowed.includes(k)));
+    // server folders may only be ones the user picked in a dialog
+    if (clean.serverRoots) clean.serverRoots = (Array.isArray(clean.serverRoots) ? clean.serverRoots : []).filter(f => typeof f === 'string' && (pickedFolders.has(f) || (sys.prefs(config).serverRoots || []).includes(f))).slice(0, 20);
     sys.setPrefs(config, clean);
     if ('startWithWindows' in clean || 'startHidden' in clean) sys.applyLoginItem(config);
     let hotkeyOk = true;

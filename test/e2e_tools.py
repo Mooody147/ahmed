@@ -62,6 +62,7 @@ async def main():
 
         # calculators
         await pg.click('.rail [data-nav="tools"]'); await pg.wait_for_selector('.tools-page')
+        await pg.click('[data-act="tool-tab"][data-tab="calc"]'); await pg.wait_for_selector('#calc-out')
         out = await ev("document.querySelector('#calc-out').textContent"); print('PIPE', ' '.join(out.split())[:120]); assert '1.61' in out
         await pg.click('[data-act="calc-pick"][data-k="pump"]'); await pg.wait_for_timeout(100)
         out = await ev("document.querySelector('#calc-out').textContent"); assert '16.19' in out and '30' in out

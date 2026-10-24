@@ -28,12 +28,12 @@ HOOKS.approved.push(e => {
 });
 
 UI.docTab = UI.docTab || 'register'; UI.docQ = ''; UI.docProj = ''; UI.docCode = '';
-const DOC_TABS = [['register', '📑 Register'], ['timeline', '🗓️ Timeline'], ['files', '📎 Attachments'], ['tags', '🏷️ Equipment tags'], ['lessons', '💡 Lessons']];
+const DOC_TABS = [['register', '📑 Register'], ['tofile', '📁 To file'], ['timeline', '🗓️ Timeline'], ['files', '📎 Attachments'], ['tags', '🏷️ Equipment tags'], ['lessons', '💡 Lessons']];
 VIEWS.push('docs');
 VIEW_FN.docs = () => `<div class="wrap docs">
   <div class="page-head"><div><h1>Documents</h1><div class="sub">Every drawing, datasheet and calculation your emails mention, with its revision and review code, plus the files, equipment and lessons behind your work.</div></div></div>
   <div class="seg tabs" role="tablist">${DOC_TABS.map(([k, l]) => `<button role="tab" data-act="doc-tab" data-tab="${k}" aria-pressed="${UI.docTab === k}">${l}</button>`).join('')}</div>
-  ${({ register: docRegister, timeline: docTimeline, files: docFiles, tags: docTags, lessons: docLessons }[UI.docTab] || docRegister)()}
+  ${({ register: docRegister, tofile: docToFile, timeline: docTimeline, files: docFiles, tags: docTags, lessons: docLessons }[UI.docTab] || docRegister)()}
 </div>`;
 const codeChip = c => c ? `<span class="chip ${c === '1' ? 'ok' : c === '2' ? 'accent' : 'crit'}" title="${esc(DOC_CODE[c] || '')}">Code ${esc(c)}</span>` : '';
 function docRows() {
@@ -109,7 +109,7 @@ function docFiles() {
   for (const e of St.emails.values()) for (const a of e.attachments || []) rows.push({ a, e });
   const list = rows.filter(r => !q || E.normMatch([r.a.name, r.e.subject, r.e.from].join(' ')).includes(q)).sort((x, y) => (y.e.date || '').localeCompare(x.e.date || ''));
   return `<div class="row doc-bar"><label class="search todo-search">${I.search}<span class="sr">Search files</span><input class="input" id="doc-q" type="search" placeholder="File name, email subject or sender…" value="${esc(UI.docQ)}" data-inp="docQ"></label><span class="small muted">${list.length} file${list.length === 1 ? '' : 's'}</span></div>
-    ${list.length ? `<div class="card tbl-wrap"><table class="tbl"><thead><tr><th>File</th><th>Type</th><th>Email</th><th>Date</th><th>Read</th></tr></thead><tbody>${list.slice(0, 400).map(({ a, e }) => `<tr><td dir="auto">📎 ${esc(a.name)}${a.pages ? ` <span class="small muted">${a.pages} p</span>` : ''}</td><td>${esc(a.kindLabel || '')}</td><td><button class="dtitle" data-act="open-email" data-id="${esc(e.id)}" dir="auto">${esc(E.clip(e.subject || '(no subject)', 70))}</button><div class="small muted" dir="auto">${esc(e.from || '')}</div></td><td class="nowrap">${esc(e.date ? fmtDate(e.date.slice(0, 10)) : '')}</td><td>${(ATT_STATUS[a.status] || [a.status])[0] ? `<span class="chip ${(ATT_STATUS[a.status] || [])[1] || ''}">${esc((ATT_STATUS[a.status] || [a.status])[0])}</span>` : ''}</td></tr>`).join('')}</tbody></table></div>`
+    ${list.length ? `<div class="card tbl-wrap"><table class="tbl"><thead><tr><th>File</th><th>Type</th><th>Email</th><th>Date</th><th>Read</th><th></th></tr></thead><tbody>${list.slice(0, 400).map(({ a, e }) => `<tr><td dir="auto">📎 ${esc(a.name)}${a.pages ? ` <span class="small muted">${a.pages} p</span>` : ''}</td><td>${esc(a.kindLabel || '')}</td><td><button class="dtitle" data-act="open-email" data-id="${esc(e.id)}" dir="auto">${esc(E.clip(e.subject || '(no subject)', 70))}</button><div class="small muted" dir="auto">${esc(e.from || '')}</div></td><td class="nowrap">${esc(e.date ? fmtDate(e.date.slice(0, 10)) : '')}</td><td>${(ATT_STATUS[a.status] || [a.status])[0] ? `<span class="chip ${(ATT_STATUS[a.status] || [])[1] || ''}">${esc((ATT_STATUS[a.status] || [a.status])[0])}</span>` : ''}</td><td class="nowrap">${a.fileId ? `<button class="btn sm ghost" data-act="att-open" data-id="${esc(a.fileId)}" data-name="${esc(a.name.split(' › ').pop())}">Open</button>` : ''}</td></tr>`).join('')}</tbody></table></div>`
       : '<div class="empty"><div class="big-emoji">📎</div><h3>No attachments</h3><p>Files attached to your analysed emails are listed here, so you can find “that datasheet from last month” quickly.</p></div>'}`;
 }
 

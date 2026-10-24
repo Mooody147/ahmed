@@ -227,7 +227,8 @@ async function reloaded(pg, action) {
     await app.close();
     imap = await mocks.startImap();
     const data2 = fs.mkdtempSync(path.join(os.tmpdir(), 'ar-data2-'));
-    const env2 = { ...env, AR_DATA_DIR: data2, AR_IMAP_HOST: '127.0.0.1', AR_IMAP_PORT: String(imap.port), AR_IMAP_INSECURE: '1', AR_START_VIEW: 'setup' };
+    const server = fs.mkdtempSync(path.join(os.tmpdir(), 'ar-server-'));
+    const env2 = { ...env, AR_DATA_DIR: data2, AR_IMAP_HOST: '127.0.0.1', AR_IMAP_PORT: String(imap.port), AR_IMAP_INSECURE: '1', AR_START_VIEW: 'setup', AR_TEST_FOLDER: server };
     ({ app, pg } = await launch(env2));
     await pg.fill('#dk-key', KEY); await reloaded(pg, () => pg.click('[data-dact="save-key"]'));
     await pg.click('.rail [data-nav="setup"]'); await pg.waitForSelector('#dk-imap-user');
@@ -272,6 +273,27 @@ async function reloaded(pg, action) {
     await waitFor(pg, 'true'); await new Promise(r => setTimeout(r, 400));
     const reg = JSON.parse(fs.readFileSync(path.join(data2, 'data', 'register.json'), 'utf8'));
     assert.ok(Object.keys(reg.docs).some(k => /\/tools\/[^/]+\/cases\//.test(k)), 'the tool case is stored with the register');
+
+    step('email files: the original and its attachments are kept; filing copies them to a server folder named with the email date; open in Outlook falls back to the saved copy');
+    await pg.click('.rail [data-nav="review"]'); await pg.waitForTimeout(300);
+    const ab2 = await pg.$('[data-act="approve-all"]'); if (ab2) { await ab2.click(); await pg.waitForTimeout(800); }
+    const em = await ev(pg, "(()=>{const e=[...window.__AR.St.emails.values()].find(x=>x.original && [...window.__AR.St.tasks.values()].some(t=>(t.emailIds||[]).includes(x.id))); return e ? {id:e.id, orig:e.original, atts:(e.attachments||[]).filter(a=>a.fileId).length, subject:e.subject, date:e.date} : null})()");
+    console.log('email kept', JSON.stringify(em));
+    assert.ok(em && em.orig && em.orig.fileId, 'original email kept');
+    assert.ok(fs.existsSync(path.join(data2, 'data', 'files', 'emails', em.orig.fileId)), 'original email file on disk');
+    const tid = await ev(pg, `[...window.__AR.St.tasks.values()].find(t=>(t.emailIds||[]).includes(${JSON.stringify(em.id)})).id`);
+    await pg.click('.rail [data-nav="todo"]'); await pg.click('[data-act="todo-mode"][data-mode="map"]'); await pg.waitForTimeout(800);
+    assert.ok(await ev(pg, "!!document.querySelector('.mnode.task .mfile.todo')"), 'canvas asks to file the email');
+    await pg.click(`.mnode.task[data-tid="${tid}"] .mfile`); await pg.waitForSelector('.filing');
+    const fname = await pg.inputValue(`[data-fname="${em.id}"]`); console.log('folder name', fname);
+    assert.ok(fname.startsWith(String(em.date || '').slice(0, 10)), 'folder name starts with the email date');
+    await pg.click(`[data-act="file-save"][data-id="${em.id}"]`); await waitFor(pg, `!!(window.__AR.St.emails.get(${JSON.stringify(em.id)}).filed)`, 15000);
+    const filedPath = await ev(pg, `window.__AR.St.emails.get(${JSON.stringify(em.id)}).filed.path`); console.log('filed to', filedPath);
+    assert.ok(filedPath.startsWith(server) && fs.readdirSync(filedPath).length >= 1 + em.atts, 'email and attachments copied to the server folder');
+    await pg.click('.filing [data-act="close-modal"]');
+    const opened = await ev(pg, `window.claude.desktop.call('outlook:open', { subject: 'x', fileId: ${JSON.stringify(em.orig.fileId)}, name: 'mail.eml' })`);
+    assert.strictEqual(opened.how, 'file', 'falls back to the saved copy when Outlook is not available');
+    await pg.screenshot({ path: path.join(OUT, '10-filing.png') });
 
     errors.splice(0, errors.length, ...errors.filter(e => !/Failed to load resource|Content Security Policy/.test(e)));
     assert.deepStrictEqual(errors, [], 'no page or console errors');
