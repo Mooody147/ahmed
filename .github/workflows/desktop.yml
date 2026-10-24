@@ -88,4 +88,6 @@ jobs:
           Windows: download Action-Register-Setup-$VERSION.exe (installer, updates itself) or Action-Register-Portable-$VERSION.exe (no install needed).
           macOS: the arm64 .dmg is for Apple Silicon (M1 and later), the x64 .dmg for Intel Macs.
 
+          Installed copies update themselves from this release. What's new: see the README section \"What's new\".
+
           The app is not code-signed. Windows: More info › Run anyway. macOS: right-click › Open the first time."

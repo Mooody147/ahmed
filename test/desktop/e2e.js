@@ -166,6 +166,25 @@ async function reloaded(pg, action) {
     assert.ok(backup.board.length === 2 && backup.daily.length === 1 && backup.layout && Object.keys(backup.layout.off).length === 1, 'canvas and daily data are in the backup');
     await pg.screenshot({ path: path.join(OUT, '05-setup-connected.png'), fullPage: true });
 
+    step('reports, document register and canvas export save real Word, PDF, Excel and PNG files');
+    await pg.click('.rail [data-nav="insights"]'); await pg.waitForSelector('.insights');
+    await pg.click('[data-act="ins-tab"][data-tab="reports"]'); await pg.waitForTimeout(300);
+    await pg.click('[data-act="rep-out"][data-f="docx"]'); await pg.click('[data-act="rep-out"][data-f="pdf"]');
+    await pg.click('.rail [data-nav="docs"]'); await pg.waitForSelector('.docs');
+    await pg.click('[data-act="doc-add"]'); await pg.fill('#de-number', 'ELM-ME-CAL-0012'); await pg.fill('#de-title', 'RAS pump calc'); await pg.click('[data-act="doc-save"]');
+    await pg.click('[data-act="doc-export"]');
+    await pg.click('.rail [data-nav="todo"]'); await pg.click('[data-act="todo-mode"][data-mode="map"]'); await pg.waitForTimeout(800);
+    await pg.click('details[data-menu="export"] > summary'); await pg.click('[data-act="map-export"][data-f="png"]');
+    const magic = { docx: 'PK', xlsx: 'PK', pdf: '%PDF', png: '\x89PNG' };
+    const t0 = Date.now(); let got = {};
+    while (Date.now() - t0 < 30000) {
+      got = Object.fromEntries(Object.keys(magic).map(x => [x, fs.readdirSync(downloads).find(f => f.endsWith('.' + x))]));
+      if (Object.values(got).every(Boolean)) break; await pg.waitForTimeout(300);
+    }
+    console.log('files', got);
+    for (const [x, f] of Object.entries(got)) { assert.ok(f, x + ' saved'); const head = fs.readFileSync(path.join(downloads, f)).subarray(0, 4).toString('latin1'); assert.ok(head.startsWith(magic[x]), x + ' is a real file: ' + JSON.stringify(head)); }
+    await pg.screenshot({ path: path.join(OUT, '05b-canvas-export.png') });
+
     step('dark mode');
     // Playwright pins the page to light; the real app follows the OS setting
     await pg.emulateMedia({ colorScheme: 'dark' });

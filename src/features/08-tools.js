@@ -217,7 +217,8 @@ function mtgCreate() {
 
 /* --- Ask your register --- */
 UI.ask = UI.ask || { q: '', answer: null, busy: false };
-function openAsk() {
+function openAsk(q) {
+  if (typeof q === 'string' && q) { UI.ask.q = q; UI.ask.answer = null; setTimeout(askGo, 0); }
   const a = UI.ask, m = $('#modal');
   m.innerHTML = deco(`<div class="card pad ask-card" role="dialog" aria-label="Ask your register"><div class="row"><b>💬 Ask your register</b><span class="spacer"></span><button class="icon-btn" data-act="close-modal" aria-label="Close">${I.x}</button></div>
     <div class="row" style="flex-wrap:nowrap"><input class="input" id="ask-q" dir="auto" autocomplete="off" placeholder="e.g. What is still open with the consultant on ELM?" value="${esc(a.q)}"><button class="btn primary" data-act="ask-go" ${a.busy ? 'disabled' : ''}>${a.busy ? '…' : 'Ask'}</button></div>

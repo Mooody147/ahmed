@@ -1114,7 +1114,7 @@ function applyCam(animate) {
   w.style.transform = `translate(${UI.map.x}px,${UI.map.y}px) scale(${UI.map.k})`;
   // semantic zoom: far out, details hide and project labels grow so the map stays readable
   w.style.setProperty('--k', UI.map.k);
-  const vp = $('#map-vp'); if (vp) { vp.classList.toggle('z-far', UI.map.k < 0.5); vp.classList.toggle('z-mid', UI.map.k >= 0.5 && UI.map.k < 0.75); }
+  const vp = $('#map-vp'); if (vp) { vp.classList.toggle('z-far', UI.map.k < 0.38); vp.classList.toggle('z-mid', UI.map.k >= 0.38 && UI.map.k < 0.6); }
   drawMinimap();
 }
 function mapFit(smart) {

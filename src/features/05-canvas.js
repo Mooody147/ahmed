@@ -13,7 +13,8 @@ function projectBands(M) {
   const byY = [...out].sort((a, b) => a.y - b.y);
   for (let i = 1; i < byY.length; i++) {
     const a = byY[i - 1], b = byY[i], ov = a.y + a.h + 4 - b.y;
-    if (ov > 0 && a.x < b.x + b.w && b.x < a.x + a.w) { const cut = ov / 2; a.h -= cut; b.y += cut; b.h -= cut; }
+    // only trim small overlaps; a branch dragged right over another keeps its full band
+    if (ov > 0 && a.x < b.x + b.w && b.x < a.x + a.w && ov / 2 < Math.min(a.h, b.h) / 3) { const cut = ov / 2; a.h -= cut; b.y += cut; b.h -= cut; }
   }
   return out;
 }

@@ -8,6 +8,20 @@ JSON backup.
 This repository is the Electron desktop version of the Action Register web app. The original hand-off
 brief is in [`docs/HANDOFF.md`](docs/HANDOFF.md).
 
+## What's new in 1.1
+
+- **Look and feel:** custom title bar, icon set, light/dark/system theme, six accent colours, compact density, text size, project colours and icons.
+- **Runs in the background (desktop):** tray icon, close-to-tray, start with Windows, Gmail checked every few minutes, morning reminder, desktop notifications, quick add from any program (Ctrl+Shift+Space), a watch folder for `.msg`/`.eml`/PDF files, daily backups, optional PIN lock, and automatic updates from GitHub Releases (Windows installer; unsigned macOS builds cannot update themselves, so download the new .dmg).
+- **Home:** today strip with a morning briefing and risk radar, command palette (Ctrl+K), shortcuts (?), focus mode with a 25-minute timer, privacy mode (Ctrl+Shift+P), recycle bin.
+- **Canvas:** View / History / Export menus, grouped tool flyouts, project colour bands, semantic zoom (labels grow as you zoom out), minimap, PNG and PDF export, and a presentation mode that steps through projects (← →).
+- **Daily:** drag cards between lanes, progress ring, timers that run while a task is in progress.
+- **Insights:** charts of finished work and open tasks by project, waiting-on-others board with one-click chaser drafts, timesheet (CSV), progress reports for a week / month / year or one project and hand-over packs, as Word, PDF or email text.
+- **Documents:** register built from analysed emails (number, revision, review code, resubmission tracking, Excel export), timeline, attachment library, equipment tags, lessons learned, and an evidence viewer that shows each quote highlighted in its email or attachment.
+- **Tools:** pipe velocity and head loss, pump power and motor size, NPSH available, blower power; offer / datasheet comparison (TBE); CRS response drafting and saving back to Excel; meeting minutes to tasks.
+- **Claude:** Ask your register (Ctrl+J), reply and chaser drafts, email rules, working days and holidays in deadline maths, and it learns from the corrections you make to its choices. Prompt caching and a monthly cost estimate in Setup.
+
+Not in 1.1: code signing (needs a purchased certificate), an Outlook add-in, voice notes, a phone companion, and a full Arabic interface (Arabic email text and tasks are shown right-to-left with an Arabic font).
+
 ## Install and run
 
 Requirements: Node.js 22 or newer.
@@ -70,12 +84,14 @@ and add to it freely:
 - **Selection bar:** recolour, change thickness, duplicate (Ctrl+D), bring to front, delete (Del), and **→ Task**, which turns a note into a to-do task.
 - **Undo/redo:** Ctrl+Z / Ctrl+Shift+Z covers every canvas change, including moving tasks between projects.
 - **Rename:** the ✎ button on a project or topic renames it on all its tasks.
-- **Tidy layout** puts every node back in its automatic place.
+- **View menu:** completed tasks, activity panel, project colour bands, minimap, and **Tidy layout**, which puts every node back in its automatic place.
+- **Export menu:** PNG image, PDF, or **Present project by project** (← → to step, Esc to stop).
+- **Zoom:** zoomed far out, details hide and project names grow so the map stays readable. Click or drag the minimap to jump.
 - **Full screen:** ⤢ or Shift+F. Esc leaves it.
 
-**History.**
-- **📌 Day** highlights the tasks worked on that day and filters the activity feed.
-- **🕒 As of** shows the map as it was on a past date. Tasks created later are hidden, and work finished later shows as still open.
+**History menu.**
+- **📌 Highlight day** highlights the tasks worked on that day and filters the activity feed.
+- **🕒 Map as of** shows the map as it was on a past date. Tasks created later are hidden, and work finished later shows as still open.
 - Completed tasks stay on the map, with their links.
 
 ## Daily tracker (Daily tab)
@@ -132,7 +148,7 @@ Setup › Full backup (.json).
 ```bash
 npm run test:unit                       # parsing, prompts, evidence verification, dedupe (Node)
 xvfb-run -a npm run test:desktop        # Electron end-to-end (drop xvfb-run on Windows/macOS)
-npm run build && npm run test:e2e       # web-build browser tests incl. test/e2e_canvas.py (Python Playwright)
+npm run build && npm run test:e2e       # web-build browser tests: canvas, daily, insights, documents, tools (Python Playwright)
 ```
 
 The desktop test (`test/desktop/e2e.js`) launches the real app against local mock Anthropic, Google

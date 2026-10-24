@@ -94,7 +94,7 @@ function paletteItems(q) {
     ['Privacy mode on/off', () => togglePrivacy()], ['Keyboard shortcuts', () => openShortcuts()],
     ['Weekly report', () => { UI.insTab = 'reports'; go('insights'); }], ['Timesheet', () => { UI.insTab = 'time'; go('insights'); }],
     ['Engineering calculators', () => { UI.toolTab = 'calc'; go('tools'); }], ['Compare datasheets / offers', () => { UI.toolTab = 'compare'; go('tools'); }],
-    ['CRS responses', () => { UI.toolTab = 'crs'; go('tools'); }], ['Document register', () => { UI.docTab = 'register'; go('docs'); }],
+    ['CRS responses', () => { UI.toolTab = 'crs'; go('tools'); }], ['Meeting minutes → tasks', () => { UI.toolTab = 'minutes'; go('tools'); }], ['Ask your register (Ctrl+J)', () => openAsk()], ['Waiting on others', () => { UI.insTab = 'waiting'; go('insights'); }], ['Hand-over pack', () => { UI.insTab = 'reports'; UI.repKind = 'handover'; go('insights'); }], ['Document register', () => { UI.docTab = 'register'; go('docs'); }],
     ['Full backup (.json)', () => exportJSON()], ['Recycle bin', () => { go('setup'); setTimeout(() => document.getElementById('set-bin')?.scrollIntoView(), 80); }],
     ...(DESKTOP && DK.status().desktop && DK.status().desktop.locked ? [['Lock now', () => showLock()]] : []),
   ];
@@ -136,7 +136,7 @@ Object.assign(ACT, { palette: () => openPalette(), 'pal-run': el => runPal(+el.d
 
 /* ---------- keyboard shortcuts help (?) ---------- */
 const SHORTCUTS = [
-  ['Anywhere', [['Ctrl K', 'Search and commands'], ['Ctrl N', 'Quick add for today'], ['Ctrl Shift Space', 'Quick add from any program (desktop)'], ['Ctrl Shift P', 'Privacy mode on/off'], ['?', 'This list'], ['Esc', 'Close panels']]],
+  ['Anywhere', [['Ctrl K', 'Search and commands'], ['Ctrl N', 'Quick add for today'], ['Ctrl J', 'Ask your register'], ['Ctrl Shift Space', 'Quick add from any program (desktop)'], ['Ctrl Shift P', 'Privacy mode on/off'], ['?', 'This list'], ['Esc', 'Close panels']]],
   ['Canvas', [['V H K', 'Select, pan, task'], ['N T', 'Sticky note, text'], ['R O D', 'Rectangle, ellipse, diamond'], ['A L C', 'Arrow, line, connector'], ['P M E', 'Pen, highlighter, eraser'], ['F', 'Frame'], ['Space + drag', 'Pan'], ['Ctrl Z / Ctrl Shift Z', 'Undo / redo'], ['Ctrl D', 'Duplicate'], ['Del', 'Delete selection'], ['Shift F', 'Full screen'], ['← →', 'Next / previous project in presentation mode']]],
 ];
 function openShortcuts() {
