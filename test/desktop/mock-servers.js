@@ -185,4 +185,13 @@ function startImap() {
   const server = hoodiecrow({ plugins: ['X-GM-EXT-1', 'SPECIAL-USE', 'IDLE', 'ENABLE', 'UIDPLUS', 'LITERALPLUS'], users: { 'msobeah12@gmail.com': { password: 'abcdefghijklmnop' } }, storage });
   return new Promise(r => server.listen(0, '127.0.0.1', () => r({ server, port: server.address().port, labeled: () => server.storage })));
 }
-module.exports = { start, startImap, ADDR };
+// Gmail SMTP stand-in: checks the app password and keeps every message it receives
+function startSmtp() {
+  const { SMTPServer } = require('smtp-server');
+  const got = [];
+  const server = new SMTPServer({ secure: false, disabledCommands: ['STARTTLS'], authOptional: false, logger: false,
+    onAuth(auth, session, cb) { if (auth.username === 'msobeah12@gmail.com' && auth.password === 'abcdefghijklmnop') return cb(null, { user: auth.username }); cb(new Error('535 5.7.8 Username and Password not accepted')); },
+    onData(stream, session, cb) { const ch = []; stream.on('data', d => ch.push(d)); stream.on('end', () => { got.push({ from: session.envelope.mailFrom.address, to: session.envelope.rcptTo.map(r => r.address), raw: Buffer.concat(ch).toString('utf8') }); cb(); }); } });
+  return new Promise(r => server.listen(0, '127.0.0.1', () => r({ server, got, port: server.server.address().port })));
+}
+module.exports = { start, startImap, startSmtp, ADDR };

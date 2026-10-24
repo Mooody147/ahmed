@@ -6,7 +6,7 @@ const CHANNELS = new Set(['db:load', 'db:get', 'db:set', 'db:delete', 'sample:js
   'gmail:call', 'gmail:connect', 'gmail:connect-imap', 'gmail:disconnect', 'downloads:save', 'shell:openData', 'shell:openPath', 'shell:openExternal',
   'sys:prefs', 'sys:choose-folder', 'sys:notify', 'backup:write', 'data:move', 'lock:set', 'lock:check', 'update:install',
   'ui:titlebar', 'ui:zoom', 'print:pdf', 'capture:png', 'watch:ready', 'watch:done',
-  'files:save', 'files:load', 'files:info', 'files:remove', 'files:list', 'files:open', 'files:copyTo', 'files:pickFolder', 'files:openFolder', 'htmltool:open', 'outlook:open', 'ai:config', 'ai:key', 'ai:models', 'ai:test', 'nb:scan', 'nb:read', 'nb:open', 'cloud:connect', 'cloud:signin', 'cloud:signout', 'cloud:sync', 'cloud:prefs', 'cloud:sql', 'cloud:share', 'cloud:unshare']);
+  'files:save', 'files:load', 'files:info', 'files:remove', 'files:list', 'files:open', 'files:copyTo', 'files:pickFolder', 'files:openFolder', 'htmltool:open', 'outlook:open', 'ai:config', 'ai:key', 'ai:models', 'ai:test', 'nb:scan', 'nb:read', 'nb:open', 'cloud:connect', 'cloud:signin', 'cloud:signout', 'cloud:sync', 'cloud:prefs', 'cloud:sql', 'cloud:share', 'cloud:unshare', 'mail:send']);
 const EVENTS = new Set(['db:remote', 'cloud:status', 'cloud:reload', 'sample:text', 'sample:usage', 'quick-add', 'gmail-check', 'nav', 'import:file', 'update:ready']);
 
 contextBridge.exposeInMainWorld('arDesktop', {

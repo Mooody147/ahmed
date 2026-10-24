@@ -1034,3 +1034,8 @@ details.menu > summary.on { background: var(--accent-soft); color: var(--accent)
 /* grid children never grow wider than the page (wide tables scroll inside their card) */
 .wrap > * { min-width: 0; }
 .tools-page .card { overflow-x: auto; }
+.chat-preview { max-height: 220px; overflow: auto; display: grid; gap: 3px; padding: 8px; border: 1px solid var(--line); border-radius: 8px; }
+.wr-out { white-space: pre-wrap; padding: 12px; border-radius: 10px; background: var(--soft, rgba(0,0,0,.04)); }
+.wrap-btns { flex-wrap: wrap; }
+.remind-pick select { width: auto; height: 30px; font-size: 12.5px; }
+.snooze-note { margin: 0 0 8px; }

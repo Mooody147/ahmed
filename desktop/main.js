@@ -18,6 +18,7 @@ const filesMod = require('./files');
 const outlook = require('./outlook');
 const notebook = require('./notebook');
 const cloudMod = require('./cloud');
+const mailSend = require('./mail-send');
 
 const ROOT = path.join(__dirname, '..', 'app');
 const PARTITION = 'persist:action-register';
@@ -184,6 +185,7 @@ function registerIpc() {
   handle('gmail:disconnect', async () => { gmailImap.disconnect(config); await gmail.disconnect(config); config.set({ gmail: { ...config.get().gmail, mode: '' } }); return status(); });
 
   handle('downloads:save', ({ filename, data }) => saveFile(filename, data));
+  handle('mail:send', m => mailSend.send(config, gmailMode(), m || {}));
   /* stored files: workbooks, HTML tools, reference documents, email originals, attachments, receipts, photos */
   handle('files:save', async ({ kind, id, data, meta }) => { const r = await files.save(kind, id, data, meta); cloud.fileSaved(kind, id); return r; });
   handle('files:load', async ({ kind, id }) => (await files.load(kind, id)) || cloud.fetchFile(kind, id));

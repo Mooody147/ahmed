@@ -156,4 +156,4 @@ async function call(config, tool, input = {}) {
   }
 }
 
-module.exports = { connect, disconnect, call };
+module.exports = { connect, disconnect, call, api };

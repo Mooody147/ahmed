@@ -216,7 +216,7 @@ function openMailModal() {
     <label class="field"><span>To</span><input class="input" id="ml-to" value="${esc(d.to || '')}" placeholder="name@company.com"></label>
     <label class="field"><span>Subject</span><input class="input" id="ml-sub" dir="auto" value="${esc(d.subject)}"></label>
     <label class="field"><span>Message</span><textarea class="input" id="ml-body" dir="auto" rows="11">${esc(d.body)}</textarea></label>
-    <div class="row end"><span class="small muted mail-note">Nothing is sent from here — copy it, or open it in your email app.</span><button class="btn" data-act="mail-copy">Copy</button><button class="btn primary" data-act="mail-open">Open in email</button></div></div>`);
+    <div class="row end"><span class="small muted mail-note">Nothing is sent from here — copy it, or open it in your email app.</span><button class="btn" data-act="mail-copy">Copy</button><button class="btn ${typeof mailCanSend === 'function' && mailCanSend() ? '' : 'primary'}" data-act="mail-open">Open in email</button>${typeof mailCanSend === 'function' && mailCanSend() ? '<button class="btn primary" data-act="mail-send">Send from Gmail</button>' : ''}</div></div>`);
   m.hidden = false;
 }
 function mailFields() { const v = id => ($('#' + id) || {}).value || ''; return { to: v('ml-to'), subject: v('ml-sub'), body: v('ml-body') }; }

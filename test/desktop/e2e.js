@@ -12,7 +12,7 @@ const FX = path.join(ROOT, 'test', 'fixtures');
 const OUT = path.join(__dirname, 'out'); fs.mkdirSync(OUT, { recursive: true });
 const KEY = 'sk-ant-test-0123456789abcdefghij';
 const errors = [];
-let imap = null;
+let imap = null, smtp = null;
 const step = s => console.log('•', s);
 
 async function launch(env) {
@@ -225,10 +225,10 @@ async function reloaded(pg, action) {
     // the only expected console errors come from the deliberate network-block check above
     step('Gmail with an app password (no Google Cloud setup): forwards are imported, analysed and labelled');
     await app.close();
-    imap = await mocks.startImap();
+    imap = await mocks.startImap(); smtp = await mocks.startSmtp();
     const data2 = fs.mkdtempSync(path.join(os.tmpdir(), 'ar-data2-'));
     const server = fs.mkdtempSync(path.join(os.tmpdir(), 'ar-server-'));
-    const env2 = { ...env, AR_DATA_DIR: data2, AR_IMAP_HOST: '127.0.0.1', AR_IMAP_PORT: String(imap.port), AR_IMAP_INSECURE: '1', AR_START_VIEW: 'setup', AR_TEST_FOLDER: server };
+    const env2 = { ...env, AR_DATA_DIR: data2, AR_IMAP_HOST: '127.0.0.1', AR_IMAP_PORT: String(imap.port), AR_IMAP_INSECURE: '1', AR_SMTP_HOST: '127.0.0.1', AR_SMTP_PORT: String(smtp.port), AR_SMTP_INSECURE: '1', AR_START_VIEW: 'setup', AR_TEST_FOLDER: server };
     ({ app, pg } = await launch(env2));
     await pg.fill('#dk-key', KEY); await reloaded(pg, () => pg.click('[data-dact="save-key"]'));
     await pg.click('.rail [data-nav="setup"]'); await pg.waitForSelector('#dk-imap-user');
@@ -294,6 +294,15 @@ async function reloaded(pg, action) {
     const opened = await ev(pg, `window.claude.desktop.call('outlook:open', { subject: 'x', fileId: ${JSON.stringify(em.orig.fileId)}, name: 'mail.eml' })`);
     assert.strictEqual(opened.how, 'file', 'falls back to the saved copy when Outlook is not available');
     await pg.screenshot({ path: path.join(OUT, '10-filing.png') });
+
+    step('email from the app: the weekly report goes out from Gmail (app password over SMTP) with the Word file attached');
+    await pg.click('.rail [data-nav="setup"]'); await pg.waitForSelector('#set-weekly');
+    await pg.fill('#set-weekly [data-k="to"]', 'manager@company.example'); await pg.dispatchEvent('#set-weekly [data-k="to"]', 'change'); await pg.click('#set-weekly h2'); await pg.waitForTimeout(300);
+    await pg.click('[data-act="wk-send"]'); await waitFor(pg, `${smtp.got.length} >= 0`); const tSm = Date.now(); while (!smtp.got.length && Date.now() - tSm < 15000) await new Promise(r => setTimeout(r, 200));
+    assert.strictEqual(smtp.got.length, 1, 'one message sent');
+    assert.deepStrictEqual(smtp.got[0].to, ['manager@company.example']); assert.match(smtp.got[0].raw, /filename=.*\.docx/); assert.match(smtp.got[0].raw, /Subject: .*report/i);
+    assert.strictEqual(await ev(pg, "window.claude.desktop.call('mail:send', { to: 'not-an-address', subject: 'x', text: 'y' }).then(() => 'sent', e => e.code)"), 'invalid_argument');
+    await pg.click('.rail [data-nav="review"]');
 
     step('which AI: Claude out of credit → you are asked and can use ChatGPT; the fast model for a simple email; Gemini as the main AI; a local model as automatic backup; the monthly budget');
     await app.close();
@@ -471,5 +480,6 @@ async function reloaded(pg, action) {
     try { await app.close(); } catch {}
     m.server.close();
     if (imap) imap.server.close();
+    if (smtp) smtp.server.close();
   }
 })();
