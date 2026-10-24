@@ -230,6 +230,8 @@ let rq = null;
 function scheduleRender() { if (rq) return; rq = requestAnimationFrame(() => { rq = null; render(); }); }
 // a full re-render would destroy the canvas element being dragged or edited, so it waits until that ends
 const cvHold = () => (UI.view === 'todo' && (!!UI.cvEditing || (!!MP.mode && MP.mode !== 'pinch'))) || !!(document.activeElement && document.activeElement.classList && document.activeElement.classList.contains('hold-render'));
+// a render skipped while you typed in a held box happens when you leave it
+document.addEventListener('focusout', e => { if (UI.cvPending && e.target && e.target.classList && e.target.classList.contains('hold-render')) setTimeout(() => { if (UI.cvPending && !cvHold()) { UI.cvPending = false; render(); } }, 0); });
 function keepFocus(fn) {
   const a = document.activeElement; const id = a && a.id; let ss = null, se = null;
   try { ss = a.selectionStart; se = a.selectionEnd; } catch {}

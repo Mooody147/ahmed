@@ -27,6 +27,7 @@
      return f; }
    return null; }};
  window.__mockAnswer=function(prompt){
+   if(/^Compare these engineering documents/.test(prompt)) return {conflicts:[{topic:'Actuator enclosure rating',a:{doc:'CRS_valves.xlsx',quote:'Actuator enclosure IP68'},b:{doc:'MOM-17.docx',quote:'IP65 is acceptable for the actuators'},severity:'high',suggestion:'Confirm the rating with the consultant before ordering.'}]};
    if(/^You are a research assistant for the user's own notebook/.test(prompt)) { const ex=prompt.split('EXCERPTS:\n')[1]||''; const i=ex.split(/\n\n(?=\[\d+\] )/).findIndex(x=>/IP68/.test(x)); return i>=0?{answer:'Valve actuators must be IP68 [' + (i+1) + '].',citations:[i+1],notFound:false,followUps:['What coating is required?']}:{answer:'The files do not say.',citations:[],notFound:true,followUps:[]}; }
    if(/^You are a research assistant\. Below are the opening passages/.test(prompt)) return {answer:'- Valve specification for ELM [1]\n- Pump calculation [2]',citations:[1,2],followUps:['What IP rating is required?']};
    if(/^Read this receipt or invoice/.test(prompt)) return {payee:'Carrefour Maadi',date:'2026-10-20',total:'1,245.50',currency:'EGP',category:'Food & groceries',note:'Groceries'};

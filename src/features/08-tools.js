@@ -46,11 +46,13 @@ const CALCS = {
 };
 UI.toolTab = UI.toolTab || 'wb'; UI.calc = UI.calc || 'pipe'; UI.calcIn = UI.calcIn || {};
 const TOOL_TABS = [['wb', '📗 My workbooks'], ['calc', '🧮 Calculators'], ['compare', '⚖️ Compare offers'], ['crs', '📝 CRS responses'], ['minutes', '🗣️ Meeting minutes']];
+// tab → renderer; later feature files add their tabs to TOOL_TABS and TOOL_FN
+const TOOL_FN = { wb: () => (UI.wb.open ? wbViewHTML() : wbLibraryHTML()), calc: () => toolCalc(), compare: () => toolCompare(), crs: () => toolCRS(), minutes: () => toolMinutes() };
 VIEWS.push('tools');
 VIEW_FN.tools = () => `<div class="wrap tools-page">
   <div class="page-head"><div><h1>Tools</h1><div class="sub">Quick engineering checks, offer comparisons, comment responses and meeting actions — linked to your tasks.</div></div></div>
   <div class="seg tabs" role="tablist">${TOOL_TABS.map(([k, l]) => `<button role="tab" data-act="tool-tab" data-tab="${k}" aria-pressed="${UI.toolTab === k}">${l}</button>`).join('')}</div>
-  ${({ wb: () => (UI.wb.open ? wbViewHTML() : wbLibraryHTML()), calc: toolCalc, compare: toolCompare, crs: toolCRS, minutes: toolMinutes }[UI.toolTab] || toolCalc)()}
+  ${(TOOL_FN[UI.toolTab] || toolCalc)()}
 </div>`;
 const fmtNum = (v, dp) => v === null || v === undefined || Number.isNaN(v) ? '—' : typeof v === 'string' ? v : Number(v).toLocaleString('en-GB', { maximumFractionDigits: dp ?? 2, minimumFractionDigits: 0 });
 function calcValues(k) { const c = CALCS[k], saved = UI.calcIn[k] || {}; return Object.fromEntries(c.fields.map(([f, , , d]) => [f, saved[f] ?? d])); }
@@ -67,7 +69,7 @@ function toolCalc() {
   return `<div class="calc-layout"><nav class="calc-list">${Object.entries(CALCS).map(([id, x]) => `<button class="${id === k ? 'on' : ''}" data-act="calc-pick" data-k="${id}">${esc(x.label)}</button>`).join('')}</nav>
     <section class="card pad calc-card"><h2>${esc(c.label)}</h2><div class="grid-2">${c.fields.map(([f, l, u]) => `<label class="field"><span>${esc(l)} <span class="muted">${esc(u)}</span></span><input class="input num" type="number" step="any" id="calc-${f}" data-calc="${f}" value="${esc(v[f])}"></label>`).join('')}</div>
       <div id="calc-out">${calcResultHTML(k)}</div><p class="small muted">${esc(c.note)}</p>
-      <div class="row"><button class="btn sm" data-act="calc-copy">Copy result</button><button class="btn sm ghost" data-act="calc-reset">Reset values</button>${UI.drawerTask ? '' : ''}</div></section></div>`;
+      <div class="row"><button class="btn sm" data-act="calc-copy">Copy result</button>${typeof calcNoteBtns === 'function' ? calcNoteBtns() : ''}<button class="btn sm ghost" data-act="calc-reset">Reset values</button>${UI.drawerTask ? '' : ''}</div></section></div>`;
 }
 document.addEventListener('input', e => {
   const el = e.target; if (!el.dataset || !el.dataset.calc) return;

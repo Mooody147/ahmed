@@ -298,12 +298,14 @@ function reportText(R) {
   const { title, sub } = reportTitle(R);
   return [title, sub, '', ...reportSections(R).flatMap(s => [s.h.toUpperCase(), ...(s.p || []), ...(s.list || []).map(x => '• ' + x), ...(s.table ? s.table.rows.map(r => '• ' + r.filter(Boolean).join(' — ')) : []), ''])].join('\n');
 }
-async function reportDocx(R) {
-  const d = await E.need('docx'); const { title, sub } = reportTitle(R);
+async function reportDocx(R) { const { title, sub } = reportTitle(R); return docxDoc(title, sub, reportSections(R)); }
+// a Word document from sections { h, p: [..], list: [..], table: { head, rows }, notes: [..] }
+async function docxDoc(title, sub, sections) {
+  const d = await E.need('docx');
   const P = (text, o = {}) => new d.Paragraph({ children: [new d.TextRun({ text: String(text), ...o })], spacing: { after: 80 } });
   const kids = [new d.Paragraph({ text: title, heading: d.HeadingLevel.TITLE }), P(sub, { color: '5B6B68' })];
-  for (const s of reportSections(R)) {
-    kids.push(new d.Paragraph({ text: s.h, heading: d.HeadingLevel.HEADING_1, spacing: { before: 240, after: 100 } }));
+  for (const s of sections) {
+    if (s.h) kids.push(new d.Paragraph({ text: s.h, heading: d.HeadingLevel.HEADING_1, spacing: { before: 240, after: 100 } }));
     (s.p || []).forEach(p => kids.push(P(p)));
     (s.list || []).forEach(x => kids.push(new d.Paragraph({ text: x, bullet: { level: 0 } })));
     if (s.table) kids.push(new d.Table({ width: { size: 100, type: d.WidthType.PERCENTAGE }, rows: [s.table.head, ...s.table.rows].map((r, i) => new d.TableRow({ tableHeader: i === 0, children: r.map(c => new d.TableCell({ shading: i === 0 ? { fill: 'EEF3F2' } : undefined, children: [P(c, { bold: i === 0, size: 18 })] })) })) }));
