@@ -873,6 +873,56 @@ details.menu > summary.on { background: var(--accent-soft); color: var(--accent)
 .mail-draft textarea { min-height: 220px; font: inherit; }
 .task-actions { gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 8px; }
 
+/* ---------- documents ---------- */
+.grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 10px 14px; }
+.tbl-wrap { overflow-x: auto; padding: 4px 8px; }
+.nowrap { white-space: nowrap; }
+.doc-bar { margin-bottom: 12px; gap: 8px; flex-wrap: wrap; }
+.doc-bar .input { width: auto; }
+.doc-bar .todo-search { flex: 1 1 260px; }
+.doc-tbl tr.needs td:first-child { box-shadow: inset 3px 0 0 var(--crit); }
+.doc-edit { display: grid; gap: 10px; margin-bottom: 12px; }
+.timeline { display: grid; gap: 14px; }
+.tl-day h3 { font-size: 13px; color: var(--ink-3); margin: 0 0 6px; text-transform: uppercase; letter-spacing: .05em; }
+.tl-day ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; border-inline-start: 2px solid var(--line); padding-inline-start: 12px; }
+.tl-day li { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.tl-e { width: 20px; flex: none; }
+.tag-cloud { display: flex; flex-wrap: wrap; gap: 6px; }
+.tag-cloud .chip { cursor: pointer; border: 0; }
+.lesson-add { display: grid; gap: 10px; margin-bottom: 12px; }
+.lessons { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 12px; }
+.lesson p { margin: 6px 0; white-space: pre-wrap; }
+.ev-viewer { width: min(900px, calc(100vw - 32px)); max-height: calc(100vh - 60px); display: grid; grid-template-rows: auto auto 1fr; gap: 10px; }
+.ev-viewer blockquote { margin: 0; padding: 8px 12px; border-inline-start: 3px solid var(--accent); background: var(--accent-soft); border-radius: 6px; }
+.src-text { white-space: pre-wrap; overflow: auto; max-height: 60vh; margin: 0; padding: 12px; background: var(--sunken); border-radius: 8px; font: 13px/1.55 var(--f-body, inherit); }
+.src-text mark { background: #FFE07A; color: #1F1A00; border-radius: 3px; padding: 0 2px; }
+
+/* ---------- tools ---------- */
+.calc-layout { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 14px; align-items: start; }
+@media (max-width: 760px) { .calc-layout { grid-template-columns: 1fr; } }
+.calc-list { display: grid; gap: 4px; }
+.calc-list button { text-align: start; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
+.calc-list button.on { background: var(--accent-soft); border-color: transparent; color: var(--accent); font-weight: 600; }
+.calc-card { display: grid; gap: 12px; } .calc-card h2 { margin: 0; font-size: 17px; }
+.calc-out td:last-child { text-align: end; white-space: nowrap; }
+.input.num { font-variant-numeric: tabular-nums; }
+.cmp-in, .mtg-in { display: grid; gap: 12px; margin-bottom: 14px; }
+.cmp-tbl td.cmp-deviation { background: color-mix(in srgb, var(--crit) 8%, transparent); }
+.cmp-tbl td.cmp-missing { background: color-mix(in srgb, var(--warn, #B26B00) 8%, transparent); }
+.icon-btn.xs { width: 18px; height: 18px; }
+.crs-list { display: grid; gap: 10px; margin-top: 12px; }
+.crs-row { display: grid; gap: 8px; } .crs-c { flex: 1; white-space: pre-wrap; }
+.mtg-items { display: grid; gap: 6px; }
+.mtg-item { display: flex; gap: 10px; align-items: flex-start; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; }
+.mtg-item small { display: block; color: var(--ink-3); }
+.ask-card { width: min(720px, calc(100vw - 32px)); display: grid; gap: 12px; }
+.ask-sugs { display: flex; flex-wrap: wrap; gap: 6px; } .ask-sugs .chip { cursor: pointer; border: 0; }
+.ask-ans { display: grid; gap: 8px; }
+.learn-list { margin: 0 0 10px; padding-inline-start: 18px; display: grid; gap: 4px; }
+.ev-head { flex-wrap: nowrap; min-width: 0; } .ev-head .ev-sub { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+.ev-head b { white-space: nowrap; }
+.mail-note { flex: 1 1 220px; }
+
 </style>
 <div class="titlestrip" id="titlestrip"><span class="ts-brand"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c3.3 4 6 7.2 6 10.4a6 6 0 0 1-12 0C6 10.2 8.7 7 12 3z"/><path d="m9.3 13.6 1.9 1.9 3.6-4.1"/></svg> Action Register</span><button class="ts-search" data-act="palette" title="Search and commands (Ctrl+K)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg><span>Search or type a command</span><kbd>Ctrl K</kbd></button><span class="ts-space"></span></div>
 <div class="app">
@@ -2207,6 +2257,7 @@ function evidenceHTML(list, withEmailLink) {
     <div class="ev">
       <div class="ev-h"><span class="ev-badge ${esc(e.check || 'no_quote')}">${esc(CHECK[e.check] || 'Unchecked')}</span>
         <span>${esc(e.sourceName || e.source || '')}</span>${e.location ? `<span class="loc">${esc(e.location)}</span>` : ''}
+        ${e.quote && e.emailId && St.emails.has(e.emailId) ? `<button class="btn ghost sm" data-act="ev-view" data-email="${esc(e.emailId)}" data-src="${esc(e.source || '')}" data-name="${esc(e.sourceName || '')}" data-q="${esc(e.quote)}" title="Show the quote highlighted in the email or attachment">🔎 In source</button>` : ''}
         ${withEmailLink && e.emailId && St.emails.has(e.emailId) ? `<button class="btn ghost sm" data-act="open-email" data-id="${esc(e.emailId)}">Open email</button>` : ''}</div>
       ${e.quote ? `<q dir="auto">${esc(e.quote)}</q>` : ''}
     </div>`).join('')}</div>`;
@@ -4728,7 +4779,7 @@ document.addEventListener('input', e => {
   if (el.classList && (el.classList.contains('title-edit') || el.classList.contains('autogrow'))) autosize(el);
   if (el.dataset && el.dataset.inp) {
     UI[el.dataset.inp] = el.value; clearTimeout(qTimer);
-    qTimer = setTimeout(() => { if (el.dataset.inp === 'mapQ') { render(); const ids = [...(document.querySelectorAll('.mnode.task.hit'))].map(n => n.dataset.tid); if (ids.length && UI.mapQ) { const vp = $('#map-vp'), n = UI.mapLayout.nodes.find(x => x.id === 't:' + ids[0]); if (vp && n) { UI.map.x = vp.clientWidth / 2 - (n.x + n.w / 2) * UI.map.k; UI.map.y = vp.clientHeight / 2 - (n.y + n.h / 2) * UI.map.k; applyCam(true); } } return; } if (el.dataset.inp === 'todoQ') { const n = $('#todo-groups'); if (n) n.innerHTML = deco(todoGroupsHTML()); } else render(); }, 120);
+    qTimer = setTimeout(() => { if (el.dataset.inp === 'mapQ') { render(); const ids = [...(document.querySelectorAll('.mnode.task.hit'))].map(n => n.dataset.tid); if (ids.length && UI.mapQ) { const vp = $('#map-vp'), n = UI.mapLayout.nodes.find(x => x.id === 't:' + ids[0]); if (vp && n) { UI.map.x = vp.clientWidth / 2 - (n.x + n.w / 2) * UI.map.k; UI.map.y = vp.clientHeight / 2 - (n.y + n.h / 2) * UI.map.k; applyCam(true); } } return; } if (el.dataset.inp === 'todoQ') { const n = $('#todo-groups'); if (n) n.innerHTML = deco(todoGroupsHTML()); } else { const id = el.id, pos = el.selectionStart; render(); const n = id && document.getElementById(id); if (n && document.activeElement !== n) { n.focus(); try { n.setSelectionRange(pos, pos); } catch {} } } }, 120);
   }
 });
 document.addEventListener('keydown', e => { if (e.key === 'Enter' && (e.target.id === 'day-in' || e.target.id === 'day-mgr')) { e.preventDefault(); dayAdd(); return; } if (e.key === 'Enter' && e.target.classList && e.target.classList.contains('title-edit')) { e.preventDefault(); e.target.blur(); } if (e.key === 'Enter' && e.target.id === 'd-sub-new') { e.preventDefault(); addSub(); } });
@@ -5244,7 +5295,7 @@ Object.assign(ACT, { print: () => window.print() });
 /* ===== features/04-setup.js ===== */
 /* ---------- Setup: section index and the extra sections ---------- */
 VIEW_FN.setup = () => {
-  const extra = [projectMetaHTML(), rulesHTML(), workweekHTML(), appearanceHTML(), automationHTML(), templatesHTML(), recurringHTML(), DESKTOP ? usageHTML() : '', binHTML()].join('');
+  const extra = [projectMetaHTML(), rulesHTML(), typeof learnedHTML === 'function' ? learnedHTML() : '', workweekHTML(), appearanceHTML(), automationHTML(), templatesHTML(), recurringHTML(), DESKTOP ? usageHTML() : '', binHTML()].join('');
   const h = viewSetup().replace('<!--SETUP-EXTRA-->', extra);
   const secs = [...h.matchAll(/<section[^>]*\bid="([^"]+)"[^>]*\bdata-sec="([^"]+)"/g)].map(m => [m[1], m[2]]);
   return `<div class="set-layout"><nav class="set-index" aria-label="Setup sections">${secs.map(([id, l]) => `<button data-act="set-jump" data-id="${esc(id)}">${esc(l)}</button>`).join('')}</nav><div class="set-main">${h}</div></div>`;
@@ -5842,6 +5893,16 @@ function mailContext(t) {
   const ev = (t.evidence || [])[0];
   return { em, ev, to: em ? (em.fromEmail || '') : '', subject: em ? em.subject : t.title };
 }
+// the address of a person named on the task, from any email header that names them
+function addressOf(name) {
+  const n = E.normMatch(name || ''); if (!n || n === 'me') return '';
+  for (const e of St.emails.values()) for (const h of [e.from, e.to, e.cc]) for (const part of String(h || '').split(/[,;]/)) {
+    const m = /<?([\w.+-]+@[\w-]+(?:\.[\w-]+)+)>?/.exec(part); if (!m) continue;
+    const label = E.normMatch(part.replace(m[0], '')), local = E.normMatch(m[1].split('@')[0].replace(/[._-]+/g, ' '));
+    if ((label && (label.includes(n) || n.includes(label))) || local === n || (n.split(' ')[0].length > 2 && local.startsWith(n.split(' ')[0]) && local.includes((n.split(' ')[1] || '').slice(0, 3)))) return m[1];
+  }
+  return '';
+}
 function localDraft(kind, t) {
   const c = mailContext(t), me = (St.settings.me.name || '').split(' ')[0] || '';
   const who = (t.owner && !/^me$/i.test(t.owner) ? t.owner : t.requestedBy || '').split(' ')[0];
@@ -5854,7 +5915,8 @@ function localDraft(kind, t) {
 }
 async function draftMail(kind, id) {
   const t = St.tasks.get(id); if (!t) return;
-  UI.mail = { kind, id, ...localDraft(kind, t), to: mailContext(t).to, busy: !!St.sample }; openMailModal();
+  const who = t.owner && !/^me$/i.test(t.owner) ? t.owner : '';
+  UI.mail = { kind, id, ...localDraft(kind, t), to: kind === 'chase' ? addressOf(who) : mailContext(t).to || addressOf(t.requestedBy), busy: !!St.sample }; openMailModal();
   if (!St.sample) return;
   const c = mailContext(t);
   const prompt = `You draft short, polite, professional engineering emails. Write a ${kind === 'chase' ? 'follow-up chaser asking for an overdue item' : 'reply that answers the request'} from ${St.settings.me.name || 'me'}${St.settings.me.role ? ' (' + St.settings.me.role + ')' : ''}.
@@ -5870,11 +5932,11 @@ Reply with JSON only: {"subject": "...", "body": "..."}`;
 }
 function openMailModal() {
   const d = UI.mail, m = $('#modal'); if (!d) return;
-  m.innerHTML = deco(`<div class="card mail-draft" role="dialog" aria-label="Email draft"><div class="row"><b>${d.kind === 'chase' ? '✉ Chaser' : '✉ Reply'} draft</b>${d.busy ? '<span class="small muted">✨ Claude is improving it…</span>' : ''}<span class="spacer"></span><button class="icon-btn" data-act="close-modal" aria-label="Close">${I.x}</button></div>
+  m.innerHTML = deco(`<div class="card pad mail-draft" role="dialog" aria-label="Email draft"><div class="row"><b>${d.kind === 'chase' ? '✉ Chaser' : '✉ Reply'} draft</b>${d.busy ? '<span class="small muted">✨ Claude is improving it…</span>' : ''}<span class="spacer"></span><button class="icon-btn" data-act="close-modal" aria-label="Close">${I.x}</button></div>
     <label class="field"><span>To</span><input class="input" id="ml-to" value="${esc(d.to || '')}" placeholder="name@company.com"></label>
     <label class="field"><span>Subject</span><input class="input" id="ml-sub" dir="auto" value="${esc(d.subject)}"></label>
     <label class="field"><span>Message</span><textarea class="input" id="ml-body" dir="auto" rows="11">${esc(d.body)}</textarea></label>
-    <div class="row end"><span class="small muted">Nothing is sent from here — copy it, or open it in your email app.</span><span class="spacer"></span><button class="btn" data-act="mail-copy">Copy</button><button class="btn primary" data-act="mail-open">Open in email</button></div></div>`);
+    <div class="row end"><span class="small muted mail-note">Nothing is sent from here — copy it, or open it in your email app.</span><button class="btn" data-act="mail-copy">Copy</button><button class="btn primary" data-act="mail-open">Open in email</button></div></div>`);
   m.hidden = false;
 }
 function mailFields() { const v = id => ($('#' + id) || {}).value || ''; return { to: v('ml-to'), subject: v('ml-sub'), body: v('ml-body') }; }
@@ -6009,12 +6071,517 @@ Object.assign(CHG, {
   'rep-date': el => { UI[el.dataset.k] = el.value; render(); },
 });
 
+/* ===== features/07-docs.js ===== */
+/* ---------- Documents: register, timeline, attachment library, equipment tags, lessons, evidence viewer ---------- */
+// Register rows ('docreg' collection), one per document number:
+// { id, number, title, project, revision, code, status, by, date, emailId, taskId, revs: [{ rev, code, status, date, by, emailId }], closed }
+const DOC_STATUS = { submitted: 'Submitted', returned: 'Returned', approved: 'Approved', rejected: 'Rejected', requested: 'Requested', for_info: 'For information' };
+const DOC_CODE = { 1: 'Code 1 — Approved', 2: 'Code 2 — Approved with comments', 3: 'Code 3 — Revise and resubmit', 4: 'Code 4 — Rejected' };
+const docKey = n => E.normMatch(n || '').replace(/\s+/g, '');
+const revRank = r => { const s = String(r || '').trim().toUpperCase(); if (/^\d+$/.test(s)) return 100 + +s; if (/^[A-Z]$/.test(s)) return s.charCodeAt(0) - 64; return 0; };
+function upsertDoc(d, e, project) {
+  const key = docKey(d.number || d.title); if (!key) return;
+  const cur = colList('docreg').find(x => docKey(x.number || x.title) === key);
+  const date = d.date || dayOf(e.date) || T();
+  const rev = { rev: d.revision || '', code: d.code || '', status: d.status || '', date, by: d.by || '', emailId: e.id };
+  const task = [...St.tasks.values()].find(t => (t.emailIds || []).includes(e.id) && d.number && E.normMatch([t.title, t.action, subsOf(t).map(x => x.text).join(' ')].join(' ')).includes(E.normMatch(d.number)));
+  if (!cur) { colPut('docreg', { id: E.uid('dr'), number: d.number || '', title: d.title || '', project: project || '', revision: rev.rev, code: rev.code, status: rev.status, by: rev.by, date, emailId: e.id, taskId: task ? task.id : '', revs: [rev], createdAt: nowISO() }); return; }
+  const x = clone(cur);
+  if (!(x.revs || []).some(r => r.emailId === e.id && r.rev === rev.rev && r.status === rev.status)) x.revs = [...(x.revs || []), rev];
+  const latest = [...x.revs].sort((a, b) => (a.date || '').localeCompare(b.date || '') || revRank(a.rev) - revRank(b.rev)).pop();
+  Object.assign(x, { revision: latest.rev || x.revision, code: latest.code, status: latest.status || x.status, by: latest.by || x.by, date: latest.date, emailId: latest.emailId, title: x.title || d.title || '', project: x.project || project || '' });
+  // a new revision submitted after a Code 3/4 counts as the resubmission
+  x.resubmitted = latest.status === 'submitted' && x.revs.some(r => /^[34]$/.test(r.code) && revRank(r.rev) < revRank(latest.rev));
+  if (task && !x.taskId) x.taskId = task.id;
+  colPut('docreg', x);
+}
+HOOKS.approved.push(e => {
+  const a = e && e.analysis; if (!a || !Array.isArray(a.documents)) return;
+  const proj = a.project || ([...St.tasks.values()].find(t => (t.emailIds || []).includes(e.id)) || {}).project || '';
+  for (const d of a.documents) upsertDoc(d, e, proj);
+});
+
+UI.docTab = UI.docTab || 'register'; UI.docQ = ''; UI.docProj = ''; UI.docCode = '';
+const DOC_TABS = [['register', '📑 Register'], ['timeline', '🗓️ Timeline'], ['files', '📎 Attachments'], ['tags', '🏷️ Equipment tags'], ['lessons', '💡 Lessons']];
+VIEWS.push('docs');
+VIEW_FN.docs = () => `<div class="wrap docs">
+  <div class="page-head"><div><h1>Documents</h1><div class="sub">Every drawing, datasheet and calculation your emails mention, with its revision and review code, plus the files, equipment and lessons behind your work.</div></div></div>
+  <div class="seg tabs" role="tablist">${DOC_TABS.map(([k, l]) => `<button role="tab" data-act="doc-tab" data-tab="${k}" aria-pressed="${UI.docTab === k}">${l}</button>`).join('')}</div>
+  ${({ register: docRegister, timeline: docTimeline, files: docFiles, tags: docTags, lessons: docLessons }[UI.docTab] || docRegister)()}
+</div>`;
+const codeChip = c => c ? `<span class="chip ${c === '1' ? 'ok' : c === '2' ? 'accent' : 'crit'}" title="${esc(DOC_CODE[c] || '')}">Code ${esc(c)}</span>` : '';
+function docRows() {
+  const q = E.normMatch(UI.docQ || '');
+  return colList('docreg').filter(d => (!UI.docProj || d.project === UI.docProj) && (!UI.docCode || (UI.docCode === 'open' ? /^[34]$/.test(d.code) && !d.resubmitted && !d.closed : d.code === UI.docCode)) && (!q || E.normMatch([d.number, d.title, d.by, d.project].join(' ')).includes(q)))
+    .sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+}
+function docRegister() {
+  const all = colList('docreg'), rows = docRows(), projects = [...new Set(all.map(d => d.project).filter(Boolean))].sort();
+  const openN = all.filter(d => /^[34]$/.test(d.code) && !d.resubmitted && !d.closed).length;
+  return `<div class="row doc-bar">
+      <label class="search todo-search">${I.search}<span class="sr">Search documents</span><input class="input" id="doc-q" type="search" placeholder="Number, title or sender…" value="${esc(UI.docQ)}" data-inp="docQ"></label>
+      <select class="input" data-chg="doc-filter" data-k="docProj" aria-label="Project"><option value="">All projects</option>${projects.map(p => `<option ${UI.docProj === p ? 'selected' : ''}>${esc(p)}</option>`).join('')}</select>
+      <select class="input" data-chg="doc-filter" data-k="docCode" aria-label="Review code"><option value="">Any status</option><option value="open" ${UI.docCode === 'open' ? 'selected' : ''}>Needs resubmission (${openN})</option>${[1, 2, 3, 4].map(c => `<option value="${c}" ${UI.docCode === String(c) ? 'selected' : ''}>${DOC_CODE[c]}</option>`).join('')}</select>
+      <span class="spacer"></span><button class="btn sm" data-act="doc-add">＋ Add document</button><button class="btn sm" data-act="doc-export" ${all.length ? '' : 'disabled'}>⬇ Excel</button></div>
+    ${UI.docEdit ? docEditHTML() : ''}
+    ${rows.length ? `<div class="card tbl-wrap"><table class="tbl doc-tbl"><thead><tr><th>Document</th><th>Title</th><th>Rev</th><th>Status</th><th>By</th><th>Date</th><th>Task</th><th></th></tr></thead><tbody>
+      ${rows.map(d => { const t = d.taskId && St.tasks.get(d.taskId); const needs = /^[34]$/.test(d.code) && !d.resubmitted && !d.closed; return `<tr class="${needs ? 'needs' : ''}">
+        <td class="mono">${esc(d.number || '—')}</td><td dir="auto">${esc(d.title)}${d.project ? `<div class="small muted">${esc(d.project)}</div>` : ''}</td><td>${esc(d.revision || '')}</td>
+        <td>${codeChip(d.code)} ${d.status ? `<span class="small muted">${esc(DOC_STATUS[d.status] || d.status)}</span>` : ''}${d.resubmitted ? ' <span class="chip ok">resubmitted</span>' : ''}${d.closed ? ' <span class="chip">closed</span>' : ''}</td>
+        <td dir="auto">${esc(d.by)}</td><td class="nowrap">${esc(d.date ? fmtDate(d.date) : '')}</td>
+        <td>${t ? `<button class="btn ghost sm" data-act="open-task" data-id="${esc(t.id)}">${esc(t.ref)}</button>` : needs ? `<button class="btn sm" data-act="doc-task" data-id="${esc(d.id)}">＋ Task</button>` : ''}</td>
+        <td class="nowrap">${(d.revs || []).length > 1 ? `<span class="small muted" title="${esc(d.revs.map(r => `${r.rev || '—'} ${r.code ? 'Code ' + r.code : r.status} ${r.date}`).join('\n'))}">${d.revs.length} events</span>` : ''}${d.emailId && St.emails.has(d.emailId) ? `<button class="icon-btn" data-act="open-email" data-id="${esc(d.emailId)}" aria-label="Open email">✉</button>` : ''}<button class="icon-btn" data-act="doc-edit" data-id="${esc(d.id)}" aria-label="Edit">✎</button></td></tr>`; }).join('')}
+    </tbody></table></div>` : `<div class="empty"><div class="big-emoji">📑</div><h3>${all.length ? 'No documents match' : 'No documents yet'}</h3><p>When you approve an email that submits, returns or requests a document, it is added here with its revision and review code. You can also add documents by hand.</p></div>`}`;
+}
+function docEditHTML() {
+  const d = UI.docEdit;
+  const f = (k, l, extra = '') => `<label class="field"><span>${l}</span><input class="input" id="de-${k}" dir="auto" value="${esc(d[k] || '')}" ${extra}></label>`;
+  return `<section class="card pad doc-edit"><div class="grid-2">${f('number', 'Document number')}${f('title', 'Title')}${f('project', 'Project')}${f('revision', 'Revision')}
+      <label class="field"><span>Review code</span><select class="input" id="de-code"><option value="">—</option>${[1, 2, 3, 4].map(c => `<option value="${c}" ${String(d.code) === String(c) ? 'selected' : ''}>${DOC_CODE[c]}</option>`).join('')}</select></label>
+      <label class="field"><span>Status</span><select class="input" id="de-status"><option value="">—</option>${Object.entries(DOC_STATUS).map(([k, v]) => `<option value="${k}" ${d.status === k ? 'selected' : ''}>${v}</option>`).join('')}</select></label>
+      ${f('by', 'Issued / returned by')}${f('date', 'Date', 'type="date"')}</div>
+    <label class="check small"><input type="checkbox" id="de-closed" ${d.closed ? 'checked' : ''}> Closed (no further action)</label>
+    <div class="row end">${d.id ? '<button class="btn ghost danger sm" data-act="doc-del">Delete</button>' : ''}<span class="spacer"></span><button class="btn ghost" data-act="doc-cancel">Cancel</button><button class="btn primary" data-act="doc-save">Save</button></div></section>`;
+}
+function docSave() {
+  const v = k => (($('#de-' + k) || {}).value || '').trim(), d = clone(UI.docEdit);
+  for (const k of ['number', 'title', 'project', 'revision', 'code', 'status', 'by', 'date']) d[k] = v(k);
+  d.closed = !!($('#de-closed') || {}).checked;
+  if (!d.number && !d.title) { toast('Enter a document number or title.'); return; }
+  if (!d.id) { d.id = E.uid('dr'); d.createdAt = nowISO(); d.revs = [{ rev: d.revision, code: d.code, status: d.status, date: d.date || T(), by: d.by, emailId: '' }]; }
+  colPut('docreg', d); UI.docEdit = null; render(); toast('Document saved.');
+}
+async function docExport() {
+  const rows = docRows().map(d => ({ Document: d.number, Title: d.title, Project: d.project, Revision: d.revision, Code: d.code, Status: DOC_STATUS[d.status] || d.status, 'Issued/returned by': d.by, Date: d.date, Task: (St.tasks.get(d.taskId) || {}).ref || '', Resubmitted: d.resubmitted ? 'Yes' : '', Closed: d.closed ? 'Yes' : '', History: (d.revs || []).map(r => `${r.date} ${r.rev || ''} ${r.code ? 'Code ' + r.code : r.status}`.trim()).join('; ') }));
+  try {
+    const X = await E.need('xlsx'); const ws = X.utils.json_to_sheet(rows); ws['!cols'] = [18, 40, 18, 8, 6, 14, 22, 12, 8, 10, 8, 50].map(w => ({ wch: w }));
+    const wb = X.utils.book_new(); X.utils.book_append_sheet(wb, ws, 'Document register');
+    await offerFile(`document-register-${T()}.xlsx`, new Blob([X.write(wb, { type: 'array', bookType: 'xlsx' })], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+  } catch { const cols = Object.keys(rows[0] || { Document: '' }); offerFile(`document-register-${T()}.csv`, '﻿' + [cols, ...rows.map(r => cols.map(c => r[c]))].map(r => r.map(csvCell).join(',')).join('\r\n')); }
+}
+
+/* --- timeline: what happened, day by day, per project --- */
+function docTimeline() {
+  const ev = [];
+  for (const e of St.emails.values()) if (e.reviewState === 'approved' || e.reviewState === 'done' || e.analysis) ev.push({ at: e.date || e.importedAt, kind: 'email', e, proj: (e.analysis && e.analysis.project) || '' });
+  for (const t of St.tasks.values()) { if (t.completedAt) ev.push({ at: t.completedAt, kind: 'done', t, proj: t.project || '' }); if (t.source === 'daily' || t.source === 'meeting') ev.push({ at: t.createdAt, kind: 'new', t, proj: t.project || '' }); }
+  for (const d of colList('docreg')) for (const r of d.revs || []) ev.push({ at: r.date, kind: 'doc', d, r, proj: d.project || '' });
+  const projects = [...new Set(ev.map(x => x.proj).filter(Boolean))].sort();
+  const list = ev.filter(x => x.at && (!UI.docProj || x.proj === UI.docProj)).sort((a, b) => String(b.at).localeCompare(String(a.at))).slice(0, 300);
+  const byDay = new Map(); for (const x of list) { const d = dayOf(x.at); if (!byDay.has(d)) byDay.set(d, []); byDay.get(d).push(x); }
+  const item = x => x.kind === 'email' ? `<li><span class="tl-e">📨</span><button class="dtitle" data-act="open-email" data-id="${esc(x.e.id)}" dir="auto">${esc(x.e.subject || '(no subject)')}</button><span class="small muted" dir="auto">${esc(x.e.from || '')}${x.e.analysis && x.e.analysis.summary ? ' — ' + esc(E.clip(x.e.analysis.summary, 120)) : ''}</span></li>`
+    : x.kind === 'done' ? `<li><span class="tl-e">✅</span><button class="dtitle" data-act="open-task" data-id="${esc(x.t.id)}" dir="auto">${esc(x.t.ref)} ${esc(x.t.title)}</button><span class="small muted">completed</span></li>`
+    : x.kind === 'new' ? `<li><span class="tl-e">🆕</span><button class="dtitle" data-act="open-task" data-id="${esc(x.t.id)}" dir="auto">${esc(x.t.ref)} ${esc(x.t.title)}</button><span class="small muted">${x.t.source === 'meeting' ? 'from a meeting' : 'added in Daily'}</span></li>`
+    : `<li><span class="tl-e">📑</span><span><b class="mono">${esc(x.d.number || x.d.title)}</b> ${esc(x.r.rev ? 'Rev ' + x.r.rev : '')} ${x.r.code ? codeChip(x.r.code) : esc(DOC_STATUS[x.r.status] || x.r.status || '')}</span><span class="small muted" dir="auto">${esc(x.r.by || '')}</span></li>`;
+  return `<div class="row doc-bar"><select class="input" data-chg="doc-filter" data-k="docProj" aria-label="Project"><option value="">All projects</option>${projects.map(p => `<option ${UI.docProj === p ? 'selected' : ''}>${esc(p)}</option>`).join('')}</select></div>
+    ${byDay.size ? `<div class="timeline">${[...byDay.entries()].map(([d, xs]) => `<section class="tl-day"><h3>${esc(fmtDate(d, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }))}</h3><ul>${xs.map(item).join('')}</ul></section>`).join('')}</div>` : '<div class="empty"><div class="big-emoji">🗓️</div><h3>Nothing yet</h3><p>Emails, documents and finished tasks appear here in date order.</p></div>'}`;
+}
+
+/* --- attachment library --- */
+function docFiles() {
+  const q = E.normMatch(UI.docQ || ''), rows = [];
+  for (const e of St.emails.values()) for (const a of e.attachments || []) rows.push({ a, e });
+  const list = rows.filter(r => !q || E.normMatch([r.a.name, r.e.subject, r.e.from].join(' ')).includes(q)).sort((x, y) => (y.e.date || '').localeCompare(x.e.date || ''));
+  return `<div class="row doc-bar"><label class="search todo-search">${I.search}<span class="sr">Search files</span><input class="input" id="doc-q" type="search" placeholder="File name, email subject or sender…" value="${esc(UI.docQ)}" data-inp="docQ"></label><span class="small muted">${list.length} file${list.length === 1 ? '' : 's'}</span></div>
+    ${list.length ? `<div class="card tbl-wrap"><table class="tbl"><thead><tr><th>File</th><th>Type</th><th>Email</th><th>Date</th><th>Read</th></tr></thead><tbody>${list.slice(0, 400).map(({ a, e }) => `<tr><td dir="auto">📎 ${esc(a.name)}${a.pages ? ` <span class="small muted">${a.pages} p</span>` : ''}</td><td>${esc(a.kindLabel || '')}</td><td><button class="dtitle" data-act="open-email" data-id="${esc(e.id)}" dir="auto">${esc(E.clip(e.subject || '(no subject)', 70))}</button><div class="small muted" dir="auto">${esc(e.from || '')}</div></td><td class="nowrap">${esc(e.date ? fmtDate(e.date.slice(0, 10)) : '')}</td><td>${(ATT_STATUS[a.status] || [a.status])[0] ? `<span class="chip ${(ATT_STATUS[a.status] || [])[1] || ''}">${esc((ATT_STATUS[a.status] || [a.status])[0])}</span>` : ''}</td></tr>`).join('')}</tbody></table></div>`
+      : '<div class="empty"><div class="big-emoji">📎</div><h3>No attachments</h3><p>Files attached to your analysed emails are listed here, so you can find “that datasheet from last month” quickly.</p></div>'}`;
+}
+
+/* --- equipment tags: P-101, BL-201A, V-3001 … found in tasks and emails --- */
+const TAG_RE = /\b([A-Z]{1,4})-?(\d{2,4}[A-Z]?)\b/g;
+function equipmentTags() {
+  const tags = new Map();
+  const add = (raw, ref) => { const k = raw.replace(/^([A-Z]+)(\d)/, '$1-$2'); if (!tags.has(k)) tags.set(k, { tag: k, tasks: new Set(), emails: new Set() }); const x = tags.get(k); ref.t ? x.tasks.add(ref.t) : x.emails.add(ref.e); };
+  const scan = (text, ref) => { for (const m of String(text || '').matchAll(TAG_RE)) { const pre = text.slice(Math.max(0, m.index - 1), m.index), post = text.slice(m.index + m[0].length, m.index + m[0].length + 1); if (pre === '-' || post === '-' || /^(DN|PN|IP|EN|ISO|BS|RAL|T|C|N|S|NO|REV|CODE|PAGE|ITEM|SPC|CAL|DS|DWG|TR)$/.test(m[1])) continue; add(m[1] + '-' + m[2], ref); } };
+  for (const t of St.tasks.values()) scan([t.title, t.action, t.nextStep, subsOf(t).map(x => x.text).join(' '), (t.evidence || []).map(x => x.quote).join(' ')].join(' '), { t: t.id });
+  for (const e of St.emails.values()) scan([e.subject, e.snippet].join(' '), { e: e.id });
+  return [...tags.values()].filter(x => x.tasks.size + x.emails.size > 0).sort((a, b) => (b.tasks.size + b.emails.size) - (a.tasks.size + a.emails.size) || a.tag.localeCompare(b.tag));
+}
+function docTags() {
+  const tags = equipmentTags(), sel = UI.docTag && tags.find(x => x.tag === UI.docTag);
+  if (!tags.length) return '<div class="empty"><div class="big-emoji">🏷️</div><h3>No equipment tags found</h3><p>Tags like P-101, BL-201A or V-3001 in your tasks and emails are collected here, so you can see everything about one piece of equipment.</p></div>';
+  return `<div class="tag-cloud">${tags.slice(0, 120).map(x => `<button class="chip ${sel && sel.tag === x.tag ? 'accent' : ''}" data-act="doc-tagsel" data-tag="${esc(x.tag)}"><span class="mono">${esc(x.tag)}</span> <span class="muted">${x.tasks.size + x.emails.size}</span></button>`).join('')}</div>
+    ${sel ? `<section class="card pad" style="margin-top:12px"><div class="section-title"><h2 class="mono">${esc(sel.tag)}</h2></div>
+      ${sel.tasks.size ? `<div class="label">Tasks</div><div class="dlist">${[...sel.tasks].map(id => St.tasks.get(id)).filter(Boolean).map(t => `<div class="row"><button class="dtitle" data-act="open-task" data-id="${esc(t.id)}" dir="auto">${esc(t.ref)} ${esc(t.title)}</button>${chipStatus(t.status)}</div>`).join('')}</div>` : ''}
+      ${sel.emails.size ? `<div class="label" style="margin-top:8px">Emails</div><div class="dlist">${[...sel.emails].map(id => St.emails.get(id)).filter(Boolean).map(e => `<div class="row"><button class="dtitle" data-act="open-email" data-id="${esc(e.id)}" dir="auto">${esc(e.subject || '(no subject)')}</button><span class="small muted">${esc(e.date ? fmtDate(e.date.slice(0, 10)) : '')}</span></div>`).join('')}</div>` : ''}</section>` : '<p class="small muted">Pick a tag to see its tasks and emails.</p>'}`;
+}
+
+/* --- lessons learned library --- */
+function docLessons() {
+  const q = E.normMatch(UI.docQ || ''), all = colList('lessons').sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+  const list = all.filter(l => !q || E.normMatch([l.title, l.text, l.project, (l.tags || []).join(' ')].join(' ')).includes(q));
+  return `<section class="card pad lesson-add"><div class="grid-2"><label class="field"><span>Lesson</span><input class="input" id="ls-title" dir="auto" placeholder="e.g. Ask for NPSHr curve at minimum wet well level with every pump offer"></label><label class="field"><span>Project / tags</span><input class="input" id="ls-tags" dir="auto" placeholder="ELM, pumps"></label></div>
+      <label class="field"><span>What happened and what to do next time</span><textarea class="input" id="ls-text" dir="auto" rows="3"></textarea></label><div class="row end"><button class="btn primary" data-act="lesson-add">Save lesson</button></div></section>
+    <div class="row doc-bar"><label class="search todo-search">${I.search}<span class="sr">Search lessons</span><input class="input" id="doc-q" type="search" placeholder="Search lessons…" value="${esc(UI.docQ)}" data-inp="docQ"></label></div>
+    ${list.length ? `<div class="lessons">${list.map(l => `<article class="card pad lesson"><div class="row"><b dir="auto">${esc(l.title)}</b><span class="spacer"></span><span class="small muted">${esc(fmtDate(dayOf(l.createdAt)))}</span><button class="icon-btn" data-act="lesson-del" data-id="${esc(l.id)}" aria-label="Delete lesson">${I.x}</button></div>${l.text ? `<p dir="auto">${esc(l.text)}</p>` : ''}<div class="row">${(l.tags || []).map(x => `<span class="chip">${esc(x)}</span>`).join('')}${l.taskId && St.tasks.has(l.taskId) ? `<button class="btn ghost sm" data-act="open-task" data-id="${esc(l.taskId)}">${esc(St.tasks.get(l.taskId).ref)}</button>` : ''}</div></article>`).join('')}</div>` : `<p class="small muted">${all.length ? 'No lessons match.' : 'No lessons yet. Save one here, or press “💡 Save a lesson” on a finished task.'}</p>`}`;
+}
+TASK_ACTIONS.push(t => t.status === 'done' ? `<button class="btn sm ghost" data-act="lesson-from-task" data-id="${esc(t.id)}">💡 Save a lesson</button>` : '');
+
+/* --- evidence viewer: the source text with the quote highlighted --- */
+function findQuote(text, quote) {
+  const q = String(quote || '').trim(); if (!q || !text) return null;
+  let i = text.indexOf(q); if (i >= 0) return [i, i + q.length];
+  // tolerant match: ignore case and whitespace differences
+  const map = [], norm = []; for (let k = 0; k < text.length; k++) { const c = text[k]; if (/\s/.test(c)) { if (norm[norm.length - 1] !== ' ') { norm.push(' '); map.push(k); } } else { norm.push(c.toLowerCase()); map.push(k); } }
+  const nq = q.replace(/\s+/g, ' ').toLowerCase(), ns = norm.join('');
+  i = ns.indexOf(nq); if (i < 0) { const part = nq.slice(0, Math.min(60, nq.length)); i = ns.indexOf(part); if (i < 0) return null; return [map[i], map[Math.min(map.length - 1, i + part.length - 1)] + 1]; }
+  return [map[i], map[Math.min(map.length - 1, i + nq.length - 1)] + 1];
+}
+async function viewEvidence(emailId, src, name, quote) {
+  const e = St.emails.get(emailId), m = $('#modal'); if (!e) return;
+  const data = await getTexts(emailId);
+  let text = '', label = '';
+  if (data) {
+    const att = (data.atts || []).find(a => a.name && name && a.name === name) || (src && src !== 'BODY' && (data.atts || []).find(a => findQuote(a.text, quote)));
+    if (att && src !== 'BODY') { text = att.text || ''; label = att.name; } else { text = data.body || ''; label = 'Email body'; }
+    if (!findQuote(text, quote)) { const other = [{ name: 'Email body', text: data.body }, ...(data.atts || [])].find(x => findQuote(x.text, quote)); if (other) { text = other.text; label = other.name; } }
+  }
+  const hit = findQuote(text, quote);
+  const W = 1600, body = !text ? '<p class="muted">The full text of this email was not kept (Setup → Privacy controls whether email text is stored), so only the quote can be shown.</p>'
+    : hit ? `<pre class="src-text" dir="auto">${esc(text.slice(Math.max(0, hit[0] - W), hit[0]))}<mark id="ev-mark">${esc(text.slice(hit[0], hit[1]))}</mark>${esc(text.slice(hit[1], hit[1] + W))}</pre>`
+    : `<p class="small muted">The exact quote was not found in the stored text (it may come from a page image).</p><pre class="src-text" dir="auto">${esc(E.clip(text, 3000))}</pre>`;
+  m.innerHTML = deco(`<div class="card pad ev-viewer" role="dialog" aria-label="Evidence in source"><div class="row ev-head"><b dir="auto">🔎 ${esc(label || 'Source')}</b><span class="small muted ev-sub" dir="auto">${esc(e.subject || '')}</span><span class="spacer"></span><button class="btn ghost sm" data-act="open-email" data-id="${esc(e.id)}">Open email</button><button class="icon-btn" data-act="close-modal" aria-label="Close">${I.x}</button></div>
+    <blockquote dir="auto">${esc(quote)}</blockquote>${body}</div>`);
+  m.hidden = false; setTimeout(() => { const k = $('#ev-mark'); if (k) k.scrollIntoView({ block: 'center' }); }, 30);
+}
+
+Object.assign(ACT, {
+  'doc-tab': el => { UI.docTab = el.dataset.tab; UI.docQ = ''; render(); },
+  'doc-add': () => { UI.docEdit = { number: '', title: '', project: UI.docProj || '', date: T() }; render(); setTimeout(() => $('#de-number')?.focus(), 30); },
+  'doc-edit': el => { UI.docEdit = clone(St.cols.docreg.get(el.dataset.id)); render(); },
+  'doc-cancel': () => { UI.docEdit = null; render(); },
+  'doc-save': () => docSave(),
+  'doc-del': () => { if (UI.docEdit && UI.docEdit.id) colDel('docreg', UI.docEdit.id); UI.docEdit = null; render(); toast('Document removed.'); },
+  'doc-export': () => docExport(),
+  'doc-task': el => {
+    const d = St.cols.docreg.get(el.dataset.id); if (!d) return;
+    const t = makeTask({ title: `Revise and resubmit ${d.number || d.title}${d.revision ? ' (returned Rev ' + d.revision + ', Code ' + d.code + ')' : ''}`, action: `Address the review comments and resubmit ${d.title || d.number}`, project: d.project || '', priority: d.code === '4' ? 'critical' : 'high', requestedBy: d.by || '', emailIds: d.emailId ? [d.emailId] : [], topic: d.title || '', history: [{ at: nowISO(), text: 'Created from the document register' }] });
+    putTask(t); colPut('docreg', { ...clone(d), taskId: t.id }); render(); toast(`${t.ref} created.`, { action: 'Open', fn: () => openDrawer('task', t.id) });
+  },
+  'doc-tagsel': el => { UI.docTag = UI.docTag === el.dataset.tag ? '' : el.dataset.tag; render(); },
+  'lesson-add': () => {
+    const v = id => (($('#' + id) || {}).value || '').trim(), title = v('ls-title'); if (!title) { toast('Write the lesson first.'); return; }
+    const tags = v('ls-tags').split(/[,;]+/).map(x => x.trim()).filter(Boolean);
+    colPut('lessons', { id: E.uid('ls'), title, text: v('ls-text'), tags, project: tags[0] || '', createdAt: nowISO() }); render(); toast('Lesson saved.');
+  },
+  'lesson-del': el => { colDel('lessons', el.dataset.id); render(); },
+  'lesson-from-task': el => {
+    const t = St.tasks.get(el.dataset.id); if (!t) return;
+    closeDrawer(); UI.view = 'docs'; UI.docTab = 'lessons'; render();
+    setTimeout(() => { const a = $('#ls-title'), b = $('#ls-tags'), c = $('#ls-text'); if (a) { a.value = ''; a.placeholder = 'What did you learn from ' + t.ref + '?'; a.focus(); } if (b) b.value = [t.project, topicOf(t)].filter(Boolean).join(', '); if (c) c.value = `${t.ref} — ${t.title}\n`; UI.lessonTask = t.id; }, 30);
+  },
+  'ev-view': el => viewEvidence(el.dataset.email, el.dataset.src, el.dataset.name, el.dataset.q),
+});
+Object.assign(CHG, { 'doc-filter': el => { UI[el.dataset.k] = el.value; render(); } });
+// link a lesson saved right after "Save a lesson" to its task
+const lessonAddAct = ACT['lesson-add'];
+ACT['lesson-add'] = el => { const before = new Set(colList('lessons').map(l => l.id)); lessonAddAct(el); const n = colList('lessons').find(l => !before.has(l.id)); if (n && UI.lessonTask) { colPut('lessons', { ...n, taskId: UI.lessonTask }); UI.lessonTask = null; render(); } };
+
+/* ===== features/08-tools.js ===== */
+/* ---------- Tools: engineering calculators, offer comparison (TBE), CRS responses, meeting minutes ---------- */
+/* ---------- plus: Ask your register, learning from corrections, reply drafts ---------- */
+const G = 9.80665;
+const CALC = {
+  // water properties (1–100 °C): density (Tanaka 2001 fit) and vapour pressure (Antoine, mmHg → kPa)
+  rho: T => 1000 * (1 - ((T + 288.9414) / (508929.2 * (T + 68.12963))) * (T - 3.9863) ** 2),
+  pv: T => 0.133322 * Math.pow(10, 8.07131 - 1730.63 / (233.426 + T)),
+  patm: z => 101.325 * Math.pow(1 - 2.25577e-5 * z, 5.25588), // kPa at altitude z (m)
+  pipe({ q, d, l, eps, nu, k }) {
+    const D = d / 1000, A = Math.PI * D * D / 4, v = q / 3600 / A, Re = v * D / (nu * 1e-6);
+    const f = Re < 2300 ? 64 / Re : 0.25 / Math.log10((eps / 1000) / (3.7 * D) + 5.74 / Math.pow(Re, 0.9)) ** 2;
+    const hv = v * v / (2 * G), hf = f * (l / D) * hv, hm = (k || 0) * hv;
+    return { v, Re, f, hf, hm, h: hf + hm, per100: l ? 100 * hf / l : 0, regime: Re < 2300 ? 'laminar' : Re < 4000 ? 'transitional' : 'turbulent' };
+  },
+  pump({ q, h, sg, ep, em }) {
+    const ph = 1000 * sg * G * (q / 3600) * h / 1000, shaft = ph / (ep / 100), input = shaft / (em / 100);
+    const IEC = [0.37, 0.55, 0.75, 1.1, 1.5, 2.2, 3, 4, 5.5, 7.5, 11, 15, 18.5, 22, 30, 37, 45, 55, 75, 90, 110, 132, 160, 200, 250, 315, 355, 400, 450, 500, 560, 630];
+    const need = shaft * (shaft < 22 ? 1.15 : 1.1);
+    return { ph, shaft, input, need, motor: IEC.find(x => x >= need) || null };
+  },
+  npsh({ z, t, hs, hf, npshr }) {
+    const pa = CALC.patm(z), pv = CALC.pv(t), rho = CALC.rho(t);
+    const ha = pa * 1000 / (rho * G), hvp = pv * 1000 / (rho * G), npsha = ha - hvp + hs - hf;
+    return { pa, pv, rho, ha, hvp, npsha, margin: npshr ? npsha - npshr : null, ratio: npshr ? npsha / npshr : null };
+  },
+  // Metcalf & Eddy: Pw = w·R·T1 / (29.7·n·e) · [(p2/p1)^0.283 − 1]
+  blower({ qn, t, z, dp, e }) {
+    const w = qn * 1.293 / 3600, T1 = t + 273.15, p1 = CALC.patm(z), p2 = p1 + dp, n = 0.283;
+    const pw = (w * 8.314 * T1) / (29.7 * n * (e / 100)) * (Math.pow(p2 / p1, n) - 1);
+    return { w, p1, p2, ratio: p2 / p1, pw };
+  },
+};
+const CALCS = {
+  pipe: { label: '🚰 Pipe velocity & head loss', fields: [['q', 'Flow', 'm³/h', 410], ['d', 'Inside diameter', 'mm', 300], ['l', 'Length', 'm', 120], ['eps', 'Roughness', 'mm', 0.05], ['nu', 'Kinematic viscosity', 'mm²/s (cSt)', 1.0], ['k', 'Sum of fitting K', '—', 0]],
+    out: r => [['Velocity', r.v, 'm/s', 2], ['Reynolds number', r.Re, '', 0], ['Flow regime', r.regime], ['Friction factor (Swamee–Jain)', r.f, '', 4], ['Friction loss', r.hf, 'm', 2], ['Fittings loss', r.hm, 'm', 2], ['Total head loss', r.h, 'm', 2], ['Friction loss per 100 m', r.per100, 'm', 2]],
+    note: 'Darcy–Weisbach with the Swamee–Jain friction factor (turbulent flow). Typical roughness: new steel 0.045 mm, ductile iron (cement lined) 0.1 mm, HDPE 0.007 mm.' },
+  pump: { label: '⚙️ Pump power & motor size', fields: [['q', 'Flow', 'm³/h', 410], ['h', 'Total head', 'm', 14.5], ['sg', 'Specific gravity', '—', 1.0], ['ep', 'Pump efficiency', '%', 78], ['em', 'Motor efficiency', '%', 94]],
+    out: r => [['Hydraulic power', r.ph, 'kW', 2], ['Shaft power', r.shaft, 'kW', 2], ['Electrical input', r.input, 'kW', 2], ['Shaft power + margin', r.need, 'kW', 2], ['Next IEC motor size', r.motor, 'kW', 2]],
+    note: 'P = ρ·g·Q·H. Margin used for the motor: 15 % below 22 kW, 10 % above — check your project specification.' },
+  npsh: { label: '💧 NPSH available', fields: [['z', 'Site altitude', 'm above sea level', 20], ['t', 'Liquid temperature', '°C', 30], ['hs', 'Static suction head (+ above pump, − lift)', 'm', 2.35], ['hf', 'Suction line losses', 'm', 0.4], ['npshr', 'NPSH required (pump data)', 'm', 4.2]],
+    out: r => [['Atmospheric pressure', r.pa, 'kPa', 2], ['Vapour pressure', r.pv, 'kPa', 3], ['Atmospheric head', r.ha, 'm', 2], ['Vapour pressure head', r.hvp, 'm', 2], ['NPSH available', r.npsha, 'm', 2], ['Margin (NPSHa − NPSHr)', r.margin, 'm', 2], ['Margin ratio (NPSHa / NPSHr)', r.ratio, '', 2]],
+    note: 'NPSHa = (Patm − Pv)/(ρg) + hs − hf, for water. ANSI/HI 9.6.1 recommends margin ratios from about 1.1 to 2.5 depending on the service — check your specification.' },
+  blower: { label: '🌬️ Blower power', fields: [['qn', 'Air flow', 'Nm³/h', 6000], ['t', 'Inlet air temperature', '°C', 40], ['z', 'Site altitude', 'm', 20], ['dp', 'Pressure rise (water depth + losses)', 'kPa', 60], ['e', 'Blower efficiency', '%', 75]],
+    out: r => [['Mass flow', r.w, 'kg/s', 3], ['Inlet pressure', r.p1, 'kPa abs', 2], ['Discharge pressure', r.p2, 'kPa abs', 2], ['Pressure ratio', r.ratio, '', 3], ['Blower power', r.pw, 'kW', 1]],
+    note: 'Adiabatic compression (Metcalf & Eddy): Pw = w·R·T1/(29.7·n·e)·[(p2/p1)^0.283 − 1]. Pressure rise ≈ diffuser submergence × 9.81 kPa/m + diffuser and pipe losses.' },
+};
+UI.toolTab = UI.toolTab || 'calc'; UI.calc = UI.calc || 'pipe'; UI.calcIn = UI.calcIn || {};
+const TOOL_TABS = [['calc', '🧮 Calculators'], ['compare', '⚖️ Compare offers'], ['crs', '📝 CRS responses'], ['minutes', '🗣️ Meeting minutes']];
+VIEWS.push('tools');
+VIEW_FN.tools = () => `<div class="wrap tools-page">
+  <div class="page-head"><div><h1>Tools</h1><div class="sub">Quick engineering checks, offer comparisons, comment responses and meeting actions — linked to your tasks.</div></div></div>
+  <div class="seg tabs" role="tablist">${TOOL_TABS.map(([k, l]) => `<button role="tab" data-act="tool-tab" data-tab="${k}" aria-pressed="${UI.toolTab === k}">${l}</button>`).join('')}</div>
+  ${({ calc: toolCalc, compare: toolCompare, crs: toolCRS, minutes: toolMinutes }[UI.toolTab] || toolCalc)()}
+</div>`;
+const fmtNum = (v, dp) => v === null || v === undefined || Number.isNaN(v) ? '—' : typeof v === 'string' ? v : Number(v).toLocaleString('en-GB', { maximumFractionDigits: dp ?? 2, minimumFractionDigits: 0 });
+function calcValues(k) { const c = CALCS[k], saved = UI.calcIn[k] || {}; return Object.fromEntries(c.fields.map(([f, , , d]) => [f, saved[f] ?? d])); }
+function calcResultHTML(k) {
+  const c = CALCS[k], v = calcValues(k);
+  const bad = Object.entries(v).some(([f, x]) => !Number.isFinite(+x)) || (k === 'pipe' && !(+v.d > 0 && +v.q > 0)) || (k === 'pump' && !(+v.ep > 0 && +v.em > 0)) || (k === 'blower' && !(+v.e > 0));
+  if (bad) return '<p class="small muted">Enter positive numbers to see the result.</p>';
+  const r = CALC[k](Object.fromEntries(Object.entries(v).map(([a, b]) => [a, +b])));
+  return `<table class="tbl calc-out"><tbody>${c.out(r).map(([l, x, u, dp]) => `<tr><td>${esc(l)}</td><td class="num"><b>${esc(fmtNum(x, dp))}</b> ${esc(u || '')}</td></tr>`).join('')}</tbody></table>
+    ${k === 'npsh' && r.ratio !== null ? callout(r.ratio >= 1.3 && r.margin >= 1 ? 'ok' : r.ratio >= 1.1 ? 'warn' : 'crit', r.ratio >= 1.1 ? `Margin ratio ${fmtNum(r.ratio, 2)} — compare with the margin your specification asks for.` : `NPSHa is below 1.1 × NPSHr — cavitation risk. Raise the suction level, cut suction losses or choose a pump with lower NPSHr.`) : ''}`;
+}
+function toolCalc() {
+  const k = UI.calc, c = CALCS[k], v = calcValues(k);
+  return `<div class="calc-layout"><nav class="calc-list">${Object.entries(CALCS).map(([id, x]) => `<button class="${id === k ? 'on' : ''}" data-act="calc-pick" data-k="${id}">${esc(x.label)}</button>`).join('')}</nav>
+    <section class="card pad calc-card"><h2>${esc(c.label)}</h2><div class="grid-2">${c.fields.map(([f, l, u]) => `<label class="field"><span>${esc(l)} <span class="muted">${esc(u)}</span></span><input class="input num" type="number" step="any" id="calc-${f}" data-calc="${f}" value="${esc(v[f])}"></label>`).join('')}</div>
+      <div id="calc-out">${calcResultHTML(k)}</div><p class="small muted">${esc(c.note)}</p>
+      <div class="row"><button class="btn sm" data-act="calc-copy">Copy result</button><button class="btn sm ghost" data-act="calc-reset">Reset values</button>${UI.drawerTask ? '' : ''}</div></section></div>`;
+}
+document.addEventListener('input', e => {
+  const el = e.target; if (!el.dataset || !el.dataset.calc) return;
+  (UI.calcIn[UI.calc] = UI.calcIn[UI.calc] || {})[el.dataset.calc] = el.value;
+  const o = $('#calc-out'); if (o) o.innerHTML = deco(calcResultHTML(UI.calc));
+});
+function calcText() {
+  const k = UI.calc, c = CALCS[k], v = calcValues(k), r = CALC[k](Object.fromEntries(Object.entries(v).map(([a, b]) => [a, +b])));
+  return [c.label.replace(/^\S+\s/, ''), ...c.fields.map(([f, l, u]) => `${l}: ${v[f]} ${u}`), '—', ...c.out(r).map(([l, x, u, dp]) => `${l}: ${fmtNum(x, dp)} ${u || ''}`.trim()), '', c.note].join('\n');
+}
+
+/* --- shared: pick files and read their text --- */
+function pickFiles(accept, multiple) {
+  return new Promise(res => { const i = document.createElement('input'); i.type = 'file'; i.accept = accept; i.multiple = !!multiple; i.onchange = () => res([...i.files]); i.click(); });
+}
+async function readFileText(f) {
+  const bytes = new Uint8Array(await f.arrayBuffer());
+  const r = await E.extract({ name: f.name, mime: f.type, bytes }, { vision: false });
+  return { name: f.name, text: r.text || '', note: r.note || '', status: r.status };
+}
+
+/* --- compare offers / datasheets (technical bid evaluation) --- */
+UI.cmp = UI.cmp || { files: [], req: '', result: null, busy: false };
+function toolCompare() {
+  const c = UI.cmp;
+  return `<section class="card pad cmp-in"><p class="small muted" style="margin:0">Add 2–4 offers or datasheets (PDF, Word, Excel or text). Claude lines up the technical parameters side by side and flags deviations from your requirements. Nothing is sent until you press Compare.</p>
+      <div class="row"><button class="btn" data-act="cmp-add">📎 Add files</button>${c.files.map((f, i) => `<span class="chip">${esc(f.name)}${f.text ? '' : ' ⚠'}<button class="icon-btn xs" data-act="cmp-rm" data-i="${i}" aria-label="Remove">${I.x}</button></span>`).join('')}</div>
+      <label class="field"><span>Requirements to check against (optional — paste the spec clauses or datasheet)</span><textarea class="input" id="cmp-req" rows="3" dir="auto" placeholder="e.g. Duty 410 m³/h at 14.5 m; NPSHr ≤ 4 m; motor IE3, IP55; casing ductile iron">${esc(c.req)}</textarea></label>
+      <div class="row"><button class="btn primary" data-act="cmp-run" ${c.files.length >= 2 && St.sample && !c.busy ? '' : 'disabled'}>${c.busy ? 'Comparing…' : '⚖️ Compare'}</button>${St.sample ? '' : '<span class="small muted">Comparing needs Claude (connect it in Setup).</span>'}${c.result ? '<button class="btn" data-act="cmp-export">⬇ Excel</button>' : ''}</div></section>
+    ${c.result ? cmpResultHTML(c.result) : ''}`;
+}
+const CMP_CLS = { ok: 'ok', deviation: 'crit', missing: 'warn', unclear: '', better: 'accent' };
+function cmpResultHTML(r) {
+  return `<section class="card pad"><div class="section-title"><h2>Comparison</h2></div>${r.summary ? `<p dir="auto">${esc(r.summary)}</p>` : ''}
+    <div class="tbl-wrap"><table class="tbl cmp-tbl"><thead><tr><th>Parameter</th><th>Required</th>${r.names.map(n => `<th dir="auto">${esc(n)}</th>`).join('')}</tr></thead><tbody>
+    ${r.parameters.map(p => `<tr><td dir="auto"><b>${esc(p.name)}</b>${p.unit ? ` <span class="muted">${esc(p.unit)}</span>` : ''}</td><td dir="auto">${esc(p.requirement || '')}</td>${r.names.map((_, i) => `<td dir="auto" class="cmp-${esc((p.status || [])[i] || '')}">${esc((p.values || [])[i] || '—')}${(p.status || [])[i] && (p.status || [])[i] !== 'ok' ? ` <span class="chip ${CMP_CLS[(p.status || [])[i]] || ''}">${esc((p.status || [])[i])}</span>` : ''}</td>`).join('')}</tr>`).join('')}
+    </tbody></table></div>${r.recommendation ? callout('info', esc(r.recommendation)) : ''}<p class="small muted">Check every value against the source documents before you rely on it.</p></section>`;
+}
+async function cmpRun() {
+  const c = UI.cmp; c.busy = true; c.req = ($('#cmp-req') || {}).value || c.req; render();
+  const names = c.files.map(f => f.name);
+  const prompt = `You are preparing a technical bid evaluation (TBE) for a water/wastewater engineer. Compare these ${names.length} documents parameter by parameter.
+${c.req ? 'REQUIREMENTS:\n' + c.req + '\n' : ''}${c.files.map((f, i) => `=== DOCUMENT ${i + 1}: ${f.name} ===\n${E.clip(f.text, Math.floor(150000 / c.files.length))}`).join('\n\n')}
+Rules: use only values written in the documents; write "not stated" when a document does not give a value; never guess. Put the most important technical parameters first (duty, performance, materials, motor/electrical, standards, weights, delivery, warranty, exclusions).
+Reply with JSON only: {"parameters":[{"name":"…","unit":"…","requirement":"from REQUIREMENTS or empty","values":["one per document, in order"],"status":["ok|deviation|missing|unclear|better, one per document"]}],"summary":"two sentences","recommendation":"one sentence, or empty"}`;
+  try {
+    const r = await St.sample.json(prompt, { modelTier: 'complex' });
+    const ps = (r && Array.isArray(r.parameters) ? r.parameters : []).filter(p => p && p.name).slice(0, 80);
+    c.result = ps.length ? { names, parameters: ps.map(p => ({ name: String(p.name), unit: String(p.unit || ''), requirement: String(p.requirement || ''), values: names.map((_, i) => String((p.values || [])[i] ?? '')), status: names.map((_, i) => String((p.status || [])[i] ?? '')) })), summary: String(r.summary || ''), recommendation: String(r.recommendation || '') } : null;
+    if (!c.result) toast('Claude could not find comparable parameters in these files.', { err: true });
+  } catch (e) { toast('Comparison failed: ' + (e && e.message || 'try again'), { err: true }); }
+  c.busy = false; render();
+}
+async function sheetDownload(name, aoa, sheet) {
+  const X = await E.need('xlsx'); const wb = X.utils.book_new(); X.utils.book_append_sheet(wb, X.utils.aoa_to_sheet(aoa), sheet || 'Sheet1');
+  return offerFile(name, new Blob([X.write(wb, { type: 'array', bookType: 'xlsx' })], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+}
+
+/* --- CRS: comment response sheet --- */
+UI.crs = UI.crs || null;
+function toolCRS() {
+  const c = UI.crs;
+  if (!c) return `<section class="card pad"><p style="margin-top:0">Open the consultant’s comment response sheet (Excel or CSV). Each comment gets a draft response from your tasks and documents — you edit and accept them, then save the sheet with the Response column filled.</p><button class="btn primary" data-act="crs-open">📂 Open CRS file</button></section>`;
+  return `<section class="card pad"><div class="row"><b dir="auto">📝 ${esc(c.name)}</b><span class="small muted">${c.rows.length} comments · column “${esc(c.head[c.ci] || '')}”</span><span class="spacer"></span>
+      <button class="btn sm" data-act="crs-draft" ${St.sample && !c.busy ? '' : 'disabled'}>${c.busy ? 'Drafting…' : '✨ Draft responses'}</button><button class="btn sm primary" data-act="crs-save">⬇ Save sheet</button><button class="btn sm ghost" data-act="crs-close">Close</button></div>
+      ${St.sample ? '' : '<p class="small muted">Drafting needs Claude; you can still type responses and save the sheet.</p>'}
+      <label class="field"><span>Context for the responses (optional)</span><textarea class="input" id="crs-ctx" rows="2" dir="auto" placeholder="e.g. Vendor confirmed IP68 actuators; coating per spec clause 5.3">${esc(c.ctx || '')}</textarea></label></section>
+    <div class="crs-list">${c.rows.map((r, i) => `<article class="card pad crs-row"><div class="row"><span class="mono">${esc(r.no || String(i + 1))}</span><span dir="auto" class="crs-c">${esc(r.comment)}</span></div>
+      <textarea class="input" data-crs="${i}" rows="2" dir="auto" placeholder="Response…">${esc(r.response || '')}</textarea>${r.basis ? `<div class="small muted" dir="auto">Based on: ${esc(r.basis)}</div>` : ''}</article>`).join('')}</div>`;
+}
+async function crsOpen() {
+  const [f] = await pickFiles('.xlsx,.xls,.csv'); if (!f) return;
+  try {
+    const X = await E.need('xlsx'); const wb = X.read(new Uint8Array(await f.arrayBuffer()), { type: 'array' });
+    const sn = wb.SheetNames[0], aoa = X.utils.sheet_to_json(wb.Sheets[sn], { header: 1, defval: '' });
+    const hi = aoa.findIndex(r => r.some(c => /comment/i.test(String(c)))); if (hi < 0) { toast('No “Comment” column found in the first sheet.', { err: true }); return; }
+    const head = aoa[hi].map(String), ci = head.findIndex(c => /comment/i.test(c));
+    let ri = head.findIndex((c, i) => i !== ci && /response|reply|answer|contractor/i.test(c)); if (ri < 0) { ri = head.length; head.push('Response'); }
+    const ni = head.findIndex(c => /^(no|item|#|s\.?n|ref)/i.test(c.trim()));
+    const rows = aoa.slice(hi + 1).map((r, k) => ({ at: hi + 1 + k, no: ni >= 0 ? String(r[ni] || '') : '', comment: String(r[ci] || '').trim(), response: String(r[ri] || '') })).filter(r => r.comment);
+    UI.crs = { name: f.name, sn, aoa, head, hi, ci, ri, rows, ctx: '' }; render();
+  } catch (e) { toast('Could not read that file: ' + (e && e.message || e), { err: true }); }
+}
+async function crsDraft() {
+  const c = UI.crs; if (!c) return; c.ctx = ($('#crs-ctx') || {}).value || ''; crsSync(); c.busy = true; render();
+  const q = E.normMatch(c.name + ' ' + c.rows.map(r => r.comment).join(' ')).split(' ').filter(w => w.length > 3);
+  const related = [...St.tasks.values()].map(t => ({ t, s: q.filter(w => E.normMatch([t.title, t.action, subsOf(t).map(x => x.text).join(' '), t.notes].join(' ')).includes(w)).length })).filter(x => x.s >= 2).sort((a, b) => b.s - a.s).slice(0, 12).map(x => x.t);
+  const prompt = `Draft contractor responses for a comment response sheet (CRS) from the consultant, for the engineer ${St.settings.me.name || ''}.
+FILE: ${c.name}
+CONTEXT FROM THE ENGINEER: ${c.ctx || '(none)'}
+RELATED TASKS AND NOTES:\n${related.map(t => `- ${t.ref} ${t.title} | status ${t.status} | next: ${t.nextStep || ''} | notes: ${E.clip(t.notes || '', 200)} | items: ${subsOf(t).map(x => (x.done ? '[x] ' : '[ ] ') + x.text).join('; ')}`).join('\n') || '-'}
+COMMENTS:\n${c.rows.map((r, i) => `${i + 1}. ${r.comment}`).join('\n')}
+Rules: write short, professional responses in the language of each comment ("Noted, will be incorporated in Rev X", "Agreed — …", "Clarification: …"). Use only facts from the context and tasks; where you need information you do not have, write [TO CONFIRM: what is needed]. Never invent values.
+Reply with JSON only: {"responses":[{"i":1,"response":"…","basis":"task ref or context used, or empty"}]}`;
+  try {
+    const r = await St.sample.json(prompt, { modelTier: 'complex' });
+    for (const x of (r && r.responses) || []) { const row = c.rows[(+x.i || 0) - 1]; if (row && x.response && !row.response.trim()) { row.response = String(x.response); row.basis = String(x.basis || ''); } }
+  } catch (e) { toast('Drafting failed: ' + (e && e.message || 'try again'), { err: true }); }
+  c.busy = false; render();
+}
+function crsSync() { const c = UI.crs; if (!c) return; document.querySelectorAll('[data-crs]').forEach(t => { const r = c.rows[+t.dataset.crs]; if (r) r.response = t.value; }); }
+async function crsSave() {
+  crsSync(); const c = UI.crs; const aoa = c.aoa.map(r => [...r]); aoa[c.hi] = c.head;
+  for (const r of c.rows) { const row = aoa[r.at] || (aoa[r.at] = []); while (row.length <= c.ri) row.push(''); row[c.ri] = r.response; }
+  try { await sheetDownload(c.name.replace(/\.(xlsx|xls|csv)$/i, '') + '-responses.xlsx', aoa, c.sn); } catch (e) { toast('Could not save: ' + (e && e.message || e), { err: true }); }
+}
+
+/* --- meeting minutes → tasks --- */
+UI.mtg = UI.mtg || { notes: '', date: '', project: '', items: null, busy: false };
+function parseMinutesLocal(text) {
+  return text.split(/\r?\n/).map(l => l.trim()).filter(l => /^([-*•]|\d+[.)]|action\b|ACTION\b)/.test(l)).map(l => l.replace(/^([-*•]|\d+[.)])\s*/, '').replace(/^action:?\s*/i, ''))
+    .filter(l => l.length > 6).map(l => { const m = /\s[-–—(]\s*([A-Z][\w.]+(?: [A-Z][\w.]+)?)\)?\s*$/.exec(l); const owner = m ? m[1] : ''; return { title: m ? l.slice(0, m.index).trim() : l, owner, mine: !owner || /^(me|I|myself)$/i.test(owner), deadline: '', accept: true }; });
+}
+function toolMinutes() {
+  const m = UI.mtg, projects = [...new Set([...St.tasks.values()].map(t => (t.project || '').trim()).filter(Boolean))].sort();
+  return `<section class="card pad mtg-in"><div class="grid-2"><label class="field"><span>Meeting date</span><input class="input" type="date" id="mtg-date" value="${esc(m.date || T())}"></label>
+      <label class="field"><span>Project</span><input class="input" id="mtg-proj" list="mtg-projs" dir="auto" value="${esc(m.project)}" placeholder="Project"><datalist id="mtg-projs">${projects.map(p => `<option value="${esc(p)}">`).join('')}</datalist></label></div>
+      <label class="field"><span>Notes or minutes</span><textarea class="input" id="mtg-notes" rows="9" dir="auto" placeholder="Paste or type the meeting notes. Lines like “- Send revised valve schedule — Omar” become actions.">${esc(m.notes)}</textarea></label>
+      <div class="row"><button class="btn primary" data-act="mtg-extract" ${m.busy ? 'disabled' : ''}>${m.busy ? 'Reading…' : St.sample ? '✨ Find the actions' : 'Find the actions'}</button></div></section>
+    ${m.items ? `<section class="card pad"><div class="section-title"><h2>Actions found</h2><span class="count">${m.items.length}</span></div>${m.items.length ? `<div class="mtg-items">${m.items.map((x, i) => `<label class="mtg-item"><input type="checkbox" data-mtg="${i}" ${x.accept ? 'checked' : ''}><span><b dir="auto">${esc(x.title)}</b><small>${x.mine ? 'Mine' : 'Waiting on ' + esc(x.owner || 'someone')}${x.deadline ? ' · due ' + esc(fmtDate(x.deadline)) : ''}</small></span></label>`).join('')}</div>
+      <div class="row end"><button class="btn primary" data-act="mtg-create">Add ${m.items.filter(x => x.accept).length} task${m.items.filter(x => x.accept).length === 1 ? '' : 's'}</button></div>` : '<p class="small muted">No actions found. Start action lines with “-” or “Action:”.</p>'}</section>` : ''}`;
+}
+async function mtgExtract() {
+  const m = UI.mtg, v = id => (($('#' + id) || {}).value || '').trim();
+  m.notes = v('mtg-notes'); m.date = v('mtg-date') || T(); m.project = v('mtg-proj');
+  if (!m.notes) { toast('Paste the meeting notes first.'); return; }
+  if (!St.sample) { m.items = parseMinutesLocal(m.notes); render(); return; }
+  m.busy = true; render();
+  const prompt = `Extract the action items from these meeting notes for ${St.settings.me.name || 'me'} (aliases: me, I${St.settings.me.name ? ', ' + St.settings.me.name.split(' ')[0] : ''}). Meeting date ${m.date}. Project: ${m.project || 'unknown'}.
+NOTES:\n${E.clip(m.notes, 60000)}
+Rules: one item per distinct action; "owner" is the person who must act ("me" when it is me); convert relative dates using the meeting date; never invent actions or dates.
+Reply with JSON only: {"tasks":[{"title":"verb-first, specific","owner":"me or a name","deadline":"YYYY-MM-DD or null","note":"short context or empty"}]}`;
+  try {
+    const r = await St.sample.json(prompt, { modelTier: 'quick' });
+    m.items = ((r && r.tasks) || []).filter(x => x && x.title).slice(0, 40).map(x => ({ title: String(x.title), owner: /^me$/i.test(x.owner || '') ? '' : String(x.owner || ''), mine: !x.owner || /^me$/i.test(x.owner), deadline: /^\d{4}-\d{2}-\d{2}$/.test(x.deadline || '') ? x.deadline : '', note: String(x.note || ''), accept: true }));
+  } catch { m.items = parseMinutesLocal(m.notes); toast('Claude was unavailable — found the actions from the bullet lines instead.'); }
+  m.busy = false; render();
+}
+function mtgCreate() {
+  const m = UI.mtg; document.querySelectorAll('[data-mtg]').forEach(c => { const x = m.items[+c.dataset.mtg]; if (x) x.accept = c.checked; });
+  const pick = m.items.filter(x => x.accept); if (!pick.length) return;
+  const refs = nextRefs(pick.length); let k = 0;
+  for (const x of pick) putTask(makeTask({ ref: refs[k++], title: x.title, action: x.note || '', project: m.project || '', ownership: x.mine ? 'mine' : 'waiting', owner: x.mine ? 'me' : x.owner, status: x.mine ? 'todo' : 'waiting', deadline: x.deadline || null, deadlineBasis: x.deadline ? 'explicit' : 'none', source: 'meeting', notes: `From the meeting on ${fmtDate(m.date, { day: 'numeric', month: 'short', year: 'numeric' })}`, history: [{ at: nowISO(), text: 'Created from meeting minutes' }] }));
+  toast(`${pick.length} task${pick.length === 1 ? '' : 's'} added from the meeting.`, { action: 'Open to-do', fn: () => go('todo') });
+  UI.mtg = { notes: '', date: '', project: m.project, items: null, busy: false }; render(); setTimeout(maybeAutoCategorize, 300);
+}
+
+/* --- Ask your register --- */
+UI.ask = UI.ask || { q: '', answer: null, busy: false };
+function openAsk() {
+  const a = UI.ask, m = $('#modal');
+  m.innerHTML = deco(`<div class="card pad ask-card" role="dialog" aria-label="Ask your register"><div class="row"><b>💬 Ask your register</b><span class="spacer"></span><button class="icon-btn" data-act="close-modal" aria-label="Close">${I.x}</button></div>
+    <div class="row" style="flex-wrap:nowrap"><input class="input" id="ask-q" dir="auto" autocomplete="off" placeholder="e.g. What is still open with the consultant on ELM?" value="${esc(a.q)}"><button class="btn primary" data-act="ask-go" ${a.busy ? 'disabled' : ''}>${a.busy ? '…' : 'Ask'}</button></div>
+    <div class="ask-sugs">${['What did I finish this week?', 'Which documents were returned Code 3?', 'Who am I waiting on, and for how long?', 'What is due in the next 7 days?'].map(s => `<button class="chip" data-act="ask-sug" data-q="${esc(s)}">${esc(s)}</button>`).join('')}</div>
+    <div id="ask-ans">${a.busy ? '<p class="muted">Looking through your tasks, emails and documents…</p>' : a.answer ? askAnswerHTML(a.answer) : ''}</div></div>`);
+  m.hidden = false; setTimeout(() => $('#ask-q')?.focus(), 30);
+}
+function askAnswerHTML(r) {
+  const tasks = (r.refs || []).map(ref => [...St.tasks.values()].find(t => t.ref === ref)).filter(Boolean);
+  return `<div class="ask-ans"><p dir="auto" style="white-space:pre-wrap">${esc(r.answer)}</p>${tasks.length ? `<div class="dlist">${tasks.map(t => `<div class="row"><button class="dtitle" data-act="ask-open" data-id="${esc(t.id)}" dir="auto">${esc(t.ref)} ${esc(t.title)}</button>${chipStatus(t.status)}</div>`).join('')}</div>` : ''}${r.local ? '<p class="small muted">Search results (connect Claude in Setup for answers in plain language).</p>' : '<p class="small muted">Answered from your register only — open the tasks to check the details.</p>'}</div>`;
+}
+async function askGo() {
+  const a = UI.ask; a.q = (($('#ask-q') || {}).value || '').trim(); if (!a.q) return;
+  if (!St.sample) {
+    const words = E.normMatch(a.q).split(' ').filter(w => w.length > 2);
+    const hits = [...St.tasks.values()].map(t => ({ t, s: words.filter(w => E.normMatch([t.ref, t.title, t.action, t.project, t.owner, t.requestedBy, topicOf(t)].join(' ')).includes(w)).length })).filter(x => x.s).sort((x, y) => y.s - x.s).slice(0, 10);
+    a.answer = { answer: hits.length ? `${hits.length} task${hits.length === 1 ? '' : 's'} match your question:` : 'Nothing matched.', refs: hits.map(x => x.t.ref), local: true }; openAsk(); return;
+  }
+  a.busy = true; a.answer = null; openAsk();
+  const line = t => [t.ref, t.title, 'status ' + t.status, t.project, topicOf(t), t.ownership === 'waiting' ? 'waiting on ' + (t.owner || '') : '', t.requestedBy ? 'from ' + t.requestedBy : '', t.deadline ? 'due ' + t.deadline : '', t.completedAt ? 'done ' + dayOf(t.completedAt) : '', t.nextStep ? 'next: ' + t.nextStep : '', subsOf(t).length ? `items ${subsDone(t)}/${subsOf(t).length}` : ''].filter(Boolean).join(' | ');
+  const prompt = `Answer the question using ONLY the engineer's register below. Today is ${T()}. Be brief and specific; give task refs. If the register does not contain the answer, say so.
+QUESTION: ${a.q}
+TASKS:\n${[...St.tasks.values()].slice(0, 600).map(line).join('\n')}
+DOCUMENTS:\n${colList('docreg').slice(0, 200).map(d => [d.number, d.title, d.revision && 'rev ' + d.revision, d.code && 'code ' + d.code, d.status, d.by, d.date, d.project].filter(Boolean).join(' | ')).join('\n') || '-'}
+RECENT EMAILS:\n${[...St.emails.values()].sort((x, y) => (y.date || '').localeCompare(x.date || '')).slice(0, 60).map(e => `${dayOf(e.date)} | ${e.from} | ${e.subject} | ${E.clip((e.analysis && e.analysis.summary) || '', 160)}`).join('\n')}
+Reply with JSON only: {"answer":"…","refs":["T-0001"]}`;
+  try { const r = await St.sample.json(prompt, { modelTier: 'quick' }); a.answer = { answer: String((r && r.answer) || 'No answer.'), refs: Array.isArray(r && r.refs) ? r.refs.map(String) : [] }; }
+  catch (e) { a.answer = { answer: 'Could not answer right now: ' + (e && e.message || 'try again'), refs: [] }; }
+  a.busy = false; if (!$('#modal').hidden && $('#ask-q')) openAsk();
+}
+document.addEventListener('keydown', e => { if (e.target && e.target.id === 'ask-q' && e.key === 'Enter') { e.preventDefault(); askGo(); } });
+document.addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'j' && St.ready) { e.preventDefault(); openAsk(); } });
+
+/* --- learn from corrections: when you change what Claude chose, later analyses are told --- */
+const LEARN_FIELDS = ['project', 'priority', 'ownership', 'topic', 'discipline'];
+const learned = () => ((St.cols.prefs.get('learned') || {}).items || []);
+const senderKey = em => { const a = String((em && (em.fromEmail || em.from)) || '').toLowerCase(); const m = /@([\w.-]+)/.exec(a); return m ? '@' + m[1] : ''; };
+const taskFieldChg = CHG['task-field'];
+CHG['task-field'] = el => {
+  const t = UI.drawer && UI.drawer.kind === 'task' && St.tasks.get(UI.drawer.id), f = el.dataset.field, before = t ? String(t[f] ?? '') : '';
+  taskFieldChg(el);
+  if (!t || !LEARN_FIELDS.includes(f) || !(t.emailIds || []).length || autoPrefs().learn === false) return;
+  const after = String((St.tasks.get(t.id) || {})[f] ?? ''); if (!after || before === after) return;
+  const em = St.emails.get(t.emailIds[0]), sender = senderKey(em);
+  const items = learned().filter(x => !(x.field === f && x.sender === sender && x.from === before)).concat({ field: f, sender, from: before, to: after, subject: E.clip((em && em.subject) || '', 80), at: nowISO() }).slice(-60);
+  colPut('prefs', { id: 'learned', items });
+};
+function learnedNotes(em) {
+  const s = senderKey(em), items = learned();
+  const pick = [...items.filter(x => x.sender && x.sender === s), ...items.filter(x => x.sender !== s)].slice(0, 12);
+  if (!pick.length) return '';
+  return 'CORRECTIONS I MADE BEFORE (prefer my choice in similar cases):\n' + pick.map(x => `- ${x.sender ? 'For emails from ' + x.sender + ' ' : ''}${x.subject ? '(e.g. “' + x.subject + '”) ' : ''}the ${FIELD_LABEL[x.field] || x.field} was “${x.from || 'empty'}” and I changed it to “${x.to}”.`).join('\n');
+}
+function learnedHTML() {
+  const items = learned();
+  return `<section class="card pad set-sec" id="set-learn" data-sec="Learned corrections"><div class="section-title"><h2>Learned from your corrections</h2></div>
+    <p class="small muted" style="margin-top:0">When you change the project, priority, topic, category or whose action Claude chose for an emailed task, the next analyses are told about it.</p>
+    ${items.length ? `<ul class="learn-list">${items.slice().reverse().slice(0, 20).map(x => `<li><span class="small">${esc(x.sender || 'Any sender')}</span> · ${esc(FIELD_LABEL[x.field] || x.field)}: <s>${esc(x.from || '—')}</s> → <b dir="auto">${esc(x.to)}</b></li>`).join('')}</ul><button class="btn sm ghost" data-act="learn-clear">Forget all corrections</button>` : '<p class="small muted">Nothing learned yet.</p>'}</section>`;
+}
+TASK_ACTIONS.push(t => t.status !== 'done' && isMine(t) && (t.emailIds || []).length ? `<button class="btn sm ghost" data-act="draft-mail" data-kind="reply" data-id="${esc(t.id)}">✉ Draft a reply</button>` : '');
+
+Object.assign(ACT, {
+  'tool-tab': el => { UI.toolTab = el.dataset.tab; render(); },
+  'calc-pick': el => { UI.calc = el.dataset.k; render(); },
+  'calc-reset': () => { delete UI.calcIn[UI.calc]; render(); },
+  'calc-copy': async () => { try { await navigator.clipboard.writeText(calcText()); toast('Result copied.'); } catch { offerFile('calculation.txt', calcText()); } },
+  'cmp-add': async () => { const fs = await pickFiles('.pdf,.docx,.xlsx,.xls,.csv,.txt,.eml', true); if (!fs.length) return; toast('Reading files…'); for (const f of fs.slice(0, 4 - UI.cmp.files.length)) { try { UI.cmp.files.push(await readFileText(f)); } catch (e) { toast(`Could not read ${f.name}.`, { err: true }); } } render(); },
+  'cmp-rm': el => { UI.cmp.files.splice(+el.dataset.i, 1); render(); },
+  'cmp-run': () => cmpRun(),
+  'cmp-export': () => { const r = UI.cmp.result; if (r) sheetDownload(`technical-comparison-${T()}.xlsx`, [['Parameter', 'Unit', 'Required', ...r.names.flatMap(n => [n, 'Status'])], ...r.parameters.map(p => [p.name, p.unit, p.requirement, ...r.names.flatMap((_, i) => [p.values[i], p.status[i]])])], 'TBE'); },
+  'crs-open': () => crsOpen(), 'crs-draft': () => crsDraft(), 'crs-save': () => crsSave(), 'crs-close': () => { UI.crs = null; render(); },
+  'mtg-extract': () => mtgExtract(), 'mtg-create': () => mtgCreate(),
+  'ask-go': () => askGo(), 'ask-sug': el => { UI.ask.q = el.dataset.q; openAsk(); askGo(); }, 'ask-open': el => { $('#modal').hidden = true; openDrawer('task', el.dataset.id); }, 'open-ask': () => openAsk(),
+  'learn-clear': () => { colPut('prefs', { id: 'learned', items: [] }); render(); toast('Corrections forgotten.'); },
+});
+document.addEventListener('input', e => { if (e.target && e.target.dataset && e.target.dataset.crs !== undefined && UI.crs) { const r = UI.crs.rows[+e.target.dataset.crs]; if (r) r.response = e.target.value; } });
+window.addEventListener('hashchange', () => { const v = location.hash.slice(1); if (St.ready && VIEWS.includes(v) && v !== UI.view) go(v); });
+
 /* ---------- boot ---------- */
 const startView = (location.hash || '').replace('#', '');
 if (VIEWS.includes(startView)) UI.view = startView;
 render();
 initStore();
-window.__AR = { St, UI, E, mapSVG }; // debugging hook
+window.__AR = { St, UI, E, mapSVG, learnedNotes }; // debugging hook
 })();
 
 </script>

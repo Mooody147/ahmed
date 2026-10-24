@@ -1,6 +1,6 @@
 /* ---------- Setup: section index and the extra sections ---------- */
 VIEW_FN.setup = () => {
-  const extra = [projectMetaHTML(), rulesHTML(), workweekHTML(), appearanceHTML(), automationHTML(), templatesHTML(), recurringHTML(), DESKTOP ? usageHTML() : '', binHTML()].join('');
+  const extra = [projectMetaHTML(), rulesHTML(), typeof learnedHTML === 'function' ? learnedHTML() : '', workweekHTML(), appearanceHTML(), automationHTML(), templatesHTML(), recurringHTML(), DESKTOP ? usageHTML() : '', binHTML()].join('');
   const h = viewSetup().replace('<!--SETUP-EXTRA-->', extra);
   const secs = [...h.matchAll(/<section[^>]*\bid="([^"]+)"[^>]*\bdata-sec="([^"]+)"/g)].map(m => [m[1], m[2]]);
   return `<div class="set-layout"><nav class="set-index" aria-label="Setup sections">${secs.map(([id, l]) => `<button data-act="set-jump" data-id="${esc(id)}">${esc(l)}</button>`).join('')}</nav><div class="set-main">${h}</div></div>`;

@@ -867,3 +867,53 @@ details.menu > summary.on { background: var(--accent-soft); color: var(--accent)
 .mail-draft { width: min(640px, calc(100vw - 32px)); display: grid; gap: 10px; }
 .mail-draft textarea { min-height: 220px; font: inherit; }
 .task-actions { gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 8px; }
+
+/* ---------- documents ---------- */
+.grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 10px 14px; }
+.tbl-wrap { overflow-x: auto; padding: 4px 8px; }
+.nowrap { white-space: nowrap; }
+.doc-bar { margin-bottom: 12px; gap: 8px; flex-wrap: wrap; }
+.doc-bar .input { width: auto; }
+.doc-bar .todo-search { flex: 1 1 260px; }
+.doc-tbl tr.needs td:first-child { box-shadow: inset 3px 0 0 var(--crit); }
+.doc-edit { display: grid; gap: 10px; margin-bottom: 12px; }
+.timeline { display: grid; gap: 14px; }
+.tl-day h3 { font-size: 13px; color: var(--ink-3); margin: 0 0 6px; text-transform: uppercase; letter-spacing: .05em; }
+.tl-day ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; border-inline-start: 2px solid var(--line); padding-inline-start: 12px; }
+.tl-day li { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.tl-e { width: 20px; flex: none; }
+.tag-cloud { display: flex; flex-wrap: wrap; gap: 6px; }
+.tag-cloud .chip { cursor: pointer; border: 0; }
+.lesson-add { display: grid; gap: 10px; margin-bottom: 12px; }
+.lessons { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 12px; }
+.lesson p { margin: 6px 0; white-space: pre-wrap; }
+.ev-viewer { width: min(900px, calc(100vw - 32px)); max-height: calc(100vh - 60px); display: grid; grid-template-rows: auto auto 1fr; gap: 10px; }
+.ev-viewer blockquote { margin: 0; padding: 8px 12px; border-inline-start: 3px solid var(--accent); background: var(--accent-soft); border-radius: 6px; }
+.src-text { white-space: pre-wrap; overflow: auto; max-height: 60vh; margin: 0; padding: 12px; background: var(--sunken); border-radius: 8px; font: 13px/1.55 var(--f-body, inherit); }
+.src-text mark { background: #FFE07A; color: #1F1A00; border-radius: 3px; padding: 0 2px; }
+
+/* ---------- tools ---------- */
+.calc-layout { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 14px; align-items: start; }
+@media (max-width: 760px) { .calc-layout { grid-template-columns: 1fr; } }
+.calc-list { display: grid; gap: 4px; }
+.calc-list button { text-align: start; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
+.calc-list button.on { background: var(--accent-soft); border-color: transparent; color: var(--accent); font-weight: 600; }
+.calc-card { display: grid; gap: 12px; } .calc-card h2 { margin: 0; font-size: 17px; }
+.calc-out td:last-child { text-align: end; white-space: nowrap; }
+.input.num { font-variant-numeric: tabular-nums; }
+.cmp-in, .mtg-in { display: grid; gap: 12px; margin-bottom: 14px; }
+.cmp-tbl td.cmp-deviation { background: color-mix(in srgb, var(--crit) 8%, transparent); }
+.cmp-tbl td.cmp-missing { background: color-mix(in srgb, var(--warn, #B26B00) 8%, transparent); }
+.icon-btn.xs { width: 18px; height: 18px; }
+.crs-list { display: grid; gap: 10px; margin-top: 12px; }
+.crs-row { display: grid; gap: 8px; } .crs-c { flex: 1; white-space: pre-wrap; }
+.mtg-items { display: grid; gap: 6px; }
+.mtg-item { display: flex; gap: 10px; align-items: flex-start; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; }
+.mtg-item small { display: block; color: var(--ink-3); }
+.ask-card { width: min(720px, calc(100vw - 32px)); display: grid; gap: 12px; }
+.ask-sugs { display: flex; flex-wrap: wrap; gap: 6px; } .ask-sugs .chip { cursor: pointer; border: 0; }
+.ask-ans { display: grid; gap: 8px; }
+.learn-list { margin: 0 0 10px; padding-inline-start: 18px; display: grid; gap: 4px; }
+.ev-head { flex-wrap: nowrap; min-width: 0; } .ev-head .ev-sub { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+.ev-head b { white-space: nowrap; }
+.mail-note { flex: 1 1 220px; }

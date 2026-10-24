@@ -173,6 +173,16 @@ function mailContext(t) {
   const ev = (t.evidence || [])[0];
   return { em, ev, to: em ? (em.fromEmail || '') : '', subject: em ? em.subject : t.title };
 }
+// the address of a person named on the task, from any email header that names them
+function addressOf(name) {
+  const n = E.normMatch(name || ''); if (!n || n === 'me') return '';
+  for (const e of St.emails.values()) for (const h of [e.from, e.to, e.cc]) for (const part of String(h || '').split(/[,;]/)) {
+    const m = /<?([\w.+-]+@[\w-]+(?:\.[\w-]+)+)>?/.exec(part); if (!m) continue;
+    const label = E.normMatch(part.replace(m[0], '')), local = E.normMatch(m[1].split('@')[0].replace(/[._-]+/g, ' '));
+    if ((label && (label.includes(n) || n.includes(label))) || local === n || (n.split(' ')[0].length > 2 && local.startsWith(n.split(' ')[0]) && local.includes((n.split(' ')[1] || '').slice(0, 3)))) return m[1];
+  }
+  return '';
+}
 function localDraft(kind, t) {
   const c = mailContext(t), me = (St.settings.me.name || '').split(' ')[0] || '';
   const who = (t.owner && !/^me$/i.test(t.owner) ? t.owner : t.requestedBy || '').split(' ')[0];
@@ -185,7 +195,8 @@ function localDraft(kind, t) {
 }
 async function draftMail(kind, id) {
   const t = St.tasks.get(id); if (!t) return;
-  UI.mail = { kind, id, ...localDraft(kind, t), to: mailContext(t).to, busy: !!St.sample }; openMailModal();
+  const who = t.owner && !/^me$/i.test(t.owner) ? t.owner : '';
+  UI.mail = { kind, id, ...localDraft(kind, t), to: kind === 'chase' ? addressOf(who) : mailContext(t).to || addressOf(t.requestedBy), busy: !!St.sample }; openMailModal();
   if (!St.sample) return;
   const c = mailContext(t);
   const prompt = `You draft short, polite, professional engineering emails. Write a ${kind === 'chase' ? 'follow-up chaser asking for an overdue item' : 'reply that answers the request'} from ${St.settings.me.name || 'me'}${St.settings.me.role ? ' (' + St.settings.me.role + ')' : ''}.
@@ -201,11 +212,11 @@ Reply with JSON only: {"subject": "...", "body": "..."}`;
 }
 function openMailModal() {
   const d = UI.mail, m = $('#modal'); if (!d) return;
-  m.innerHTML = deco(`<div class="card mail-draft" role="dialog" aria-label="Email draft"><div class="row"><b>${d.kind === 'chase' ? '✉ Chaser' : '✉ Reply'} draft</b>${d.busy ? '<span class="small muted">✨ Claude is improving it…</span>' : ''}<span class="spacer"></span><button class="icon-btn" data-act="close-modal" aria-label="Close">${I.x}</button></div>
+  m.innerHTML = deco(`<div class="card pad mail-draft" role="dialog" aria-label="Email draft"><div class="row"><b>${d.kind === 'chase' ? '✉ Chaser' : '✉ Reply'} draft</b>${d.busy ? '<span class="small muted">✨ Claude is improving it…</span>' : ''}<span class="spacer"></span><button class="icon-btn" data-act="close-modal" aria-label="Close">${I.x}</button></div>
     <label class="field"><span>To</span><input class="input" id="ml-to" value="${esc(d.to || '')}" placeholder="name@company.com"></label>
     <label class="field"><span>Subject</span><input class="input" id="ml-sub" dir="auto" value="${esc(d.subject)}"></label>
     <label class="field"><span>Message</span><textarea class="input" id="ml-body" dir="auto" rows="11">${esc(d.body)}</textarea></label>
-    <div class="row end"><span class="small muted">Nothing is sent from here — copy it, or open it in your email app.</span><span class="spacer"></span><button class="btn" data-act="mail-copy">Copy</button><button class="btn primary" data-act="mail-open">Open in email</button></div></div>`);
+    <div class="row end"><span class="small muted mail-note">Nothing is sent from here — copy it, or open it in your email app.</span><button class="btn" data-act="mail-copy">Copy</button><button class="btn primary" data-act="mail-open">Open in email</button></div></div>`);
   m.hidden = false;
 }
 function mailFields() { const v = id => ($('#' + id) || {}).value || ''; return { to: v('ml-to'), subject: v('ml-sub'), body: v('ml-body') }; }

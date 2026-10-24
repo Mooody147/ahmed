@@ -266,6 +266,7 @@ function evidenceHTML(list, withEmailLink) {
     <div class="ev">
       <div class="ev-h"><span class="ev-badge ${esc(e.check || 'no_quote')}">${esc(CHECK[e.check] || 'Unchecked')}</span>
         <span>${esc(e.sourceName || e.source || '')}</span>${e.location ? `<span class="loc">${esc(e.location)}</span>` : ''}
+        ${e.quote && e.emailId && St.emails.has(e.emailId) ? `<button class="btn ghost sm" data-act="ev-view" data-email="${esc(e.emailId)}" data-src="${esc(e.source || '')}" data-name="${esc(e.sourceName || '')}" data-q="${esc(e.quote)}" title="Show the quote highlighted in the email or attachment">🔎 In source</button>` : ''}
         ${withEmailLink && e.emailId && St.emails.has(e.emailId) ? `<button class="btn ghost sm" data-act="open-email" data-id="${esc(e.emailId)}">Open email</button>` : ''}</div>
       ${e.quote ? `<q dir="auto">${esc(e.quote)}</q>` : ''}
     </div>`).join('')}</div>`;
@@ -2787,7 +2788,7 @@ document.addEventListener('input', e => {
   if (el.classList && (el.classList.contains('title-edit') || el.classList.contains('autogrow'))) autosize(el);
   if (el.dataset && el.dataset.inp) {
     UI[el.dataset.inp] = el.value; clearTimeout(qTimer);
-    qTimer = setTimeout(() => { if (el.dataset.inp === 'mapQ') { render(); const ids = [...(document.querySelectorAll('.mnode.task.hit'))].map(n => n.dataset.tid); if (ids.length && UI.mapQ) { const vp = $('#map-vp'), n = UI.mapLayout.nodes.find(x => x.id === 't:' + ids[0]); if (vp && n) { UI.map.x = vp.clientWidth / 2 - (n.x + n.w / 2) * UI.map.k; UI.map.y = vp.clientHeight / 2 - (n.y + n.h / 2) * UI.map.k; applyCam(true); } } return; } if (el.dataset.inp === 'todoQ') { const n = $('#todo-groups'); if (n) n.innerHTML = deco(todoGroupsHTML()); } else render(); }, 120);
+    qTimer = setTimeout(() => { if (el.dataset.inp === 'mapQ') { render(); const ids = [...(document.querySelectorAll('.mnode.task.hit'))].map(n => n.dataset.tid); if (ids.length && UI.mapQ) { const vp = $('#map-vp'), n = UI.mapLayout.nodes.find(x => x.id === 't:' + ids[0]); if (vp && n) { UI.map.x = vp.clientWidth / 2 - (n.x + n.w / 2) * UI.map.k; UI.map.y = vp.clientHeight / 2 - (n.y + n.h / 2) * UI.map.k; applyCam(true); } } return; } if (el.dataset.inp === 'todoQ') { const n = $('#todo-groups'); if (n) n.innerHTML = deco(todoGroupsHTML()); } else { const id = el.id, pos = el.selectionStart; render(); const n = id && document.getElementById(id); if (n && document.activeElement !== n) { n.focus(); try { n.setSelectionRange(pos, pos); } catch {} } } }, 120);
   }
 });
 document.addEventListener('keydown', e => { if (e.key === 'Enter' && (e.target.id === 'day-in' || e.target.id === 'day-mgr')) { e.preventDefault(); dayAdd(); return; } if (e.key === 'Enter' && e.target.classList && e.target.classList.contains('title-edit')) { e.preventDefault(); e.target.blur(); } if (e.key === 'Enter' && e.target.id === 'd-sub-new') { e.preventDefault(); addSub(); } });
@@ -2811,5 +2812,5 @@ const startView = (location.hash || '').replace('#', '');
 if (VIEWS.includes(startView)) UI.view = startView;
 render();
 initStore();
-window.__AR = { St, UI, E, mapSVG }; // debugging hook
+window.__AR = { St, UI, E, mapSVG, learnedNotes }; // debugging hook
 })();
