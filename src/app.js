@@ -990,10 +990,12 @@ function worldHTML(M) {
   return `${frames.map(e => belHTML(e, hits)).join('')}
     <svg class="map-edges" width="${M.w}" height="${M.h}" aria-hidden="true">
       <defs><marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="arrowhead"/></marker></defs>
+      ${UI.mapBands !== false ? projectBands(M).map(b => `<rect class="band" x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" rx="26" style="--h:${b.hue}"/>`).join('') : ''}
       ${M.edges.map(e => `<path class="edge ${e.b.type === 'task' && e.b.t.status === 'done' ? 'done' : ''}" style="--h:${e.hue}" d="${edgePath(e.a, e.b)}"/>`).join('')}
       ${M.links.map(l => `<path class="link ${sel && (l.from.t.id === sel || l.to.t.id === sel) ? 'hot' : ''}" d="${linkPath(l.from, l.to)}" marker-end="url(#arrow)"/>`).join('')}
     </svg>
     ${blocks.map(e => belHTML(e, hits)).join('')}
+    ${UI.mapBands !== false ? projectBands(M).map(b => `<div class="band-label" style="left:${b.x + 14}px;top:${b.y + 10}px;--h:${b.hue}" dir="auto">${esc(b.label)}</div>`).join('') : ''}
     ${M.nodes.map(n => mapNodeHTML(n, hits, day)).join('')}
     <svg class="map-ink" width="${M.w}" height="${M.h}">
       <defs><marker id="cv-arrow" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>
@@ -1014,9 +1016,18 @@ function ctxHTML() {
     <button class="btn sm ghost" data-act="cv-front" title="Bring to front">⬆</button><button class="btn sm ghost" data-act="cv-dup" title="Duplicate (Ctrl+D)">⧉</button>
     <button class="btn sm ghost danger" data-act="cv-del" title="Delete (Del)">${I.trash}</button></div>`;
 }
+// tools in groups; a group shows its last-used tool and opens a flyout with the others
+const TOOL_GROUPS = [['select'], ['hand'], ['task'], ['sticky'], ['text'], ['rect', 'ellipse', 'diamond'], ['arrow', 'line', 'connector'], ['pen', 'highlighter', 'eraser'], ['frame']];
+UI.toolPick = UI.toolPick || {};
 function toolsHTML() {
+  const T_ = Object.fromEntries(TOOLS.map(t => [t[0], t]));
+  const btn = (k, extra = '') => { const [, key, label, d] = T_[k]; return `<button class="cvt ${UI.tool === k ? 'on' : ''}${extra}" data-act="cv-tool" data-tool="${k}" title="${esc(label)} (${key})" aria-label="${esc(label)}" aria-pressed="${UI.tool === k}">${svg(d, 18)}</button>`; };
   return `<div class="cv-tools" role="toolbar" aria-label="Canvas tools">
-    ${TOOLS.map(([k, key, label, d]) => `<button class="cvt ${UI.tool === k ? 'on' : ''}" data-act="cv-tool" data-tool="${k}" title="${esc(label)} (${key})" aria-label="${esc(label)}" aria-pressed="${UI.tool === k}">${svg(d, 18)}</button>`).join('')}
+    ${TOOL_GROUPS.map((g, gi) => {
+      if (g.length === 1) return btn(g[0]);
+      const cur = g.includes(UI.tool) ? UI.tool : (UI.toolPick[gi] && g.includes(UI.toolPick[gi]) ? UI.toolPick[gi] : g[0]);
+      return `<div class="cvt-group" data-group="${gi}">${btn(cur, ' has-more')}<div class="cvt-fly" role="group">${g.map(k => btn(k)).join('')}</div></div>`;
+    }).join('')}
   </div>
   <div class="cv-sub" role="toolbar" aria-label="Colour and history">
     <div class="cvt-colors">${PALETTE.map(c => `<button class="sw ${UI.cvColor === c ? 'on' : ''}" data-act="cv-color" data-c="${c}" style="--c:${colorCss(c)}" aria-label="Colour ${c}" aria-pressed="${UI.cvColor === c}"></button>`).join('')}</div>
@@ -1032,7 +1043,7 @@ function viewMap() {
   const sugN = [...St.tasks.values()].filter(t => t.placement && t.placement.status === 'suggested').length;
   const act = UI.mapActivity ? activityList() : [];
   const offN = Object.keys(St.layout.off || {}).length + Object.keys(St.layout.size || {}).length;
-  return `<div class="map-wrap ${UI.mapFull ? 'full' : ''}">
+  return `<div class="map-wrap ${UI.mapFull ? 'full' : ''} ${UI.present ? 'presenting' : ''}">
     ${sugN ? callout('info', `<div class="row"><span>❓ Claude wasn’t sure where ${sugN} task${sugN > 1 ? 's belong' : ' belongs'}. Pick the right place from its suggestions.</span><span class="spacer"></span><button class="btn sm primary" data-act="map-next-suggest">Review</button></div>`) : ''}
     ${UI.mapAsOf ? callout('info', `<div class="row"><span>🕒 Showing the map as it was on <b>${esc(fmtDate(UI.mapAsOf, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }))}</b>: later tasks are hidden and work finished later shows as open. Projects and topics are shown as they are now.</span><span class="spacer"></span><button class="btn sm" data-act="map-now">Back to now</button></div>`) : ''}
     <div class="map-toolbar">
@@ -1043,11 +1054,23 @@ function viewMap() {
       <div class="row map-tools">
         <label class="search todo-search">${I.search}<span class="sr">Find on map</span><input class="input" id="map-q" type="search" placeholder="Find a task, item or note…" value="${esc(UI.mapQ)}" data-inp="mapQ"></label>
         ${hits ? `<span class="small muted">${hits.size} found</span>` : ''}
-        <label class="check small"><input type="checkbox" id="map-done" data-chg="map-opt" data-key="mapShowDone" ${UI.mapShowDone ? 'checked' : ''}>Completed (history)</label>
-        <label class="check small"><input type="checkbox" id="map-act" data-chg="map-opt" data-key="mapActivity" ${UI.mapActivity ? 'checked' : ''}>Activity</label>
-        <label class="small map-date" title="Highlight the tasks worked on that day">📌 Day <input class="input" type="date" id="map-day" data-chg="map-day" value="${esc(UI.mapDay)}" max="${T()}"></label>
-        <label class="small map-date" title="Show the map as it was on a past date">🕒 As of <input class="input" type="date" id="map-asof" data-chg="map-asof" value="${esc(UI.mapAsOf)}" max="${T()}"></label>
-        ${offN ? `<button class="btn sm ghost" data-act="map-reset-layout" title="Put every node back in its automatic place">↺ Tidy layout</button>` : ''}
+        <details class="menu" ${UI.menuOpen === 'view' ? 'open' : ''} data-menu="view"><summary class="btn sm">👁 View</summary><div class="menu-pop">
+          <label class="check small"><input type="checkbox" id="map-done" data-chg="map-opt" data-key="mapShowDone" ${UI.mapShowDone ? 'checked' : ''}>Completed tasks (history)</label>
+          <label class="check small"><input type="checkbox" id="map-act" data-chg="map-opt" data-key="mapActivity" ${UI.mapActivity ? 'checked' : ''}>Activity panel</label>
+          <label class="check small"><input type="checkbox" id="map-bands" data-chg="map-opt" data-key="mapBands" ${UI.mapBands !== false ? 'checked' : ''}>Project colour bands</label>
+          <label class="check small"><input type="checkbox" id="map-mini" data-chg="map-opt" data-key="mapMini" ${UI.mapMini !== false ? 'checked' : ''}>Minimap</label>
+          ${offN ? `<button class="btn sm ghost" data-act="map-reset-layout" title="Put every node back in its automatic place">↺ Tidy layout</button>` : ''}
+        </div></details>
+        <details class="menu" ${UI.menuOpen === 'hist' ? 'open' : ''} data-menu="hist"><summary class="btn sm ${UI.mapDay || UI.mapAsOf ? 'on' : ''}">🕒 History${UI.mapDay || UI.mapAsOf ? ' ·' : ''}</summary><div class="menu-pop">
+          <label class="small map-date" title="Highlight the tasks worked on that day">📌 Highlight day <input class="input" type="date" id="map-day" data-chg="map-day" value="${esc(UI.mapDay)}" max="${T()}"></label>
+          <label class="small map-date" title="Show the map as it was on a past date">🕒 Map as of <input class="input" type="date" id="map-asof" data-chg="map-asof" value="${esc(UI.mapAsOf)}" max="${T()}"></label>
+          ${UI.mapDay || UI.mapAsOf ? '<button class="btn sm ghost" data-act="map-hist-clear">Clear</button>' : ''}
+        </div></details>
+        <details class="menu" ${UI.menuOpen === 'export' ? 'open' : ''} data-menu="export"><summary class="btn sm">⬇ Export</summary><div class="menu-pop">
+          <button class="btn sm ghost" data-act="map-export" data-f="png">🖼 Image (PNG)</button>
+          <button class="btn sm ghost" data-act="map-export" data-f="pdf">📄 PDF</button>
+          <button class="btn sm ghost" data-act="map-present">🖥 Present project by project</button>
+        </div></details>
         <div class="seg zoom"><button data-act="map-zoom" data-z="-1" aria-label="Zoom out">−</button><button data-act="map-fit" aria-label="Fit to screen">Fit</button><button data-act="map-zoom" data-z="1" aria-label="Zoom in">+</button></div>
         <button class="btn sm" data-act="map-full" aria-pressed="${UI.mapFull}" title="${UI.mapFull ? 'Exit full screen (Esc)' : 'Full screen (Shift+F)'}">${UI.mapFull ? '⤡ Exit full screen' : '⤢ Full screen'}</button>
       </div>
@@ -1058,6 +1081,8 @@ function viewMap() {
         ${M.projects.length || St.board.size ? '' : `<div class="empty map-empty"><div class="big-emoji">🧠</div><h3>Your canvas is empty</h3><p>Approved tasks appear here, branching from projects and topics. Use the tools on the left to add notes, shapes and drawings.</p><button class="btn primary" data-act="nav" data-view="import">${I.upload} Add emails</button></div>`}
         ${toolsHTML()}
         <div id="cv-ctx-slot">${ctxHTML()}</div>
+        ${UI.mapMini !== false && (M.projects.length || St.board.size) ? '<canvas class="minimap" id="minimap" width="200" height="130" aria-label="Minimap — click to move there"></canvas>' : ''}
+        ${UI.present ? presentBarHTML() : ''}
         <div class="map-hint">${esc(TOOL_HINT[UI.tool] || TOOL_HINT.select)}</div>
       </div>
       ${UI.mapActivity ? `<aside class="map-activity"><div class="label" style="padding:12px 14px 6px">Activity${UI.mapDay ? ' · ' + esc(fmtDate(UI.mapDay)) : ''}</div>${act.length ? `<ol>${act.map(e => `<li><button data-act="map-goto" data-id="${esc(e.t.id)}"><span class="ae">${evEmoji(e.text)}</span><span class="atxt"><b>${esc(e.t.ref || '')}</b> <span dir="auto">${esc(E.clip(e.t.title, 60))}</span><small dir="auto">${esc(e.text)}</small></span><time>${esc(fmtDate(e.at.slice(0, 10)))}</time></button></li>`).join('')}</ol>` : '<p class="small muted" style="padding:0 14px">No activity yet.</p>'}</aside>` : ''}
@@ -1086,6 +1111,10 @@ function applyCam(animate) {
   const w = $('#map-world'); if (!w) return;
   w.classList.toggle('anim', !!animate);
   w.style.transform = `translate(${UI.map.x}px,${UI.map.y}px) scale(${UI.map.k})`;
+  // semantic zoom: far out, details hide and project labels grow so the map stays readable
+  w.style.setProperty('--k', UI.map.k);
+  const vp = $('#map-vp'); if (vp) { vp.classList.toggle('z-far', UI.map.k < 0.5); vp.classList.toggle('z-mid', UI.map.k >= 0.5 && UI.map.k < 0.75); }
+  drawMinimap();
 }
 function mapFit(smart) {
   const vp = $('#map-vp'), M = UI.mapLayout; if (!vp || !M) return;
@@ -1171,7 +1200,7 @@ function eraseAt(e) {
 }
 document.addEventListener('pointerdown', e => {
   const vp = e.target.closest && e.target.closest('#map-vp'); if (!vp || e.button > 1) return;
-  if (e.target.closest('.cv-tools,.cv-sub,.cv-ctx,.map-empty,[contenteditable],input,textarea,select')) return;
+  if (e.target.closest('.cv-tools,.cv-sub,.cv-ctx,.map-empty,.minimap,.present-bar,[contenteditable],input,textarea,select')) return;
   if (UI.cvEditing) commitEdit();
   MP.ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
   if (MP.ptrs.size === 2) { const [a, b] = [...MP.ptrs.values()]; MP.pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), k: UI.map.k }; MP.mode = 'pinch'; UI.cvTemp = null; live(''); return; }
@@ -2782,5 +2811,5 @@ const startView = (location.hash || '').replace('#', '');
 if (VIEWS.includes(startView)) UI.view = startView;
 render();
 initStore();
-window.__AR = { St, UI, E }; // debugging hook
+window.__AR = { St, UI, E, mapSVG }; // debugging hook
 })();

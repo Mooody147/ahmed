@@ -17,7 +17,12 @@ async def main():
         await pg.click('.rail [data-nav="todo"]'); await pg.wait_for_timeout(1500)
         ev = pg.evaluate
         board = lambda: ev("[...window.__AR.St.board.values()].map(e=>({id:e.id,type:e.type,kind:e.kind,text:e.text,x:e.x,y:e.y,w:e.w,h:e.h,n:(e.pts||[]).length,from:e.from&&e.from.id,to:e.to&&e.to.id}))")
-        async def tool(t): await pg.click(f'[data-act="cv-tool"][data-tool="{t}"]'); await pg.wait_for_timeout(100)
+        async def tool(t):
+            b = pg.locator(f'[data-act="cv-tool"][data-tool="{t}"]').first
+            if not await b.is_visible():  # tools grouped in a flyout: hover the group to open it
+                await pg.hover(f'.cvt-group:has([data-tool="{t}"]) > .cvt'); await pg.wait_for_timeout(80)
+                b = pg.locator(f'.cvt-fly [data-act="cv-tool"][data-tool="{t}"]')
+            await b.click(); await pg.wait_for_timeout(100)
         async def drag(x1, y1, x2, y2, steps=10):
             await pg.mouse.move(x1, y1); await pg.mouse.down(); await pg.mouse.move(x2, y2, steps=steps); await pg.mouse.up(); await pg.wait_for_timeout(250)
         async def box(sel): return await (await pg.query_selector(sel)).bounding_box()
@@ -110,7 +115,7 @@ async def main():
         await idle(pg)
 
         # task tool on empty canvas: new task where you clicked
-        cx, cy = vp['x'] + vp['width'] - 140, vp['y'] + vp['height'] - 170
+        cx, cy = vp['x'] + vp['width'] - 140, vp['y'] + vp['height'] - 240
         await tool('task'); await pg.mouse.click(cx, cy); await pg.wait_for_selector('#drawer:not([hidden])')
         await pg.fill('#d-title', 'Prepare blower building load list'); await pg.dispatch_event('#d-title', 'change'); await pg.wait_for_timeout(500)
         await pg.click('[data-act="close-drawer"]'); await pg.wait_for_timeout(500)
@@ -118,7 +123,7 @@ async def main():
         assert abs(tn['x'] - cx) < 30 and abs(tn['y'] - cy) < 30
 
         # rename a project inline
-        await pg.click('[data-act="map-reset-layout"]'); await pg.wait_for_timeout(300)
+        await pg.click('details[data-menu="view"] > summary'); await pg.click('[data-act="map-reset-layout"]'); await pg.wait_for_timeout(300)
         assert not await ev("Object.keys(window.__AR.St.layout.off).length"), 'tidy layout clears manual positions'
         await pg.click('[data-act="map-fit"]'); await pg.wait_for_timeout(500)
         await pg.hover('.mnode.project >> nth=0'); await pg.click('.mnode.project >> nth=0 >> [data-map="rename"]'); await pg.wait_for_timeout(150)
@@ -169,10 +174,36 @@ async def main():
         await pg.screenshot(path=SHOTS + '/83-canvas-day.png')
         # as of yesterday: today's tasks disappear
         y = await ev("window.__AR.E.addDays(window.__AR.E.todayISO(), -1)")
+        await pg.click('details[data-menu="hist"] > summary'); await pg.wait_for_timeout(100)
         await pg.fill('#map-asof', y); await pg.dispatch_event('#map-asof', 'change'); await pg.wait_for_timeout(600)
         print('AS OF yesterday task nodes', await ev("document.querySelectorAll('.mnode.task').length")); assert await ev("document.querySelectorAll('.mnode.task').length") == 0
+        assert await ev("!!document.querySelector('details[data-menu=\"hist\"][open]')"), 'History menu stays open after a change'
         await pg.click('[data-act="map-now"]'); await pg.wait_for_timeout(400)
         assert await ev("document.querySelectorAll('.mnode.task').length") > 0
+
+        # minimap, bands, semantic zoom
+        assert await ev("!!document.querySelector('#minimap')") and await ev("document.querySelectorAll('.map-edges .band').length") >= 1
+        await pg.click('[data-act="map-zoom"][data-z="-1"]'); await pg.click('[data-act="map-zoom"][data-z="-1"]'); await pg.click('[data-act="map-zoom"][data-z="-1"]'); await pg.wait_for_timeout(200)
+        far = await ev("document.querySelector('#map-vp').classList.contains('z-far')"); print('Z-FAR', far, await ev("window.__AR.UI.map.k"))
+        mm = await box('#minimap'); k0 = await ev("[window.__AR.UI.map.x, window.__AR.UI.map.y]")
+        await pg.mouse.click(mm['x'] + 20, mm['y'] + 20); await pg.wait_for_timeout(150)
+        k1 = await ev("[window.__AR.UI.map.x, window.__AR.UI.map.y]"); print('MINIMAP move', k0, k1); assert k0 != k1
+        await pg.screenshot(path=SHOTS + '/86-canvas-far.png')
+        await pg.click('[data-act="map-fit"]'); await pg.wait_for_timeout(300)
+        # export PNG and PDF (web build: PNG saved, PDF opens print)
+        await pg.click('details[data-menu="export"] > summary'); await pg.click('[data-act="map-export"][data-f="png"]')
+        await pg.wait_for_function("(window.__saves||[]).some(s=>s.filename.endsWith('.png'))", timeout=10000)
+        sv = await ev("(window.__saves||[]).map(s=>s.filename)"); print('EXPORT saves', sv); assert any(n.endswith('.png') for n in sv)
+        svgok = await ev("(()=>{const x=window.__AR.mapSVG(); return x.svg.startsWith('<svg') && x.svg.includes('My work') && x.w>300})()"); assert svgok
+        # presentation
+        await pg.click('details[data-menu="export"] > summary'); await pg.click('[data-act="map-present"]'); await pg.wait_for_timeout(700)
+        pres = await ev("document.querySelector('.present-bar') && document.querySelector('.present-bar').textContent"); print('PRESENT', ' '.join((pres or '').split()))
+        assert pres and '1 /' in pres
+        await pg.screenshot(path=SHOTS + '/87-canvas-present.png')
+        await pg.keyboard.press('ArrowRight'); await pg.wait_for_timeout(500)
+        pres2 = await ev("document.querySelector('.present-bar').textContent"); assert '2 /' in pres2 or pres2 == pres
+        await pg.keyboard.press('Escape'); await pg.wait_for_timeout(400)
+        assert not await ev("!!document.querySelector('.present-bar')")
 
         # backup carries canvas and daily data
         await pg.click('.rail [data-nav="setup"]'); await pg.wait_for_timeout(200); await pg.click('[data-act="export-json"]'); await pg.wait_for_timeout(300)

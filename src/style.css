@@ -782,3 +782,52 @@ body.privacy .erow .f, body.privacy .kv dd, body.privacy .ev q, body.privacy .bo
   body, body.has-titlebar { padding: 0 !important; background: #fff !important; }
   .app { display: block !important; } .card, .dcard, .tcard { box-shadow: none !important; break-inside: avoid; }
 }
+
+/* ---------- toolbar menus (View / History / Export) ---------- */
+details.menu { position: relative; }
+details.menu > summary { list-style: none; cursor: pointer; }
+details.menu > summary::-webkit-details-marker { display: none; }
+details.menu > summary::after { content: ""; display: inline-block; width: 6px; height: 6px; margin-inline-start: 6px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; transform: translateY(-2px) rotate(45deg); opacity: .6; }
+details.menu > summary.on { background: var(--accent-soft); color: var(--accent); border-color: transparent; }
+.menu-pop { position: absolute; top: calc(100% + 6px); inset-inline-end: 0; z-index: 30; min-width: 230px; display: flex; flex-direction: column; align-items: stretch; gap: 8px; padding: 10px 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--elev-3, var(--elev-2)); }
+.menu-pop .btn { justify-content: flex-start; }
+.menu-pop .map-date { display: flex; flex-direction: column; gap: 4px; align-items: stretch; }
+
+/* ---------- canvas tool flyouts ---------- */
+.cv-tools { overflow: visible; }
+.cvt-group { position: relative; display: flex; }
+.cvt.has-more::after { content: ""; position: absolute; right: 3px; bottom: 3px; border: 3px solid transparent; border-right-color: currentColor; border-bottom-color: currentColor; opacity: .55; }
+.cvt.has-more { position: relative; }
+.cvt-fly { display: none; position: absolute; left: calc(100% + 8px); top: -6px; gap: 2px; padding: 6px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--elev-2); z-index: 5; }
+.cvt-fly::before { content: ""; position: absolute; left: -10px; top: 0; bottom: 0; width: 10px; }
+.cvt-group:hover .cvt-fly, .cvt-group:focus-within .cvt-fly { display: flex; }
+@media (max-width: 560px) {
+  .cv-tools { overflow-x: auto; }
+  .cvt-group > .has-more { display: none; }
+  .cvt-group .cvt-fly { display: contents; }
+  .minimap { display: none; }
+}
+
+/* ---------- project bands, semantic zoom, minimap ---------- */
+.map-edges .band { fill: hsl(var(--h) 60% 60% / .07); stroke: hsl(var(--h) 50% 55% / .22); stroke-width: 1.5; }
+.band-label { position: absolute; display: none; pointer-events: none; font-weight: 700; background: color-mix(in srgb, var(--surface) 80%, transparent); padding: 0 .3em; border-radius: .3em; color: hsl(var(--h) 45% 35%); white-space: nowrap; transform-origin: 0 0; font-size: calc(15px / var(--k, 1)); letter-spacing: -.01em; z-index: 3; }
+[data-theme="dark"] .band-label { color: hsl(var(--h) 55% 72%); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .band-label { color: hsl(var(--h) 55% 72%); } }
+.z-far .band-label { display: block; }
+.z-far .mnode.task small, .z-far .mnode .mfocus, .z-far .mnode.item, .z-far .mnode .rz { visibility: hidden; }
+.z-far .mnode.task .mtxt b { -webkit-line-clamp: 2; display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; }
+.z-mid .mnode.task small span[title] { display: none; }
+.minimap { position: absolute; right: 12px; bottom: 40px; width: 200px; height: 130px; background: color-mix(in srgb, var(--surface) 92%, transparent); border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--elev-2); z-index: 4; cursor: crosshair; touch-action: none; }
+.map-body.with-act .minimap { right: 12px; }
+
+/* ---------- presentation mode ---------- */
+.map-wrap.presenting .map-toolbar, .map-wrap.presenting .map-activity, .map-wrap.presenting .cv-tools, .map-wrap.presenting .cv-sub, .map-wrap.presenting .map-hint, .map-wrap.presenting .minimap, .map-wrap.presenting .callout { display: none !important; }
+.map-wrap.presenting .map-body { grid-template-columns: 1fr !important; }
+.present-bar { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; box-shadow: var(--elev-2); z-index: 6; white-space: nowrap; max-width: calc(100% - 24px); }
+
+/* ---------- printing a generated document (web build) ---------- */
+#print-area { display: none; }
+@media print {
+  body.printing-doc > *:not(#print-area) { display: none !important; }
+  body.printing-doc #print-area { display: block; }
+}
