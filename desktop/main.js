@@ -11,6 +11,7 @@ const { Store } = require('./store');
 const { Config } = require('./config');
 const claude = require('./claude');
 const gmail = require('./gmail');
+const gmailImap = require('./gmail-imap');
 
 const ROOT = path.join(__dirname, '..', 'app');
 const PARTITION = 'persist:action-register';
@@ -76,10 +77,17 @@ function status() {
     dataDir: DATA_DIR,
     user: { id: 'local', name: config.get().profileName || userName() },
     claude: { hasKey: !!config.secret('anthropicKey'), models: config.models(), maxPromptKB: config.get().maxPromptKB },
-    gmail: { clientId: config.get().gmail.clientId || '', hasSecret: !!config.secret('gmailClientSecret'), connected: !!config.secret('gmailRefresh'), account: config.get().gmail.account || '' },
+    gmail: { mode: gmailMode(), clientId: config.get().gmail.clientId || '', hasSecret: !!config.secret('gmailClientSecret'), connected: !!gmailMode(), account: config.get().gmail.account || '' },
     secure: config.encrypted(),
     version: app.getVersion(),
   };
+}
+// 'imap' = Gmail app password (the simple way), 'oauth' = Google Cloud OAuth client, '' = not connected
+function gmailMode() {
+  const g = config.get().gmail;
+  if (config.secret('gmailAppPassword') && g.mode === 'imap') return 'imap';
+  if (config.secret('gmailRefresh')) return 'oauth';
+  return '';
 }
 function userName() { try { return os.userInfo().username || ''; } catch { return ''; } }
 
@@ -102,15 +110,21 @@ function registerIpc() {
     return status();
   });
 
-  handle('gmail:call', ({ tool, input }) => gmail.call(config, tool, input));
+  handle('gmail:call', ({ tool, input }) => (gmailMode() === 'imap' ? gmailImap : gmail).call(config, tool, input));
+  handle('gmail:connect-imap', async ({ address, appPassword }) => {
+    await gmailImap.connect(config, address, appPassword);
+    config.setSecret('gmailRefresh', null);
+    return status();
+  });
   handle('gmail:connect', async ({ clientId, clientSecret }) => {
     if (clientId) config.set({ gmail: { ...config.get().gmail, clientId: String(clientId).trim() } });
     if (clientSecret) config.setSecret('gmailClientSecret', String(clientSecret).trim());
     await gmail.connect(config, url => process.env.AR_TEST_OAUTH === 'fetch' ? net.fetch(url) : shell.openExternal(url));
+    config.setSecret('gmailAppPassword', null); config.set({ gmail: { ...config.get().gmail, mode: 'oauth' } });
     if (win) win.focus();
     return status();
   });
-  handle('gmail:disconnect', () => gmail.disconnect(config).then(status));
+  handle('gmail:disconnect', async () => { gmailImap.disconnect(config); await gmail.disconnect(config); config.set({ gmail: { ...config.get().gmail, mode: '' } }); return status(); });
 
   handle('downloads:save', async ({ filename, data }) => {
     const ext = path.extname(filename).slice(1);

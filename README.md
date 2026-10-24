@@ -38,17 +38,16 @@ Open **Setup › Connections**.
    [console.anthropic.com › API keys](https://console.anthropic.com/settings/keys) and press **Save key**,
    then **Test**. Usage is billed to your Anthropic account.
 2. **Gmail forwarding inbox (optional).** Forward work emails to `you+tasks@gmail.com` and the app picks
-   them up, then labels them `Action Register/Imported` so they are never imported twice. Connecting needs
-   a Google OAuth client that you create once (about 5 minutes):
-   1. [Google Cloud console](https://console.cloud.google.com/projectcreate): create a project.
-   2. APIs & Services › Library › enable **Gmail API**.
-   3. OAuth consent screen: user type **External**, add your Gmail address as a **test user**, add the
-      scope `https://www.googleapis.com/auth/gmail.modify`.
-   4. Clients › Create client › **Desktop app**. Paste the client ID and secret into the app and press
-      **Connect Gmail**. Your browser opens for Google sign-in.
-   5. While the consent screen is in "Testing", Google expires the sign-in after 7 days and you have to
-      connect again. **Publish app** on the consent screen stops that. For your own account you can
-      click through the "unverified app" warning.
+   them up automatically, then labels them `Action Register/Imported` so they are never imported twice.
+   Connecting takes about 2 minutes:
+   1. Turn on [2-Step Verification](https://myaccount.google.com/signinoptions/twosv) for the Gmail account.
+   2. Open [App passwords](https://myaccount.google.com/apppasswords), type `Action Register`, press **Create**.
+   3. Paste your Gmail address and the 16-letter password into Setup › Connections and press **Connect Gmail**.
+
+   The app reads Gmail over IMAP (`imap.gmail.com:993`). Some company networks block that port; if so, connect from
+   home or use the Gmail API option. Google does not offer app passwords for work/school accounts or accounts with
+   Advanced Protection; for those, open **"No App passwords page?"** under the Gmail section and connect with your
+   own Google Cloud OAuth client (Desktop app, scope `gmail.modify`).
 3. Fill in **You** (name, work email, projects) so Claude can tell your actions from other people's.
 
 Without Gmail you can still drag `.msg` / `.eml` / `.zip` files or loose PDF, Word, Excel and image files
@@ -102,7 +101,7 @@ and add to it freely:
 | Main process | `desktop/main.js` | Window, `app://` protocol, network lock-down, IPC. |
 | Storage | `desktop/store.js` | `register.json` for tasks/emails/settings plus one file per email for extracted text. Atomic writes. |
 | Claude | `desktop/claude.js` | Anthropic Messages API through `@anthropic-ai/sdk`, streamed. |
-| Gmail | `desktop/gmail.js` | OAuth loopback + PKCE, Gmail REST API. Answers the same tool calls the web app made to the claude.ai Gmail connector. |
+| Gmail | `desktop/gmail-imap.js`, `desktop/gmail.js` | App password over IMAP (default), or OAuth loopback + PKCE with the Gmail REST API. Both answer the same tool calls the web app made to the claude.ai Gmail connector. |
 | Secrets | `desktop/config.js` | API key and Gmail tokens encrypted with the OS keychain (`safeStorage`: DPAPI / Keychain / libsecret). |
 
 **Models.** Thorough analysis uses `claude-opus-5-5` at effort `high`, Balanced uses `claude-sonnet-5-5`
@@ -157,4 +156,3 @@ Screenshots go to `test/desktop/out/`.
   file that Chromium cannot read. Drag it to the desktop first (it saves as `.msg`), then onto the app.
 - DWG/RVT and other CAD files, legacy `.doc`/`.ppt`, TIFF/HEIC, password-protected files and 7z/RAR are
   flagged as unreadable, not guessed.
-- Gmail is reached through the Gmail API only. IMAP with an app password is not implemented.

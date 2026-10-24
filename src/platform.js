@@ -119,19 +119,32 @@ function connInner() {
     <div style="display:grid;gap:10px">
       <div class="row"><b>Gmail forwarding inbox</b>${chip(g.connected, 'Connected' + (g.account ? ' · ' + g.account : ''), 'Not connected')}<span class="spacer"></span>
         ${g.connected ? `<button class="btn ghost danger sm" data-dact="gmail-disconnect" ${busy ? 'disabled' : ''}>Disconnect</button>` : ''}</div>
-      <p class="small muted" style="margin:0">Optional. Connect the personal Gmail you forward work emails to. Only messages sent to your forwarding address are read; imported ones get a label. Needs a free Google Cloud OAuth client of type <b>Desktop app</b> (steps below).</p>
-      ${g.connected ? '' : `<div class="grid2">
-        <label class="field"><span>OAuth client ID</span><input class="input mono" id="dk-gid" value="${esc(g.clientId)}" placeholder="…apps.googleusercontent.com" spellcheck="false"></label>
-        <label class="field"><span>OAuth client secret</span><input class="input mono" id="dk-gsec" type="password" autocomplete="off" placeholder="${g.hasSecret ? 'Saved' : 'GOCSPX-…'}" spellcheck="false"></label>
+      <p class="small muted" style="margin:0">Optional. Connect the personal Gmail you forward work emails to (for example <span class="mono">yourname+tasks@gmail.com</span>). New forwards are then picked up and analysed automatically. Only messages sent to your forwarding address are read, and imported ones get the label “Action Register/Imported”.</p>
+      ${g.connected ? (g.mode === 'imap' ? '<p class="small muted" style="margin:0">Connected with an app password. To stop access, press Disconnect or delete the app password at myaccount.google.com › App passwords.</p>' : '') : `
+      <ol class="small steps">
+        <li>Turn on <a href="#" data-dact="open" data-url="https://myaccount.google.com/signinoptions/twosv">2-Step Verification</a> for this Gmail, if it is not on already.</li>
+        <li>Open <a href="#" data-dact="open" data-url="https://myaccount.google.com/apppasswords">Google › App passwords</a>, type the name <b>Action Register</b> and press <b>Create</b>.</li>
+        <li>Copy the 16-letter password Google shows and paste it below with your Gmail address.</li>
+      </ol>
+      <div class="grid2">
+        <label class="field"><span>Gmail address</span><input class="input" id="dk-imap-user" type="email" autocomplete="off" spellcheck="false" placeholder="yourname@gmail.com" value="${esc(UIX.imapUser || g.account)}"></label>
+        <label class="field"><span>App password (16 letters)</span><input class="input mono" id="dk-imap-pass" type="password" autocomplete="off" spellcheck="false" placeholder="abcd efgh ijkl mnop"></label>
       </div>
-      <div class="row end">${busy === 'gmail' ? '<span class="small muted">Finish signing in in your browser…</span>' : ''}<button class="btn primary" data-dact="gmail-connect" ${busy ? 'disabled' : ''}>${busy === 'gmail' ? 'Waiting for Google…' : 'Connect Gmail'}</button></div>`}
-      <details class="howto"><summary>Create the Google OAuth client (one time, about 5 minutes)</summary><ol>
-        <li>Open <a href="#" data-dact="open" data-url="https://console.cloud.google.com/projectcreate">Google Cloud console</a> signed in with the same Gmail and create a project (e.g. “Action Register”).</li>
-        <li>APIs &amp; Services › Library › enable <b>Gmail API</b>.</li>
-        <li>Google Auth Platform (OAuth consent screen): User type <b>External</b>, add your Gmail as a <b>test user</b>, add the scope <span class="mono">…/auth/gmail.modify</span>.</li>
-        <li>Clients › Create client › Application type <b>Desktop app</b>. Copy the client ID and secret here and press Connect Gmail.</li>
-        <li>While the app is in “Testing”, Google asks you to sign in again every 7 days. To avoid that, press <b>Publish app</b> on the consent screen — for your own use you can click through the “unverified app” warning.</li>
-      </ol></details>
+      <div class="row end">${busy === 'imap' ? '<span class="small muted">Checking with Gmail…</span>' : ''}<button class="btn primary" data-dact="gmail-connect-imap" ${busy ? 'disabled' : ''}>${busy === 'imap' ? 'Connecting…' : 'Connect Gmail'}</button></div>
+      <details class="howto"><summary>No “App passwords” page? Use a Google Cloud OAuth client instead (advanced)</summary>
+        <p class="small muted">Google hides app passwords for work/school accounts and accounts with Advanced Protection. Then connect with your own OAuth client:</p>
+        <ol>
+          <li>Open <a href="#" data-dact="open" data-url="https://console.cloud.google.com/projectcreate">Google Cloud console</a> signed in with the same Gmail and create a project (e.g. “Action Register”).</li>
+          <li>APIs &amp; Services › Library › enable <b>Gmail API</b>.</li>
+          <li>Google Auth Platform: Audience <b>External</b>, add your Gmail as a <b>test user</b>, Data Access › add the scope <span class="mono">…/auth/gmail.modify</span>.</li>
+          <li>Clients › Create client › <b>Desktop app</b>. Paste the client ID and secret here and press Connect with OAuth.</li>
+        </ol>
+        <div class="grid2">
+          <label class="field"><span>OAuth client ID</span><input class="input mono" id="dk-gid" value="${esc(g.clientId)}" placeholder="…apps.googleusercontent.com" spellcheck="false"></label>
+          <label class="field"><span>OAuth client secret</span><input class="input mono" id="dk-gsec" type="password" autocomplete="off" placeholder="${g.hasSecret ? 'Saved' : 'GOCSPX-…'}" spellcheck="false"></label>
+        </div>
+        <div class="row end">${busy === 'gmail' ? '<span class="small muted">Finish signing in in your browser…</span>' : ''}<button class="btn" data-dact="gmail-connect" ${busy ? 'disabled' : ''}>${busy === 'gmail' ? 'Waiting for Google…' : 'Connect with OAuth'}</button></div>
+      </details>`}
     </div>
     <hr style="border:0;border-top:1px solid var(--line, #ddd);margin:6px 0">
     <div class="row"><div style="min-width:0"><b>Data folder</b><div class="small muted mono" style="word-break:break-all">${esc(ST.dataDir)}</div></div><span class="spacer"></span><button class="btn" data-dact="open-data">Open folder</button></div>`;
@@ -169,6 +182,15 @@ const ACT = {
     if (!clientSecret && !ST.gmail.hasSecret) return say('Enter the OAuth client secret.', true);
     UIX.busy = 'gmail'; UIX.msg = null; repaint();
     try { ST = await call('gmail:connect', { clientId, clientSecret }); UIX.busy = ''; reloadSoon(`Gmail connected (${ST.gmail.account}).`); }
+    catch (e) { UIX.busy = ''; refresh(); say('Gmail was not connected: ' + (e.message || e.code), true); }
+  },
+  async 'gmail-connect-imap'() {
+    const address = val('dk-imap-user'), appPassword = val('dk-imap-pass');
+    UIX.imapUser = address; // keep what was typed if Gmail says no
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(address)) return say('Enter your Gmail address.', true);
+    if (appPassword.replace(/\s+/g, '').length < 16) return say('Paste the 16-letter app password from Google (spaces are fine).', true);
+    UIX.busy = 'imap'; UIX.msg = null; repaint();
+    try { ST = await call('gmail:connect-imap', { address, appPassword }); UIX.busy = ''; reloadSoon(`Gmail connected (${ST.gmail.account}).`); }
     catch (e) { UIX.busy = ''; refresh(); say('Gmail was not connected: ' + (e.message || e.code), true); }
   },
   async 'gmail-disconnect'() { ST = await call('gmail:disconnect'); reloadSoon('Gmail disconnected.'); },

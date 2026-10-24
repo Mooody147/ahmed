@@ -3,7 +3,7 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 const CHANNELS = new Set(['db:load', 'db:get', 'db:set', 'db:delete', 'sample:json', 'sample:abort', 'claude:test', 'config:claude',
-  'gmail:call', 'gmail:connect', 'gmail:disconnect', 'downloads:save', 'shell:openData', 'shell:openExternal']);
+  'gmail:call', 'gmail:connect', 'gmail:connect-imap', 'gmail:disconnect', 'downloads:save', 'shell:openData', 'shell:openExternal']);
 
 contextBridge.exposeInMainWorld('arDesktop', {
   status: () => ipcRenderer.sendSync('desktop:status'),

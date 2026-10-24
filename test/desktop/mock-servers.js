@@ -86,4 +86,14 @@ function start() {
   });
   return new Promise(r => server.listen(0, '127.0.0.1', () => r({ server, log, labeled, base: `http://127.0.0.1:${server.address().port}` })));
 }
-module.exports = { start, ADDR };
+// Gmail over IMAP (app password): hoodiecrow with Gmail's folder layout and X-GM extensions
+function startImap() {
+  const hoodiecrow = require('hoodiecrow-imap');
+  const raw = f => fs.readFileSync(path.join(FX, f), 'latin1');
+  const now = new Date();
+  const messages = ['fwd_attachment.eml', 'fwd_inline.eml', 'fwd_gmail.eml', 'review.eml'].map(f => ({ raw: raw(f), internaldate: now }));
+  const storage = { INBOX: { messages: [] }, '': { separator: '/', folders: { '[Gmail]': { flags: ['\\Noselect'], folders: { 'All Mail': { 'special-use': '\\All', messages }, 'Sent Mail': { 'special-use': '\\Sent' } } } } } };
+  const server = hoodiecrow({ plugins: ['X-GM-EXT-1', 'SPECIAL-USE', 'IDLE', 'ENABLE', 'UIDPLUS', 'LITERALPLUS'], users: { 'msobeah12@gmail.com': { password: 'abcdefghijklmnop' } }, storage });
+  return new Promise(r => server.listen(0, '127.0.0.1', () => r({ server, port: server.address().port, labeled: () => server.storage })));
+}
+module.exports = { start, startImap, ADDR };

@@ -12,6 +12,7 @@ const FX = path.join(ROOT, 'test', 'fixtures');
 const OUT = path.join(__dirname, 'out'); fs.mkdirSync(OUT, { recursive: true });
 const KEY = 'sk-ant-test-0123456789abcdefghij';
 const errors = [];
+let imap = null;
 const step = s => console.log('•', s);
 
 async function launch(env) {
@@ -75,6 +76,7 @@ async function reloaded(pg, action) {
     await pg.click('[data-dact="test-key"]'); await waitFor(pg, "/The key works/.test(document.querySelector('#dk-conn').textContent)");
 
     step('connect Gmail (OAuth loopback + PKCE)');
+    await pg.click('#dk-conn details.howto:has(#dk-gid) summary');
     await pg.fill('#dk-gid', 'cid.apps.googleusercontent.com'); await pg.fill('#dk-gsec', 'GOCSPX-secret');
     await reloaded(pg, () => pg.click('[data-dact="gmail-connect"]'));
     assert.strictEqual(m.log.token[0].grant_type, 'authorization_code');
@@ -202,6 +204,34 @@ async function reloaded(pg, action) {
     assert.match(err || '', /API key was rejected/);
 
     // the only expected console errors come from the deliberate network-block check above
+    step('Gmail with an app password (no Google Cloud setup): forwards are imported, analysed and labelled');
+    await app.close();
+    imap = await mocks.startImap();
+    const data2 = fs.mkdtempSync(path.join(os.tmpdir(), 'ar-data2-'));
+    const env2 = { ...env, AR_DATA_DIR: data2, AR_IMAP_HOST: '127.0.0.1', AR_IMAP_PORT: String(imap.port), AR_IMAP_INSECURE: '1', AR_START_VIEW: 'setup' };
+    ({ app, pg } = await launch(env2));
+    await pg.fill('#dk-key', KEY); await reloaded(pg, () => pg.click('[data-dact="save-key"]'));
+    await pg.click('.rail [data-nav="setup"]'); await pg.waitForSelector('#dk-imap-user');
+    await pg.fill('#dk-imap-user', 'msobeah12@gmail.com'); await pg.fill('#dk-imap-pass', 'wxyz wxyz wxyz wxyz');
+    await pg.click('[data-dact="gmail-connect-imap"]');
+    await waitFor(pg, "/did not accept/.test(document.querySelector('#dk-conn').textContent)", 20000);
+    await pg.fill('#dk-imap-pass', 'abcd efgh ijkl mnop');
+    await reloaded(pg, () => pg.click('[data-dact="gmail-connect-imap"]'));
+    assert.ok(!fs.readFileSync(path.join(data2, 'data', 'secrets.json'), 'utf8').includes('abcdefghijklmnop'), 'app password not stored in clear text');
+    await waitFor(pg, 'window.__AR.UI.staging.length >= 3', 30000); await idle(pg);
+    const st2 = await ev(pg, 'window.__AR.UI.staging.map(b=>({gid:b.gmailId,state:b.state,subj:b.email.subject}))');
+    console.log(JSON.stringify(st2));
+    assert.strictEqual(st2.length, 3, 'only the three forwards to the +tasks address'); assert.ok(st2.every(b => b.state === 'done'));
+    assert.strictEqual(await ev(pg, "window.__AR.St.settings.gmail ? window.__AR.St.settings.gmail.address : window.claude.desktop.suggestedAddress()"), mocks.ADDR.replace('tester', 'msobeah12'));
+    await pg.click('.rail [data-nav="setup"]'); await pg.waitForSelector('#dk-conn');
+    assert.match(await pg.textContent('#dk-conn'), /Connected · msobeah12@gmail\.com/);
+    await pg.screenshot({ path: path.join(OUT, '08-gmail-app-password.png'), fullPage: true });
+    // reopening the app imports nothing again (Gmail label + seen list)
+    await app.close();
+    ({ app, pg } = await launch({ ...env2, AR_START_VIEW: 'import' }));
+    await waitFor(pg, 'window.__AR.St.ready'); await pg.waitForTimeout(3000); await idle(pg);
+    assert.strictEqual(await ev(pg, 'window.__AR.UI.staging.length'), 0, 'no re-import after restart');
+
     errors.splice(0, errors.length, ...errors.filter(e => !/Failed to load resource|Content Security Policy/.test(e)));
     assert.deepStrictEqual(errors, [], 'no page or console errors');
     console.log('\nDESKTOP E2E PASSED');
@@ -213,5 +243,6 @@ async function reloaded(pg, action) {
   } finally {
     try { await app.close(); } catch {}
     m.server.close();
+    if (imap) imap.server.close();
   }
 })();
