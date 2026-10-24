@@ -10,6 +10,7 @@ const { pathToFileURL } = require('url');
 const { Store } = require('./store');
 const { Config } = require('./config');
 const claude = require('./claude');
+const ai = require('./ai');
 const gmail = require('./gmail');
 const gmailImap = require('./gmail-imap');
 const sys = require('./system');
@@ -86,7 +87,7 @@ function buildMenu() {
 const handle = (ch, fn) => ipcMain.handle(ch, async (e, arg) => {
   if (!win || e.sender !== win.webContents) return { ok: false, error: { code: 'forbidden', message: 'Unknown sender' } };
   try { return { ok: true, value: await fn(arg, e) }; }
-  catch (err) { return { ok: false, error: { code: (err && err.code) || 'error', message: String((err && err.message) || err) } }; }
+  catch (err) { return { ok: false, error: { code: (err && err.code) || 'error', message: String((err && err.message) || err), ...(err && err.provider ? { provider: err.provider, backup: err.backup || '' } : {}) } }; }
 });
 
 function status() {
@@ -95,6 +96,7 @@ function status() {
     dataDir: DATA_DIR, platform: process.platform, packaged: app.isPackaged,
     user: { id: 'local', name: config.get().profileName || userName() },
     claude: { hasKey: !!config.secret('anthropicKey'), models: config.models(), maxPromptKB: config.get().maxPromptKB },
+    ai: ai.status(config),
     gmail: { mode: gmailMode(), clientId: config.get().gmail.clientId || '', hasSecret: !!config.secret('gmailClientSecret'), connected: !!gmailMode(), account: config.get().gmail.account || '' },
     desktop: { closeToTray: d.closeToTray, startWithWindows: d.startWithWindows, startHidden: d.startHidden, hotkey: d.hotkey, notify: d.notify, autoUpdate: d.autoUpdate, watchDir: d.watchDir, backupDir: d.backupDir, backupKeep: d.backupKeep, serverRoots: d.serverRoots || [], locked: !!d.pin },
     usage: config.get().usage || {},
@@ -142,8 +144,16 @@ function registerIpc() {
   handle('db:set', ({ path: p, data }) => store.set(p, data));
   handle('db:delete', p => store.delete(p));
 
-  handle('sample:json', (req, e) => claude.run(config, req, delta => { if (!e.sender.isDestroyed()) e.sender.send('sample:text', { id: req.id, delta }); }, addUsage));
-  handle('sample:abort', id => claude.abort(id));
+  // answers { value, meta: { provider, model, fallback } }; the provider is the main AI unless the call names one
+  handle('sample:json', (req, e) => ai.run(config, req, delta => { if (!e.sender.isDestroyed()) e.sender.send('sample:text', { id: req.id, delta }); }, addUsage));
+  handle('sample:abort', id => ai.abort(id));
+  handle('ai:config', patch => { ai.setSettings(config, patch || {}); return status(); });
+  handle('ai:key', ({ provider, key }) => {
+    const name = { openai: 'openaiKey', gemini: 'geminiKey' }[provider]; if (!name) throw { code: 'invalid_argument', message: 'Unknown AI' };
+    config.setSecret(name, key ? String(key).trim() : null); return status();
+  });
+  handle('ai:models', ({ provider, key }) => ai.listModels(config, provider, key ? String(key).trim() : ''));
+  handle('ai:test', ({ provider }) => ai.test(config, provider));
   handle('claude:test', () => claude.test(config));
   handle('config:claude', ({ key, models, maxPromptKB }) => {
     if (key !== undefined) config.setSecret('anthropicKey', key ? String(key).trim() : null);
@@ -197,7 +207,7 @@ function registerIpc() {
   filesMod.toolDbIpc(ipcMain, store, filesMod.notifyToolWindows);
   handle('shell:openData', () => shell.openPath(DATA_DIR));
   handle('shell:openPath', p => { if (typeof p === 'string' && [sys.prefs(config).watchDir, sys.prefs(config).backupDir, DATA_DIR].some(d => d && p.startsWith(d))) return shell.openPath(p); throw { code: 'forbidden', message: 'Path not allowed' }; });
-  handle('shell:openExternal', url => { if (/^(https:\/\/(console\.anthropic\.com|console\.cloud\.google\.com|docs\.anthropic\.com|platform\.claude\.com|myaccount\.google\.com|support\.google\.com|mail\.google\.com|github\.com\/Mooody147)\/|mailto:)/.test(url)) return shell.openExternal(url); throw { code: 'forbidden', message: 'URL not allowed' }; });
+  handle('shell:openExternal', url => { if (/^(https:\/\/(console\.anthropic\.com|console\.cloud\.google\.com|docs\.anthropic\.com|platform\.claude\.com|myaccount\.google\.com|support\.google\.com|platform\.openai\.com|aistudio\.google\.com|ollama\.com|mail\.google\.com|github\.com\/Mooody147)\/|mailto:)/.test(url)) return shell.openExternal(url); throw { code: 'forbidden', message: 'URL not allowed' }; });
 
   /* desktop extras */
   handle('sys:prefs', patch => {

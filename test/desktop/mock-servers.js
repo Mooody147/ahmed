@@ -14,7 +14,7 @@ const ADDR = 'tester+tasks@gmail.com';
 const b64url = b => Buffer.from(b).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 
 function start() {
-  const log = { anthropic: [], gmail: [], token: [] };
+  const log = { anthropic: [], gmail: [], token: [], openai: [], gemini: [], ollama: [] };
   const labeled = new Set(); const labels = [{ id: 'INBOX', name: 'INBOX' }];
   const msgs = [
     { id: 'm0', file: 'fwd_attachment.eml', at: Date.parse('2026-10-23T17:05:00Z'), to: ADDR },
@@ -35,6 +35,7 @@ function start() {
       // SDK 1.x (API version 2026-10-21) sends the API key as a Bearer token; older clients use x-api-key
       const key = req.headers['x-api-key'] || String(req.headers.authorization || '').replace(/^Bearer /, '');
       log.anthropic.push({ key, version: req.headers['anthropic-version'], beta: req.headers['anthropic-beta'] || '', model: b.model, effort: b.output_config && b.output_config.effort, fallbacks: b.fallbacks, images: Array.isArray(content) ? content.filter(c => c.type === 'image').length : 0, stream: !!b.stream, max_tokens: b.max_tokens, prompt });
+      if (key === 'sk-ant-nocredit-0123456789abcdef') return json(res, 400, { type: 'error', error: { type: 'invalid_request_error', message: 'Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits.' } });
       if (key !== 'sk-ant-test-0123456789abcdefghij') return json(res, 401, { type: 'error', error: { type: 'authentication_error', message: 'invalid x-api-key' } });
       const ans = /Reply with the word OK/.test(prompt) ? 'OK' : 'Here are the results:\n```json\n' + JSON.stringify(mockAnswer(prompt)) + '\n```';
       const message = { id: 'msg_' + log.anthropic.length, type: 'message', role: 'assistant', model: b.model, content: [], stop_reason: null, stop_sequence: null, usage: { input_tokens: 100, output_tokens: 1 } };
@@ -47,6 +48,55 @@ function start() {
       ev('content_block_stop', { index: 0 });
       ev('message_delta', { delta: { stop_reason: 'end_turn', stop_sequence: null }, usage: { output_tokens: 500 } });
       ev('message_stop', {});
+      return res.end();
+    }
+    /* ---- OpenAI (chat completions, streamed) ---- */
+    const textOf = content => (typeof content === 'string' ? content : content.filter(c => c.type === 'text').map(c => c.text).join('\n'));
+    const answerFor = prompt => (/Reply with this JSON exactly/.test(prompt) ? '{"ok": true}' : JSON.stringify(mockAnswer(prompt)));
+    if (u.pathname === '/v1/models' && req.method === 'GET') {
+      log.openai.push({ path: u.pathname, auth: req.headers.authorization });
+      if (req.headers.authorization !== 'Bearer sk-openai-test-0123456789abcdef') return json(res, 401, { error: { message: 'Incorrect API key provided', type: 'invalid_request_error', code: 'invalid_api_key' } });
+      return json(res, 200, { object: 'list', data: ['gpt-test-4o', 'gpt-test-4o-mini', 'text-embedding-3-large', 'whisper-1', 'gpt-test-4o-realtime-preview'].map(id => ({ id, object: 'model' })) });
+    }
+    if (u.pathname === '/v1/chat/completions' && req.method === 'POST') {
+      const b = JSON.parse(await body(req)); const um = b.messages.find(x => x.role === 'user');
+      const prompt = textOf(um.content);
+      log.openai.push({ path: u.pathname, auth: req.headers.authorization, model: b.model, json: b.response_format && b.response_format.type, stream: b.stream, images: Array.isArray(um.content) ? um.content.filter(c => c.type === 'image_url').length : 0, prompt });
+      if (req.headers.authorization !== 'Bearer sk-openai-test-0123456789abcdef') return json(res, 401, { error: { message: 'Incorrect API key provided', code: 'invalid_api_key' } });
+      const ans = answerFor(prompt);
+      res.writeHead(200, { 'Content-Type': 'text/event-stream' });
+      for (let i = 0; i < ans.length; i += 300) res.write(`data: ${JSON.stringify({ choices: [{ index: 0, delta: { content: ans.slice(i, i + 300) }, finish_reason: null }] })}\n\n`);
+      res.write(`data: ${JSON.stringify({ choices: [{ index: 0, delta: {}, finish_reason: 'stop' }] })}\n\n`);
+      res.write(`data: ${JSON.stringify({ choices: [], usage: { prompt_tokens: 1000, completion_tokens: 200, prompt_tokens_details: { cached_tokens: 100 } } })}\n\n`);
+      res.write('data: [DONE]\n\n'); return res.end();
+    }
+    /* ---- Gemini ---- */
+    if (u.pathname === '/v1beta/models' && req.method === 'GET') {
+      if (req.headers['x-goog-api-key'] !== 'AIza-gemini-test-0123456789abcdef') return json(res, 400, { error: { code: 400, message: 'API key not valid. Please pass a valid API key.', status: 'INVALID_ARGUMENT', details: [{ reason: 'API_KEY_INVALID' }] } });
+      return json(res, 200, { models: [{ name: 'models/gemini-test-2.5-pro', supportedGenerationMethods: ['generateContent'] }, { name: 'models/gemini-test-2.5-flash', supportedGenerationMethods: ['generateContent'] }, { name: 'models/text-embedding-004', supportedGenerationMethods: ['embedContent'] }] });
+    }
+    let gm;
+    if ((gm = /^\/v1beta\/models\/([^/:]+):streamGenerateContent$/.exec(u.pathname)) && req.method === 'POST') {
+      const b = JSON.parse(await body(req)); const parts = b.contents[0].parts;
+      const prompt = parts.filter(x => x.text).map(x => x.text).join('\n');
+      log.gemini.push({ model: decodeURIComponent(gm[1]), key: req.headers['x-goog-api-key'], sse: u.searchParams.get('alt'), mime: b.generationConfig && b.generationConfig.responseMimeType, images: parts.filter(x => x.inline_data).length, prompt });
+      if (req.headers['x-goog-api-key'] !== 'AIza-gemini-test-0123456789abcdef') return json(res, 400, { error: { code: 400, message: 'API key not valid.', status: 'INVALID_ARGUMENT', details: [{ reason: 'API_KEY_INVALID' }] } });
+      const ans = answerFor(prompt);
+      res.writeHead(200, { 'Content-Type': 'text/event-stream' });
+      for (let i = 0; i < ans.length; i += 300) res.write(`data: ${JSON.stringify({ candidates: [{ content: { role: 'model', parts: [{ text: ans.slice(i, i + 300) }] } }] })}\r\n\r\n`);
+      res.write(`data: ${JSON.stringify({ candidates: [{ content: { role: 'model', parts: [{ text: '' }] }, finishReason: 'STOP' }], usageMetadata: { promptTokenCount: 900, candidatesTokenCount: 150, totalTokenCount: 1050 } })}\r\n\r\n`);
+      return res.end();
+    }
+    /* ---- Ollama ---- */
+    if (u.pathname === '/api/tags') return json(res, 200, { models: [{ name: 'qwen-test:8b' }, { name: 'llama-test:70b' }] });
+    if (u.pathname === '/api/chat' && req.method === 'POST') {
+      const b = JSON.parse(await body(req)); const um = b.messages.find(x => x.role === 'user');
+      log.ollama.push({ model: b.model, format: b.format, images: (um.images || []).length, prompt: um.content });
+      if (!/^(qwen-test:8b|llama-test:70b)$/.test(b.model)) return json(res, 404, { error: `model "${b.model}" not found, try pulling it first` });
+      const ans = answerFor(um.content);
+      res.writeHead(200, { 'Content-Type': 'application/x-ndjson' });
+      for (let i = 0; i < ans.length; i += 300) res.write(JSON.stringify({ model: b.model, message: { role: 'assistant', content: ans.slice(i, i + 300) }, done: false }) + '\n');
+      res.write(JSON.stringify({ model: b.model, message: { role: 'assistant', content: '' }, done: true, prompt_eval_count: 800, eval_count: 120 }) + '\n');
       return res.end();
     }
     /* ---- Google OAuth ---- */

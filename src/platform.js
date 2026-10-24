@@ -56,8 +56,10 @@ async function db() {
   return { doc: docRef, collection: colRef };
 }
 
-/* ---------- sample: Claude via the main process ---------- */
+/* ---------- sample: the chosen AI via the main process (desktop/ai.js) ---------- */
 const listeners = new Map();
+// for this session only: use another AI after the main one ran out of credit, or go over the monthly budget once
+const AIO = { provider: '', overBudget: false };
 B.onSampleText(m => { const f = listeners.get(m.id); if (f) f(m.delta); });
 function sample() {
   const f = async () => { throw { code: 'unavailable', message: 'Use sample.json' }; };
@@ -69,17 +71,26 @@ function sample() {
     listeners.set(id, d => { text += d; if (opts.onText) try { opts.onText({ text, delta: d }); } catch {} });
     const onAbort = () => { B.invoke('sample:abort', id); };
     if (opts.signal) opts.signal.addEventListener('abort', onAbort, { once: true });
-    try { return await call('sample:json', { id, prompt, tier: opts.modelTier || 'complex', images }); }
+    try {
+      const r = await call('sample:json', { id, prompt, tier: opts.modelTier || 'complex', images, provider: opts.provider || AIO.provider || undefined, overBudget: !!(opts.overBudget || AIO.overBudget) });
+      if (opts.onMeta) try { opts.onMeta(r.meta); } catch {}
+      return r.value;
+    }
     finally { listeners.delete(id); if (opts.signal) opts.signal.removeEventListener('abort', onAbort); }
   };
-  f.limits = async () => ({ maxPromptBytes: (ST.claude.maxPromptKB || 600) * 1024, images: { maxCount: 20, maxInputBytes: 3.5e6, mediaTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif'] } });
+  f.limits = async () => {
+    // a local model has a smaller window and reads images only when it is a vision model
+    const local = ST.ai.primary === 'ollama', m = ST.ai.strongModel || '';
+    const kb = local ? Math.min(ST.claude.maxPromptKB || 600, 96) : (ST.claude.maxPromptKB || 600);
+    return { maxPromptBytes: kb * 1024, images: { maxCount: local && !/llava|vision|vl\b|-vl|gemma3|minicpm-v|moondream|llama4/i.test(m) ? 0 : 20, maxInputBytes: 3.5e6, mediaTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif'] } };
+  };
   return f;
 }
 
 const caps = {
   db,
   user: async () => ({ me: async () => ({ id: ST.user.id, name: ST.user.name, email: ST.gmail.account || null }), id: async () => ST.user.id, isOwner: async () => true, canEdit: async () => true, can: async () => true }),
-  sample: async () => (ST.claude.hasKey ? sample() : null),
+  sample: async () => (ST.ai.ready ? sample() : null),
   mcp: async () => (ST.gmail.connected ? { callTool: async (server, tool, input) => { if (server !== 'Gmail') throw { code: 'server_not_connected' }; return call('gmail:call', { tool, input }); } } : null),
   downloads: async () => ({ save: async ({ filename, data }) => call('downloads:save', { filename, data: typeof data === 'string' ? data : new Uint8Array(await data.arrayBuffer()) }) }),
 };
@@ -151,8 +162,66 @@ function connInner() {
     <hr style="border:0;border-top:1px solid var(--line, #ddd);margin:6px 0">
     <div class="row"><div style="min-width:0"><b>Data folder</b><div class="small muted mono" style="word-break:break-all">${esc(ST.dataDir)}</div></div><span class="spacer"></span><button class="btn" data-dact="open-data">Open folder</button></div>`;
 }
-function setupHTML() { return `<section class="card pad" id="dk-conn" data-sec="Connections" style="display:grid;gap:12px">${connInner()}</section>`; }
-function repaint() { const n = document.getElementById('dk-conn'); if (n) n.innerHTML = connInner(); }
+/* ---------- Setup › Which AI ---------- */
+const AI_LINKS = { openai: 'https://platform.openai.com/api-keys', gemini: 'https://aistudio.google.com/apikey', ollama: 'https://ollama.com/download' };
+const AI_BILL = { claude: 'https://console.anthropic.com/settings/billing', openai: 'https://platform.openai.com/settings/organization/billing/overview', gemini: 'https://aistudio.google.com/apikey' };
+const money = v => '$' + (v < 10 ? v.toFixed(2) : Math.round(v).toLocaleString());
+function aiOptions(sel, none) {
+  const P = ST.ai.providers;
+  return (none ? `<option value="" ${!sel ? 'selected' : ''}>None</option>` : '') + Object.entries(P).map(([k, v]) => `<option value="${k}" ${sel === k ? 'selected' : ''}>${esc(v.label)}${v.ready ? '' : ' — not set up'}</option>`).join('');
+}
+function priceRow(p, model) {
+  if (!model) return '';
+  const pr = ST.ai.prices[model] || {};
+  return `<div class="row small" style="gap:6px"><span class="mono" style="min-width:0;flex:1;word-break:break-all">${esc(model)}</span>$<input class="input ai-price" data-model="${esc(model)}" data-k="in" type="number" min="0" step="0.01" style="width:84px" value="${pr.in ?? ''}" placeholder="input" aria-label="Input price per million tokens">/ $<input class="input ai-price" data-model="${esc(model)}" data-k="out" type="number" min="0" step="0.01" style="width:84px" value="${pr.out ?? ''}" placeholder="output" aria-label="Output price per million tokens"><span class="muted">per million tokens (in / out)</span></div>`;
+}
+function providerBox(p) {
+  const v = ST.ai.providers[p], sg = (UIX.sugg || {})[p] || {}, m0 = ST.ai.models[p] || {}, m = { strong: m0.strong || sg.strong || '', fast: m0.fast || sg.fast || '' }, list = (UIX.models || {})[p] || [], busy = UIX.busy;
+  const keyRow = p === 'ollama'
+    ? `<label class="field"><span>Ollama address on this PC</span><input class="input mono" id="ai-ollama-url" value="${esc(ST.ai.ollamaUrl)}" spellcheck="false"></label>`
+    : `<div class="row"><input class="input" id="ai-key-${p}" type="password" autocomplete="off" spellcheck="false" style="flex:1;min-width:220px" placeholder="${v.hasKey ? 'Saved — paste a new key to replace it' : p === 'openai' ? 'sk-…' : 'AIza…'}">
+        <button class="btn primary" data-dact="ai-key" data-p="${p}" ${busy ? 'disabled' : ''}>Save key</button>${v.hasKey ? `<button class="btn ghost danger" data-dact="ai-key-remove" data-p="${p}" ${busy ? 'disabled' : ''}>Remove</button>` : ''}</div>`;
+  const help = { openai: `Create a key at <a href="#" data-dact="open" data-url="${AI_LINKS.openai}">platform.openai.com › API keys</a> (ChatGPT Plus does not include API use; the API is billed separately).`, gemini: `Create a key at <a href="#" data-dact="open" data-url="${AI_LINKS.gemini}">Google AI Studio › API keys</a>. Google has a free tier with daily limits; on the free tier Google may use what you send to improve its products.`, ollama: `Free and private: the model runs on this PC and nothing leaves it. Install <a href="#" data-dact="open" data-url="${AI_LINKS.ollama}">Ollama</a>, then download a model in a terminal, for example <span class="mono">ollama pull qwen3</span>. Local models are slower and less careful than Claude with long attachments, so they suit short, simple emails.` }[p];
+  const dl = list.length ? `<datalist id="ai-list-${p}">${list.map(x => `<option value="${esc(x)}">`).join('')}</datalist>` : '';
+  return `<details class="howto" ${UIX.openP === p ? 'open' : ''} data-p="${p}"><summary><b>${esc(v.label)}</b> ${chip(v.ready, 'Ready', v.hasKey ? 'Choose models' : 'Not set up')}</summary>
+    <div style="display:grid;gap:10px;margin-top:10px">
+      <p class="small muted" style="margin:0">${help}</p>
+      ${keyRow}
+      <div class="row"><button class="btn sm" data-dact="ai-models" data-p="${p}" ${busy || (p !== 'ollama' && !v.hasKey) ? 'disabled' : ''}>${busy === 'models-' + p ? 'Loading…' : 'Load the model list'}</button>${list.length ? `<span class="small muted">${list.length} models found — suggestions filled in.</span>` : ''}${v.ready ? `<button class="btn sm" data-dact="ai-test" data-p="${p}" ${busy ? 'disabled' : ''}>${busy === 'test-' + p ? 'Testing…' : 'Test'}</button>` : ''}</div>
+      <div class="grid2">
+        <label class="field"><span>Strong model (emails with attachments)</span><input class="input mono" id="ai-m-${p}-strong" list="ai-list-${p}" value="${esc(m.strong)}" spellcheck="false"></label>
+        <label class="field"><span>Fast model (short jobs, simple emails)</span><input class="input mono" id="ai-m-${p}-fast" list="ai-list-${p}" value="${esc(m.fast)}" spellcheck="false"></label>
+      </div>${dl}
+      ${p === 'ollama' ? '' : `<div style="display:grid;gap:6px"><span class="small muted">Prices for the cost estimate and the budget (from the provider's pricing page; leave empty if unsure):</span>${priceRow(p, m.strong)}${m.fast !== m.strong ? priceRow(p, m.fast) : ''}</div>`}
+      <div class="row end"><button class="btn" data-dact="ai-save-models" data-p="${p}">Save</button></div>
+    </div></details>`;
+}
+function aiInner() {
+  const a = ST.ai; if (!a) return '';
+  const pct = a.budget > 0 ? Math.min(100, Math.round(a.monthCost / a.budget * 100)) : 0;
+  const msg = UIX.aiMsg ? callout(UIX.aiMsg.err ? 'crit' : 'ok', esc(UIX.aiMsg.text)) : '';
+  return `<div class="section-title"><h2>Which AI reads your emails</h2></div>
+    ${msg}
+    <p class="small muted" style="margin:0">Claude is the default and the most careful with long attachments and drawings. You can add ChatGPT, Gemini or a free local model as a backup, for when Claude is out of credit or cannot be reached. Each email shows which AI read it.</p>
+    <div class="grid2">
+      <label class="field"><span>Main AI</span><select class="input" id="ai-primary">${aiOptions(a.primary)}</select></label>
+      <label class="field"><span>Backup AI</span><select class="input" id="ai-backup">${aiOptions(a.backup, true)}</select></label>
+    </div>
+    <label class="check small"><input type="checkbox" id="ai-auto" ${a.autoBackup ? 'checked' : ''}>Switch to the backup by itself when the main AI is out of credit, rejects the key or cannot be reached (otherwise the app asks you first)</label>
+    <label class="check small"><input type="checkbox" id="ai-simple" ${a.suggestSimple ? 'checked' : ''}>Suggest the fast, cheaper model for simple emails (short, no attachments)</label>
+    <div class="grid2">
+      <label class="field"><span>Monthly budget in US$ (0 = no limit)</span><input class="input" id="ai-budget" type="number" min="0" step="1" value="${a.budget || 0}"></label>
+      <div class="field"><span>Spent this month (estimate)</span><div style="display:grid;gap:4px;padding-top:6px"><b>${money(a.monthCost)}${a.costUnknown ? ' + models without a price' : ''}${a.budget ? ` of ${money(a.budget)} (${pct}%)` : ''}</b>${a.budget ? `<div class="progress"><i style="width:${pct}%;${pct >= 100 ? 'background:var(--crit, #c0392b)' : pct >= 80 ? 'background:var(--warn, #d68910)' : ''}"></i></div>` : ''}</div></div>
+    </div>
+    <p class="small muted" style="margin:0">At 80% of the budget the app warns you; at 100% it stops and asks before spending more (a local model is free and is never stopped).</p>
+    <div class="row end"><button class="btn primary" data-dact="ai-save">Save AI choice</button></div>
+    ${['openai', 'gemini', 'ollama'].map(providerBox).join('')}`;
+}
+function setupHTML() { return `<section class="card pad" id="dk-conn" data-sec="Connections" style="display:grid;gap:12px">${connInner()}</section><section class="card pad" id="dk-ai" data-sec="Which AI" style="display:grid;gap:12px">${aiInner()}</section>`; }
+function repaint() { const n = document.getElementById('dk-conn'); if (n) n.innerHTML = connInner(); const a = document.getElementById('dk-ai'); if (a) { UIX.openP = (a.querySelector('details.howto[open]') || {}).dataset?.p || UIX.openP; a.innerHTML = aiInner(); } }
+// the window reloads when AI becomes available or unavailable (capabilities are resolved at start-up)
+const READY0 = !!(ST.ai && ST.ai.ready);
+function aiSay(text, err) { if (!err && !!ST.ai.ready !== READY0) { UIX.aiMsg = null; return reloadSoon(text); } UIX.aiMsg = { text, err }; repaint(); }
 function say(text, err) { UIX.msg = { text, err }; repaint(); }
 // Capabilities are resolved once at start-up (app.js initStore), so a change of key or Gmail account reloads the window.
 function reloadSoon(text) {
@@ -195,6 +264,53 @@ const ACT = {
     try { ST = await call('gmail:connect-imap', { address, appPassword }); UIX.busy = ''; reloadSoon(`Gmail connected (${ST.gmail.account}).`); }
     catch (e) { UIX.busy = ''; refresh(); say('Gmail was not connected: ' + (e.message || e.code), true); }
   },
+  async 'ai-save'() {
+    const prim = ST.ai.primary;
+    const patch = { primary: val('ai-primary'), backup: val('ai-backup'), autoBackup: document.getElementById('ai-auto').checked, suggestSimple: document.getElementById('ai-simple').checked, budget: +val('ai-budget') || 0 };
+    if (patch.backup === patch.primary) patch.backup = '';
+    ST = await call('ai:config', patch);
+    if (!ST.ai.providers[ST.ai.primary].ready) aiSay(`${ST.ai.providers[ST.ai.primary].label} is the main AI but is not set up yet — add its key and models below.`, true);
+    else if (prim !== ST.ai.primary) { UIX.aiMsg = null; reloadSoon('AI choice saved.'); }
+    else aiSay('Saved.');
+  },
+  async 'ai-key'(el) {
+    const p = el.dataset.p, key = val('ai-key-' + p);
+    if (key.length < 20 || /\s/.test(key)) return aiSay('Paste the whole API key.', true);
+    UIX.busy = 'models-' + p; UIX.openP = p; repaint();
+    try {
+      const r = await call('ai:models', { provider: p, key });   // checks the key before it is saved
+      ST = await call('ai:key', { provider: p, key });
+      UIX.models = { ...(UIX.models || {}), [p]: r.models };
+      const m = ST.ai.models[p];
+      if (!m.strong && !m.fast && (r.suggest.strong || r.suggest.fast)) ST = await call('ai:config', { models: { [p]: { strong: r.suggest.strong, fast: r.suggest.fast } } });
+      UIX.busy = ''; aiSay(`Key saved. ${r.models.length} models found; suggested: ${r.suggest.strong || '—'} (strong) and ${r.suggest.fast || '—'} (fast). Add their prices for the budget, then Save.`);
+    } catch (e) { UIX.busy = ''; aiSay('The key did not work: ' + (e.message || e.code), true); }
+  },
+  async 'ai-key-remove'(el) { ST = await call('ai:key', { provider: el.dataset.p, key: '' }); aiSay('Key removed.'); },
+  async 'ai-models'(el) {
+    const p = el.dataset.p; UIX.busy = 'models-' + p; UIX.openP = p;
+    if (p === 'ollama' && val('ai-ollama-url')) ST = await call('ai:config', { ollamaUrl: val('ai-ollama-url') });
+    repaint();
+    try {
+      const r = await call('ai:models', { provider: p });
+      UIX.models = { ...(UIX.models || {}), [p]: r.models }; UIX.sugg = { ...(UIX.sugg || {}), [p]: r.suggest }; UIX.busy = '';
+      aiSay(r.models.length ? `${r.models.length} models found. Check the two boxes, then Save.` : (p === 'ollama' ? 'Ollama is running but has no models yet. Run “ollama pull qwen3” in a terminal.' : 'No models found for this key.'), !r.models.length);
+    } catch (e) { UIX.busy = ''; aiSay('Could not load the models: ' + (e.message || e.code), true); }
+  },
+  async 'ai-save-models'(el) {
+    const p = el.dataset.p; UIX.openP = p;
+    const patch = { models: { [p]: { strong: val(`ai-m-${p}-strong`), fast: val(`ai-m-${p}-fast`) } }, prices: {} };
+    if (p === 'ollama' && val('ai-ollama-url')) patch.ollamaUrl = val('ai-ollama-url');
+    document.querySelectorAll(`#dk-ai details[data-p="${p}"] .ai-price`).forEach(i => { const m = i.dataset.model; patch.prices[m] = patch.prices[m] || {}; patch.prices[m][i.dataset.k] = i.value === '' ? null : +i.value; });
+    for (const [m, v] of Object.entries(patch.prices)) patch.prices[m] = v.in == null && v.out == null ? null : { in: v.in || 0, out: v.out || 0 };
+    ST = await call('ai:config', patch);
+    aiSay('Saved.');
+  },
+  async 'ai-test'(el) {
+    const p = el.dataset.p; UIX.busy = 'test-' + p; UIX.openP = p; repaint();
+    try { const r = await call('ai:test', { provider: p }); UIX.busy = ''; aiSay(`${ST.ai.providers[p].label} works (answered by ${r.model}).`); }
+    catch (e) { UIX.busy = ''; aiSay('It did not work: ' + (e.message || e.code), true); }
+  },
   async 'gmail-disconnect'() { ST = await call('gmail:disconnect'); reloadSoon('Gmail disconnected.'); },
   async 'open-data'() { await call('shell:openData'); },
   async open(el) { await call('shell:openExternal', el.dataset.url); },
@@ -208,6 +324,7 @@ document.addEventListener('click', e => {
 window.claude = {
   desktop: {
     setupHTML, suggestedAddress, dataDir: () => ST.dataDir, status: () => ST, refresh,
+    aiOverride: patch => (patch ? Object.assign(AIO, patch) : { ...AIO }), billingUrl: p => AI_BILL[p] || '',
     // generic access for the desktop features in app.js (features/*): call(channel, arg) and on(event, cb)
     call, on: (event, cb) => B.on(event, cb),
   },

@@ -207,16 +207,23 @@ Object.assign(ACT, {
 });
 Object.assign(CHG, { 'rec-f': el => { saveSettings(s => { s.recurring = recurList().map(x => x.id === el.dataset.id ? { ...x, [el.dataset.f]: el.value } : x); }); if (el.dataset.f === 'freq') render(); } });
 
-/* --- Claude usage and estimated cost (desktop) --- */
-// List prices per million tokens (Anthropic API, October 2026). Cache writes are estimated at 1.25× input.
-const PRICES = { 'claude-opus-5-5': { in: 4, out: 20, cr: 0.2 }, 'claude-sonnet-5-5': { in: 2, out: 10, cr: 0.2 }, 'claude-haiku-5-5': { in: 0.1, out: 0.5, cr: 0.01 } };
-function usageCost(model, u) { const p = PRICES[Object.keys(PRICES).find(k => String(model).startsWith(k))]; if (!p) return null; return (u.input * p.in + u.output * p.out + u.cacheRead * p.cr + u.cacheWrite * p.in * 1.25) / 1e6; }
+/* --- AI usage and estimated cost (desktop) --- */
+// Claude list prices per million tokens (Anthropic API, October 2026); prices for other AIs are typed in
+// Setup › Which AI and arrive with the status. Cache writes are estimated at 1.25× input; local models are free.
+const PRICES = { 'claude-opus-5-5': { in: 4, out: 20, cr: 0.2 }, 'claude-sonnet-5-5': { in: 2, out: 10, cr: 0.2 }, 'claude-haiku-5-5': { in: 0.1, out: 0.5, cr: 0.01 }, 'claude-fable-5-1': { in: 10, out: 50, cr: 0.25 } };
+function usageCost(model, u) {
+  if (/^ollama:/.test(model)) return 0;
+  const all = { ...PRICES, ...(((DK && DK.status().ai) || {}).prices || {}) };
+  const p = all[model] || all[Object.keys(all).find(k => String(model).startsWith(k))]; if (!p) return null;
+  return (u.input * p.in + u.output * p.out + u.cacheRead * (p.cr ?? p.in / 10) + u.cacheWrite * p.in * 1.25) / 1e6;
+}
 function usageMonth(month) { const m = ((DK && DK.status().usage) || {})[month] || {}; let calls = 0, cost = 0, unknown = false; for (const [model, u] of Object.entries(m)) { calls += u.calls; const c = usageCost(model, u); if (c === null) unknown = true; else cost += c; } return { rows: m, calls, cost, unknown }; }
+const usageWho = m => /^ollama:/.test(m) ? 'Local' : /^claude-/.test(m) ? 'Claude' : /^gemini/.test(m) ? 'Gemini' : 'ChatGPT';
 function usageHTML() {
   const month = new Date().toISOString().slice(0, 7), u = usageMonth(month);
-  return `<section class="card pad set-sec" id="set-usage" data-sec="Usage and cost"><div class="section-title"><h2>Claude usage this month</h2></div>
-    ${u.calls ? `<table class="tbl"><thead><tr><th>Model</th><th>Calls</th><th>Input</th><th>Output</th><th>Cached read</th><th>Estimated cost</th></tr></thead><tbody>${Object.entries(u.rows).map(([m, x]) => { const c = usageCost(m, x); return `<tr><td class="mono">${esc(m)}</td><td class="num">${x.calls}</td><td class="num">${(x.input / 1000).toFixed(1)}k</td><td class="num">${(x.output / 1000).toFixed(1)}k</td><td class="num">${(x.cacheRead / 1000).toFixed(1)}k</td><td class="num">${c === null ? '—' : '$' + c.toFixed(2)}</td></tr>`; }).join('')}</tbody></table>
-    <p class="small muted" style="margin:0">About <b>$${u.cost.toFixed(2)}</b> so far this month${u.unknown ? ' (some models have no price on file)' : ''}. Estimate from list prices; your Anthropic invoice is the exact figure (console.anthropic.com › Billing).</p>` : '<p class="small muted" style="margin:0">No Claude calls yet this month.</p>'}
+  return `<section class="card pad set-sec" id="set-usage" data-sec="Usage and cost"><div class="section-title"><h2>AI usage this month</h2></div>
+    ${u.calls ? `<table class="tbl"><thead><tr><th>AI</th><th>Model</th><th>Calls</th><th>Input</th><th>Output</th><th>Cached read</th><th>Estimated cost</th></tr></thead><tbody>${Object.entries(u.rows).map(([m, x]) => { const c = usageCost(m, x); return `<tr><td>${usageWho(m)}</td><td class="mono">${esc(m.replace(/^ollama:/, ''))}</td><td class="num">${x.calls}</td><td class="num">${(x.input / 1000).toFixed(1)}k</td><td class="num">${(x.output / 1000).toFixed(1)}k</td><td class="num">${(x.cacheRead / 1000).toFixed(1)}k</td><td class="num">${c === null ? '—' : c === 0 ? 'free' : '$' + c.toFixed(2)}</td></tr>`; }).join('')}</tbody></table>
+    <p class="small muted" style="margin:0">About <b>$${u.cost.toFixed(2)}</b> so far this month${u.unknown ? ' (some models have no price on file — add it in Setup › Which AI)' : ''}. Estimate from list prices; the provider's invoice is the exact figure.</p>` : '<p class="small muted" style="margin:0">No AI calls yet this month.</p>'}
   </section>`;
 }
 

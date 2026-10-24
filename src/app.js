@@ -1775,7 +1775,7 @@ function reviewCard(e) {
   const sel = props.filter(p => p.accept).length + ups.filter(u => u.accept).length;
   return `<section class="rv" id="rv-${esc(e.id)}">
     <div class="rv-h">
-      <div class="row">${a.category ? `<span class="chip accent">${esc(CATEGORY[a.category] || a.category)}</span>` : ''}${a.project ? `<span class="chip proj">${esc(a.project)}</span>` : ''}<span class="small muted">${esc(fmtDateTime(e.date || e.importedAt))}</span><span class="spacer"></span><button class="btn ghost sm" data-act="open-email" data-id="${esc(e.id)}">${I.mail} Email</button></div>
+      <div class="row">${a.category ? `<span class="chip accent">${esc(CATEGORY[a.category] || a.category)}</span>` : ''}${a.project ? `<span class="chip proj">${esc(a.project)}</span>` : ''}<span class="small muted">${esc(fmtDateTime(e.date || e.importedAt))}</span>${a.readBy && typeof aiName === 'function' ? `<span class="chip ai-by" title="${esc(aiByTitle(a.readBy))}">Read by ${esc(aiName(a.readBy))}</span>` : ''}<span class="spacer"></span><button class="btn ghost sm" data-act="open-email" data-id="${esc(e.id)}">${I.mail} Email</button></div>
       <div class="subj" dir="auto">${esc(e.subject || '(no subject)')}</div>
       <div class="small muted" dir="auto">From ${esc(e.from || 'unknown')}</div>
       ${a.summary ? `<p style="margin:2px 0 0" dir="auto">${esc(a.summary)}</p>` : ''}
@@ -1938,7 +1938,7 @@ function viewImport() {
   const ready = UI.staging.filter(b => b.state === 'ready' && !b.skip);
   return `<div class="wrap">
     <div class="page-head"><div><h1>Add emails</h1><div class="sub">Forward emails to your address, or add saved Outlook files. Claude reads each email with its attachments and proposes tasks for your review.</div></div></div>
-    ${!aiOK && St.capsResolved ? callout('warn', DESKTOP ? '<p><b>Claude analysis is not set up yet.</b> Add your Anthropic API key in Setup › Connections. <button class="btn sm" data-act="nav" data-view="setup">Open Setup</button></p>' : '<p><b>Claude analysis is not available in this view.</b> Open this page inside Claude while signed in, and choose Allow when asked.</p>') : ''}
+    ${!aiOK && St.capsResolved ? callout('warn', DESKTOP ? '<p><b>AI analysis is not set up yet.</b> Add your Anthropic API key (or ChatGPT, Gemini or a free local model) in Setup › Connections. <button class="btn sm" data-act="nav" data-view="setup">Open Setup</button></p>' : '<p><b>Claude analysis is not available in this view.</b> Open this page inside Claude while signed in, and choose Allow when asked.</p>') : ''}
     ${!s.me.name ? callout('warn', `<p>Tell Claude who you are first, so it can separate your actions from other people's. <button class="btn sm" data-act="nav" data-view="setup">Open Setup</button></p>`) : ''}
     ${gmailCardHTML()}
     <div class="drop" id="drop">
@@ -1950,6 +1950,7 @@ function viewImport() {
       </div>
     </div>
     ${UI.pasteOpen ? pastePanelHTML() : ''}
+    ${typeof aiSimpleHTML === 'function' ? aiSimpleHTML(ready) : ''}
     <div id="staging">${stagingHTML()}</div>
     ${UI.staging.length ? `<div class="card pad action-bar"><div class="row">${UI.analyzing ? `<button class="btn" data-act="stop">Stop</button><span class="small muted">Analysing… keep this page open.</span>` : `${ready.length ? `<button class="btn primary" data-act="analyze" ${aiOK ? '' : 'disabled'}>${I.spark} Analyse ${ready.length} email${ready.length === 1 ? '' : 's'}</button>` : ''}<button class="btn ${ready.length ? 'ghost' : ''}" data-act="clear-staging">${ready.length ? 'Clear list' : 'Clear finished'}</button>`}<span class="spacer"></span><button class="btn ghost sm" data-act="nav" data-view="setup">Analysis options</button></div></div>` : ''}
     <details class="card pad howto"><summary>Saving emails from Outlook as files</summary><ol>
@@ -1990,7 +1991,7 @@ function stagingHTML() {
   if (!UI.staging.length) return '';
   return `<div style="display:grid;gap:12px">${UI.staging.map(b => {
     const em = b.email;
-    const stateChip = { parsing: '<span class="chip">Reading files…</span>', ready: b.skip ? '<span class="chip">Skipped</span>' : '<span class="chip accent">Ready</span>', analyzing: '<span class="chip accent">Analysing…</span>', done: '<span class="chip ok">Analysed</span>', error: '<span class="chip crit">Failed</span>' }[b.state];
+    const stateChip = { parsing: '<span class="chip">Reading files…</span>', ready: b.skip ? '<span class="chip">Skipped</span>' : '<span class="chip accent">Ready</span>' + (b.tierOverride === 'quick' ? '<span class="chip ai-quick" title="Read with the quick, cheaper model">Quick model</span>' : ''), analyzing: '<span class="chip accent">Analysing…</span>', done: '<span class="chip ok">Analysed</span>', error: '<span class="chip crit">Failed</span>' }[b.state];
     return `<div class="bundle">
       <div class="bundle-h"><div style="min-width:0">
         ${b.source === 'docs' ? `<div class="subj">Documents without an email</div><div class="meta">Analysed together as one item. Use “Move to…” to attach a file to an email instead.</div>` :
@@ -1998,7 +1999,7 @@ function stagingHTML() {
       </div><div class="row" style="align-items:flex-start">${stateChip}${b.state !== 'analyzing' ? `<button class="icon-btn" data-act="remove-bundle" data-id="${esc(b.id)}" aria-label="Remove">${I.x}</button>` : ''}</div></div>
       ${b.dupEmailId && b.state === 'ready' ? `<div style="padding:10px 14px 0">${callout('info', `<div class="row"><span>Already imported on ${esc(fmtDate(St.emails.get(b.dupEmailId)?.importedAt))}.</span><label class="check small"><input type="checkbox" id="skip-${esc(b.id)}" data-chg="skip" data-bid="${esc(b.id)}" ${b.skip ? '' : 'checked'}>Analyse again</label></div>`)}</div>` : ''}
       ${b.state === 'analyzing' ? `<div style="padding:10px 14px;display:grid;gap:6px"><div class="progress indet"><i></i></div><div class="small muted">${esc(b.progress || 'Sending to Claude…')}</div></div>` : ''}
-      ${b.state === 'error' ? `<div style="padding:10px 14px">${callout('crit', `<p>${esc(b.error)}</p>`)}</div>` : ''}
+      ${b.state === 'error' ? `<div style="padding:10px 14px">${callout('crit', `<p>${esc(b.error)}</p>${typeof aiErrorActions === 'function' ? aiErrorActions(b) : ''}`)}</div>` : ''}
       ${b.state === 'done' ? `<div style="padding:10px 14px">${callout('ok', `<div class="row"><span>${esc(b.doneText || 'Analysed.')}</span><span class="spacer"></span><button class="btn sm" data-act="nav" data-view="review">Review</button></div>`)}</div>` : ''}
       ${b.state === 'done' ? '' : `${(b.warnings || []).length ? `<div style="padding:10px 14px 0">${callout('warn', b.warnings.map(w => `<p>${esc(w)}</p>`).join(''))}</div>` : ''}
       ${b.source !== 'docs' && em.body ? `<details class="more" style="padding:8px 14px"><summary>Email text (${em.body.length.toLocaleString()} characters)</summary><div class="bodytext" style="margin-top:8px">${esc(E.clip(em.body, 12000))}</div></details>` : ''}
@@ -2157,10 +2158,11 @@ async function runAnalysis() {
       b.state = 'done'; ok++;
       const nt = rec.analysis.tasks.length;
       b.doneText = rec.analysis.actionRequired === false && !nt ? 'No action needed from you.' : `${nt} task${nt === 1 ? '' : 's'} proposed${rec.analysis.updates.length ? `, ${rec.analysis.updates.length} update${rec.analysis.updates.length > 1 ? 's' : ''} to existing tasks` : ''}.`;
+      if (rec.analysis.readBy && typeof aiName === 'function') b.doneText += ` Read by ${aiName(rec.analysis.readBy)}${rec.analysis.readBy.fallback ? ' (backup AI)' : ''}.`;
     } catch (e) {
       if (e && e.code === 'cancelled') { b.state = 'ready'; break; }
-      b.state = 'error'; b.error = aiErrorText(e);
-      if (e && ['not_granted', 'sampling_disabled', 'rate_limited', 'session_expired', 'auth_failed', 'billing', 'model_not_found'].includes(e.code)) { rerenderStaging(); break; }
+      b.state = 'error'; b.error = (typeof aiErrorFor === 'function' && aiErrorFor(e)) || aiErrorText(e); b.errInfo = e ? { code: e.code, provider: e.provider || '', backup: e.backup || '' } : null;
+      if (e && ['not_granted', 'sampling_disabled', 'rate_limited', 'session_expired', 'auth_failed', 'billing', 'model_not_found', 'budget', 'unavailable'].includes(e.code)) { rerenderStaging(); break; }
     }
     rerenderStaging();
   }
@@ -2204,8 +2206,10 @@ async function analyzeBundle(b, signal, onProgress) {
     attachments: atts, images: images.map(i => ({ key: i.key, label: i.label })), openTasks: related, budget, notes: promptNotes(em),
   });
   onProgress('Waiting for Claude… (consent, queue and thinking can take a minute)');
+  // b.tierOverride: 'quick' when you chose the quick model for a simple email (features/12-ai.js)
+  const tier = b.tierOverride === 'quick' ? 'quick' : s.tier; let readBy = null;
   const raw = await St.sample.json(prompt, {
-    signal, modelTier: s.tier === 'default' ? 'default' : 'complex', cache: b.fresh ? false : undefined,
+    signal, modelTier: tier === 'quick' ? 'quick' : tier === 'default' ? 'default' : 'complex', cache: b.fresh ? false : undefined, onMeta: m => { readBy = m; },
     ...(images.length ? { images: images.map(i => i.blob) } : {}),
     onText: ({ text }) => onProgress(`Receiving results… ${Math.round(text.length / 100) / 10}k characters`),
   });
@@ -2236,7 +2240,7 @@ async function analyzeBundle(b, signal, onProgress) {
   });
   an.updates.forEach(u => { u.evidence = E.verifyEvidence(u.evidence, sources); u.accept = St.tasks.has(u.taskId); });
   an.updates = an.updates.filter(u => St.tasks.has(u.taskId));
-  an.flags = all; an.keyMap = keyMap; an.analyzedAt = nowISO(); an.tier = s.tier; an.imagesSent = images.length; an.masked = !!s.mask;
+  an.flags = all; an.keyMap = keyMap; an.analyzedAt = nowISO(); an.tier = tier; if (readBy) an.readBy = readBy; an.imagesSent = images.length; an.masked = !!s.mask;
   // email record
   const id = b.recordId || E.uid('e');
   const rec = {
@@ -2456,7 +2460,7 @@ function emailDrawerHTML(e) {
   return `<div class="drawer-h"><span class="label">Email</span><span class="spacer"></span><button class="icon-btn" data-act="close-drawer" aria-label="Close">${I.x}</button></div>
   <div class="drawer-b">
     <div style="display:grid;gap:4px"><h2 style="font-size:20px" dir="auto">${esc(e.subject || '(no subject)')}</h2>
-      <dl class="kv">${e.from ? `<dt>From</dt><dd dir="auto">${esc(e.from)}</dd>` : ''}${e.to ? `<dt>To</dt><dd dir="auto">${esc(e.to)}</dd>` : ''}${e.cc ? `<dt>Cc</dt><dd dir="auto">${esc(e.cc)}</dd>` : ''}<dt>Sent</dt><dd>${esc(fmtDateTime(e.date) || 'unknown')}</dd><dt>Imported</dt><dd>${esc(fmtDateTime(e.importedAt))}${e.fileName ? ' · ' + esc(e.fileName) : ''}</dd>${e.forwardedBy ? `<dt>Forwarded by</dt><dd dir="auto">${esc(e.forwardedBy)}${e.forwardMode === 'inline' ? ' <span class="small muted">(original header read from the forwarded text)</span>' : ''}</dd>` : ''}</dl><div class="row">${/^https:\/\/mail\.google\.com\//.test(e.gmailUrl || '') ? `<a class="btn ghost sm" href="${esc(e.gmailUrl)}" target="_blank" rel="noopener">${I.mail} Open in Gmail</a>` : ''}${typeof openMail === 'function' && (DESKTOP || e.original) ? `<button class="btn ghost sm" data-act="email-file-open" data-id="${esc(e.id)}">✉ Open in Outlook</button>` : ''}${tasks.length && typeof openFiling === 'function' ? `<button class="btn ghost sm" data-act="file-email" data-id="${esc(e.id)}">📁 ${e.filed ? 'Filed on the server' : 'Save to company server…'}</button>` : ''}</div></div>
+      <dl class="kv">${e.from ? `<dt>From</dt><dd dir="auto">${esc(e.from)}</dd>` : ''}${e.to ? `<dt>To</dt><dd dir="auto">${esc(e.to)}</dd>` : ''}${e.cc ? `<dt>Cc</dt><dd dir="auto">${esc(e.cc)}</dd>` : ''}<dt>Sent</dt><dd>${esc(fmtDateTime(e.date) || 'unknown')}</dd><dt>Imported</dt><dd>${esc(fmtDateTime(e.importedAt))}${e.fileName ? ' · ' + esc(e.fileName) : ''}</dd>${a.readBy && typeof aiName === 'function' ? `<dt>Read by</dt><dd>${esc(aiName(a.readBy))}${a.readBy.fallback ? ` <span class="small muted">(${esc(aiByTitle(a.readBy))})</span>` : ''}</dd>` : ''}${e.forwardedBy ? `<dt>Forwarded by</dt><dd dir="auto">${esc(e.forwardedBy)}${e.forwardMode === 'inline' ? ' <span class="small muted">(original header read from the forwarded text)</span>' : ''}</dd>` : ''}</dl><div class="row">${/^https:\/\/mail\.google\.com\//.test(e.gmailUrl || '') ? `<a class="btn ghost sm" href="${esc(e.gmailUrl)}" target="_blank" rel="noopener">${I.mail} Open in Gmail</a>` : ''}${typeof openMail === 'function' && (DESKTOP || e.original) ? `<button class="btn ghost sm" data-act="email-file-open" data-id="${esc(e.id)}">✉ Open in Outlook</button>` : ''}${tasks.length && typeof openFiling === 'function' ? `<button class="btn ghost sm" data-act="file-email" data-id="${esc(e.id)}">📁 ${e.filed ? 'Filed on the server' : 'Save to company server…'}</button>` : ''}</div></div>
     ${a.summary ? `<div><div class="label" style="margin-bottom:4px">Summary</div><p style="margin:0" dir="auto">${esc(a.summary)}</p>${a.actionRequired === false ? `<p class="small" style="margin:6px 0 0"><span class="chip ok">No action for you</span> ${esc(a.noActionReason || '')}</p>` : ''}</div>` : ''}
     ${(a.flags || []).length ? callout('warn', `<ul style="margin:0">${a.flags.map(f => `<li><b>${esc(FLAG[f.kind] || f.kind)}</b>${f.source ? ` <span class="mono">(${esc(srcName(e, f.source))})</span>` : ''}: ${esc(f.detail)}</li>`).join('')}</ul>`) : ''}
     ${tasks.length ? `<div><div class="label" style="margin-bottom:6px">Tasks from this email</div><div class="register">${tasks.map(taskRow).join('')}</div></div>` : ''}
