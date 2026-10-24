@@ -1015,3 +1015,6 @@ details.menu > summary.on { background: var(--accent-soft); color: var(--accent)
 .nb-ask textarea { resize: vertical; min-height: 52px; }
 .nb-cite-panel { display: grid; gap: 10px; align-content: start; max-height: calc(100vh - 170px); overflow: auto; }
 @media (max-width: 900px) { .nb-grid, .nb-grid:has(.nb-cite-panel) { grid-template-columns: minmax(0, 1fr); } .nb-main { min-height: 60vh; max-height: none; } .nb-side { max-height: none; } }
+.share-modal { width: min(640px, calc(100vw - 32px)); display: grid; gap: 12px; }
+.share-row { display: grid; gap: 8px; padding: 10px; border: 1px solid var(--line); border-radius: 10px; }
+.share-row input { margin-top: 6px; width: 100%; }

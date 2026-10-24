@@ -1073,6 +1073,7 @@ function viewMap() {
           <button class="btn sm ghost" data-act="map-export" data-f="png">🖼 Image (PNG)</button>
           <button class="btn sm ghost" data-act="map-export" data-f="pdf">📄 PDF</button>
           <button class="btn sm ghost" data-act="map-present">🖥 Present project by project</button>
+          ${DESKTOP ? '<button class="btn sm ghost" data-act="map-share">🔗 Share link (always up to date)…</button>' : ''}
         </div></details>
         <div class="seg zoom"><button data-act="map-zoom" data-z="-1" aria-label="Zoom out">−</button><button data-act="map-fit" aria-label="Fit to screen">Fit</button><button data-act="map-zoom" data-z="1" aria-label="Zoom in">+</button></div>
         <button class="btn sm" data-act="map-full" aria-pressed="${UI.mapFull}" title="${UI.mapFull ? 'Exit full screen (Esc)' : 'Full screen (Shift+F)'}">${UI.mapFull ? '⤡ Exit full screen' : '⤢ Full screen'}</button>

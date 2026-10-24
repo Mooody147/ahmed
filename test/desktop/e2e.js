@@ -399,6 +399,66 @@ async function reloaded(pg, action) {
     await waitFor(pg, "(n => n && n.counts && n.counts.files === 3)([...window.__AR.St.cols.notebooks.values()][0])", 30000);
     assert.strictEqual(await ev(pg, "[...window.__AR.St.cols.notebooks.values()][0].chat.length"), 1, 'the conversation is kept');
 
+    step('cloud sync: create an account on this PC; a second PC signs in with the connection code and gets the same data; changes go both ways');
+    await pg.click('.rail [data-nav="review"]'); await pg.waitForTimeout(300);
+    const abA = await pg.$('[data-act="approve-all"]'); if (abA) { await abA.click(); await pg.waitForTimeout(600); }
+    const tasksA = await ev(pg, 'window.__AR.St.tasks.size'), emailsA = await ev(pg, 'window.__AR.St.emails.size');
+    assert.ok(tasksA > 0, 'some tasks to sync');
+    await pg.click('.rail [data-nav="setup"]'); await pg.waitForSelector('#set-cloud');
+    await pg.fill('#cl-url', m.base); await pg.fill('#cl-key', 'sb_publishable_test_0123456789'); await pg.click('[data-act="cl-connect"]');
+    await pg.waitForSelector('#cl-email');
+    await pg.fill('#cl-email', 'mahmoud@example.com'); await pg.fill('#cl-pass', 'correct horse battery');
+    await reloaded(pg, () => pg.click('[data-act="cl-signin"][data-create]'));
+    await waitFor(pg, 'window.__AR.St.ready && window.claude.desktop.status().cloud.signedIn');
+    await ev(pg, "window.claude.desktop.call('cloud:sync')");
+    assert.ok([...m.sb.docs.keys()].some(k => /\/register\/tasks\//.test(k)), 'tasks are in the cloud');
+    assert.ok([...m.sb.objects.keys()].some(k => /\/notebook\//.test(k)), 'stored files are in the cloud');
+    assert.ok(!fs.readFileSync(path.join(data3, 'data', 'secrets.json'), 'utf8').includes('rt_'), 'the sign-in is stored encrypted');
+    const code = await ev(pg, 'window.claude.desktop.status().cloud.code');
+    // share link from the canvas
+    await ev(pg, 'window.__shareDelay = 400; 0');
+    await pg.click('.rail [data-nav="todo"]'); await pg.click('[data-act="todo-mode"][data-mode="map"]'); await pg.waitForTimeout(500);
+    await pg.click('details[data-menu="export"] summary'); await pg.click('[data-act="map-share"]'); await pg.waitForSelector('.share-modal');
+    await pg.click('[data-act="share-new"][data-focus="all"]'); await waitFor(pg, "!!document.querySelector('.share-row input')");
+    const link = await pg.inputValue('.share-row input'); console.log('share link', link.slice(0, 80) + '…');
+    assert.ok(link.startsWith('https://mooody147.github.io/ahmed/#s='));
+    await pg.click('.share-modal [data-act="close-modal"]');
+    const rpc = async () => (await (await fetch(m.base + '/rest/v1/rpc/ar_get_share', { method: 'POST', headers: { apikey: 'sb_publishable_test_0123456789', 'Content-Type': 'application/json' }, body: JSON.stringify({ t: JSON.parse(Buffer.from(link.split('#s=')[1], 'base64url').toString()).t }) })).json());
+    const s1 = await rpc(); assert.ok(s1.snapshot.svg.startsWith('<svg') && s1.snapshot.tasks.length === tasksA, 'the link shows the canvas and the tasks');
+    // a change on the canvas reaches the link by itself
+    await ev(pg, `(async () => { const db = await window.claude.use('db'); const t = [...window.__AR.St.tasks.values()][0]; await db.doc('data/users/local/register/tasks/' + t.id).set({ ...t, title: 'Renamed for the share link', updatedAt: new Date().toISOString() }); })()`);
+    const tShare = Date.now(); let s2; while (Date.now() - tShare < 15000) { s2 = await rpc(); if (s2.snapshot.tasks.some(t => t.title === 'Renamed for the share link')) break; await new Promise(r => setTimeout(r, 300)); }
+    assert.ok(s2.snapshot.tasks.some(t => t.title === 'Renamed for the share link'), 'share link updated after a change');
+    // the viewer page (published on GitHub Pages) shows it
+    const { chromium } = require('playwright');
+    const br = await chromium.launch(); const vw = await (await br.newContext({ viewport: { width: 390, height: 844 } })).newPage();
+    await vw.goto('file://' + path.join(ROOT, 'viewer', 'index.html') + '#s=' + link.split('#s=')[1]); await vw.waitForSelector('.proj');
+    assert.match(await vw.textContent('#list'), /Renamed for the share link/); assert.ok(await vw.evaluate("document.querySelector('#img').src.startsWith('data:image/svg+xml')"));
+    await vw.screenshot({ path: path.join(OUT, '14-share-viewer.png') });
+    await vw.click('#tab-map'); await vw.waitForTimeout(300); await vw.screenshot({ path: path.join(OUT, '15-share-viewer-canvas.png') });
+    await br.close();
+    await app.close();
+
+    const data5 = fs.mkdtempSync(path.join(os.tmpdir(), 'ar-data5-'));
+    ({ app, pg } = await launch({ ...env, AR_DATA_DIR: data5, AR_START_VIEW: 'setup' }));
+    await pg.waitForSelector('#set-cloud'); await pg.click('#set-cloud details.howto summary');
+    await pg.fill('#cl-code', code); await pg.click('[data-act="cl-code"]'); await pg.waitForSelector('#cl-email');
+    await pg.fill('#cl-email', 'mahmoud@example.com'); await pg.fill('#cl-pass', 'wrong password 1'); await pg.click('[data-act="cl-signin"]:not([data-create])');
+    await waitFor(pg, "/Invalid login credentials/.test(document.querySelector('#set-cloud').textContent)");
+    await pg.fill('#cl-pass', 'correct horse battery');
+    await reloaded(pg, () => pg.click('[data-act="cl-signin"]:not([data-create])'));
+    await waitFor(pg, 'window.__AR.St.ready'); await pg.waitForTimeout(500);
+    assert.strictEqual(await ev(pg, 'window.__AR.St.tasks.size'), tasksA, 'second PC has the tasks');
+    assert.strictEqual(await ev(pg, 'window.__AR.St.emails.size'), emailsA, 'second PC has the emails');
+    assert.ok(await ev(pg, "[...window.__AR.St.tasks.values()].some(t => t.title === 'Renamed for the share link')"));
+    const nbId = await ev(pg, "[...window.__AR.St.cols.notebooks.values()][0].id");
+    assert.ok(await ev(pg, `window.claude.desktop.call('files:load', { kind: 'notebook', id: ${JSON.stringify(nbId + '.json')} }).then(b => !!b && b.length > 100)`), 'stored files come down when needed');
+    await pg.click('.rail [data-nav="money"]'); await pg.click('[data-act="mon-new"][data-kind="expense"]'); await pg.fill('#mf-amount', '77'); await pg.fill('#mf-payee', 'Made on the second PC'); await pg.click('[data-act="mon-save"]');
+    await pg.waitForTimeout(300); await ev(pg, "window.claude.desktop.call('cloud:sync')");
+    await app.close();
+    ({ app, pg } = await launch({ ...env4, AR_TEST_FOLDER: '', AR_START_VIEW: 'money' }));
+    await waitFor(pg, "[...window.__AR.St.cols.money.values()].some(x => x.payee === 'Made on the second PC')", 20000);
+
     errors.splice(0, errors.length, ...errors.filter(e => !/Failed to load resource|Content Security Policy/.test(e)));
     assert.deepStrictEqual(errors, [], 'no page or console errors');
     console.log('\nDESKTOP E2E PASSED');

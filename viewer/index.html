@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="referrer" content="no-referrer">
+<title>Action Register — shared canvas</title>
+<!-- Read-only view of a canvas shared from the Action Register desktop app. The link's #s=… part holds the
+     Supabase project address, its public key and the share token; it never reaches this web server. -->
+<style>
+  :root { --bg: #EEF2F1; --card: #FFFFFF; --ink: #15201E; --muted: #5B6B68; --line: #D7E0DE; --accent: #0A6B74; --crit: #C62828; --warn: #B26B00; --ok: #2F7A3E; color-scheme: light; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #0E1413; --card: #151D1C; --ink: #E3EBE9; --muted: #9AABA8; --line: #2A3634; --accent: #4FB8C0; --crit: #FF6B6B; --warn: #F0A848; --ok: #6BCB77; color-scheme: dark; } }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); font: 15px/1.45 "IBM Plex Sans", "Segoe UI", system-ui, -apple-system, "Noto Sans Arabic", Arial, sans-serif; }
+  header { position: sticky; top: 0; z-index: 2; display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; padding: 10px 16px; background: var(--card); border-bottom: 1px solid var(--line); }
+  header h1 { font-size: 17px; margin: 0; flex: 1 1 200px; min-width: 0; overflow-wrap: anywhere; }
+  .muted { color: var(--muted); font-size: 13px; }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 9px; overflow: hidden; }
+  .seg button { border: 0; background: transparent; color: var(--ink); padding: 6px 12px; font: inherit; font-size: 14px; cursor: pointer; }
+  .seg button[aria-pressed="true"] { background: var(--accent); color: #fff; }
+  button.icon { border: 1px solid var(--line); background: var(--card); color: var(--ink); border-radius: 8px; min-width: 34px; height: 32px; font-size: 16px; cursor: pointer; }
+  body { display: flex; flex-direction: column; height: 100dvh; }
+  #list, .state { overflow: auto; width: 100%; }
+  #stage { position: relative; flex: 1 1 auto; min-height: 0; overflow: hidden; touch-action: none; background: #fff; cursor: grab; }
+  #stage img { position: absolute; left: 0; top: 0; transform-origin: 0 0; user-select: none; -webkit-user-drag: none; max-width: none; }
+  .zoom { position: absolute; right: 12px; bottom: 12px; display: flex; gap: 6px; z-index: 1; }
+  #list { flex: 1 1 auto; align-content: start; max-width: 900px; margin: 0 auto; padding: 14px 16px 40px; display: grid; gap: 14px; }
+  .proj { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; }
+  .proj h2 { font-size: 15px; margin: 0 0 8px; }
+  .task { display: grid; grid-template-columns: 4px 1fr auto; gap: 10px; padding: 8px 0; border-top: 1px solid var(--line); align-items: start; }
+  .task:first-of-type { border-top: 0; }
+  .bar { width: 4px; border-radius: 2px; align-self: stretch; background: var(--muted); }
+  .bar.critical { background: var(--crit); } .bar.high { background: var(--warn); } .bar.medium { background: var(--accent); }
+  .t { min-width: 0; overflow-wrap: anywhere; } .t b { font-weight: 600; }
+  .due { font-size: 12.5px; white-space: nowrap; } .due.over { color: var(--crit); font-weight: 600; } .due.done { color: var(--ok); }
+  .done .t b { text-decoration: line-through; color: var(--muted); font-weight: 400; }
+  .state { max-width: 520px; margin: 18vh auto; padding: 24px; text-align: center; }
+  .filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  input[type=search] { font: inherit; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--ink); min-width: 0; flex: 1 1 160px; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<header>
+  <h1 id="title" dir="auto">Shared canvas</h1>
+  <span class="muted" id="when"></span>
+  <div class="seg" role="tablist"><button id="tab-map" aria-pressed="true">Canvas</button><button id="tab-list" aria-pressed="false">List</button></div>
+</header>
+<div id="stage" hidden><img id="img" alt="Canvas"><div class="zoom"><button class="icon" id="zo" aria-label="Zoom out">−</button><button class="icon" id="fit" aria-label="Fit">⤢</button><button class="icon" id="zi" aria-label="Zoom in">+</button></div></div>
+<main id="list" hidden></main>
+<div class="state" id="state"><p class="muted">Loading…</p></div>
+<script>
+(() => {
+  'use strict';
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  let cfg = null;
+  try { const m = /[#&]s=([\w-]+)/.exec(location.hash); if (m) cfg = JSON.parse(atob(m[1].replace(/-/g, '+').replace(/_/g, '/'))); } catch {}
+  const state = html => { $('state').innerHTML = html; $('state').hidden = false; $('stage').hidden = true; $('list').hidden = true; };
+  if (!cfg || !/^https?:\/\//.test(cfg.u || '') || !cfg.k || !cfg.t) { state('<h2>This link is not complete</h2><p class="muted">Copy the whole link again from the Action Register app (Canvas › Export › Share link).</p>'); return; }
+  let snap = null, updated = '', view = 'map', q = '';
+  const V = { x: 0, y: 0, k: 1 };
+  const apply = () => { $('img').style.transform = `translate(${V.x}px,${V.y}px) scale(${V.k})`; };
+  function fit() { if (!snap) return; const s = $('stage'), k = Math.min(s.clientWidth / snap.w, s.clientHeight / snap.h) * 0.96; V.k = k; V.x = (s.clientWidth - snap.w * k) / 2; V.y = (s.clientHeight - snap.h * k) / 2; apply(); }
+  function zoom(f, cx, cy) { const s = $('stage'); cx ??= s.clientWidth / 2; cy ??= s.clientHeight / 2; const k = Math.max(0.05, Math.min(6, V.k * f)); V.x = cx - (cx - V.x) * k / V.k; V.y = cy - (cy - V.y) * k / V.k; V.k = k; apply(); }
+  function ago(iso) { const s = (Date.now() - Date.parse(iso)) / 1000; if (!(s >= 0)) return ''; if (s < 90) return 'just now'; if (s < 3600) return Math.round(s / 60) + ' min ago'; if (s < 86400) return Math.round(s / 3600) + ' h ago'; return new Date(iso).toLocaleString(); }
+  function due(t) {
+    if (t.done) return `<span class="due done">✓ ${esc(t.done)}</span>`;
+    if (!t.deadline) return ''; const d = Math.round((Date.parse(t.deadline + 'T12:00:00') - Date.now()) / 864e5);
+    return `<span class="due ${d < 0 ? 'over' : ''}">${d < 0 ? `${-d} d late` : d === 0 ? 'today' : d === 1 ? 'tomorrow' : esc(new Date(t.deadline + 'T12:00:00').toLocaleDateString(undefined, { day: 'numeric', month: 'short' }))}</span>`;
+  }
+  function renderList() {
+    const nq = q.trim().toLowerCase(), by = new Map();
+    for (const t of (snap.tasks || [])) { if (nq && ![t.title, t.ref, t.project, t.topic, t.owner, t.nextStep].join(' ').toLowerCase().includes(nq)) continue; const p = t.project || 'No project'; if (!by.has(p)) by.set(p, []); by.get(p).push(t); }
+    const order = { critical: 0, high: 1, medium: 2, low: 3 };
+    $('list').innerHTML = `<div class="filters"><input type="search" id="q" placeholder="Search tasks" value="${esc(q)}" dir="auto"><span class="muted">${(snap.tasks || []).filter(t => !t.done).length} open</span></div>` +
+      ([...by.entries()].map(([p, ts]) => `<section class="proj"><h2 dir="auto">${esc(p)}</h2>${ts.sort((a, b) => (!!a.done - !!b.done) || (order[a.priority] ?? 4) - (order[b.priority] ?? 4) || String(a.deadline || '9').localeCompare(String(b.deadline || '9'))).map(t => `<div class="task ${t.done ? 'done' : ''}"><span class="bar ${esc(t.priority)}"></span><div class="t" dir="auto"><b>${esc(t.title)}</b><div class="muted">${esc([t.ref, t.ownership === 'waiting' ? 'waiting on ' + t.owner : t.owner, t.topic].filter(Boolean).join(' · '))}</div>${t.nextStep ? `<div class="muted">Next: ${esc(t.nextStep)}</div>` : ''}</div>${due(t)}</div>`).join('')}</section>`).join('') || '<p class="muted">No tasks.</p>');
+    const qi = $('q'); qi.oninput = () => { q = qi.value; const pos = qi.selectionStart; renderList(); const n = $('q'); n.focus(); n.setSelectionRange(pos, pos); };
+  }
+  function show() {
+    $('state').hidden = true;
+    $('stage').hidden = view !== 'map'; $('list').hidden = view !== 'list';
+    $('tab-map').setAttribute('aria-pressed', view === 'map'); $('tab-list').setAttribute('aria-pressed', view === 'list');
+    if (view === 'list') renderList();
+  }
+  async function load(first) {
+    try {
+      const res = await fetch(cfg.u.replace(/\/+$/, '') + '/rest/v1/rpc/ar_get_share', { method: 'POST', headers: { apikey: cfg.k, Authorization: 'Bearer ' + cfg.k, 'Content-Type': 'application/json' }, body: JSON.stringify({ t: cfg.t }), cache: 'no-store' });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const r = await res.json();
+      if (!r || !r.snapshot) { state('<h2>This canvas is no longer shared</h2><p class="muted">The owner stopped sharing it, or the link is wrong.</p>'); return; }
+      if (r.updated_at === updated) { $('when').textContent = 'Updated ' + ago(updated); return; }
+      updated = r.updated_at; snap = r.snapshot;
+      $('title').textContent = r.title || 'Shared canvas'; document.title = (r.title || 'Shared canvas') + ' — Action Register';
+      $('when').textContent = 'Updated ' + ago(updated);
+      const keep = !first && $('img').src; $('img').width = snap.w; $('img').height = snap.h;
+      $('img').src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(snap.svg);
+      if (first && innerWidth < 700) view = 'list';
+      show(); if (!keep) requestAnimationFrame(fit);
+    } catch (e) { if (!snap) state(`<h2>Could not load the canvas</h2><p class="muted">${esc(e.message || e)} — check the connection; it retries every minute.</p>`); }
+  }
+  // pan with a finger or the mouse, pinch or wheel to zoom
+  const pts = new Map(); let last = null;
+  const st = $('stage');
+  st.addEventListener('pointerdown', e => { st.setPointerCapture(e.pointerId); pts.set(e.pointerId, { x: e.clientX, y: e.clientY }); last = null; });
+  st.addEventListener('pointermove', e => {
+    if (!pts.has(e.pointerId)) return; const p = pts.get(e.pointerId), nx = e.clientX, ny = e.clientY;
+    if (pts.size === 1) { V.x += nx - p.x; V.y += ny - p.y; apply(); }
+    else if (pts.size === 2) { const [a, b] = [...pts.values()]; const d = Math.hypot(a.x - b.x, a.y - b.y); if (last) { const r = st.getBoundingClientRect(); zoom(d / last, (a.x + b.x) / 2 - r.left, (a.y + b.y) / 2 - r.top); } last = d; }
+    pts.set(e.pointerId, { x: nx, y: ny });
+  });
+  const up = e => { pts.delete(e.pointerId); last = null; };
+  st.addEventListener('pointerup', up); st.addEventListener('pointercancel', up);
+  st.addEventListener('wheel', e => { e.preventDefault(); const r = st.getBoundingClientRect(); zoom(Math.exp(-e.deltaY * 0.0015), e.clientX - r.left, e.clientY - r.top); }, { passive: false });
+  st.addEventListener('dblclick', fit);
+  $('zi').onclick = () => zoom(1.25); $('zo').onclick = () => zoom(0.8); $('fit').onclick = fit;
+  $('tab-map').onclick = () => { view = 'map'; show(); requestAnimationFrame(fit); };
+  $('tab-list').onclick = () => { view = 'list'; show(); };
+  addEventListener('resize', () => { if (view === 'map') fit(); });
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) load(); });
+  setInterval(() => { if (!document.hidden) load(); }, +(new URLSearchParams(location.search).get('every')) || 60000);
+  load(true);
+})();
+</script>
+</body>
+</html>

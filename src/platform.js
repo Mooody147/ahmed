@@ -60,6 +60,9 @@ async function db() {
 const listeners = new Map();
 // for this session only: use another AI after the main one ran out of credit, or go over the monthly budget once
 const AIO = { provider: '', overBudget: false };
+// another PC changed a document (cloud sync): update the cache and tell the listeners
+B.on('db:remote', m => { if (!m || !m.path || isText(m.path)) return; if (m.data === null) cache.delete(m.path); else cache.set(m.path, m.data); changed(m.path); });
+B.on('cloud:status', m => { ST.cloud = m; });
 B.onSampleText(m => { const f = listeners.get(m.id); if (f) f(m.delta); });
 function sample() {
   const f = async () => { throw { code: 'unavailable', message: 'Use sample.json' }; };

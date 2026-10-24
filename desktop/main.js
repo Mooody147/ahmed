@@ -17,6 +17,7 @@ const sys = require('./system');
 const filesMod = require('./files');
 const outlook = require('./outlook');
 const notebook = require('./notebook');
+const cloudMod = require('./cloud');
 
 const ROOT = path.join(__dirname, '..', 'app');
 const PARTITION = 'persist:action-register';
@@ -28,7 +29,7 @@ protocol.registerSchemesAsPrivileged([{ scheme: 'app', privileges: { standard: t
 
 if (!process.env.AR_TEST && !app.requestSingleInstanceLock()) app.quit();
 
-let win = null, store = null, config = null, updater = null, rendererReady = false, files = null;
+let win = null, store = null, config = null, updater = null, rendererReady = false, files = null, cloud = null;
 // folders the user picked in a dialog this session (or earlier, saved in the prefs); files may be copied only there
 const pickedFolders = new Set();
 const ctx = {
@@ -101,6 +102,7 @@ function status() {
     gmail: { mode: gmailMode(), clientId: config.get().gmail.clientId || '', hasSecret: !!config.secret('gmailClientSecret'), connected: !!gmailMode(), account: config.get().gmail.account || '' },
     desktop: { closeToTray: d.closeToTray, startWithWindows: d.startWithWindows, startHidden: d.startHidden, hotkey: d.hotkey, notify: d.notify, autoUpdate: d.autoUpdate, watchDir: d.watchDir, backupDir: d.backupDir, backupKeep: d.backupKeep, serverRoots: d.serverRoots || [], notebookRoots: d.notebookRoots || [], locked: !!d.pin },
     usage: config.get().usage || {},
+    cloud: cloud ? cloud.status() : null,
     update: sys.updateReady(),
     secure: config.encrypted(),
     version: app.getVersion(),
@@ -142,8 +144,8 @@ function registerIpc() {
   ipcMain.on('desktop:status', e => { e.returnValue = status(); });
   handle('db:load', () => store.loadAll());
   handle('db:get', p => store.get(p));
-  handle('db:set', ({ path: p, data }) => store.set(p, data));
-  handle('db:delete', p => store.delete(p));
+  handle('db:set', async ({ path: p, data }) => { await store.set(p, data); cloud.local(p, false); });
+  handle('db:delete', async p => { await store.delete(p); cloud.local(p, true); });
 
   // answers { value, meta: { provider, model, fallback } }; the provider is the main AI unless the call names one
   handle('sample:json', (req, e) => ai.run(config, req, delta => { if (!e.sender.isDestroyed()) e.sender.send('sample:text', { id: req.id, delta }); }, addUsage));
@@ -183,9 +185,9 @@ function registerIpc() {
 
   handle('downloads:save', ({ filename, data }) => saveFile(filename, data));
   /* stored files: workbooks, HTML tools, reference documents, email originals, attachments, receipts, photos */
-  handle('files:save', ({ kind, id, data, meta }) => files.save(kind, id, data, meta));
-  handle('files:load', ({ kind, id }) => files.load(kind, id));
-  handle('files:info', ({ kind, id }) => files.info(kind, id));
+  handle('files:save', async ({ kind, id, data, meta }) => { const r = await files.save(kind, id, data, meta); cloud.fileSaved(kind, id); return r; });
+  handle('files:load', async ({ kind, id }) => (await files.load(kind, id)) || cloud.fetchFile(kind, id));
+  handle('files:info', async ({ kind, id }) => (await files.info(kind, id)) || ((await cloud.fetchFile(kind, id)) ? files.info(kind, id) : null));
   handle('files:remove', ({ kind, id }) => files.remove(kind, id));
   handle('files:list', ({ kind }) => files.list(kind));
   handle('files:open', ({ kind, id, name }) => files.open(kind, id, name));
@@ -210,10 +212,21 @@ function registerIpc() {
   handle('nb:scan', ({ folder }) => { if (!notebook.inside(folder, nbRoots())) throw { code: 'forbidden', message: 'Choose the folder first' }; return notebook.scan(folder); });
   handle('nb:read', async ({ file }) => { if (!notebook.inside(file, nbRoots()) || !notebook.EXTS.test(file)) throw { code: 'forbidden', message: 'File not allowed' }; return new Uint8Array(await fs.promises.readFile(file)); });
   handle('nb:open', ({ file }) => { if (!notebook.inside(file, nbRoots())) throw { code: 'forbidden', message: 'File not allowed' }; if (process.env.AR_TEST) return 'test'; return shell.openPath(file); });
-  filesMod.toolDbIpc(ipcMain, store, filesMod.notifyToolWindows);
+  // the HTML tools' saved cases are synced like the rest of the register
+  const syncedStore = { loadAll: () => store.loadAll(), get: p => store.get(p), set: async (p, d) => { await store.set(p, d); cloud.local(p, false); }, delete: async p => { await store.delete(p); cloud.local(p, true); } };
+  filesMod.toolDbIpc(ipcMain, syncedStore, filesMod.notifyToolWindows);
+  /* cloud sync (Supabase) and canvas share links */
+  handle('cloud:connect', a => { cloud.connect(a || {}); return status(); });
+  handle('cloud:signin', async a => { const r = await cloud.signIn(a || {}); return { ...r, status: status() }; });
+  handle('cloud:signout', () => { cloud.signOut(); return status(); });
+  handle('cloud:sync', () => cloud.syncNow());
+  handle('cloud:prefs', ({ files: f, viewer }) => { const p = {}; if (f !== undefined) p.files = !!f; if (typeof viewer === 'string' && /^https:\/\/[\w.-]+(\/[\w./~-]*)?$/.test(viewer.trim())) p.viewer = viewer.trim(); cloud.set(p); if (p.files) cloud.queueAllFiles(); return status(); });
+  handle('cloud:sql', () => cloudMod.SETUP_SQL);
+  handle('cloud:share', a => cloud.share(a || {}));
+  handle('cloud:unshare', a => cloud.unshare(a || {}));
   handle('shell:openData', () => shell.openPath(DATA_DIR));
   handle('shell:openPath', p => { if (typeof p === 'string' && [sys.prefs(config).watchDir, sys.prefs(config).backupDir, DATA_DIR].some(d => d && p.startsWith(d))) return shell.openPath(p); throw { code: 'forbidden', message: 'Path not allowed' }; });
-  handle('shell:openExternal', url => { if (/^(https:\/\/(console\.anthropic\.com|console\.cloud\.google\.com|docs\.anthropic\.com|platform\.claude\.com|myaccount\.google\.com|support\.google\.com|platform\.openai\.com|aistudio\.google\.com|ollama\.com|mail\.google\.com|github\.com\/Mooody147)\/|mailto:)/.test(url)) return shell.openExternal(url); throw { code: 'forbidden', message: 'URL not allowed' }; });
+  handle('shell:openExternal', url => { if (/^(https:\/\/(console\.anthropic\.com|console\.cloud\.google\.com|docs\.anthropic\.com|platform\.claude\.com|myaccount\.google\.com|support\.google\.com|platform\.openai\.com|aistudio\.google\.com|ollama\.com|supabase\.com|[\w-]+\.github\.io|mail\.google\.com|github\.com\/Mooody147)\/|mailto:)/.test(url)) return shell.openExternal(url); throw { code: 'forbidden', message: 'URL not allowed' }; });
 
   /* desktop extras */
   handle('sys:prefs', patch => {
@@ -267,6 +280,7 @@ app.whenReady().then(() => {
   store = new Store(DATA_DIR);
   files = new filesMod.Files(DATA_DIR);
   config = new Config(DATA_DIR);
+  cloud = new cloudMod.Cloud(config, store, files, ctx);
   setupSession();
   registerIpc();
   buildMenu();
@@ -275,9 +289,14 @@ app.whenReady().then(() => {
   sys.applyHotkey(ctx, config);
   sys.startWatch(ctx, config);
   updater = sys.setupUpdates(ctx, config);
+  cloud.start();
   app.on('activate', () => { if (!BrowserWindow.getAllWindows().length) createWindow(); else ctx.show(); });
 });
 app.on('second-instance', () => ctx.show());
 app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });
-app.on('before-quit', () => { sys.setQuitting(); if (store) store.flushSync(); });
+let cloudFlushed = false;
+app.on('before-quit', e => {
+  sys.setQuitting(); if (store) store.flushSync();
+  if (cloud && !cloudFlushed && cloud.queue.size) { e.preventDefault(); cloudFlushed = true; cloud.flush().finally(() => app.quit()); }
+});
 app.on('will-quit', () => { try { require('electron').globalShortcut.unregisterAll(); } catch {} });

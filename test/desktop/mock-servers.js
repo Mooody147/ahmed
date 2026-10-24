@@ -14,7 +14,8 @@ const ADDR = 'tester+tasks@gmail.com';
 const b64url = b => Buffer.from(b).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 
 function start() {
-  const log = { anthropic: [], gmail: [], token: [], openai: [], gemini: [], ollama: [] };
+  const log = { anthropic: [], gmail: [], token: [], openai: [], gemini: [], ollama: [], supabase: [] };
+  start.sb = { users: new Map(), access: new Map(), refresh: new Map(), docs: new Map(), shares: new Map(), objects: new Map(), ts: 0 };
   const labeled = new Set(); const labels = [{ id: 'INBOX', name: 'INBOX' }];
   const msgs = [
     { id: 'm0', file: 'fwd_attachment.eml', at: Date.parse('2026-10-23T17:05:00Z'), to: ADDR },
@@ -49,6 +50,44 @@ function start() {
       ev('message_delta', { delta: { stop_reason: 'end_turn', stop_sequence: null }, usage: { output_tokens: 500 } });
       ev('message_stop', {});
       return res.end();
+    }
+    /* ---- Supabase (auth, ar_docs / ar_shares tables, the share function, storage) ---- */
+    const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'apikey, authorization, content-type, x-upsert, prefer', 'Access-Control-Allow-Methods': 'GET, POST, PATCH, OPTIONS' };
+    if (/^\/(auth|rest|storage)\/v1\//.test(u.pathname)) {
+      const sb = start.sb; const send = (code, obj) => { res.writeHead(code, { 'Content-Type': 'application/json', ...cors }); res.end(obj === undefined ? '' : JSON.stringify(obj)); };
+      if (req.method === 'OPTIONS') { res.writeHead(204, cors); return res.end(); }
+      if (req.headers.apikey !== 'sb_publishable_test_0123456789') return send(401, { message: 'Invalid API key' });
+      const tokens = uid => { const at = 'at_' + Math.random().toString(36).slice(2), rt = 'rt_' + Math.random().toString(36).slice(2); sb.access.set(at, uid); sb.refresh.set(rt, uid); const usr = [...sb.users.values()].find(x => x.id === uid); return { access_token: at, refresh_token: rt, expires_in: 3600, token_type: 'bearer', user: { id: uid, email: usr.email } }; };
+      if (u.pathname === '/auth/v1/signup') { const b = JSON.parse(await body(req)); if (sb.users.has(b.email)) return send(422, { msg: 'User already registered' }); const id = 'u-' + (sb.users.size + 1); sb.users.set(b.email, { id, email: b.email, password: b.password }); return send(200, tokens(id)); }
+      if (u.pathname === '/auth/v1/token') {
+        const b = JSON.parse(await body(req)); const g = u.searchParams.get('grant_type');
+        if (g === 'password') { const x = sb.users.get(b.email); if (!x || x.password !== b.password) return send(400, { error: 'invalid_grant', error_description: 'Invalid login credentials' }); return send(200, tokens(x.id)); }
+        if (g === 'refresh_token') { const uid = sb.refresh.get(b.refresh_token); if (!uid) return send(400, { error: 'invalid_grant', error_description: 'Invalid Refresh Token' }); sb.refresh.delete(b.refresh_token); return send(200, tokens(uid)); }
+      }
+      const uid = sb.access.get(String(req.headers.authorization || '').replace(/^Bearer /, ''));
+      const now = () => { sb.ts = Math.max(sb.ts + 1, Date.now()); return new Date(sb.ts).toISOString(); };
+      if (u.pathname === '/rest/v1/rpc/ar_get_share') { const b = JSON.parse(await body(req)); const x = sb.shares.get(b.t); log.supabase.push('rpc'); return send(200, x && !x.revoked ? { title: x.title, snapshot: x.snapshot, updated_at: x.updated_at } : null); }
+      if (!uid) return send(401, { message: 'JWT expired' });
+      if (u.pathname === '/rest/v1/ar_docs' && req.method === 'GET') {
+        const gt = (u.searchParams.get('updated_at') || '').replace(/^gt\./, ''), lim = +u.searchParams.get('limit') || 1000;
+        const rows = [...sb.docs.values()].filter(r => r.user_id === uid && (!gt || r.updated_at > gt)).sort((a, b) => a.updated_at.localeCompare(b.updated_at)).slice(0, lim);
+        return send(200, rows.map(r => ({ path: r.path, data: r.data, deleted: r.deleted, updated_at: r.updated_at, device: r.device })));
+      }
+      if (u.pathname === '/rest/v1/ar_docs' && req.method === 'POST') {
+        const rows = JSON.parse(await body(req)); log.supabase.push('push ' + rows.length);
+        if (rows.some(r => r.user_id !== uid)) return send(403, { message: 'new row violates row-level security policy' });
+        for (const r of rows) sb.docs.set(uid + '|' + r.path, { ...r, updated_at: now() });
+        return send(201);
+      }
+      if (u.pathname === '/rest/v1/ar_shares' && req.method === 'POST') { for (const r of JSON.parse(await body(req))) { if (r.user_id !== uid) return send(403, {}); sb.shares.set(r.token, { ...r, updated_at: now() }); } return send(201); }
+      if (u.pathname === '/rest/v1/ar_shares' && req.method === 'PATCH') { const t = (u.searchParams.get('token') || '').replace(/^eq\./, ''); const x = sb.shares.get(t); if (x && x.user_id === uid) Object.assign(x, JSON.parse(await body(req))); return send(204); }
+      const so = /^\/storage\/v1\/object\/ar-files\/(.+)$/.exec(u.pathname);
+      if (so) {
+        const key = decodeURIComponent(so[1]); if (!key.startsWith(uid + '/')) return send(403, { message: 'Unauthorized' });
+        if (req.method === 'POST') { const chunks = []; for await (const c of req) chunks.push(c); sb.objects.set(key, Buffer.concat(chunks)); log.supabase.push('put ' + key); return send(200, { Key: 'ar-files/' + key }); }
+        if (req.method === 'GET') { const b = sb.objects.get(key); if (!b) return send(400, { statusCode: '404', error: 'not_found', message: 'Object not found' }); res.writeHead(200, { 'Content-Type': 'application/octet-stream' }); return res.end(b); }
+      }
+      return send(404, { message: 'no route ' + u.pathname });
     }
     /* ---- OpenAI (chat completions, streamed) ---- */
     const textOf = content => (typeof content === 'string' ? content : content.filter(c => c.type === 'text').map(c => c.text).join('\n'));
@@ -134,7 +173,7 @@ function start() {
     }
     json(res, 404, { error: 'no route' });
   });
-  return new Promise(r => server.listen(0, '127.0.0.1', () => r({ server, log, labeled, base: `http://127.0.0.1:${server.address().port}` })));
+  return new Promise(r => server.listen(0, '127.0.0.1', () => r({ server, log, labeled, sb: start.sb, base: `http://127.0.0.1:${server.address().port}` })));
 }
 // Gmail over IMAP (app password): hoodiecrow with Gmail's folder layout and X-GM extensions
 function startImap() {

@@ -33,6 +33,8 @@ class Files {
     for (const n of names) { if (n.endsWith('.json') || n.endsWith('.tmp')) continue; out.push({ id: n, ...(await this.info(kind, n) || {}) }); }
     return out;
   }
+  // ids of the stored files of a kind (a stored file always has its .json beside it)
+  listSync(kind) { let names = []; try { names = fs.readdirSync(path.join(this.root, safeKind(kind))); } catch { return []; } const set = new Set(names); return names.filter(n => set.has(n + '.json')); }
   // open with the program Windows uses for that file type (a copy with its real name and extension)
   async open(kind, id, name) {
     const src = this.file(kind, id); if (!fs.existsSync(src)) throw { code: 'not_found', message: 'File not found' };
