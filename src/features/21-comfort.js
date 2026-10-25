@@ -10,7 +10,7 @@ VIEW_FN.mini = () => {
   const doneToday = [...St.tasks.values()].filter(t => t.completedAt && dayOf(t.completedAt) === today);
   const row = t => `<li class="mini-t ${t.status === 'done' ? 'done' : ''}"><input type="checkbox" data-chg="mini-done" data-id="${esc(t.id)}" ${t.status === 'done' ? 'checked' : ''} aria-label="Done"><span dir="auto">${esc(t.title)}</span>${t.deadline ? `<span class="small ${dueInfo(t).cls === 'over' ? 'crit' : 'muted'}">${esc(dueInfo(t).txt)}</span>` : ''}</li>`;
   return `<div class="mini-view"><div class="row"><b>Today</b><span class="small muted">${esc(fmtDate(today, { weekday: 'long', day: 'numeric', month: 'short' }))}</span><span class="spacer"></span><span class="chip ok">${doneToday.length} done</span></div>
-    <input class="input hold-render" id="mini-add" placeholder="Add a task for today… (Enter)" dir="auto">
+    <input class="input" id="mini-add" placeholder="Add a task for today… (Enter)" dir="auto" data-inp="miniDraft" value="${esc(UI.miniDraft || '')}">
     <div class="label">Planned and in progress</div><ul class="mini-list">${planned.map(row).join('') || '<li class="small muted">Nothing planned — add above, or plan in Daily.</li>'}</ul>
     ${due.length ? `<div class="label">Due soon</div><ul class="mini-list">${due.slice(0, 8).map(row).join('')}</ul>` : ''}
     ${doneToday.length ? `<details><summary class="small">Done today (${doneToday.length})</summary><ul class="mini-list">${doneToday.map(row).join('')}</ul></details>` : ''}
@@ -18,7 +18,7 @@ VIEW_FN.mini = () => {
 };
 Object.assign(CHG, { 'mini-done': el => { const t = clone(St.tasks.get(el.dataset.id)); if (!t) return; if (el.checked) { t.status = 'done'; t.completedAt = nowISO(); } else { t.status = 'todo'; t.completedAt = null; } t.updatedAt = nowISO(); (t.history = t.history || []).push({ at: nowISO(), text: el.checked ? 'Done (Today window)' : 'Reopened' }); putTask(t); render(); } });
 document.addEventListener('keydown', e => {
-  if (e.target && e.target.id === 'mini-add' && e.key === 'Enter') { const v = e.target.value.trim(); if (!v) return; e.target.value = ''; e.target.blur(); const t = makeTask({ title: v, days: [T()], history: [{ at: nowISO(), text: 'Added in the Today window' }] }); putTask(t); render(); setTimeout(() => $('#mini-add')?.focus(), 30); }
+  if (e.target && e.target.id === 'mini-add' && e.key === 'Enter') { const v = e.target.value.trim(); if (!v) return; e.target.value = ''; UI.miniDraft = ''; e.target.blur(); const t = makeTask({ title: v, days: [T()], history: [{ at: nowISO(), text: 'Added in the Today window' }] }); putTask(t); render(); setTimeout(() => $('#mini-add')?.focus(), 30); }
 });
 if (MINI || SUBWIN) document.documentElement.classList.add(MINI ? 'is-mini' : 'is-popout');
 if (MINI) HOOKS.ready.push(() => { if (UI.view !== 'mini') go('mini'); });

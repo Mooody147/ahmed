@@ -20,6 +20,7 @@ jobs:
       - name: Desktop end-to-end test
         run: |
           sudo apt-get update && sudo apt-get install -y xvfb
+          npx playwright install --with-deps chromium   # the share-link viewer page is checked in a plain browser
           xvfb-run -a npm run test:desktop
       - uses: actions/upload-artifact@v4
         if: always()

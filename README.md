@@ -8,6 +8,23 @@ JSON backup.
 This repository is the Electron desktop version of the Action Register web app. The original hand-off
 brief is in [`docs/HANDOFF.md`](docs/HANDOFF.md).
 
+## What's new in 1.2
+
+Step-by-step setup for everything below: [`docs/SETUP-GUIDE.md`](docs/SETUP-GUIDE.md).
+
+- **Your Excel tools in the app (Tools › My workbooks):** import your calculation workbooks (.xlsx/.xlsm/.xls or a .zip) and HTML tools; every formula, drop-down and library table works as in Excel (the formula engine was checked against LibreOffice on 5,859 formulas of your sheets with no differences). Library tables (pipe sizes, materials…) are editable with rows you can add or remove; save calculations against a task, print a calc note, export the edited workbook.
+- **Which AI:** Claude stays the default; ChatGPT, Gemini or a free local model (Ollama) can be the main AI or a backup. When Claude is out of credit you are asked (or it switches by itself); simple emails can use the fast, cheaper model; a monthly budget warns at 80% and stops at 100%; every email shows which AI read it.
+- **Cloud sync and share links:** sign in with email and password on any PC and get the same data (your own free Supabase project — see [`docs/CLOUD-SETUP.md`](docs/CLOUD-SETUP.md)); share the canvas as a link that always shows the current state, for a tablet, phone or colleague.
+- **Email files:** the original email and its attachments are kept; the canvas asks whether each emailed task's email is saved on the company server and suggests a dated folder name (copy, or save it there in one click); open the email in Outlook from its task.
+- **Money:** income and expenses, budgets, salary and bills that repeat, bank-statement import (CSV/Excel, Arabic digits, debit/credit columns, duplicates skipped), receipts read by the AI, work expenses to claim back.
+- **Notebook:** ask questions about a folder or files on your PC (NotebookLM-style); answers quote the file and page; linked folders pick up new and changed files.
+- **Engineering:** pipe sizing, wet well and pump starts, water hammer, aeration oxygen demand and air flow, retention time and chemical dosing calculators with Word calc notes; procurement tracker with late flags; equipment list; transmittal and RFI generator with logs; drawing revision compare; conflict finder; search everything.
+- **Communication:** send drafts from Gmail, weekly report by email, WhatsApp / Teams chats to tasks, Arabic ↔ English and tone helper, letters, method statements, delay notices and inspection requests, thread summaries, reminders and snooze.
+- **Plan:** calendar, Gantt timeline, weekly workload with extension-request drafts, contacts from signatures, vendor scorecard, meeting prep, the other side's contract deadlines; Daily wrap-up and printable day sheet.
+- **Quality:** site visit reports with photos, review-comment patterns, unit converter, standards library, specification compliance checklist.
+- **Comfort:** a small "Today" window from the tray and pop-out windows for a second monitor, choose your tabs, everything in one Excel workbook, tasks from an Excel tracker, password-protected backups, a dashboard file for your manager, an appraisal pack, a guided tour and demo data.
+- **Arabic interface:** Setup › Appearance › Language — right to left, Arabic font and dates; the canvas, charts and numbers stay left to right.
+
 ## What's new in 1.1
 
 - **Look and feel:** custom title bar, icon set, light/dark/system theme, six accent colours, compact density, text size, project colours and icons.
@@ -20,7 +37,7 @@ brief is in [`docs/HANDOFF.md`](docs/HANDOFF.md).
 - **Tools:** pipe velocity and head loss, pump power and motor size, NPSH available, blower power; offer / datasheet comparison (TBE); CRS response drafting and saving back to Excel; meeting minutes to tasks.
 - **Claude:** Ask your register (Ctrl+J), reply and chaser drafts, email rules, working days and holidays in deadline maths, and it learns from the corrections you make to its choices. Prompt caching and a monthly cost estimate in Setup.
 
-Not in 1.1: code signing (needs a purchased certificate), an Outlook add-in, voice notes, a phone companion, and a full Arabic interface (Arabic email text and tasks are shown right-to-left with an Arabic font).
+Not yet: code signing (needs a purchased certificate), an Outlook add-in, voice notes and a phone app (the share link and cloud sync cover viewing on a phone).
 
 ## Install and run
 
@@ -134,10 +151,12 @@ attachments but cost more.
 - The window cannot reach the network at all (blocked by request filter and Content-Security-Policy).
 - Parsing runs offline with bundled `pdf.js 3.11.174`, `SheetJS 0.18.5`, `mammoth 1.8.0` and `JSZip 3.10.1`.
 - Fonts are bundled too.
-- The only outbound connections come from the main process: Anthropic (analysis) and Google (Gmail,
-  when connected). They go through Chromium's network stack, which uses the system proxy and the OS
-  certificate store, so they work on corporate networks.
-- There is no telemetry and no auto-update.
+- The only outbound connections come from the main process, and only to services you set up: the AI you
+  chose (Anthropic, OpenAI, Google Gemini, or Ollama on your own PC), Gmail (reading over IMAP, sending
+  over SMTP or the Gmail API), your Supabase project (cloud sync), and GitHub Releases (updates). They go
+  through Chromium's network stack, which uses the system proxy and the OS certificate store, so they work
+  on corporate networks.
+- There is no telemetry.
 
 **Data folder.** Windows: `%APPDATA%\Action Register\data`, macOS: `~/Library/Application Support/Action Register/data`,
 Linux: `~/.config/Action Register/data`. The File menu has **Open data folder**. Back up with
@@ -148,7 +167,8 @@ Setup › Full backup (.json).
 ```bash
 npm run test:unit                       # parsing, prompts, evidence verification, dedupe (Node)
 xvfb-run -a npm run test:desktop        # Electron end-to-end (drop xvfb-run on Windows/macOS)
-npm run build && npm run test:e2e       # web-build browser tests: canvas, daily, insights, documents, tools (Python Playwright)
+npm run build && npm run test:e2e       # web-build browser tests: canvas, daily, insights, documents, tools, workbooks, money,
+                                        # notebook, engineering, communication, plan, quality, comfort, Arabic (Python Playwright)
 ```
 
 The desktop test (`test/desktop/e2e.js`) launches the real app against local mock Anthropic, Google
@@ -160,7 +180,11 @@ OAuth and Gmail servers (`test/desktop/mock-servers.js`). It checks:
 - streamed analysis, the model, effort and fallback settings sent, and page images reaching Claude;
 - review › Add all, the to-do views, and offline parsing of `.msg`, `.eml`, PDF (text, scanned, A3 drawing), XLSX, DOCX and PNG;
 - the canvas (sticky note, pen, moved branch) and the daily tracker, and that both survive a restart;
-- CSV, ICS and JSON export, dark mode, and a clear error for a rejected key.
+- CSV, ICS and JSON export, dark mode, and a clear error for a rejected key;
+- workbooks and HTML tools, email files and filing to a server folder, the weekly report sent over SMTP;
+- the AI choice (mock OpenAI, Gemini and Ollama servers): out of credit → backup, fast model, budget stop;
+- the notebook reading a linked folder, cloud sync between two PCs (mock Supabase), the share link and its viewer page;
+- the small Today window updating live with the main window.
 
 Screenshots go to `test/desktop/out/`.
 

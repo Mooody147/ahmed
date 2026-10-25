@@ -1098,3 +1098,4 @@ html[lang="ar"] body { font-family: 'IBM Plex Sans Arabic', 'IBM Plex Sans', 'Se
 html[dir="rtl"] #map-vp, html[dir="rtl"] .map-wrap, html[dir="rtl"] .viz, html[dir="rtl"] .gantt-wrap, html[dir="rtl"] .dwg-view, html[dir="rtl"] .wb-grid, html[dir="rtl"] .mono, html[dir="rtl"] .num, html[dir="rtl"] input[type="number"], html[dir="rtl"] input[type="date"], html[dir="rtl"] input[type="email"], html[dir="rtl"] .cal-legend { direction: ltr; }
 html[dir="rtl"] .calc-out td.num, html[dir="rtl"] .mon-tbl td.num { text-align: left; }
 html[dir="rtl"] .drawer { left: 0; right: auto; }
+html[dir="rtl"] .nav[aria-current="page"] { box-shadow: inset -3px 0 0 var(--accent); }
