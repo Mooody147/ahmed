@@ -99,7 +99,7 @@ const caps = {
 };
 
 /* ---------- Setup › Connections ---------- */
-const UIX = { busy: '', msg: null };
+const UIX = { busy: '', msg: null, open: {} };
 function stagingCount() { try { return window.__AR.UI.staging.filter(b => b.state !== 'done').length; } catch { return 0; } }
 function suggestedAddress() {
   const a = (ST.gmail.account || '').toLowerCase(); const m = /^([^@+]+)(?:\+[^@]*)?@(.+)$/.exec(a);
@@ -115,9 +115,10 @@ function connInner() {
     ${msg}
     ${ST.secure ? '' : callout('warn', 'This computer has no system keychain available, so the API key and Gmail sign-in are stored obfuscated, not encrypted, in the data folder.')}
     <div style="display:grid;gap:10px">
-      <div class="row"><b>Claude (Anthropic API)</b>${chip(c.hasKey, 'Key saved', 'Not set up')}<span class="spacer"></span></div>
-      <p class="small muted" style="margin:0">Analysis uses your own Anthropic API key, billed to your Anthropic account. Create one at <a href="#" data-dact="open" data-url="https://console.anthropic.com/settings/keys">console.anthropic.com › API keys</a>. The key is kept in this computer’s keychain and only used to call Anthropic.</p>
-      <p class="small" style="margin:0"><b>Have Claude Pro or Max?</b> The API key is billed separately from your subscription. To use your plan instead, see Setup › Which AI › <b>Claude — my Pro/Max plan</b>.</p>
+      ${accountHTML()}
+      <details class="howto" id="dk-adv" ${(UIX.open['dk-adv'] ?? (ST.ai.primary !== 'plan' && c.hasKey)) ? 'open' : ''}><summary>Advanced: use an Anthropic API key instead, models and limits</summary><div style="display:grid;gap:10px;margin-top:10px">
+      <div class="row"><b>Claude (Anthropic API key)</b>${chip(c.hasKey, 'Key saved', 'Not set up')}<span class="spacer"></span></div>
+      <p class="small muted" style="margin:0">Only needed if you do not want to use your Claude account above. An API key is billed separately from a Pro/Max plan, as prepaid credit at <a href="#" data-dact="open" data-url="https://console.anthropic.com/settings/keys">console.anthropic.com</a>. The key is kept in this computer’s keychain and only used to call Anthropic.</p>
       <div class="row"><input class="input" id="dk-key" type="password" autocomplete="off" spellcheck="false" style="flex:1;min-width:220px" placeholder="${c.hasKey ? 'Saved — paste a new key to replace it' : 'sk-ant-…'}">
         <button class="btn primary" data-dact="save-key" ${busy ? 'disabled' : ''}>Save key</button>
         ${c.hasKey ? `<button class="btn" data-dact="test-key" ${busy ? 'disabled' : ''}>${busy === 'test' ? 'Testing…' : 'Test'}</button><button class="btn ghost danger" data-dact="remove-key" ${busy ? 'disabled' : ''}>Remove</button>` : ''}</div>
@@ -131,6 +132,9 @@ function connInner() {
         <p class="small muted">Bigger limits read more of long attachments but cost more per email. Model IDs are listed at docs.anthropic.com › Models.</p>
         <div class="row end"><button class="btn" data-dact="save-models">Save models</button></div>
       </details>
+      <div class="row small"><span class="muted">Claude helper on this PC:</span> <span class="mono" style="word-break:break-all">${esc(ST.ai.providers.plan.path || 'not installed yet')}</span></div>
+      <div class="row"><input class="input mono" id="ai-plan-path" value="${esc(ST.ai.providers.plan.customPath || '')}" placeholder="Claude Code installed somewhere else? Its full path" style="flex:1;min-width:220px" spellcheck="false"><button class="btn sm" data-dact="ai-plan-path">Save</button></div>
+      </div></details>
     </div>
     <hr style="border:0;border-top:1px solid var(--line, #ddd);margin:6px 0">
     <div style="display:grid;gap:10px">
@@ -179,32 +183,38 @@ function priceRow(p, model) {
   const pr = ST.ai.prices[model] || {};
   return `<div class="row small" style="gap:6px"><span class="mono" style="min-width:0;flex:1;word-break:break-all">${esc(model)}</span>$<input class="input ai-price" data-model="${esc(model)}" data-k="in" type="number" min="0" step="0.01" style="width:84px" value="${pr.in ?? ''}" placeholder="input" aria-label="Input price per million tokens">/ $<input class="input ai-price" data-model="${esc(model)}" data-k="out" type="number" min="0" step="0.01" style="width:84px" value="${pr.out ?? ''}" placeholder="output" aria-label="Output price per million tokens"><span class="muted">per million tokens (in / out)</span></div>`;
 }
-const WIN = /Windows/i.test(navigator.userAgent);
 function planLimitsHTML(L) {
   if (!L || !L.windows) return '';
   const name = { five_hour: '5-hour window', seven_day: 'Weekly', seven_day_opus: 'Weekly (Opus)', seven_day_sonnet: 'Weekly (Sonnet)' };
   const rows = Object.entries(L.windows).map(([k, w]) => { const pct = Math.round((w.utilization || 0) * 100); return `<div class="row small" style="gap:8px"><span style="min-width:120px">${esc(name[k] || k)}</span><div class="progress" style="flex:1;min-width:80px"><i style="width:${pct}%;${pct >= 90 ? 'background:var(--crit, #c0392b)' : pct >= 70 ? 'background:var(--warn, #d68910)' : ''}"></i></div><span class="muted">${pct}% used${w.resetsAt ? ' · resets ' + esc(new Date(w.resetsAt * 1000).toLocaleString([], { weekday: 'short', hour: '2-digit', minute: '2-digit' })) : ''}</span></div>`; }).join('');
   return `<div style="display:grid;gap:4px"><span class="small muted">Your plan's usage at the last email (shared with claude.ai and Claude Code):</span>${rows}</div>`;
 }
-function planBox() {
-  const v = ST.ai.providers.plan, busy = UIX.busy, ps = UIX.planSt, m = ST.claude.models || {};
-  const cmd = WIN ? 'irm https://claude.ai/install.ps1 | iex' : 'curl -fsSL https://claude.ai/install.sh | bash';
-  const state = !v.path ? chip(false, '', 'Claude Code not found') : ps ? (ps.plan ? chip(true, 'Signed in with your plan', '') : chip(false, '', ps.loggedIn ? 'Signed in with an API key' : 'Not signed in')) : chip(true, 'Claude Code found', '');
-  return `<details class="howto" ${UIX.openP === 'plan' ? 'open' : ''} data-p="plan"><summary><b>${esc(v.label)}</b> ${state}</summary>
-    <div style="display:grid;gap:10px;margin-top:10px">
-      <p class="small muted" style="margin:0">Uses your Claude Pro or Max subscription instead of API credit. The app runs Anthropic's own <b>Claude Code</b> program on this PC; you sign in to it once through Anthropic's page, and the app never sees your password or sign-in token. Emails then count against your plan's usage limits (the same limits as claude.ai and Claude Code) and cost nothing extra. When the limit is reached, your backup AI takes over, or the app tells you when it resets.</p>
-      ${v.path ? `<div class="small"><span class="muted">Claude Code:</span> <span class="mono" style="word-break:break-all">${esc(v.path)}</span></div>` : `<div style="display:grid;gap:6px"><span class="small"><b>1.</b> Install Claude Code: open ${WIN ? '<b>PowerShell</b> (Start menu › type PowerShell)' : '<b>Terminal</b>'}, paste this line and press Enter:</span>
-        <div class="row"><input class="input mono" readonly value="${esc(cmd)}" style="flex:1;min-width:220px" onclick="this.select()"><button class="btn sm" data-dact="ai-plan-copy" data-v="${esc(cmd)}">Copy</button></div>
-        <span class="small muted">Then press <b>Check</b> below. More ways to install: <a href="#" data-dact="open" data-url="${AI_LINKS.plan}">code.claude.com › Setup</a>.</span></div>`}
-      <div class="row">${v.path ? `<button class="btn primary sm" data-dact="ai-plan-login" ${busy ? 'disabled' : ''}>Sign in</button>` : ''}<button class="btn sm" data-dact="ai-plan-check" ${busy ? 'disabled' : ''}>${busy === 'plan-check' ? 'Checking…' : 'Check'}</button>${v.path ? `<button class="btn sm" data-dact="ai-test" data-p="plan" ${busy ? 'disabled' : ''}>${busy === 'test-plan' ? 'Testing…' : 'Test with a short question'}</button>` : ''}<a href="#" class="small" data-dact="open" data-url="${AI_LINKS.usage}">See your plan usage on claude.ai</a></div>
-      ${v.path ? `<p class="small muted" style="margin:0"><b>Sign in</b> opens a window where Claude Code asks you to log in in the browser; choose your Claude account (Pro or Max), not the Console. When it says you are logged in, close that window and press <b>Check</b>.</p>` : ''}
-      <p class="small muted" style="margin:0">Models: <span class="mono">${esc(m.complex || '')}</span> for emails with attachments, <span class="mono">${esc(m.quick || '')}</span> for short jobs (change them in Setup › Connections › Models). If your plan cannot use a model in Claude Code, pick another there.</p>
-      ${planLimitsHTML(v.limits)}
-      <details class="small"><summary class="muted">Claude Code is installed somewhere else</summary><div class="row" style="margin-top:6px"><input class="input mono" id="ai-plan-path" value="${esc(v.customPath || '')}" placeholder="${WIN ? 'C:\\Users\\you\\.local\\bin\\claude.exe' : '/usr/local/bin/claude'}" style="flex:1;min-width:220px" spellcheck="false"><button class="btn sm" data-dact="ai-plan-path">Save</button></div></details>
-    </div></details>`;
+const PLAN_BUSY = ['start', 'install', 'login'];
+function accountHTML() {
+  const pv = ST.ai.providers.plan, ps = UIX.planSt, job = (ps && ps.job) || {}, onPlan = ST.ai.primary === 'plan';
+  const connected = onPlan && !!pv.path && !!(ps && ps.plan), busy = PLAN_BUSY.includes(job.stage);
+  const head = `<div class="row"><b>Your Claude account</b>${busy ? '<span class="chip">Connecting…</span>' : chip(connected, 'Connected', onPlan && ps === undefined && pv.path ? 'Checking…' : 'Not connected')}<span class="spacer"></span></div>`;
+  if (busy) return head + callout('ok', job.stage === 'login'
+    ? 'A Claude sign-in window opened. Log in with your Claude account in the browser (the one with your Pro or Max plan). The app continues by itself when you are done.'
+    : 'Setting up Claude on this PC — this takes a minute or two the first time…');
+  if (connected) return head + `<p class="small muted" style="margin:0">Emails are read with your Claude plan: no API key and no extra cost; they count against your plan's usage, like your chats on claude.ai.</p>${planLimitsHTML(pv.limits)}
+      <div class="row small"><a href="#" data-dact="open" data-url="${AI_LINKS.usage}">See your usage on claude.ai</a><span class="spacer"></span><a href="#" data-dact="plan-connect" data-force="1" class="muted">Use another Claude account</a></div>`;
+  return head + (job.stage === 'error' ? callout('crit', esc(job.message)) : '') + `<p class="small muted" style="margin:0">Uses your Claude Pro or Max subscription — no API key, no extra cost. One click: the app sets up Anthropic's Claude helper (Claude Code) on this PC, then opens the Claude sign-in page in your browser.</p>
+      <div class="row"><button class="btn primary" data-dact="plan-connect" id="plan-connect">Connect my Claude account</button>${onPlan ? '' : '<span class="small muted">Right now emails are read by ' + esc((ST.ai.providers[ST.ai.primary] || {}).label || 'another AI') + '.</span>'}</div>`;
+}
+// the account state comes from Claude Code itself; asked once when Setup opens and every 2 s while connecting
+function planPoll() {
+  if (UIX.planPolling) return; UIX.planPolling = true;
+  const tick = async () => {
+    try { UIX.planSt = await call('ai:plan-status'); } catch { UIX.planSt = UIX.planSt || null; }
+    const st = (UIX.planSt && UIX.planSt.job || {}).stage;
+    if (st === 'done' && UIX.planWasBusy) { UIX.planPolling = false; UIX.planWasBusy = false; refresh(); return reloadSoon('Connected to your Claude account.'); }
+    if (PLAN_BUSY.includes(st)) { UIX.planWasBusy = true; repaint(); return setTimeout(tick, 2000); }
+    UIX.planPolling = false; UIX.planWasBusy = false; refresh(); repaint();
+  };
+  tick();
 }
 function providerBox(p) {
-  if (p === 'plan') return planBox();
   const v = ST.ai.providers[p], sg = (UIX.sugg || {})[p] || {}, m0 = ST.ai.models[p] || {}, m = { strong: m0.strong || sg.strong || '', fast: m0.fast || sg.fast || '' }, list = (UIX.models || {})[p] || [], busy = UIX.busy;
   const keyRow = p === 'ollama'
     ? `<label class="field"><span>Ollama address on this PC</span><input class="input mono" id="ai-ollama-url" value="${esc(ST.ai.ollamaUrl)}" spellcheck="false"></label>`
@@ -229,9 +239,10 @@ function aiInner() {
   const a = ST.ai; if (!a) return '';
   const pct = a.budget > 0 ? Math.min(100, Math.round(a.monthCost / a.budget * 100)) : 0;
   const msg = UIX.aiMsg ? callout(UIX.aiMsg.err ? 'crit' : 'ok', esc(UIX.aiMsg.text)) : '';
-  return `<div class="section-title"><h2>Which AI reads your emails</h2></div>
+  return `<details class="howto" id="dk-ai-more" ${(UIX.open['dk-ai-more'] ?? a.primary !== 'plan') ? 'open' : ''}><summary><b>Advanced: other AIs, backup and budget</b> <span class="small muted">(optional)</span></summary><div style="display:grid;gap:12px;margin-top:10px">
+    <div class="section-title"><h2>Which AI reads your emails</h2></div>
     ${msg}
-    <p class="small muted" style="margin:0">Claude is the default and the most careful with long attachments and drawings. It can run on API credit (Setup › Connections) or on <b>your Claude Pro/Max plan</b> (below). You can add ChatGPT, Gemini or a free local model as a backup, for when Claude is out of credit or cannot be reached. Each email shows which AI read it.</p>
+    <p class="small muted" style="margin:0">Your Claude account (above) is the default and the most careful with long attachments and drawings. You can add ChatGPT, Gemini or a free local model as a backup, for when Claude is out of credit or cannot be reached. Each email shows which AI read it.</p>
     <div class="grid2">
       <label class="field"><span>Main AI</span><select class="input" id="ai-primary">${aiOptions(a.primary)}</select></label>
       <label class="field"><span>Backup AI</span><select class="input" id="ai-backup">${aiOptions(a.backup, true)}</select></label>
@@ -244,10 +255,15 @@ function aiInner() {
     </div>
     <p class="small muted" style="margin:0">At 80% of the budget the app warns you; at 100% it stops and asks before spending more (a local model is free and is never stopped).</p>
     <div class="row end"><button class="btn primary" data-dact="ai-save">Save AI choice</button></div>
-    ${['plan', 'openai', 'gemini', 'ollama'].map(providerBox).join('')}`;
+    ${['openai', 'gemini', 'ollama'].map(providerBox).join('')}</div></details>`;
 }
-function setupHTML() { return `<section class="card pad" id="dk-conn" data-sec="Connections" style="display:grid;gap:12px">${connInner()}</section><section class="card pad" id="dk-ai" data-sec="Which AI" style="display:grid;gap:12px">${aiInner()}</section>`; }
-function repaint() { const n = document.getElementById('dk-conn'); if (n) n.innerHTML = connInner(); const a = document.getElementById('dk-ai'); if (a) { UIX.openP = (a.querySelector('details.howto[open]') || {}).dataset?.p || UIX.openP; a.innerHTML = aiInner(); } }
+function setupHTML() { if (UIX.planSt === undefined && !UIX.planPolling) setTimeout(planPoll, 0); return `<section class="card pad" id="dk-conn" data-sec="Connections" style="display:grid;gap:12px">${connInner()}</section><section class="card pad" id="dk-ai" data-sec="Which AI" style="display:grid;gap:12px">${aiInner()}</section>`; }
+function repaint() {
+  const open = [...document.querySelectorAll('#dk-conn details[id], #dk-ai details[id]')].map(d => [d.id, d.open]);
+  const n = document.getElementById('dk-conn'); if (n) n.innerHTML = connInner();
+  const a = document.getElementById('dk-ai'); if (a) { UIX.openP = (a.querySelector('details.howto[open][data-p]') || {}).dataset?.p || UIX.openP; a.innerHTML = aiInner(); }
+  for (const [id, o] of open) { const d = document.getElementById(id); if (d) d.open = o; }
+}
 // the window reloads when AI becomes available or unavailable (capabilities are resolved at start-up)
 const READY0 = !!(ST.ai && ST.ai.ready);
 function aiSay(text, err) { if (!err && !!ST.ai.ready !== READY0) { UIX.aiMsg = null; return reloadSoon(text); } UIX.aiMsg = { text, err }; repaint(); }
@@ -340,25 +356,16 @@ const ACT = {
     try { const r = await call('ai:test', { provider: p }); ST = await call('ai:config', {}); if (p === 'plan') UIX.planSt = { installed: true, loggedIn: true, plan: true }; UIX.busy = ''; aiSay(`${ST.ai.providers[p].label} works (answered by ${r.model}).`); }
     catch (e) { UIX.busy = ''; aiSay('It did not work: ' + (e.message || e.code), true); }
   },
-  async 'ai-plan-check'() {
-    UIX.busy = 'plan-check'; UIX.openP = 'plan'; repaint();
-    try {
-      UIX.planSt = await call('ai:plan-status'); ST = await call('ai:config', {}); UIX.busy = '';
-      const s = UIX.planSt;
-      aiSay(!s.installed ? 'Claude Code was not found. Install it (step 1), then press Check again — or set its location below.' : !s.loggedIn ? 'Claude Code is installed. Now press Sign in.' : !s.plan ? 'Claude Code is signed in with an API key. Press Sign in and choose your Claude account to use your plan.' : `Claude Code is signed in with your plan.${ST.ai.primary === 'plan' ? '' : ' Choose “' + ST.ai.providers.plan.label + '” as the Main AI above and press Save AI choice.'}`, !s.plan);
-    } catch (e) { UIX.busy = ''; aiSay('Could not check Claude Code: ' + (e.message || e.code), true); }
+  async 'plan-connect'(el) {
+    UIX.msg = null; UIX.planSt = { ...(UIX.planSt || {}), job: await call('ai:plan-connect', { force: !!el.dataset.force }) }; UIX.planWasBusy = true; repaint(); planPoll();
   },
-  async 'ai-plan-login'() {
-    UIX.openP = 'plan';
-    try { await call('ai:plan-login'); aiSay('A sign-in window opened. Log in with your Claude account in the browser, close the window when it says you are logged in, then press Check.'); }
-    catch (e) { aiSay('Could not start the sign-in: ' + (e.message || e.code), true); }
-  },
-  async 'ai-plan-path'() { UIX.openP = 'plan'; ST = await call('ai:config', { claudePath: val('ai-plan-path') }); aiSay(ST.ai.providers.plan.path ? 'Saved — Claude Code found.' : 'Claude Code was not found at that location.', !ST.ai.providers.plan.path); },
-  async 'ai-plan-copy'(el) { try { await navigator.clipboard.writeText(el.dataset.v); aiSay('Copied. Paste it in ' + (WIN ? 'PowerShell' : 'Terminal') + ' and press Enter.'); } catch { aiSay('Select the line and copy it with Ctrl+C.', true); } },
+  async 'ai-plan-path'() { UIX.openP = 'plan'; ST = await call('ai:config', { claudePath: val('ai-plan-path') }); say(ST.ai.providers.plan.path ? 'Saved — Claude Code found. Press Connect my Claude account.' : 'Claude Code was not found at that location.', !ST.ai.providers.plan.path); },
   async 'gmail-disconnect'() { ST = await call('gmail:disconnect'); reloadSoon('Gmail disconnected.'); },
   async 'open-data'() { await call('shell:openData'); },
   async open(el) { await call('shell:openExternal', el.dataset.url); },
 };
+// the Advanced sections stay open or closed when the page redraws
+document.addEventListener('toggle', e => { const d = e.target; if (d && (d.id === 'dk-adv' || d.id === 'dk-ai-more')) UIX.open[d.id] = d.open; }, true);
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-dact]'); if (!el || !ACT[el.dataset.dact]) return;
   e.preventDefault();

@@ -184,6 +184,7 @@ function registerIpc() {
   handle('ai:test', ({ provider }) => ai.test(config, provider));
   handle('ai:plan-login', () => ai.planLogin(config));
   handle('ai:plan-status', () => ai.planStatus(config));
+  handle('ai:plan-connect', o => ai.planConnect(config, !!(o && o.force)));
   handle('claude:test', () => claude.test(config));
   handle('config:claude', ({ key, models, maxPromptKB }) => {
     if (key !== undefined) config.setSecret('anthropicKey', key ? String(key).trim() : null);

@@ -6,7 +6,7 @@ notebooks (passage search) and tools, but emails are not read for you.
 ## 1. Install
 
 1. Open <https://github.com/Mooody147/ahmed/releases/latest> and download
-   `Action-Register-Setup-1.2.1.exe` (Windows installer; `Action-Register-Portable-1.2.1.exe` runs without
+   `Action-Register-Setup-1.2.2.exe` (Windows installer; `Action-Register-Portable-1.2.2.exe` runs without
    installing but does not update itself) or the Mac `.dmg` — `mac-arm64` for Apple-silicon Macs (M1 and
    later), `mac-x64` for older Intel Macs.
 2. Windows shows *“Windows protected your PC”* because the installer is not code-signed:
@@ -14,31 +14,27 @@ notebooks (passage search) and tools, but emails are not read for you.
 3. Already on 1.1? The app updates itself (Setup › Automation › *Install updates automatically*), or just
    install 1.2 over it — your data is kept.
 
-## 2. The AI that reads your emails (Setup › Connections and Setup › Which AI)
+## 2. Connect your Claude account (Setup › Connections)
 
-**Claude on your Pro or Max plan (no API credit needed).** Your claude.ai subscription and API credit are
-billed separately, so a Pro/Max plan does not pay for an API key. To use the plan instead:
+**Your Claude account (the default — uses your Pro or Max plan, no API key).** Setup › Connections ›
+**Connect my Claude account**. That is the only step: the first time, the app sets up Anthropic's Claude
+helper (Claude Code) on this PC by itself (a minute or two), then a sign-in window opens and your browser
+shows the Claude login — log in with your Claude account. The app notices when you are done and switches
+over; the card then says **Connected** and shows how much of your plan's 5-hour and weekly usage is used.
 
-1. Install Anthropic's **Claude Code** program. Windows: open **PowerShell** and run
-   `irm https://claude.ai/install.ps1 | iex`. Mac: open **Terminal** and run
-   `curl -fsSL https://claude.ai/install.sh | bash` (other ways: <https://code.claude.com/docs/en/setup>).
-2. Setup › Which AI › **Claude — my Pro/Max plan** › **Check** (it finds Claude Code) › **Sign in**: a window
-   opens and Claude Code asks you to log in in the browser — choose your Claude account, not the Console.
-   Close the window when it says you are logged in, then **Check** again and **Test with a short question**.
-3. Choose it as the **Main AI** › **Save AI choice**.
+Emails count against your plan's usage (the same limits as your chats on claude.ai) and cost nothing extra.
+When the limit is reached, a backup AI takes over if you set one (Advanced), or the app says when it resets.
+The app runs Claude Code without any tools and never sees your password or sign-in token. Anthropic allows
+signing in to its own unmodified Claude Code with your own subscription; it does not allow other apps to use
+the claude.ai sign-in directly, which is why the app goes through Claude Code. Anthropic can change these rules.
 
-Emails then count against your plan's usage limits (the same limits as claude.ai and Claude Code — heavy days
-can use them up), cost nothing extra and are not counted in the monthly budget. The box shows how much of the
-5-hour and weekly limits is used. When the limit is reached the backup AI takes over (or the app says when it
-resets). The app runs Claude Code without any tools and never sees your password or sign-in token. Anthropic
-allows signing in to its own unmodified Claude Code with your own subscription; it does not allow other apps
-to use claude.ai sign-in, which is why the app goes through Claude Code. Anthropic can change these rules.
+Everything else in this section is optional and sits under **Advanced**.
 
-**Claude on API credit.** <https://console.anthropic.com/settings/keys> › *Create key* ›
+**Advanced: Claude on API credit.** <https://console.anthropic.com/settings/keys> › *Create key* ›
 paste in Setup › Connections › **Save key** › **Test**. Add credit under *Billing*. Typical cost: a few US
 cents per email with attachments on the thorough model, much less on the fast one.
 
-**Backup or alternative AIs** (Setup › Which AI):
+**Advanced: backup or alternative AIs** (Setup › Advanced: other AIs, backup and budget):
 
 | AI | Where to get access | Notes |
 |---|---|---|
@@ -126,8 +122,9 @@ recycle bin).
 
 | What you see | What to do |
 |---|---|
-| “Your Anthropic account has no usable credit” | Your API key's Console account has no credit (a Pro/Max plan does not count). Use your plan (step 2), top up at console.anthropic.com › Billing, or press *Use ChatGPT for now* / *Try the fast model*. |
-| “Claude Code is not signed in” / “usage limit is reached” | Setup › Which AI › Claude — my Pro/Max plan › Sign in; or wait for the time shown (the backup AI reads emails meanwhile). |
+| “Your Anthropic account has no usable credit” | Your API key's Console account has no credit (a Pro/Max plan does not count). Press Connect my Claude account (step 2) to use your plan instead, top up at console.anthropic.com › Billing, or press *Use ChatGPT for now* / *Try the fast model*. |
+| “Your Claude account is not connected / signed out” | Setup › Connections › Connect my Claude account. |
+| “Your Claude plan's usage limit is reached” | Wait for the time shown, or set a backup AI under Advanced so emails keep being read. |
 | Gmail “did not accept” the app password | Create a new app password; make sure 2-Step Verification is on; copy all 16 letters. |
 | Cloud sync error after a week of not using it | Free Supabase projects pause after 7 days without use — open supabase.com/dashboard and press *Restore*. |
 | Share link says “no longer shared” | The share was stopped, or GitHub Pages is not on (step 7). |

@@ -26,6 +26,8 @@ async function launch(env) {
   return { app, pg };
 }
 const ev = (pg, js) => pg.evaluate(js);
+// the API key lives under Setup › Connections › Advanced
+const openAdv = pg => pg.evaluate("(d => { if (d && !d.open) d.open = true; })(document.getElementById('dk-adv'))").then(() => pg.waitForTimeout(100));
 async function waitFor(pg, js, ms = 30000) {
   const t = Date.now();
   while (Date.now() - t < ms) { if (await pg.evaluate(js)) return; await pg.waitForTimeout(250); }
@@ -41,7 +43,7 @@ async function reloaded(pg, action) {
   const m = await mocks.start();
   const data = fs.mkdtempSync(path.join(os.tmpdir(), 'ar-data-'));
   const downloads = fs.mkdtempSync(path.join(os.tmpdir(), 'ar-dl-'));
-  const env = { AR_TEST: '1', AR_DATA_DIR: data, AR_TEST_DOWNLOADS: downloads, AR_TEST_OAUTH: 'fetch', AR_ANTHROPIC_BASE_URL: m.base, AR_GMAIL_API_BASE: m.base, AR_GOOGLE_AUTH_URL: m.base + '/auth', AR_GOOGLE_TOKEN_URL: m.base + '/token', AR_OPENAI_BASE_URL: m.base, AR_GEMINI_BASE_URL: m.base };
+  const env = { AR_TEST: '1', AR_CLAUDE_BIN: path.join(os.tmpdir(), 'no-claude-code-here'), AR_DATA_DIR: data, AR_TEST_DOWNLOADS: downloads, AR_TEST_OAUTH: 'fetch', AR_ANTHROPIC_BASE_URL: m.base, AR_GMAIL_API_BASE: m.base, AR_GOOGLE_AUTH_URL: m.base + '/auth', AR_GOOGLE_TOKEN_URL: m.base + '/token', AR_OPENAI_BASE_URL: m.base, AR_GEMINI_BASE_URL: m.base };
   let { app, pg } = await launch({ ...env, AR_START_VIEW: 'setup' });
   try {
     step('first run: nothing connected');
@@ -65,7 +67,7 @@ async function reloaded(pg, action) {
     await pg.click('[data-act="save-setup"]'); await pg.waitForTimeout(400);
 
     step('API key: reject a malformed key, accept a valid one');
-    await pg.fill('#dk-key', 'nope'); await pg.click('[data-dact="save-key"]');
+    await openAdv(pg); await pg.fill('#dk-key', 'nope'); await pg.click('[data-dact="save-key"]');
     assert.match(await pg.textContent('#dk-conn'), /does not look like/);
     await pg.fill('#dk-key', KEY);
     await reloaded(pg, () => pg.click('[data-dact="save-key"]'));
@@ -230,7 +232,7 @@ async function reloaded(pg, action) {
     const server = fs.mkdtempSync(path.join(os.tmpdir(), 'ar-server-'));
     const env2 = { ...env, AR_DATA_DIR: data2, AR_IMAP_HOST: '127.0.0.1', AR_IMAP_PORT: String(imap.port), AR_IMAP_INSECURE: '1', AR_SMTP_HOST: '127.0.0.1', AR_SMTP_PORT: String(smtp.port), AR_SMTP_INSECURE: '1', AR_START_VIEW: 'setup', AR_TEST_FOLDER: server };
     ({ app, pg } = await launch(env2));
-    await pg.fill('#dk-key', KEY); await reloaded(pg, () => pg.click('[data-dact="save-key"]'));
+    await openAdv(pg); await pg.fill('#dk-key', KEY); await reloaded(pg, () => pg.click('[data-dact="save-key"]'));
     await pg.click('.rail [data-nav="setup"]'); await pg.waitForSelector('#dk-imap-user');
     await pg.fill('#dk-imap-user', 'msobeah12@gmail.com'); await pg.fill('#dk-imap-pass', 'wxyz wxyz wxyz wxyz');
     await pg.click('[data-dact="gmail-connect-imap"]');
@@ -310,7 +312,7 @@ async function reloaded(pg, action) {
     const env3 = { ...env, AR_DATA_DIR: data3, AR_START_VIEW: 'setup' };
     ({ app, pg } = await launch(env3));
     await pg.fill('#s-name', 'Mahmoud Sobeah'); await pg.fill('#s-emails', 'm.sobeah@contractor.example'); await pg.click('[data-act="save-setup"]'); await pg.waitForTimeout(300);
-    await pg.fill('#dk-key', 'sk-ant-nocredit-0123456789abcdef'); await reloaded(pg, () => pg.click('[data-dact="save-key"]'));
+    await openAdv(pg); await pg.fill('#dk-key', 'sk-ant-nocredit-0123456789abcdef'); await reloaded(pg, () => pg.click('[data-dact="save-key"]'));
     await pg.click('.rail [data-nav="setup"]'); await pg.waitForSelector('#dk-ai');
     assert.match(await pg.textContent('#dk-ai'), /Which AI reads your emails/);
     await pg.click('#dk-ai details[data-p="openai"] summary');
@@ -382,24 +384,26 @@ async function reloaded(pg, action) {
     assert.match(usage, /ChatGPT/); assert.match(usage, /Gemini/); assert.match(usage, /Local.*free/s);
     await pg.screenshot({ path: path.join(OUT, '12-ai-usage.png'), fullPage: true });
 
-    step('Claude on your own Pro/Max plan through Claude Code: check, sign in, emails read on the plan (no API key, no budget), plan limit → backup');
+    step('one button connects your Claude account (Pro/Max plan): Claude Code is installed, the sign-in opens, the app notices when you are signed in; emails read on the plan (no API key, no budget); plan limit → backup');
     await app.close();
-    const ccState = path.join(data3, 'fake-claude.json'), ccLog = path.join(data3, 'fake-claude.log');
-    fs.writeFileSync(ccState, JSON.stringify({ loggedIn: false }));
-    const env5 = { ...env3, AR_CLAUDE_BIN: path.join(__dirname, 'fake-claude.js'), FAKE_CLAUDE_STATE: ccState, FAKE_CLAUDE_LOG: ccLog, ANTHROPIC_API_KEY: 'sk-ant-should-not-reach-claude-code' };
+    const ccState = path.join(data3, 'fake-claude.json'), ccLog = path.join(data3, 'fake-claude.log'), ccBin = path.join(data3, 'bin', 'claude');
+    fs.mkdirSync(path.dirname(ccBin), { recursive: true }); fs.writeFileSync(ccState, JSON.stringify({ loggedIn: false }));
+    const env5 = { ...env3, AR_CLAUDE_BIN: ccBin, AR_TEST_CLAUDE_SRC: path.join(__dirname, 'fake-claude.js'), FAKE_CLAUDE_STATE: ccState, FAKE_CLAUDE_LOG: ccLog, ANTHROPIC_API_KEY: 'sk-ant-should-not-reach-claude-code' };
     ({ app, pg } = await launch(env5));
-    await pg.click('.rail [data-nav="setup"]'); await pg.waitForSelector('#dk-ai');
-    await pg.click('#dk-ai details[data-p="plan"] summary');
-    assert.match(await pg.textContent('#dk-ai details[data-p="plan"]'), /fake-claude\.js/, 'Claude Code found');
-    await pg.click('[data-dact="ai-plan-check"]'); await waitFor(pg, "/Now press Sign in/.test(document.querySelector('#dk-ai').textContent)");
-    await pg.click('[data-dact="ai-plan-login"]'); await waitFor(pg, "/sign-in window opened/.test(document.querySelector('#dk-ai').textContent)");
-    const tLg = Date.now(); while (!(fs.existsSync(ccLog) && /"login":true/.test(fs.readFileSync(ccLog, 'utf8'))) && Date.now() - tLg < 10000) await new Promise(r => setTimeout(r, 200));
-    assert.match(fs.readFileSync(ccLog, 'utf8'), /"login":true/, 'sign-in runs Claude Code\'s own login');
-    fs.writeFileSync(ccState, JSON.stringify({ loggedIn: true }));
-    await pg.click('[data-dact="ai-plan-check"]'); await waitFor(pg, "/signed in with your plan/.test(document.querySelector('#dk-ai').textContent)");
-    await pg.click('[data-dact="ai-test"][data-p="plan"]'); await waitFor(pg, "/works \\(answered by claude-haiku-5-5\\)/.test(document.querySelector('#dk-ai').textContent)");
-    await pg.selectOption('#ai-primary', 'plan'); await pg.selectOption('#ai-backup', 'ollama'); await pg.check('#ai-auto');
-    await reloaded(pg, () => pg.click('[data-dact="ai-save"]'));
+    await pg.click('.rail [data-nav="setup"]'); await pg.waitForSelector('#plan-connect');
+    assert.match(await pg.textContent('#dk-conn'), /Your Claude account\s*Not connected/);
+    await pg.click('#plan-connect');
+    await waitFor(pg, "/Setting up Claude on this PC/.test(document.querySelector('#dk-conn').textContent)", 10000);
+    await waitFor(pg, "/sign-in window opened/.test(document.querySelector('#dk-conn').textContent)", 20000);
+    assert.ok(fs.existsSync(ccBin), 'Claude Code installed');
+    assert.match(fs.readFileSync(ccLog, 'utf8'), /"login":true/, 'the sign-in is Claude Code\'s own');
+    await pg.screenshot({ path: path.join(OUT, '12b-claude-connecting.png') });
+    fs.writeFileSync(ccState, JSON.stringify({ loggedIn: true }));   // you finish the sign-in in the browser
+    await pg.waitForEvent('load', { timeout: 20000 }); await pg.waitForSelector('h1');
+    assert.strictEqual(await ev(pg, "window.claude.desktop.status().ai.primary"), 'plan', 'your Claude account now reads the emails');
+    await pg.click('.rail [data-nav="setup"]');
+    await waitFor(pg, "/Your Claude account\\s*Connected/.test(document.querySelector('#dk-conn').textContent)");
+    assert.ok(!(await ev(pg, "document.getElementById('dk-adv').open || document.getElementById('dk-ai-more').open")), 'advanced options folded away');
     await pg.click('.rail [data-nav="import"]');
     await pg.setInputFiles('#file-in', [path.join(FX, 'review.eml')]);
     await waitFor(pg, "window.__AR.UI.staging.some(b=>b.state==='ready')");
@@ -420,11 +424,11 @@ async function reloaded(pg, action) {
     await pg.click('[data-act="analyze"]'); await idle(pg);
     const b6 = await ev(pg, "(b => b && ({ state: b.state, error: b.error, done: b.doneText }))([...window.__AR.UI.staging].filter(b => b.state === 'done' || b.state === 'error').find(b => !/your plan/.test(b.doneText || '')))");
     assert.match((b6 && b6.done) || JSON.stringify(b6), /Read by Local model .*\(backup AI\)/, 'plan limit reached → the backup read it');
-    await pg.click('.rail [data-nav="setup"]'); await pg.waitForSelector('#dk-ai');
     assert.match(await ev(pg, "window.__AR.St.emails && [...window.__AR.St.emails.values()].map(e => e.analysis && e.analysis.readBy && e.analysis.readBy.fallback && e.analysis.readBy.fallback.code).filter(Boolean).join()"), /rate_limited/);
-    await pg.click('#dk-ai details[data-p="plan"] summary');
-    assert.match(await pg.textContent('#dk-ai details[data-p="plan"]'), /5-hour window/, 'plan usage shown');
-    await pg.screenshot({ path: path.join(OUT, '12b-claude-plan.png'), fullPage: true });
+    await pg.click('.rail [data-nav="setup"]'); await pg.waitForSelector('#dk-conn');
+    await waitFor(pg, "/5-hour window/.test(document.querySelector('#dk-conn').textContent)");
+    await (await pg.$('#dk-conn')).screenshot({ path: path.join(OUT, '12b-claude-connected.png') });
+    await ev(pg, "document.getElementById('dk-ai-more').open = true"); await pg.waitForTimeout(100);
     await pg.selectOption('#ai-primary', 'claude'); await reloaded(pg, () => pg.click('[data-dact="ai-save"]'));
 
     step('notebook: a linked folder is read from disk, answers cite the file, a new file is picked up after a restart');

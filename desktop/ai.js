@@ -8,7 +8,7 @@ const plan = require('./plan');
 
 const PROVIDERS = {
   claude: { label: 'Claude (Anthropic)', secret: 'anthropicKey' },
-  plan: { label: 'Claude — my Pro/Max plan', secret: null },
+  plan: { label: 'Claude — my account (Pro/Max plan)', secret: null },
   openai: { label: 'ChatGPT (OpenAI)', secret: 'openaiKey' },
   gemini: { label: 'Gemini (Google)', secret: 'geminiKey' },
   ollama: { label: 'Local model (Ollama)', secret: null },
@@ -30,7 +30,9 @@ function settings(config) {
   const a = config.get().ai || {};
   const models = {};
   for (const p of ['openai', 'gemini', 'ollama']) models[p] = { ...DEFAULT_AI.models[p], ...((a.models || {})[p] || {}) };
-  return { ...DEFAULT_AI, ...a, models, prices: { ...(a.prices || {}) } };
+  // nothing chosen yet: your Claude account (Pro/Max plan) unless an API key was saved before
+  const primary = a.primary || (config.secret('anthropicKey') ? 'claude' : 'plan');
+  return { ...DEFAULT_AI, ...a, primary, models, prices: { ...(a.prices || {}) } };
 }
 function ready(config, p) {
   if (p === 'claude') return !!config.secret('anthropicKey');
@@ -296,6 +298,8 @@ function status(config) {
 }
 function setSettings(config, patch) {
   const s = settings(config), out = { ...s };
+  // the default (your Claude account, or the API key if one is saved) is worked out each time, not stored
+  if (!(config.get().ai || {}).primary) delete out.primary;
   if (patch.primary && PROVIDERS[patch.primary]) out.primary = patch.primary;
   if ('backup' in patch) out.backup = PROVIDERS[patch.backup] ? patch.backup : '';
   if ('autoBackup' in patch) out.autoBackup = !!patch.autoBackup;
@@ -316,6 +320,8 @@ function setSettings(config, patch) {
 }
 
 function planLogin(config) { return plan.login(config); }
-async function planStatus(config) { return plan.authStatus(config); }
+async function planStatus(config) { return { ...(await plan.authStatus(config)), job: plan.job() }; }
+// connected → your Claude account reads the emails (other choices stay as they were)
+function planConnect(config, force) { return plan.connect(config, () => setSettings(config, { primary: 'plan' }), force); }
 
-module.exports = { planLogin, planStatus, run, abort, test, listModels, status, setSettings, ready, cost, monthCost, PROVIDERS, suggest, versionDesc };
+module.exports = { planLogin, planStatus, planConnect, run, abort, test, listModels, status, setSettings, ready, cost, monthCost, PROVIDERS, suggest, versionDesc };

@@ -1,7 +1,7 @@
 {
   "name": "action-register",
   "productName": "Action Register",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "private": true,
   "description": "Email-to-task manager for mechanical / water & wastewater engineers: imports Outlook emails with attachments, Claude extracts evidence-backed tasks, user approves, tasks shown as a Project → Topic → Task mind map.",
   "scripts": {

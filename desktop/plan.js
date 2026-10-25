@@ -24,7 +24,9 @@ function candidates() {
 }
 function find(config) {
   const own = (config.get().ai || {}).claudePath;
-  for (const p of [process.env.AR_CLAUDE_BIN, own, ...candidates()]) {
+  // tests point at a stand-in (or at nothing) and must never reach a real Claude Code on the machine
+  const list = process.env.AR_CLAUDE_BIN ? [process.env.AR_CLAUDE_BIN] : [own, ...candidates()];
+  for (const p of list) {
     try { if (p && fs.statSync(p).isFile()) return p; } catch {}
   }
   return '';
@@ -43,7 +45,7 @@ function launch(bin, args, opts) {
   return spawn(bin, args, { ...opts, windowsHide: true });
 }
 
-const notFound = () => ({ code: 'unavailable', message: 'Claude Code is not installed on this PC (or the app cannot find it). Install it from Setup › Which AI › Claude — my plan, then press Check.' });
+const notFound = () => ({ code: 'auth_failed', message: 'Your Claude account is not connected on this PC. Press Connect my Claude account in Setup.' });
 
 // latest plan usage seen in Claude Code's rate-limit events: { status, resetsAt, windows: { five_hour: { utilization, resetsAt } … } }
 let lastLimits = null;
@@ -101,9 +103,9 @@ function when(ts) { if (!ts) return ''; const d = new Date(ts * 1000); return d.
 function mapError(result, limit, stderr, code) {
   const msg = String((result && (result.result || (result.errors || []).join(' '))) || stderr || `Claude Code stopped (exit code ${code}).`).trim().slice(0, 500);
   if (limit || /usage limit|hit your limit|limit reached|rate.?limit|429/i.test(msg)) return { code: 'rate_limited', message: `Your Claude plan's usage limit is reached${limit && limit.resetsAt ? ` until ${when(limit.resetsAt)}` : ''}.`, resetsAt: limit && limit.resetsAt };
-  if (/not logged in|log ?in|sign ?in|authenticat|oauth|401|invalid api key|credentials/i.test(msg)) return { code: 'auth_failed', message: 'Claude Code is not signed in to your Claude account. Press Sign in in Setup › Which AI.' };
-  if (/credit balance|billing/i.test(msg)) return { code: 'auth_failed', message: 'Claude Code is using an API key instead of your plan. Sign in with your Claude account in Setup › Which AI.' };
-  if (/model/i.test(msg) && /not.?found|404|not available|access|invalid|unknown/i.test(msg)) return { code: 'model_not_found', message: 'Your plan cannot use this Claude model in Claude Code: ' + msg };
+  if (/not logged in|log ?in|sign ?in|authenticat|oauth|401|invalid api key|credentials/i.test(msg)) return { code: 'auth_failed', message: 'Your Claude account is signed out on this PC. Press Connect my Claude account in Setup.' };
+  if (/credit balance|billing/i.test(msg)) return { code: 'auth_failed', message: 'Claude is signed in with an API account instead of your plan. Press Connect my Claude account in Setup.' };
+  if (/model/i.test(msg) && /not.?found|404|not available|access|invalid|unknown/i.test(msg)) return { code: 'model_not_found', message: 'Your plan cannot use this Claude model: ' + msg };
   if (/too long|too large|context|request_too_large/i.test(msg)) return { code: 'prompt_too_large', message: msg };
   if (/overloaded|529|ENOTFOUND|ECONN|network|fetch failed|timed? ?out/i.test(msg)) return { code: 'unavailable', message: 'Claude could not be reached: ' + msg };
   return { code: 'upstream_error', message: msg };
@@ -131,11 +133,60 @@ function authStatus(config) {
 function login(config) {
   const bin = find(config);
   if (!bin) throw notFound();
-  if (process.env.AR_TEST) { spawn(bin, ['auth', 'login'], { stdio: 'ignore', env: env() }).on('error', () => {}); return true; }
-  if (WIN) spawn('cmd.exe', ['/c', 'start', '"Claude sign-in"', 'cmd', '/k', `""${bin}" auth login"`], { detached: true, stdio: 'ignore', windowsVerbatimArguments: true }).unref();
-  else if (process.platform === 'darwin') spawn('osascript', ['-e', `tell application "Terminal" to do script "'${bin.replace(/'/g, `'\\''`)}' auth login"`, '-e', 'tell application "Terminal" to activate'], { detached: true, stdio: 'ignore' }).unref();
-  else spawn('x-terminal-emulator', ['-e', bin, 'auth', 'login'], { detached: true, stdio: 'ignore' }).on('error', () => {}).unref();
+  if (process.env.AR_TEST) { spawn(bin, ['auth', 'login', '--claudeai'], { stdio: 'ignore', env: env() }).on('error', () => {}); return true; }
+  // the window closes by itself once the sign-in is finished
+  if (WIN) spawn('cmd.exe', ['/c', 'start', '"Claude sign-in"', 'cmd', '/c', `""${bin}" auth login --claudeai"`], { detached: true, stdio: 'ignore', windowsVerbatimArguments: true }).unref();
+  else if (process.platform === 'darwin') spawn('osascript', ['-e', `tell application "Terminal" to do script "'${bin.replace(/'/g, `'\\''`)}' auth login --claudeai; exit"`, '-e', 'tell application "Terminal" to activate'], { detached: true, stdio: 'ignore' }).unref();
+  else spawn('x-terminal-emulator', ['-e', bin, 'auth', 'login', '--claudeai'], { detached: true, stdio: 'ignore' }).on('error', () => {}).unref();
   return true;
 }
 
-module.exports = { run, find, authStatus, login, limits: () => lastLimits, mapError };
+// Anthropic's own installer (the same command as on code.claude.com › Setup), run hidden; it installs for this
+// user only (no administrator rights) into ~/.local/bin
+function install() {
+  return new Promise((resolve, reject) => {
+    let cmd, args;
+    if (process.env.AR_TEST) {
+      if (!process.env.AR_TEST_CLAUDE_SRC || !process.env.AR_CLAUDE_BIN) return reject({ message: 'no installer in tests' });
+      fs.symlinkSync(process.env.AR_TEST_CLAUDE_SRC, process.env.AR_CLAUDE_BIN);
+      return setTimeout(resolve, 1500);
+    }
+    if (WIN) { cmd = 'powershell.exe'; args = ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', 'irm https://claude.ai/install.ps1 | iex']; }
+    else { cmd = '/bin/bash'; args = ['-c', 'curl -fsSL https://claude.ai/install.sh | bash']; }
+    let out = '';
+    const c = spawn(cmd, args, { windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] });
+    const t = setTimeout(() => { try { c.kill(); } catch {} }, 10 * 60 * 1000);
+    c.stdout.on('data', d => { out = (out + d).slice(-2000); }); c.stderr.on('data', d => { out = (out + d).slice(-2000); });
+    c.on('error', e => { clearTimeout(t); reject({ message: String(e.message || e) }); });
+    c.on('close', code => { clearTimeout(t); code === 0 ? resolve() : reject({ message: out.trim().split('\n').slice(-3).join(' ') || 'exit code ' + code }); });
+  });
+}
+
+// One button: install Claude Code if needed, open the sign-in, wait until the account is signed in, then
+// make it the AI that reads emails. The window asks for `job` every few seconds to show progress.
+let job = { stage: 'idle' };
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+function connect(config, onDone, force) {
+  if (['install', 'login', 'start'].includes(job.stage)) return job;
+  job = { stage: 'start', at: Date.now() };
+  (async () => {
+    if (!find(config)) {
+      job = { stage: 'install', at: Date.now() };
+      try { await install(); } catch (e) { throw { message: 'Claude could not be installed automatically (' + (e.message || 'no details') + '). Check the internet connection and press Connect again.' }; }
+      if (!find(config)) throw { message: 'Claude was installed but the app cannot find it yet. Restart the app and press Connect again.' };
+    }
+    let a = force ? {} : await authStatus(config);
+    if (!a.plan) {
+      job = { stage: 'login', at: Date.now() };
+      login(config);
+      const t0 = Date.now();
+      while (Date.now() - t0 < 10 * 60 * 1000) { await sleep(2000); a = await authStatus(config); if (a.plan) break; }
+      if (!a.plan) throw { message: a.loggedIn ? 'Claude is signed in with a Console (API) account, not your Claude plan. Press Connect again and choose your Claude account.' : 'The sign-in was not finished. Press Connect again.' };
+    }
+    job = { stage: 'done', at: Date.now() };
+    onDone && onDone();
+  })().catch(e => { job = { stage: 'error', message: (e && e.message) || String(e), at: Date.now() }; });
+  return job;
+}
+
+module.exports = { run, find, authStatus, login, connect, job: () => job, limits: () => lastLimits, mapError };

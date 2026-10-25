@@ -5033,7 +5033,7 @@ function viewImport() {
   const ready = UI.staging.filter(b => b.state === 'ready' && !b.skip);
   return `<div class="wrap">
     <div class="page-head"><div><h1>Add emails</h1><div class="sub">Forward emails to your address, or add saved Outlook files. Claude reads each email with its attachments and proposes tasks for your review.</div></div></div>
-    ${!aiOK && St.capsResolved ? callout('warn', DESKTOP ? '<p><b>AI analysis is not set up yet.</b> Add your Anthropic API key (or ChatGPT, Gemini or a free local model) in Setup › Connections. <button class="btn sm" data-act="nav" data-view="setup">Open Setup</button></p>' : '<p><b>Claude analysis is not available in this view.</b> Open this page inside Claude while signed in, and choose Allow when asked.</p>') : ''}
+    ${!aiOK && St.capsResolved ? callout('warn', DESKTOP ? '<p><b>Connect your Claude account so the app can read your emails</b> (it uses your Pro or Max plan; one click in Setup). <button class="btn sm primary" data-act="nav" data-view="setup">Open Setup</button></p>' : '<p><b>Claude analysis is not available in this view.</b> Open this page inside Claude while signed in, and choose Allow when asked.</p>') : ''}
     ${!s.me.name ? callout('warn', `<p>Tell Claude who you are first, so it can separate your actions from other people's. <button class="btn sm" data-act="nav" data-view="setup">Open Setup</button></p>`) : ''}
     ${gmailCardHTML()}
     <div class="drop" id="drop">
