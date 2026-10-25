@@ -4,9 +4,11 @@
 // answers { value, meta: { provider, model, fallback } } so the app can say which AI read an email.
 const { net } = require('electron');
 const claude = require('./claude');
+const plan = require('./plan');
 
 const PROVIDERS = {
   claude: { label: 'Claude (Anthropic)', secret: 'anthropicKey' },
+  plan: { label: 'Claude — my Pro/Max plan', secret: null },
   openai: { label: 'ChatGPT (OpenAI)', secret: 'openaiKey' },
   gemini: { label: 'Gemini (Google)', secret: 'geminiKey' },
   ollama: { label: 'Local model (Ollama)', secret: null },
@@ -32,13 +34,14 @@ function settings(config) {
 }
 function ready(config, p) {
   if (p === 'claude') return !!config.secret('anthropicKey');
+  if (p === 'plan') return !!plan.find(config);
   if (p === 'ollama') { const m = settings(config).models.ollama; return !!(m.strong || m.fast); }
   if (!PROVIDERS[p]) return false;
   const m = settings(config).models[p];
   return !!config.secret(PROVIDERS[p].secret) && !!(m.strong || m.fast);
 }
 function modelFor(config, p, tier) {
-  if (p === 'claude') { const m = config.models(); return m[tier] || m.complex; }
+  if (p === 'claude' || p === 'plan') { const m = config.models(); return m[tier] || m.complex; }
   const m = settings(config).models[p];
   return tier === 'quick' ? (m.fast || m.strong) : (m.strong || m.fast);
 }
@@ -49,9 +52,10 @@ function price(config, model) {
   const k = Object.keys(CLAUDE_PRICES).find(x => String(model).startsWith(x));
   return k ? CLAUDE_PRICES[k] : null;
 }
-// usage rows are keyed by model; local models are stored as "ollama:<model>" so they count as free
+// usage rows are keyed by model; local models are stored as "ollama:<model>" and calls on the Claude plan as
+// "plan:<model>", so they count as free (the plan is paid for by its subscription, not per token)
 function cost(config, model, u) {
-  if (/^ollama:/.test(model)) return 0;
+  if (/^(ollama|plan):/.test(model)) return 0;
   const p = price(config, model); if (!p) return null;
   return ((u.input || 0) * p.in + (u.output || 0) * p.out + (u.cacheRead || 0) * (p.cr ?? p.in / 10) + (u.cacheWrite || 0) * p.in * 1.25) / 1e6;
 }
@@ -67,7 +71,7 @@ function monthCost(config) {
 async function run(config, req, onDelta, onUsage) {
   const s = settings(config);
   const first = PROVIDERS[req.provider] ? req.provider : s.primary;
-  if (s.budget > 0 && !req.overBudget && first !== 'ollama') {
+  if (s.budget > 0 && !req.overBudget && first !== 'ollama' && first !== 'plan') {
     const mc = monthCost(config);
     if (mc.total >= s.budget) throw { code: 'budget', message: `This month's AI spend (about $${mc.total.toFixed(2)}) has reached your budget of $${s.budget}.` };
   }
@@ -91,6 +95,15 @@ async function runOn(config, p, req, onDelta, onUsage) {
     return { value, meta: { provider: p, model } };
   }
   const ac = new AbortController(); running.set(req.id, ac);
+  if (p === 'plan') {
+    try {
+      const r = await plan.run(config, model, req, ac.signal, onDelta, u => onUsage && onUsage({ ...u, model: 'plan:' + u.model }));
+      if (!String(r.text).trim()) throw { code: 'empty_completion', message: 'Empty answer' };
+      const value = claude.parseJsonLoose(r.text);
+      if (value === undefined) throw { code: 'invalid_json', message: 'The answer was not JSON.' };
+      return { value, meta: { provider: p, model: r.model, viaKey: r.viaKey || undefined } };
+    } finally { running.delete(req.id); }
+  }
   try {
     const text = await (p === 'openai' ? openaiRun : p === 'gemini' ? geminiRun : ollamaRun)(config, model, req, ac.signal, onDelta, u => onUsage && onUsage({ ...u, model: p === 'ollama' ? 'ollama:' + model : model }));
     if (!text.trim()) throw { code: 'empty_completion', message: 'Empty answer' };
@@ -261,6 +274,12 @@ function suggest(p, ids) {
 }
 async function test(config, p) {
   if (p === 'claude') { const r = await claude.test(config); return { provider: p, model: r.model }; }
+  if (p === 'plan') {
+    const a = await plan.authStatus(config);
+    if (!a.installed) throw { code: 'unavailable', message: 'Claude Code is not installed on this PC (or the app cannot find it).' };
+    if (!a.loggedIn) throw { code: 'auth_failed', message: 'Claude Code is installed but not signed in. Press Sign in and finish in the browser.' };
+    if (!a.plan) throw { code: 'auth_failed', message: 'Claude Code is signed in with an API key, not your Claude plan. Press Sign in and choose your Claude account (Pro or Max).' };
+  }
   const model = modelFor(config, p, 'quick');
   const r = await runOn(config, p, { id: 't' + Date.now(), prompt: 'Reply with this JSON exactly: {"ok": true}', tier: 'quick', images: [] }, () => {}, () => {});
   if (!r.value || r.value.ok !== true) throw { code: 'invalid_json', message: 'Unexpected answer' };
@@ -271,6 +290,7 @@ function status(config) {
   const s = settings(config), mc = monthCost(config);
   const providers = {};
   for (const p of Object.keys(PROVIDERS)) providers[p] = { label: PROVIDERS[p].label, ready: ready(config, p), hasKey: PROVIDERS[p].secret ? !!config.secret(PROVIDERS[p].secret) : true };
+  providers.plan.path = plan.find(config); providers.plan.limits = plan.limits(); providers.plan.customPath = s.claudePath || '';
   const prices = {}; for (const [k, v] of Object.entries(CLAUDE_PRICES)) prices[k] = v; Object.assign(prices, s.prices);
   return { primary: s.primary, backup: s.backup, autoBackup: !!s.autoBackup, budget: +s.budget || 0, suggestSimple: s.suggestSimple !== false, ollamaUrl: s.ollamaUrl, models: s.models, prices, providers, ready: ready(config, s.primary) || (s.autoBackup && !!s.backup && ready(config, s.backup)), monthCost: mc.total, costUnknown: mc.unknown, quickModel: modelFor(config, s.primary, 'quick'), strongModel: modelFor(config, s.primary, 'complex') };
 }
@@ -281,6 +301,7 @@ function setSettings(config, patch) {
   if ('autoBackup' in patch) out.autoBackup = !!patch.autoBackup;
   if ('suggestSimple' in patch) out.suggestSimple = !!patch.suggestSimple;
   if ('budget' in patch) out.budget = Math.max(0, Math.min(100000, +patch.budget || 0));
+  if (typeof patch.claudePath === 'string') { const v = patch.claudePath.trim(); if (!v) delete out.claudePath; else if (v.length < 400 && /claude(\.exe|\.cmd)?$/i.test(v)) out.claudePath = v; }
   if (typeof patch.ollamaUrl === 'string' && /^https?:\/\/[\w.\-:[\]]+(\/[\w./-]*)?$/.test(patch.ollamaUrl.trim())) out.ollamaUrl = patch.ollamaUrl.trim();
   if (patch.models) for (const p of ['openai', 'gemini', 'ollama']) if (patch.models[p]) {
     const m = patch.models[p]; const ok = v => typeof v === 'string' && /^[\w.\-:@/]{0,120}$/.test(v.trim());
@@ -294,4 +315,7 @@ function setSettings(config, patch) {
   config.set({ ai: out });
 }
 
-module.exports = { run, abort, test, listModels, status, setSettings, ready, cost, monthCost, PROVIDERS, suggest, versionDesc };
+function planLogin(config) { return plan.login(config); }
+async function planStatus(config) { return plan.authStatus(config); }
+
+module.exports = { planLogin, planStatus, run, abort, test, listModels, status, setSettings, ready, cost, monthCost, PROVIDERS, suggest, versionDesc };

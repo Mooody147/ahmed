@@ -1,11 +1,11 @@
 /* ---------- Which AI: labels, out-of-credit choices, the fast model for simple emails, budget warnings ---------- */
-const AI_LABEL = { claude: 'Claude', openai: 'ChatGPT', gemini: 'Gemini', ollama: 'Local model' };
+const AI_LABEL = { claude: 'Claude', plan: 'Claude (your plan)', openai: 'ChatGPT', gemini: 'Gemini', ollama: 'Local model' };
 // "claude-sonnet-5-5" → "Claude Sonnet 5.5"; other providers keep the model ID after their name
 function aiName(meta) {
   if (!meta) return '';
   const m = String(meta.model || '');
   const c = /^claude-([a-z]+)-(\d+)(?:-(\d+))?/.exec(m);
-  if (meta.provider === 'claude' || c) return c ? `Claude ${c[1][0].toUpperCase() + c[1].slice(1)} ${c[2]}${c[3] ? '.' + c[3] : ''}` : 'Claude';
+  if (meta.provider === 'claude' || meta.provider === 'plan' || c) return (c ? `Claude ${c[1][0].toUpperCase() + c[1].slice(1)} ${c[2]}${c[3] ? '.' + c[3] : ''}` : 'Claude') + (meta.provider === 'plan' ? ' · your plan' : '');
   return `${AI_LABEL[meta.provider] || meta.provider || 'AI'}${m ? ' · ' + m.replace(/^ollama:/, '') : ''}`;
 }
 function aiByTitle(meta) {
@@ -26,6 +26,7 @@ function aiErrorFor(e) {
   if (!e || !e.code) return '';
   const p = e.provider || (aiSt() || {}).primary || 'claude', who = AI_LABEL[p] || 'The AI';
   const backup = e.backup ? ` You can use ${AI_LABEL[e.backup]} (your backup AI) for now.` : '';
+  if (p === 'plan' && ['auth_failed', 'rate_limited', 'model_not_found', 'unavailable'].includes(e.code)) return `${e.message || who + ' failed.'}${backup}`;
   if (e.code === 'budget') return `${e.message} Raise the budget in Setup › Which AI, or continue just this time.`;
   if (e.code === 'billing') {
     const said = aiSaid(e.message), perm = /permission|not allowed|not have access|forbidden/i.test(said) || /^403\b/.test(String(e.message || ''));

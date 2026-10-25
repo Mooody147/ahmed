@@ -182,6 +182,8 @@ function registerIpc() {
   });
   handle('ai:models', ({ provider, key }) => ai.listModels(config, provider, key ? String(key).trim() : ''));
   handle('ai:test', ({ provider }) => ai.test(config, provider));
+  handle('ai:plan-login', () => ai.planLogin(config));
+  handle('ai:plan-status', () => ai.planStatus(config));
   handle('claude:test', () => claude.test(config));
   handle('config:claude', ({ key, models, maxPromptKB }) => {
     if (key !== undefined) config.setSecret('anthropicKey', key ? String(key).trim() : null);
@@ -252,7 +254,7 @@ function registerIpc() {
   handle('cloud:unshare', a => cloud.unshare(a || {}));
   handle('shell:openData', () => shell.openPath(DATA_DIR));
   handle('shell:openPath', p => { if (typeof p === 'string' && [sys.prefs(config).watchDir, sys.prefs(config).backupDir, DATA_DIR].some(d => d && p.startsWith(d))) return shell.openPath(p); throw { code: 'forbidden', message: 'Path not allowed' }; });
-  handle('shell:openExternal', url => { if (/^(https:\/\/(console\.anthropic\.com|console\.cloud\.google\.com|docs\.anthropic\.com|platform\.claude\.com|myaccount\.google\.com|support\.google\.com|platform\.openai\.com|aistudio\.google\.com|ollama\.com|supabase\.com|[\w-]+\.github\.io|mail\.google\.com|github\.com\/Mooody147)\/|mailto:)/.test(url)) return shell.openExternal(url); throw { code: 'forbidden', message: 'URL not allowed' }; });
+  handle('shell:openExternal', url => { if (/^(https:\/\/(console\.anthropic\.com|console\.cloud\.google\.com|docs\.anthropic\.com|platform\.claude\.com|code\.claude\.com|claude\.ai|myaccount\.google\.com|support\.google\.com|platform\.openai\.com|aistudio\.google\.com|ollama\.com|supabase\.com|[\w-]+\.github\.io|mail\.google\.com|github\.com\/Mooody147)\/|mailto:)/.test(url)) return shell.openExternal(url); throw { code: 'forbidden', message: 'URL not allowed' }; });
 
   /* desktop extras */
   handle('sys:prefs', patch => {
