@@ -310,6 +310,7 @@ async function docxDoc(title, sub, sections) {
     (s.list || []).forEach(x => kids.push(new d.Paragraph({ text: x, bullet: { level: 0 } })));
     if (s.table) kids.push(new d.Table({ width: { size: 100, type: d.WidthType.PERCENTAGE }, rows: [s.table.head, ...s.table.rows].map((r, i) => new d.TableRow({ tableHeader: i === 0, children: r.map(c => new d.TableCell({ shading: i === 0 ? { fill: 'EEF3F2' } : undefined, children: [P(c, { bold: i === 0, size: 18 })] })) })) }));
     (s.notes || []).forEach(x => kids.push(P(x, { color: '5B6B68', size: 18 })));
+    (s.images || []).forEach(im => { kids.push(new d.Paragraph({ children: [new d.ImageRun({ data: im.data, transformation: { width: im.w, height: im.h } })], spacing: { before: 120 } })); if (im.caption) kids.push(P(im.caption, { italics: true, size: 18, color: '5B6B68' })); });
   }
   const doc = new d.Document({ creator: St.settings.me.name || 'Action Register', title, styles: { default: { document: { run: { font: 'Calibri', size: 21 } } } }, sections: [{ children: kids }] });
   return d.Packer.toBlob(doc);

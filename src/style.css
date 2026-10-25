@@ -1066,3 +1066,16 @@ details.menu > summary.on { background: var(--accent-soft); color: var(--accent)
 .meet-sheet { display: grid; gap: 6px; }
 .vd-rate { width: 64px; height: 30px; }
 @media (max-width: 700px) { .cal-day { min-height: 56px; } .cal-day .ev { font-size: 0; height: 6px; padding: 0; } .load-bars { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+
+/* ---------- Quality ---------- */
+.sv-photos { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; }
+.sv-ph { position: relative; margin: 0; display: grid; gap: 4px; }
+.sv-ph img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 8px; background: var(--soft, rgba(0,0,0,.05)); }
+.sv-ph .icon-btn { position: absolute; top: 4px; right: 4px; background: var(--card, #fff); }
+.sv-add { display: grid; place-items: center; gap: 4px; aspect-ratio: 4 / 3; border: 2px dashed var(--line); border-radius: 8px; cursor: pointer; font-size: 28px; }
+.sv-add span { font-size: 13px; color: var(--muted); }
+.pat-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
+.pat { border: 1px solid var(--line); border-radius: 10px; padding: 10px; }
+.pat ul { margin: 6px 0 0; padding-inline-start: 18px; }
+.uc-tbl tr.on td { background: var(--accent-soft, rgba(0,120,110,.08)); }
+.uc-tbl td.num { text-align: right; font-variant-numeric: tabular-nums; }

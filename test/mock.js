@@ -27,6 +27,9 @@
      return f; }
    return null; }};
  window.__mockAnswer=function(prompt){
+   if(/^You are an experienced site engineer/.test(prompt)) return {captions:['Pump base before grouting'],observations:[{text:'Anchor bolts not plumb at the pump base',sev:'major',action:'Correct the anchor bolts before grouting',photo:1}]};
+   if(/^These are review comments engineers received/.test(prompt)) return {themes:[{theme:'Missing NPSH data',count:2,tip:'Always attach the NPSH calculation.'}],checklist:['Attach NPSH calculation','State the IP rating of actuators']};
+   if(/^List every requirement in this specification/.test(prompt)) return {items:[{clause:'2.1',page:'1',req:'Actuators shall be IP68.',kind:'material'},{clause:'3.4',page:'2',req:'The supplier shall submit the pump curves for approval.',kind:'submittal'},{clause:'4.2',page:'2',req:'Each pump shall be performance tested at the factory (FAT) witnessed by the Engineer.',kind:'test'}]};
    if(/^Rewrite the text below/.test(prompt)) return {text:/Arabic/.test(prompt)?'يرجى إرسال جدول الصمامات المعدل.':'Please send the revised valve schedule by 30 October.'};
    if(/^Draft a formal engineering document/.test(prompt)) { const hs=[...prompt.matchAll(/\{"h": "([^"]+)"/g)].map(m=>m[1]); return {sections:hs.map(h=>({h,text:h+': drafted text [to be confirmed]'}))}; }
    if(/^Summarise this email thread/.test(prompt)) return {summary:'The consultant returned the RAS pump calc with Code 3.',decisions:['Use IP68 actuators'],open:['Ahmed to send the anchor bolt layout'],next:'Resubmit the calc Rev B.'};
