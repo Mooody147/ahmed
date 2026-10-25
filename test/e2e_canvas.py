@@ -209,6 +209,39 @@ async def main():
         await pg.click('.rail [data-nav="setup"]'); await pg.wait_for_timeout(200); await pg.click('[data-act="export-json"]'); await pg.wait_for_timeout(300)
         print('SAVES', await ev("window.__saves"))
 
+        # delete any box, undo, refresh
+        await pg.click('.rail [data-nav="todo"]'); await pg.wait_for_timeout(800)
+        if await ev("document.querySelector('[data-act=\"todo-mode\"][data-mode=\"map\"]') && document.querySelector('[data-act=\"todo-mode\"][data-mode=\"map\"]').getAttribute('aria-pressed') !== 'true'"):
+            await pg.click('[data-act="todo-mode"][data-mode="map"]'); await pg.wait_for_timeout(600)
+        await pg.click('[data-act="map-refresh"]'); await pg.wait_for_timeout(700)
+        ntasks = lambda: ev("window.__AR.St.tasks.size")
+        n0 = await ntasks()
+        tid = await ev("document.querySelector('.mnode.task').dataset.tid")
+        await pg.hover(f'.mnode.task[data-tid="{tid}"]'); await pg.click(f'.mnode.task[data-tid="{tid}"] [data-map="del"]'); await pg.wait_for_timeout(300)
+        assert await ntasks() == n0 - 1 and not await ev(f"window.__AR.St.tasks.has({tid!r})"), 'task deleted from the canvas'
+        await pg.click('.map-tools [data-act="cv-undo"]'); await pg.wait_for_timeout(300)
+        assert await ev(f"window.__AR.St.tasks.has({tid!r})") and await ntasks() == n0, 'undo brings it back'
+        # a whole project box
+        pk = await ev("document.querySelector('.mnode.project:not([data-pk=\"p:~\"])').dataset.pk")
+        inproj = await ev(f"[...window.__AR.St.tasks.values()].filter(t => 'p:' + window.__AR.E.normMatch((t.project||'').trim()) === {pk!r}).length")
+        await pg.hover(f'.mnode.project[data-pk="{pk}"]'); await pg.click(f'.mnode.project[data-pk="{pk}"] [data-map="del"]'); await pg.wait_for_timeout(300)
+        assert await ntasks() == n0 - inproj and inproj >= 1, ('project deleted with its tasks', inproj)
+        await pg.click('.map-tools [data-act="cv-undo"]'); await pg.wait_for_timeout(300); assert await ntasks() == n0
+        # tick done is undoable
+        st0 = await ev(f"window.__AR.St.tasks.get({tid!r}).status")
+        await pg.click(f'.mnode.task[data-tid="{tid}"] [data-map="tick"]'); await pg.wait_for_timeout(300)
+        assert await ev(f"window.__AR.St.tasks.get({tid!r}).status") != st0
+        await pg.keyboard.press('Control+z'); await pg.wait_for_timeout(300)
+        assert await ev(f"window.__AR.St.tasks.get({tid!r}).status") == st0, 'undo un-ticks'
+        # delete a task from an email, then Refresh offers to put it back
+        etid = await ev("[...window.__AR.St.tasks.values()].find(t => (t.emailIds||[]).length && t.status !== 'done').id")
+        await pg.hover(f'.mnode.task[data-tid="{etid}"]'); await pg.click(f'.mnode.task[data-tid="{etid}"] [data-map="del"]'); await pg.wait_for_timeout(300)
+        await pg.click('[data-act="map-refresh"]'); await pg.wait_for_selector('[data-act="map-restore-binned"]')
+        await pg.screenshot(path=SHOTS + '/88-canvas-refresh.png')
+        await pg.click('[data-act="map-restore-binned"]'); await pg.wait_for_timeout(400)
+        assert await ev(f"window.__AR.St.tasks.has({etid!r})") and await ntasks() == n0, 'refresh put the email task back'
+        assert await ev(f"!!document.querySelector('.mnode.task[data-tid=\"{etid}\"]')")
+
         # phone width and dark mode
         m = await b.new_context(viewport={'width': 390, 'height': 844}, is_mobile=True, has_touch=True, color_scheme='dark'); mp = await m.new_page(); await mp.route('**/*', route)
         mp.on('pageerror', lambda e: errors.append('PAGEERROR ' + str(e)))

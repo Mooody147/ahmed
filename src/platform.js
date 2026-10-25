@@ -93,7 +93,7 @@ function sample() {
 const caps = {
   db,
   user: async () => ({ me: async () => ({ id: ST.user.id, name: ST.user.name, email: ST.gmail.account || null }), id: async () => ST.user.id, isOwner: async () => true, canEdit: async () => true, can: async () => true }),
-  sample: async () => (ST.ai.ready ? sample() : null),
+  sample: async () => (refresh().ai.ready ? sample() : null),
   mcp: async () => (ST.gmail.connected ? { callTool: async (server, tool, input) => { if (server !== 'Gmail') throw { code: 'server_not_connected' }; return call('gmail:call', { tool, input }); } } : null),
   downloads: async () => ({ save: async ({ filename, data }) => call('downloads:save', { filename, data: typeof data === 'string' ? data : new Uint8Array(await data.arrayBuffer()) }) }),
 };
@@ -208,7 +208,7 @@ function planPoll() {
   const tick = async () => {
     try { UIX.planSt = await call('ai:plan-status'); } catch { UIX.planSt = UIX.planSt || null; }
     const st = (UIX.planSt && UIX.planSt.job || {}).stage;
-    if (st === 'done' && UIX.planWasBusy) { UIX.planPolling = false; UIX.planWasBusy = false; refresh(); return reloadSoon('Connected to your Claude account.'); }
+    if (st === 'done' && UIX.planWasBusy) { UIX.planPolling = false; UIX.planWasBusy = false; refresh(); UIX.open['dk-adv'] = false; UIX.open['dk-ai-more'] = false; return reloadSoon('Connected to your Claude account.'); }
     if (PLAN_BUSY.includes(st)) { UIX.planWasBusy = true; repaint(); return setTimeout(tick, 2000); }
     UIX.planPolling = false; UIX.planWasBusy = false; refresh(); repaint();
   };
@@ -262,7 +262,7 @@ function repaint() {
   const open = [...document.querySelectorAll('#dk-conn details[id], #dk-ai details[id]')].map(d => [d.id, d.open]);
   const n = document.getElementById('dk-conn'); if (n) n.innerHTML = connInner();
   const a = document.getElementById('dk-ai'); if (a) { UIX.openP = (a.querySelector('details.howto[open][data-p]') || {}).dataset?.p || UIX.openP; a.innerHTML = aiInner(); }
-  for (const [id, o] of open) { const d = document.getElementById(id); if (d) d.open = o; }
+  for (const [id, o] of open) { const d = document.getElementById(id); if (d) d.open = UIX.open[id] ?? o; }
 }
 // the window reloads when AI becomes available or unavailable (capabilities are resolved at start-up)
 const READY0 = !!(ST.ai && ST.ai.ready);
@@ -270,8 +270,9 @@ function aiSay(text, err) { if (!err && !!ST.ai.ready !== READY0) { UIX.aiMsg = 
 function say(text, err) { UIX.msg = { text, err }; repaint(); }
 // Capabilities are resolved once at start-up (app.js initStore), so a change of key or Gmail account reloads the window.
 function reloadSoon(text) {
-  say(text + (stagingCount() ? ' Restart the app to use it (emails waiting to be analysed are kept until then).' : ' Reloading…'));
-  if (!stagingCount()) setTimeout(() => location.reload(), 900);
+  // emails waiting in the list live only in this window, so instead of reloading, the AI is switched on in place
+  if (stagingCount()) { refresh(); say(text + ' You can analyse the emails waiting in Add emails now.'); try { window.__AR.recheckAI(); } catch {} return; }
+  say(text + ' Reloading…'); setTimeout(() => location.reload(), 900);
 }
 const val = id => ((document.getElementById(id) || {}).value || '').trim();
 const ACT = {

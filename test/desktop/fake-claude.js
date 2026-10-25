@@ -36,7 +36,17 @@ process.stdin.on('end', () => {
     out({ type: 'rate_limit_event', rate_limit_info: { status: 'rejected', resetsAt, rateLimitType: 'five_hour', unifiedWindows: { five_hour: { utilization: 1, resetsAt, status: 'rejected' } } } });
     out({ type: 'result', subtype: 'success', is_error: true, result: "You've hit your limit · resets 3pm" }); process.exit(1);
   }
-  const ans = /Reply with this JSON exactly/.test(prompt) ? '{"ok": true}' : JSON.stringify(mockAnswer(prompt));
+  // a long email read in parts: one task per part, with the comment rows of that part as subtasks, quoted
+  // without the Arabic vowel marks (the app must still find the quote)
+  const lp = /LONG EMAIL: .*?This is part (\d+) of (\d+)/.exec(prompt);
+  const rows = lp ? [...prompt.matchAll(/^(C-\d{5}) \| (.+)$/gm)] : [];
+  const ans = /Reply with this JSON exactly/.test(prompt) ? '{"ok": true}' : lp ? JSON.stringify({
+    summary: 'طلب مراجعة تعليقات / CRS review', actionRequired: true, project: 'ELM', category: 'vendor_comments',
+    tasks: [{ ref: 'N1', title: 'Respond to the CRS comments on the RAS pump calc', action: 'Answer every open comment', type: 'reply', ownership: 'mine', owner: 'me', priority: 'high', deadline: null, deadlineBasis: 'none',
+      subtasks: rows.slice(0, 3).map(r => ({ text: r[1] + ' — ' + r[2].slice(0, 40), ref: r[1] })),
+      evidence: rows.length ? [{ source: 'A1', location: null, quote: rows[0][2].replace(/[\u064B-\u0652]/g, '').split(' ').slice(0, 8).join(' ') }] : [], confidence: 0.9 }],
+    updates: [], flags: [], decisions: [], documents: [] }) : JSON.stringify(mockAnswer(prompt));
+  log({ part: lp ? +lp[1] : 0, of: lp ? +lp[2] : 0, bytes: Buffer.byteLength(input), firstRow: rows.length ? rows[0][1] : '', lastRow: rows.length ? rows[rows.length - 1][1] : '' });
   for (let i = 0; i < ans.length; i += 400) out({ type: 'stream_event', event: { type: 'content_block_delta', index: 0, delta: { type: 'text_delta', text: ans.slice(i, i + 400) } } });
   out({ type: 'assistant', message: { model, content: [{ type: 'text', text: ans }] } });
   out({ type: 'rate_limit_event', rate_limit_info: { status: 'allowed', resetsAt, rateLimitType: 'five_hour', unifiedWindows: { five_hour: { utilization: 0.12, resetsAt, status: 'allowed' }, seven_day: { utilization: 0.31, resetsAt: resetsAt + 86400 * 3, status: 'allowed' } } } });

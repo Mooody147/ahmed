@@ -944,7 +944,10 @@ function normalizeAnalysis(raw, ctx) {
 }
 
 /* ---------- evidence verification ---------- */
-const normMatch = s => String(s || '').toLowerCase().normalize('NFKC').replace(/[‘’“”"'`´]/g, '').replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+// Arabic: harakat and tatweel removed, alef/yeh/teh-marbuta variants unified, Arabic-Indic digits as 0-9, so a
+// quote matches whether or not the AI kept the vowel marks
+const AR_DIGITS = { '٠': '0', '١': '1', '٢': '2', '٣': '3', '٤': '4', '٥': '5', '٦': '6', '٧': '7', '٨': '8', '٩': '9', '۰': '0', '۱': '1', '۲': '2', '۳': '3', '۴': '4', '۵': '5', '۶': '6', '۷': '7', '۸': '8', '۹': '9' };
+const normMatch = s => String(s || '').toLowerCase().normalize('NFKC').replace(/[\p{M}\u0640]/gu, '').replace(/[أإآٱ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه').replace(/[٠-٩۰-۹]/g, d => AR_DIGITS[d]).replace(/[‘’“”"'`´]/g, '').replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
 const normCache = new Map();
 function normed(text) { if (normCache.has(text)) return normCache.get(text); const n = normMatch(text); if (normCache.size > 50) normCache.clear(); normCache.set(text, n); return n; }
 function locate(text, quote) {

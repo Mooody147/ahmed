@@ -22,4 +22,7 @@ const u8=f=>new Uint8Array(fs.readFileSync(f));
  // paste
  const p=E.parsePasted('From: Ali Kamal <ali@vendor.example>\nSent: Wednesday, October 22, 2026 3:10 PM\nTo: Mahmoud Sobeah\nCc: Procurement\nSubject: RE: RFQ-221 Blowers – clarification\n\nDear Mahmoud,\nPlease confirm the required discharge pressure (mbar) before we finalize the offer.\nThanks');
  console.log('PASTE',p);
-})().catch(e=>{console.error('FAIL',e)});
+ // Arabic quotes match with or without vowel marks, tatweel and letter variants
+ const ar=E.verifyEvidence([{source:'BODY',quote:'يرجى مراجعة حسابات المضخة رقم ٣ وتقديم المنحنى المعدل'},{source:'BODY',quote:'إرسال الجدول المحدث للاستشاري قبل نهاية الأسبوع'}],{BODY:{name:'Email body',text:'م. محمود،\nيُرجى مُراجعة حسابات المضخّة رقم 3 وتقديم المنحنى المُعدَّل.\nكما نرجو ارسال الجدول المحـدث للإستشاري قبل نهاية الاسبوع.'}});
+ console.log('ARABIC',ar.map(x=>x.check)); if(ar.some(x=>x.check!=='verified')){ console.error('FAIL arabic quotes'); process.exit(1); }
+})().catch(e=>{console.error('FAIL',e); process.exit(1);});

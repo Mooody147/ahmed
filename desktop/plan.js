@@ -36,6 +36,8 @@ function find(config) {
 function env() {
   const e = { ...process.env };
   for (const k of ['ANTHROPIC_API_KEY', 'ANTHROPIC_AUTH_TOKEN', 'ANTHROPIC_BASE_URL', 'CLAUDE_CODE_USE_BEDROCK', 'CLAUDE_CODE_USE_VERTEX', 'CLAUDE_CODE_USE_FOUNDRY']) delete e[k];
+  // long emails with many comments need a long JSON answer
+  e.CLAUDE_CODE_MAX_OUTPUT_TOKENS = e.CLAUDE_CODE_MAX_OUTPUT_TOKENS || '64000';
   if (process.env.AR_CLAUDE_BASE_URL) e.ANTHROPIC_BASE_URL = process.env.AR_CLAUDE_BASE_URL; // tests only
   return e;
 }
@@ -81,6 +83,8 @@ function run(config, model, req, signal, onDelta, onUsage) {
       else if (d.type === 'rate_limit_event' && d.rate_limit_info) { const r = d.rate_limit_info; lastLimits = { status: r.status, resetsAt: r.resetsAt, type: r.rateLimitType, windows: r.unifiedWindows || null, at: Date.now() }; if (r.status === 'rejected') limit = lastLimits; }
       else if (d.type === 'result') result = d;
     };
+    // as text, so an Arabic letter split between two chunks is not broken
+    child.stdout.setEncoding('utf8'); child.stderr.setEncoding('utf8');
     child.stdout.on('data', c => { buf += c; let i; while ((i = buf.indexOf('\n')) >= 0) { const l = buf.slice(0, i).trim(); buf = buf.slice(i + 1); if (l) line(l); } });
     child.stderr.on('data', c => { err = (err + c).slice(-4000); });
     child.on('error', e => finish(reject, e && e.code === 'ENOENT' ? notFound() : { code: 'unavailable', message: 'Claude Code could not be started: ' + (e.message || e) }));

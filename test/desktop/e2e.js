@@ -390,6 +390,10 @@ async function reloaded(pg, action) {
     fs.mkdirSync(path.dirname(ccBin), { recursive: true }); fs.writeFileSync(ccState, JSON.stringify({ loggedIn: false }));
     const env5 = { ...env3, AR_CLAUDE_BIN: ccBin, AR_TEST_CLAUDE_SRC: path.join(__dirname, 'fake-claude.js'), FAKE_CLAUDE_STATE: ccState, FAKE_CLAUDE_LOG: ccLog, ANTHROPIC_API_KEY: 'sk-ant-should-not-reach-claude-code' };
     ({ app, pg } = await launch(env5));
+    // an email is waiting in the list before Claude is connected (the case where Analyse used to stay greyed out)
+    await pg.click('.rail [data-nav="import"]');
+    await pg.setInputFiles('#file-in', [path.join(FX, 'review.eml')]);
+    await waitFor(pg, "window.__AR.UI.staging.some(b=>b.state==='ready')");
     await pg.click('.rail [data-nav="setup"]'); await pg.waitForSelector('#plan-connect');
     assert.match(await pg.textContent('#dk-conn'), /Your Claude account\s*Not connected/);
     await pg.click('#plan-connect');
@@ -399,14 +403,13 @@ async function reloaded(pg, action) {
     assert.match(fs.readFileSync(ccLog, 'utf8'), /"login":true/, 'the sign-in is Claude Code\'s own');
     await pg.screenshot({ path: path.join(OUT, '12b-claude-connecting.png') });
     fs.writeFileSync(ccState, JSON.stringify({ loggedIn: true }));   // you finish the sign-in in the browser
-    await pg.waitForEvent('load', { timeout: 20000 }); await pg.waitForSelector('h1');
+    await waitFor(pg, "/analyse the emails waiting/.test(document.querySelector('#dk-conn').textContent)", 20000);   // no restart needed
     assert.strictEqual(await ev(pg, "window.claude.desktop.status().ai.primary"), 'plan', 'your Claude account now reads the emails');
     await pg.click('.rail [data-nav="setup"]');
     await waitFor(pg, "/Your Claude account\\s*Connected/.test(document.querySelector('#dk-conn').textContent)");
     assert.ok(!(await ev(pg, "document.getElementById('dk-adv').open || document.getElementById('dk-ai-more').open")), 'advanced options folded away');
     await pg.click('.rail [data-nav="import"]');
-    await pg.setInputFiles('#file-in', [path.join(FX, 'review.eml')]);
-    await waitFor(pg, "window.__AR.UI.staging.some(b=>b.state==='ready')");
+    assert.ok(await ev(pg, "window.__AR.UI.staging.some(b=>b.state==='ready')"), 'the waiting email is still there');
     const sy5 = await pg.$('[data-act="ai-simple-no"]'); if (sy5) await sy5.click();
     await pg.click('[data-act="analyze"]'); await idle(pg);
     const b5 = await ev(pg, "(b => ({ state: b.state, error: b.error, done: b.doneText }))(window.__AR.UI.staging.find(b => b.state === 'done' || b.state === 'error'))");
@@ -417,6 +420,29 @@ async function reloaded(pg, action) {
     assert.strictEqual(last.apiKeyLeaked, false, 'an API key on this PC is not passed to Claude Code');
     assert.match(last.model, /^claude-/); assert.ok(last.args.includes('--tools') && last.args[last.args.indexOf('--tools') + 1] === '', 'no tools');
     assert.ok(last.args.includes('--no-session-persistence'));
+    // a very long Arabic email: a 12,000-row comment sheet is read in several parts, nothing is cut off
+    const b64 = t => Buffer.from(t, 'utf8').toString('base64').replace(/.{76}/g, '$&\r\n');
+    const crs = Array.from({ length: 12000 }, (_, i) => `C-${String(i + 1).padStart(5, '0')} | يُرجى مُراجعة حسابات مضخة الحمأة الراجعة رقم ${i + 1} وتقديم المنحنى المُعدَّل`).join('\n');
+    const longEml = path.join(data3, 'long-arabic.eml');
+    fs.writeFileSync(longEml, ['From: Rania Hassan <rania@consultant.example>', 'To: m.sobeah@contractor.example', 'Subject: =?UTF-8?B?' + Buffer.from('تعليقات CRS — حسابات المضخات', 'utf8').toString('base64') + '?=', 'Date: Thu, 22 Oct 2026 09:00:00 +0300', 'Message-ID: <long-ar@consultant.example>', 'MIME-Version: 1.0', 'Content-Type: multipart/mixed; boundary="XX"', '',
+      '--XX', 'Content-Type: text/plain; charset=utf-8', 'Content-Transfer-Encoding: base64', '', b64('م. محمود،\nيُرجى الرد على جميع التعليقات المرفقة قبل نهاية الأسبوع.\nPlease respond to all attached comments.'),
+      '--XX', 'Content-Type: text/plain; charset=utf-8; name="CRS.txt"', 'Content-Disposition: attachment; filename="CRS.txt"', 'Content-Transfer-Encoding: base64', '', b64(crs), '--XX--', ''].join('\r\n'));
+    await pg.setInputFiles('#file-in', [longEml]);
+    await waitFor(pg, "window.__AR.UI.staging.some(b=>b.state==='ready')");
+    const sy7 = await pg.$('[data-act="ai-simple-no"]'); if (sy7) await sy7.click();
+    await pg.click('[data-act="analyze"]'); await idle(pg);
+    const lr = await ev(pg, "(e => e && ({ parts: e.analysis.parts, tasks: e.analysis.tasks.map(t => ({ title: t.title, subs: (t.subtasks || []).length, checks: t.evidence.map(x => x.check) })), truncated: e.analysis.flags.filter(f => f.kind === 'truncated').length }))([...window.__AR.St.emails.values()].find(e => e.messageId === '<long-ar@consultant.example>' || /حسابات المضخات/.test(e.subject)))");
+    const lparts = fs.readFileSync(ccLog, 'utf8').trim().split('\n').map(l => JSON.parse(l)).filter(x => x.of);
+    console.log('  long email:', JSON.stringify(lr), 'requests:', lparts.map(x => `${x.part}/${x.of} ${Math.round(x.bytes / 1024)}KB`).join(', '));
+    assert.ok(lr && lr.parts >= 3, 'read in several parts');
+    assert.strictEqual(lparts.filter(x => x.of === lr.parts).length, lr.parts, 'one request per part');
+    assert.strictEqual(lr.truncated, 0, 'nothing cut off');
+    assert.strictEqual(lr.tasks.length, 1, 'the same task from every part is joined');
+    assert.strictEqual(lr.tasks[0].subs, lr.parts * 3, 'subtasks from every part');
+    assert.ok(lr.tasks[0].checks.every(c => c === 'verified'), 'Arabic quotes without vowel marks are found');
+    const lp3 = lparts.filter(x => x.of === lr.parts);
+    assert.strictEqual(lp3[0].firstRow, 'C-00001'); assert.strictEqual(lp3[lp3.length - 1].lastRow, 'C-12000', 'the last part reaches the end of the 12,000 rows');
+    lp3.slice(1).forEach((x, i) => assert.strictEqual(+x.firstRow.slice(2), +lp3[i].lastRow.slice(2) + 1, 'each part starts where the one before ended'));
     fs.writeFileSync(ccState, JSON.stringify({ loggedIn: true, limited: true }));
     await pg.setInputFiles('#file-in', [path.join(FX, 'test.msg')]);
     await waitFor(pg, "window.__AR.UI.staging.some(b=>b.state==='ready')");

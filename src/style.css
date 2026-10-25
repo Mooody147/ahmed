@@ -1099,3 +1099,12 @@ html[dir="rtl"] #map-vp, html[dir="rtl"] .map-wrap, html[dir="rtl"] .viz, html[d
 html[dir="rtl"] .calc-out td.num, html[dir="rtl"] .mon-tbl td.num { text-align: left; }
 html[dir="rtl"] .drawer { left: 0; right: auto; }
 html[dir="rtl"] .nav[aria-current="page"] { box-shadow: inset -3px 0 0 var(--accent); }
+
+/* 🗑 on canvas boxes: shown on hover (always on touch screens) */
+.mnode .mdel { right: 49px; }
+.mnode.task .mdel, .mnode.item .mdel { right: -9px; top: -9px; }
+.mnode.topic .mdel { right: 49px; }
+.mnode.project:hover .mdel, .mnode.topic:hover .mdel, .mnode.task:hover .mdel, .mnode.item:hover .mdel, .mnode.sel .mdel { opacity: 1; }
+.mnode .mdel:hover { color: var(--crit, #c0392b); border-color: var(--crit, #c0392b); }
+[dir="rtl"] .mnode .mdel { right: auto; left: 49px; }
+[dir="rtl"] .mnode.task .mdel, [dir="rtl"] .mnode.item .mdel { left: -9px; }

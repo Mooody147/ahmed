@@ -6,7 +6,7 @@ notebooks (passage search) and tools, but emails are not read for you.
 ## 1. Install
 
 1. Open <https://github.com/Mooody147/ahmed/releases/latest> and download
-   `Action-Register-Setup-1.2.2.exe` (Windows installer; `Action-Register-Portable-1.2.2.exe` runs without
+   `Action-Register-Setup-1.2.3.exe` (Windows installer; `Action-Register-Portable-1.2.3.exe` runs without
    installing but does not update itself) or the Mac `.dmg` — `mac-arm64` for Apple-silicon Macs (M1 and
    later), `mac-x64` for older Intel Macs.
 2. Windows shows *“Windows protected your PC”* because the installer is not code-signed:
@@ -102,6 +102,11 @@ repository **Settings › Pages › Source: GitHub Actions**, then run the *Shar
 
 - **Add emails** (forward, drop .msg files, paste text, or a WhatsApp/Teams chat in Tools › Chats) →
   **Review** the proposed tasks with their quotes → **Add**.
+- **Long emails** (hundreds of pages, thousands of comment rows) are read in parts and the results joined, so
+  nothing is cut off; Arabic and English both work.
+- **Canvas**: 🗑 on any box deletes it (a task, an item, or a whole topic or project with its tasks);
+  **↶ Undo** / **↷ Redo** (Ctrl+Z / Ctrl+Shift+Z) undo deletes, moves and ticks; **⟳ Refresh** shows everything again
+  and offers to add tasks from analysed emails that are not on the canvas or to put back tasks deleted in the last 30 days.
 - **To-do**: list, board or canvas. **Daily**: plan the day, wrap up in the evening (🌙). **Plan**:
   calendar, Gantt, workload, contacts, vendors, meeting prep, their deadlines.
 - **Notebook**: add a folder of specifications or contracts and ask questions — answers cite file and page.

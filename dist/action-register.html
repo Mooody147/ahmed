@@ -1105,6 +1105,15 @@ html[dir="rtl"] .calc-out td.num, html[dir="rtl"] .mon-tbl td.num { text-align: 
 html[dir="rtl"] .drawer { left: 0; right: auto; }
 html[dir="rtl"] .nav[aria-current="page"] { box-shadow: inset -3px 0 0 var(--accent); }
 
+/* 🗑 on canvas boxes: shown on hover (always on touch screens) */
+.mnode .mdel { right: 49px; }
+.mnode.task .mdel, .mnode.item .mdel { right: -9px; top: -9px; }
+.mnode.topic .mdel { right: 49px; }
+.mnode.project:hover .mdel, .mnode.topic:hover .mdel, .mnode.task:hover .mdel, .mnode.item:hover .mdel, .mnode.sel .mdel { opacity: 1; }
+.mnode .mdel:hover { color: var(--crit, #c0392b); border-color: var(--crit, #c0392b); }
+[dir="rtl"] .mnode .mdel { right: auto; left: 49px; }
+[dir="rtl"] .mnode.task .mdel, [dir="rtl"] .mnode.item .mdel { left: -9px; }
+
 </style>
 <div class="titlestrip" id="titlestrip"><span class="ts-brand"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c3.3 4 6 7.2 6 10.4a6 6 0 0 1-12 0C6 10.2 8.7 7 12 3z"/><path d="m9.3 13.6 1.9 1.9 3.6-4.1"/></svg> Action Register</span><button class="ts-search" data-act="palette" title="Search and commands (Ctrl+K)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg><span>Search or type a command</span><kbd>Ctrl K</kbd></button><span class="ts-space"></span></div>
 <div class="app">
@@ -2988,7 +2997,10 @@ function normalizeAnalysis(raw, ctx) {
 }
 
 /* ---------- evidence verification ---------- */
-const normMatch = s => String(s || '').toLowerCase().normalize('NFKC').replace(/[‘’“”"'`´]/g, '').replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+// Arabic: harakat and tatweel removed, alef/yeh/teh-marbuta variants unified, Arabic-Indic digits as 0-9, so a
+// quote matches whether or not the AI kept the vowel marks
+const AR_DIGITS = { '٠': '0', '١': '1', '٢': '2', '٣': '3', '٤': '4', '٥': '5', '٦': '6', '٧': '7', '٨': '8', '٩': '9', '۰': '0', '۱': '1', '۲': '2', '۳': '3', '۴': '4', '۵': '5', '۶': '6', '۷': '7', '۸': '8', '۹': '9' };
+const normMatch = s => String(s || '').toLowerCase().normalize('NFKC').replace(/[\p{M}\u0640]/gu, '').replace(/[أإآٱ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه').replace(/[٠-٩۰-۹]/g, d => AR_DIGITS[d]).replace(/[‘’“”"'`´]/g, '').replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
 const normCache = new Map();
 function normed(text) { if (normCache.has(text)) return normCache.get(text); const n = normMatch(text); if (normCache.size > 50) normCache.clear(); normCache.set(text, n); return n; }
 function locate(text, quote) {
@@ -3917,12 +3929,12 @@ function mapNodeHTML(n, hits, day) {
     return `<div class="mnode project${drag}${drop}" data-node="${esc(n.id)}" data-type="project" data-pk="${esc(n.id)}" data-label="${esc(n.label)}" style="${st}">
       ${n.id === 'p:~' ? '<span class="gicon">🗂️</span>' : projBadge(n.label)}
       <div class="mtxt"><b dir="auto" data-edit="${esc(n.id)}">${esc(n.label)}</b><small>${n.n - n.done} open · ${n.done} done</small></div>${ring(pct, 34)}${more}
-      <button class="mfocus" data-map="focus" title="Show only this project" aria-label="Show only this project">⤢</button>${n.id === 'p:~' ? '' : '<button class="mfocus mren" data-map="rename" title="Rename project" aria-label="Rename project">✎</button>'}${rz}</div>`;
+      <button class="mfocus" data-map="focus" title="Show only this project" aria-label="Show only this project">⤢</button>${n.id === 'p:~' ? '' : '<button class="mfocus mren" data-map="rename" title="Rename project" aria-label="Rename project">✎</button>'}<button class="mfocus mdel" data-map="del" title="Delete this project and its tasks" aria-label="Delete this project and its tasks">🗑</button>${rz}</div>`;
   }
   if (n.type === 'topic') {
     const open = n.tasks.filter(t => t.status !== 'done').length;
     return `<div class="mnode topic${drag}${drop}" data-node="${esc(n.id)}" data-type="topic" data-topic="${esc(n.key === '~' ? '' : n.label)}" data-plabel="${esc(n.tasks[0] ? projKeyLabel(n.tasks[0])[1] : '')}" style="${st}">
-      <span class="cicon">${n.key === '~' ? '🗂️' : '🧩'}</span><div class="mtxt"><b dir="auto" data-edit="${esc(n.id)}">${esc(n.label)}</b><small>${open} open · ${n.tasks.length - open} done</small></div>${more}${n.key === '~' ? '' : '<button class="mfocus mren" data-map="rename" title="Rename topic" aria-label="Rename topic">✎</button>'}${rz}</div>`;
+      <span class="cicon">${n.key === '~' ? '🗂️' : '🧩'}</span><div class="mtxt"><b dir="auto" data-edit="${esc(n.id)}">${esc(n.label)}</b><small>${open} open · ${n.tasks.length - open} done</small></div>${more}${n.key === '~' ? '' : '<button class="mfocus mren" data-map="rename" title="Rename topic" aria-label="Rename topic">✎</button>'}<button class="mfocus mdel" data-map="del" title="Delete this topic and its tasks" aria-label="Delete this topic and its tasks">🗑</button>${rz}</div>`;
   }
   if (n.type === 'task') {
     const t = n.t, d = dueInfo(t), subs = subsOf(t).length, links = relIds(t).length + [...St.tasks.values()].filter(x => relIds(x).includes(t.id)).length;
@@ -3934,10 +3946,10 @@ function mapNodeHTML(n, hits, day) {
       <button class="mtick" data-map="tick" aria-label="${t.status === 'done' ? 'Reopen' : 'Mark done'}">${I.check}</button>
       <div class="mtxt"><b dir="auto">${esc(t.title)}</b>
         <small><span class="mono">${esc(t.ref || '')}</span>${t.status === 'done' ? `<span class="mdone">✓ ${esc(fmtDate((t.completedAt || t.updatedAt || '').slice(0, 10)))}</span>` : `<span class="duepill ${d.cls}">${dueEmoji(d)}${esc(d.txt)}</span>`}
-        ${t.status === 'in_progress' ? '<span title="In progress">▶</span>' : ''}${subs ? `<button class="mitems" data-map="items" title="Show items">🗂️ ${subsDone(t)}/${subs}</button>` : ''}${links ? `<span title="Linked tasks">🔗 ${links}</span>` : ''}${isFromManager(t) ? '<span title="Assigned by your manager">👔</span>' : ''}${(t.days || []).includes(T()) ? '<span title="On today’s plan">📌</span>' : ''}${ach ? `<span title="Achievements">⭐ ${ach}</span>` : ''}${t.status === 'waiting' || t.ownership === 'waiting' ? '<span>⏳</span>' : ''}${t.status === 'blocked' ? '<span>⛔</span>' : ''}${sug ? '<span class="msug" title="Claude needs your confirmation">❓ Confirm</span>' : ''}${NODE_EXTRA.map(f => { try { return f(t) || ''; } catch { return ''; } }).join('')}</small></div>${rz}</div>`;
+        ${t.status === 'in_progress' ? '<span title="In progress">▶</span>' : ''}${subs ? `<button class="mitems" data-map="items" title="Show items">🗂️ ${subsDone(t)}/${subs}</button>` : ''}${links ? `<span title="Linked tasks">🔗 ${links}</span>` : ''}${isFromManager(t) ? '<span title="Assigned by your manager">👔</span>' : ''}${(t.days || []).includes(T()) ? '<span title="On today’s plan">📌</span>' : ''}${ach ? `<span title="Achievements">⭐ ${ach}</span>` : ''}${t.status === 'waiting' || t.ownership === 'waiting' ? '<span>⏳</span>' : ''}${t.status === 'blocked' ? '<span>⛔</span>' : ''}${sug ? '<span class="msug" title="Claude needs your confirmation">❓ Confirm</span>' : ''}${NODE_EXTRA.map(f => { try { return f(t) || ''; } catch { return ''; } }).join('')}</small></div><button class="mfocus mdel" data-map="del" title="Delete this task" aria-label="Delete this task">🗑</button>${rz}</div>`;
   }
   const s = n.s;
-  return `<div class="mnode item ${s.done ? 'done' : ''}" data-node="${esc(n.id)}" data-type="item" data-tid="${esc(n.t.id)}" data-sid="${esc(s.id)}" style="${st}"><span class="subtick" aria-pressed="${!!s.done}">${I.check}</span><span class="itxt" dir="auto">${esc(s.text)}</span></div>`;
+  return `<div class="mnode item ${s.done ? 'done' : ''}" data-node="${esc(n.id)}" data-type="item" data-tid="${esc(n.t.id)}" data-sid="${esc(s.id)}" style="${st}"><span class="subtick" aria-pressed="${!!s.done}">${I.check}</span><span class="itxt" dir="auto">${esc(s.text)}</span><button class="mfocus mdel" data-map="del" title="Delete this item" aria-label="Delete this item">🗑</button></div>`;
 }
 /* measure each node's natural height so boxes fit their full text */
 const measureCache = new Map();
@@ -4100,7 +4112,9 @@ function worldHTML(M) {
     </svg>`;
 }
 function ctxHTML() {
-  const ids = [...UI.cvSel].filter(id => St.board.has(id)); if (!ids.length) return '';
+  const ids = [...UI.cvSel].filter(id => St.board.has(id));
+  if (!ids.length && UI.mapSel && St.tasks.has(UI.mapSel)) { const t = St.tasks.get(UI.mapSel); return `<div class="cv-ctx" role="toolbar" aria-label="Selected task"><span class="small muted">${esc(t.ref || 'Task')} selected</span><button class="btn sm ghost danger" data-act="cv-del" title="Delete (Del)">${I.trash} Delete</button></div>`; }
+  if (!ids.length) return '';
   const els = ids.map(id => St.board.get(id)); const one = els.length === 1 ? els[0] : null;
   const canTask = one && ['sticky', 'text', 'shape'].includes(one.type) && (one.text || '').trim();
   const inked = els.some(e => ['stroke', 'line', 'connector'].includes(e.type));
@@ -4141,6 +4155,7 @@ function viewMap() {
   const offN = Object.keys(St.layout.off || {}).length + Object.keys(St.layout.size || {}).length;
   return `<div class="map-wrap ${UI.mapFull ? 'full' : ''} ${UI.present ? 'presenting' : ''}">
     ${sugN ? callout('info', `<div class="row"><span>❓ Claude wasn’t sure where ${sugN} task${sugN > 1 ? 's belong' : ' belongs'}. Pick the right place from its suggestions.</span><span class="spacer"></span><button class="btn sm primary" data-act="map-next-suggest">Review</button></div>`) : ''}
+    ${UI.mapRefresh && (UI.mapRefresh.pending || UI.mapRefresh.binned) ? callout('info', `<div class="row"><span>⟳ Canvas refreshed.${UI.mapRefresh.pending ? ` <b>${UI.mapRefresh.pending}</b> analysed email${UI.mapRefresh.pending > 1 ? 's have' : ' has'} tasks not added yet.` : ''}${UI.mapRefresh.binned ? ` <b>${UI.mapRefresh.binned}</b> task${UI.mapRefresh.binned > 1 ? 's' : ''} from emails ${UI.mapRefresh.binned > 1 ? 'were' : 'was'} deleted in the last 30 days.` : ''}</span><span class="spacer"></span>${UI.mapRefresh.pending ? '<button class="btn sm primary" data-act="map-add-pending">Add their tasks</button>' : ''}${UI.mapRefresh.binned ? '<button class="btn sm" data-act="map-restore-binned">Put them back</button>' : ''}<button class="btn sm ghost" data-act="map-refresh-close">✕</button></div>`) : ''}
     ${UI.mapAsOf ? callout('info', `<div class="row"><span>🕒 Showing the map as it was on <b>${esc(fmtDate(UI.mapAsOf, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }))}</b>: later tasks are hidden and work finished later shows as open. Projects and topics are shown as they are now.</span><span class="spacer"></span><button class="btn sm" data-act="map-now">Back to now</button></div>`) : ''}
     <div class="map-toolbar">
       <div class="map-projects" role="toolbar" aria-label="Projects">
@@ -4168,6 +4183,8 @@ function viewMap() {
           <button class="btn sm ghost" data-act="map-present">🖥 Present project by project</button>
           ${DESKTOP ? '<button class="btn sm ghost" data-act="map-share">🔗 Share link (always up to date)…</button>' : ''}
         </div></details>
+        <button class="btn sm" data-act="map-refresh" title="Show every task and email again">⟳ Refresh</button>
+        <div class="seg"><button data-act="cv-undo" title="Undo (Ctrl+Z)" ${UI.cvUndo.length ? '' : 'disabled'}>↶ Undo</button><button data-act="cv-redo" title="Redo (Ctrl+Shift+Z)" ${UI.cvRedo.length ? '' : 'disabled'}>↷ Redo</button></div>
         <div class="seg zoom"><button data-act="map-zoom" data-z="-1" aria-label="Zoom out">−</button><button data-act="map-fit" aria-label="Fit to screen">Fit</button><button data-act="map-zoom" data-z="1" aria-label="Zoom in">+</button></div>
         ${DESKTOP && !SUBWIN ? '<button class="btn sm" data-act="pop-out" data-view="todo" title="Open the canvas in another window (second monitor)">⧉ Window</button>' : ''}
         <button class="btn sm" data-act="map-full" aria-pressed="${UI.mapFull}" title="${UI.mapFull ? 'Exit full screen (Esc)' : 'Full screen (Shift+F)'}">${UI.mapFull ? '⤡ Exit full screen' : '⤢ Full screen'}</button>
@@ -4474,13 +4491,14 @@ const NODE_EXTRA = [], MAP_BTN = {};
 function clickNode(node, target) {
   const kind = node.dataset.type, btn = target && target.closest && target.closest('[data-map]');
   if (node.dataset.node === 'root') { mapFit(); return true; }
+  if (btn && btn.dataset.map === 'del') { deleteNode(node); return true; }
   if ((kind === 'project' || kind === 'topic') && btn && btn.dataset.map === 'rename') { startNodeEdit(node.dataset.node); return true; }
   if (kind === 'project' && btn && btn.dataset.map === 'focus') { UI.mapFocus = node.dataset.pk; UI.map.fitted = false; render(); return true; }
   if (kind === 'project' || kind === 'topic') { const id = node.dataset.node; UI.mapCollapsed.has(id) ? UI.mapCollapsed.delete(id) : UI.mapCollapsed.add(id); render(); return true; }
-  if (kind === 'item') { toggleSub(node.dataset.tid, node.dataset.sid); render(); return true; }
+  if (kind === 'item') { undoable({ [node.dataset.tid]: true }, () => toggleSub(node.dataset.tid, node.dataset.sid)); render(); return true; }
   if (kind === 'task') {
     const id = node.dataset.tid;
-    if (btn && btn.dataset.map === 'tick') { ACT['toggle-done']({ dataset: { id } }); return true; }
+    if (btn && btn.dataset.map === 'tick') { undoable({ [id]: true }, () => ACT['toggle-done']({ dataset: { id } })); return true; }
     if (btn && btn.dataset.map === 'items') { UI.mapItems.has(id) ? UI.mapItems.delete(id) : UI.mapItems.add(id); render(); return true; }
     if (btn && MAP_BTN[btn.dataset.map]) { MAP_BTN[btn.dataset.map](id, btn); return true; }
     UI.mapSel = id; UI.cvSel.clear(); render(); openDrawer('task', id); return true;
@@ -4614,6 +4632,47 @@ function deleteSelection() {
   }
   const t = UI.mapSel && St.tasks.get(UI.mapSel);
   if (t) { cvApply({ tasks: { [t.id]: null } }); UI.mapSel = null; closeDrawer(); render(); toast(`${t.ref} deleted.`, { action: 'Undo', fn: cvUndo }); }
+}
+// a change made by other code (tick, item done) becomes one undo step: the tasks are saved as they were before
+function undoable(taskIds, fn) {
+  const inv = { tasks: {} }; for (const id of Object.keys(taskIds)) inv.tasks[id] = St.tasks.has(id) ? clone(St.tasks.get(id)) : null;
+  fn(); UI.cvUndo.push(inv); if (UI.cvUndo.length > 150) UI.cvUndo.shift(); UI.cvRedo = [];
+}
+// 🗑 on any box: a task, an item of a task, or a whole topic or project with all its tasks (Undo brings them back;
+// deleted tasks also stay 30 days in Setup › Recycle bin)
+function deleteNode(node) {
+  const kind = node.dataset.type;
+  if (kind === 'item') {
+    const t = St.tasks.get(node.dataset.tid); if (!t) return;
+    const c = clone(t); c.subtasks = (c.subtasks || []).filter(x => x.id !== node.dataset.sid); c.updatedAt = nowISO();
+    cvApply({ tasks: { [t.id]: c } }); render(); toast('Item deleted.', { action: 'Undo', fn: cvUndo }); return;
+  }
+  let ids = [], label = '';
+  if (kind === 'task') { ids = [node.dataset.tid]; const t = St.tasks.get(ids[0]); label = t ? (t.ref || 'Task') : 'Task'; }
+  else if (kind === 'project') { const pk = node.dataset.pk; ids = [...St.tasks.values()].filter(t => projKeyLabel(t)[0] === pk).map(t => t.id); label = `Project “${node.dataset.label}”`; }
+  else if (kind === 'topic') { const tk = node.dataset.node; ids = [...St.tasks.values()].filter(t => topicKey(t) === tk).map(t => t.id); label = `Topic “${node.dataset.topic || 'General'}”`; }
+  if (!ids.length) return;
+  const ch = { tasks: {} }; ids.forEach(id => { ch.tasks[id] = null; });
+  cvApply(ch); if (ids.includes(UI.mapSel)) { UI.mapSel = null; closeDrawer(); }
+  render(); toast(`${label} deleted${ids.length > 1 ? ` (${ids.length} tasks)` : ''}.`, { action: 'Undo', fn: cvUndo });
+}
+// ⟳ Refresh: show everything again (filters, folded branches, past dates cleared), redraw, and offer to put back
+// tasks from emails that are not on the canvas (still waiting in Review, or deleted in the last 30 days)
+function mapRefresh() {
+  UI.mapFocus = 'all'; UI.mapQ = ''; UI.mapAsOf = ''; UI.mapDay = ''; UI.mapCollapsed.clear(); UI.cvSel.clear(); UI.mapSel = null; UI.cvTemp = null;
+  measureCache.clear(); UI.map.fitted = false;
+  const pending = [...St.emails.values()].filter(e => e.reviewState === 'pending' && ((e.analysis && e.analysis.tasks) || []).some(p => p.accept));
+  const binned = colList('trash').filter(x => x.kind === 'task' && x.data && (x.data.emailIds || []).length && !St.tasks.has(x.data.id));
+  UI.mapRefresh = { pending: pending.length, binned: binned.length, at: Date.now() };
+  render(); requestAnimationFrame(() => mapFit());
+  if (!pending.length && !binned.length) toast('Canvas refreshed — every task is shown.');
+}
+function mapRestoreBinned() {
+  const list = colList('trash').filter(x => x.kind === 'task' && x.data && (x.data.emailIds || []).length && !St.tasks.has(x.data.id));
+  const ch = { tasks: {} }; list.forEach(x => { ch.tasks[x.data.id] = clone(x.data); });
+  if (list.length) cvApply(ch);
+  list.forEach(x => colDel('trash', x.id));
+  UI.mapRefresh = null; render(); toast(`${list.length} task${list.length === 1 ? '' : 's'} put back on the canvas.`, { action: 'Undo', fn: cvUndo });
 }
 function duplicateSelection() {
   const ids = [...UI.cvSel].filter(id => St.board.has(id) && St.board.get(id).type !== 'connector'); if (!ids.length) return;
@@ -5047,7 +5106,7 @@ function viewImport() {
     ${UI.pasteOpen ? pastePanelHTML() : ''}
     ${typeof aiSimpleHTML === 'function' ? aiSimpleHTML(ready) : ''}
     <div id="staging">${stagingHTML()}</div>
-    ${UI.staging.length ? `<div class="card pad action-bar"><div class="row">${UI.analyzing ? `<button class="btn" data-act="stop">Stop</button><span class="small muted">Analysing… keep this page open.</span>` : `${ready.length ? `<button class="btn primary" data-act="analyze" ${aiOK ? '' : 'disabled'}>${I.spark} Analyse ${ready.length} email${ready.length === 1 ? '' : 's'}</button>` : ''}<button class="btn ${ready.length ? 'ghost' : ''}" data-act="clear-staging">${ready.length ? 'Clear list' : 'Clear finished'}</button>`}<span class="spacer"></span><button class="btn ghost sm" data-act="nav" data-view="setup">Analysis options</button></div></div>` : ''}
+    ${UI.staging.length ? `<div class="card pad action-bar"><div class="row">${UI.analyzing ? `<button class="btn" data-act="stop">Stop</button><span class="small muted">Analysing… keep this page open.</span>` : `${ready.length ? `<button class="btn primary" data-act="analyze">${I.spark} Analyse ${ready.length} email${ready.length === 1 ? '' : 's'}</button>` : ''}<button class="btn ${ready.length ? 'ghost' : ''}" data-act="clear-staging">${ready.length ? 'Clear list' : 'Clear finished'}</button>`}<span class="spacer"></span><button class="btn ghost sm" data-act="nav" data-view="setup">Analysis options</button></div></div>` : ''}
     <details class="card pad howto"><summary>Saving emails from Outlook as files</summary><ol>
       <li><b>Classic Outlook:</b> drag a message onto your desktop or a folder — it saves as .msg with its attachments. Select several and drag them together for a batch.</li>
       <li><b>New Outlook / Outlook on the web:</b> open the message › More actions (…) › Save as (.eml).</li>
@@ -5240,7 +5299,12 @@ function aiErrorText(e) {
   })[c] || ('Analysis failed' + (c ? ' (' + c + ')' : '') + '.');
 }
 async function runAnalysis() {
-  if (UI.analyzing || !St.sample) return;
+  if (UI.analyzing) return;
+  if (!St.sample && DESKTOP) await recheckAI();
+  if (!St.sample) {
+    toast(DESKTOP ? 'Connect your Claude account first: Setup › Connections › Connect my Claude account.' : 'Claude analysis is not available in this view.', { err: true, action: DESKTOP ? 'Open Setup' : '', fn: () => go('setup') });
+    return;
+  }
   UI.analyzing = true; render();
   const queue = UI.staging.filter(b => b.state === 'ready' && !b.skip);
   let ok = 0;
@@ -5295,20 +5359,29 @@ async function analyzeBundle(b, signal, onProgress) {
   const tk = E.threadKey(em);
   const related = E.relatedOpenTasks([...St.tasks.values()], em, tk).map(t => ({ id: t.id, ref: t.ref, title: t.title, project: t.project, discipline: t.discipline, owner: t.ownership === 'mine' ? 'me' : t.owner, status: t.status, deadline: t.deadline }));
   const budget = ((St.limits && St.limits.maxPromptBytes) || 262144) - 10000;
-  const { prompt, truncations } = E.buildPrompt({
+  const input = {
     me: s.me, projects: allProjects(), topics: allTopics(), today: E.todayISO(), tz: TZ,
     email: { subject: masker.mask(em.subject), from: masker.mask(em.from), to: masker.mask(em.to), cc: masker.mask(em.cc), date: em.date, forwardedBy: masker.mask(em.forwardedBy || ''), forwardedAt: em.forwardedAt || '', forwardMode: em.forwardMode || '', body: masker.mask(em.body || (b.source === 'docs' ? '(No email — the user shared these documents directly. Identify what they require from the user, if anything.)' : '')) },
     attachments: atts, images: images.map(i => ({ key: i.key, label: i.label })), openTasks: related, budget, notes: promptNotes(em),
-  });
-  onProgress('Waiting for Claude… (consent, queue and thinking can take a minute)');
+  };
+  let { prompt, truncations } = E.buildPrompt(input);
+  // too long for one request: analysed in parts that together cover every page and row, results combined
+  const parts = truncations.length ? splitLongEmail(input, budget) : [{ prompt, images: true }];
+  if (parts.length > 1) truncations = parts.dropped || [];
   // b.tierOverride: 'quick' when you chose the quick model for a simple email (features/12-ai.js)
   const tier = b.tierOverride === 'quick' ? 'quick' : s.tier; let readBy = null;
-  const raw = await St.sample.json(prompt, {
-    signal, modelTier: tier === 'quick' ? 'quick' : tier === 'default' ? 'default' : 'complex', cache: b.fresh ? false : undefined, onMeta: m => { readBy = m; },
-    ...(images.length ? { images: images.map(i => i.blob) } : {}),
-    onText: ({ text }) => onProgress(`Receiving results… ${Math.round(text.length / 100) / 10}k characters`),
-  });
-  const an = E.normalizeAnalysis(raw, { unmask: masker.unmask });
+  const results = [];
+  for (let i = 0; i < parts.length; i++) {
+    const pre = parts.length > 1 ? `Long email — part ${i + 1} of ${parts.length}. ` : '';
+    onProgress(pre + 'Waiting for Claude… (consent, queue and thinking can take a minute)');
+    const raw = await St.sample.json(parts[i].prompt, {
+      signal, modelTier: tier === 'quick' ? 'quick' : tier === 'default' ? 'default' : 'complex', cache: b.fresh ? false : undefined, onMeta: m => { readBy = m; },
+      ...(images.length && parts[i].images ? { images: images.map(x => x.blob) } : {}),
+      onText: ({ text }) => onProgress(`${pre}Receiving results… ${Math.round(text.length / 100) / 10}k characters`),
+    });
+    results.push(E.normalizeAnalysis(raw, { unmask: masker.unmask }));
+  }
+  const an = results.length > 1 ? mergeAnalyses(results) : results[0];
   runHooks('proposals', an, em, b); // email rules and learned corrections adjust the proposals
   // local verification + flags
   const flags = [];
@@ -5352,6 +5425,88 @@ async function analyzeBundle(b, signal, onProgress) {
   if (b.gmailId) { markSeen(b.gmailId, id); labelImported(b.gmailId); }
   return rec;
 }
+/* Long emails: every source is cut into pieces that fit one request (at page / sheet / row boundaries where
+   possible) and the pieces are packed into parts. Each part repeats the start of the email body so Claude knows
+   who asks what; images go with the first part. At most 15 parts; anything beyond is flagged as truncated. */
+const MAX_PARTS = 15;
+function splitLongEmail(input, budget) {
+  const U = E.utf8len;
+  const bodyText = input.email.body || '';
+  const ctxChars = Math.min(bodyText.length, 6000);
+  const emptyAtts = input.attachments.map(a => ({ ...a, text: '' }));
+  const base = U(E.buildPrompt({ ...input, email: { ...input.email, body: bodyText.slice(0, ctxChars) }, attachments: emptyAtts, notes: (input.notes || '') + ' '.repeat(900) }).prompt);
+  const cap = Math.max(20000, budget - base - 2000);
+  // sources are poured into parts in order; a long source continues in the next part where the last one ended
+  const parts = []; let cur = [], size = 0;
+  const sources = [{ key: 'BODY', text: bodyText }].concat(input.attachments.filter(a => a.text && a.status !== 'excluded').map(a => ({ key: a.key, text: a.text })));
+  for (const src of sources) {   // the body belongs to the first part; later parts repeat its start as context
+    const text = src.text, ratio = text.length / Math.max(1, U(text)); let at = 0, n = 0; const mine = [];
+    while (at < text.length || !n) {
+      let space = cap - size - 200;
+      if (space < 20000 && cur.length) { parts.push(cur); cur = []; size = 0; space = cap - 200; }
+      let end = Math.min(text.length, at + Math.max(1000, Math.floor(space * ratio)));
+      if (end < text.length) {
+        const win = text.slice(at, end), min = (end - at) * 0.5;
+        const mk = Math.max(win.lastIndexOf('\n[Page '), win.lastIndexOf('\n[Sheet: '), win.lastIndexOf('\n[Slide '));
+        const nl = win.lastIndexOf('\n');
+        if (mk > min) end = at + mk; else if (nl > min) end = at + nl;
+      }
+      const piece = { key: src.key, text: text.slice(at, end), n: ++n };
+      cur.push(piece); mine.push(piece); size += U(piece.text) + 200; at = end;
+      if (at >= text.length) break;
+    }
+    if (mine.length > 1) mine.forEach(p => { p.of = mine.length; });
+  }
+  if (cur.length) parts.push(cur);
+  const dropped = [];
+  if (parts.length > MAX_PARTS) {
+    for (const p of parts.slice(MAX_PARTS).flat()) if (!dropped.some(d => d.key === p.key)) dropped.push({ key: p.key, pct: 0, where: 'the end of the file (too long even for ' + MAX_PARTS + ' parts)' });
+    parts.length = MAX_PARTS;
+  }
+  const n = parts.length;
+  const out = parts.map((ps, i) => {
+    const has = k => ps.filter(p => p.key === k);
+    const bp = has('BODY');
+    const body = bp.length ? bp.map(p => p.text).join('\n') + (bp[0].of ? `\n[Email body, piece ${bp.map(p => p.n).join(', ')} of ${bp[0].of}]` : '')
+      : '[Start of the email body, repeated for context — its own requests are read in another part]\n' + bodyText.slice(0, ctxChars) + (bodyText.length > ctxChars ? '\n[…]' : '');
+    const attachments = input.attachments.map(a => {
+      const ap = has(a.key);
+      if (ap.length) return { ...a, text: ap.map(p => p.text).join('\n') + (ap[0].of ? `\n[${a.key}: piece ${ap.map(p => p.n).join(', ')} of ${ap[0].of}]` : '') };
+      return a.text && a.status !== 'excluded' ? { ...a, text: '', note: [a.note, 'read in another part of this email'].filter(Boolean).join('; ') } : a;
+    });
+    const notes = (input.notes ? input.notes + '\n' : '') + `LONG EMAIL: it is too long for one request, so it is read in ${n} parts and the results are combined. This is part ${i + 1} of ${n}. Extract the obligations found in the content of THIS part (the start of the email body is repeated for context — do not repeat its tasks unless they are in this part). Do not flag content as missing or truncated because it is in another part. When a list of comments or items continues across parts, keep the same task title so the parts can be joined.`;
+    return { prompt: E.buildPrompt({ ...input, email: { ...input.email, body }, attachments, images: i === 0 ? input.images : [], notes, budget: budget + 100000 }).prompt, images: i === 0 };
+  });
+  out.dropped = dropped;
+  return out;
+}
+// one result from all parts: the same task (same title, owner and project) found in two parts is joined
+function mergeAnalyses(list) {
+  const key = t => [t.ownership, (t.project || '').toLowerCase(), E.normMatch ? E.normMatch(t.title) : String(t.title).toLowerCase()].join('|');
+  const words = t => new Set((E.normMatch ? E.normMatch(t.title) : String(t.title).toLowerCase()).split(' ').filter(w => w.length > 2));
+  const same = (a, b) => { if (key(a) === key(b)) return true; if (a.ownership !== b.ownership) return false; const x = words(a), y = words(b); let c = 0; x.forEach(w => { if (y.has(w)) c++; }); return c / Math.max(1, Math.max(x.size, y.size)) >= 0.75; };
+  const out = { ...list[0], tasks: [], updates: [], flags: [], decisions: [], documents: [] };
+  for (const r of list) {
+    for (const t of r.tasks || []) {
+      const m = out.tasks.find(x => same(x, t));
+      if (!m) { out.tasks.push({ ...t }); continue; }
+      const seen = new Set((m.subtasks || []).map(x => (x.ref || '') + '|' + x.text));
+      m.subtasks = [...(m.subtasks || []), ...(t.subtasks || []).filter(x => !seen.has((x.ref || '') + '|' + x.text))];
+      m.evidence = [...(m.evidence || []), ...(t.evidence || [])].slice(0, 6);
+      m.confidence = Math.max(m.confidence || 0, t.confidence || 0);
+      if (!m.deadline && t.deadline) { m.deadline = t.deadline; m.deadlineText = t.deadlineText; m.deadlineBasis = t.deadlineBasis; }
+      if (PRI_ORDER.indexOf(t.priority) < PRI_ORDER.indexOf(m.priority)) m.priority = t.priority;
+    }
+    out.updates.push(...(r.updates || [])); out.flags.push(...(r.flags || [])); out.decisions.push(...(r.decisions || []));
+    for (const d of r.documents || []) if (!out.documents.some(x => x.number && x.number === d.number && x.revision === d.revision)) out.documents.push(d);
+  }
+  out.actionRequired = list.some(r => r.actionRequired !== false) || out.tasks.length > 0;
+  if (out.actionRequired) out.noActionReason = null;
+  out.summary = (list[0].summary || '') + ` (Long email: read in ${list.length} parts.)`;
+  out.parts = list.length;
+  return out;
+}
+const PRI_ORDER = ['critical', 'high', 'medium', 'low'];
 async function saveTexts(id, body, atts) {
   let data = { body, atts };
   const size = () => E.utf8len(JSON.stringify(data));
@@ -5806,6 +5961,10 @@ const ACT = {
   'cv-front': () => { const ch = { els: {} }; let z = Date.now(); for (const id of UI.cvSel) { const x = St.board.get(id); if (x) ch.els[id] = { ...x, z: z++ }; } cvApply(ch); render(); },
   'cv-dup': () => duplicateSelection(),
   'cv-del': () => deleteSelection(),
+  'map-refresh': () => mapRefresh(),
+  'map-add-pending': () => { UI.mapRefresh = null; approveAll(); if (UI.view !== 'todo') go('todo'); },
+  'map-restore-binned': () => mapRestoreBinned(),
+  'map-refresh-close': () => { UI.mapRefresh = null; render(); },
   'cv-to-task': () => noteToTask(),
   'cv-undo': () => cvUndo(),
   'cv-redo': () => cvRedo(),
@@ -10835,6 +10994,29 @@ HOOKS.ready.push(() => { try { if (!SUBWIN && !localStorage.getItem('ar-toured')
 /* ---------- Arabic interface text: English → Arabic. {0}, {1}… stand for numbers in the sentence. ---------- */
 // Generated from the strings shown in the app, translated for Egyptian / Gulf engineering use. Add a line to extend it.
 const AR_DICT = {
+"⟳ Refresh": "⟳ تحديث",
+"↶ Undo": "↶ تراجع",
+"↷ Redo": "↷ إعادة",
+"Put them back": "أعِدها",
+"Add their tasks": "أضف مهامها",
+"Your Claude account": "حساب Claude الخاص بك",
+"Connect my Claude account": "ربط حساب Claude الخاص بي",
+"Connected": "متصل",
+"Connecting…": "جارٍ الربط…",
+"Checking…": "جارٍ التحقق…",
+"Use another Claude account": "استخدام حساب Claude آخر",
+"See your usage on claude.ai": "عرض استهلاكك على claude.ai",
+"5-hour window": "نافذة الـ 5 ساعات",
+"Weekly": "أسبوعي",
+"Uses your Claude Pro or Max subscription — no API key, no extra cost. One click: the app sets up Anthropic's Claude helper (Claude Code) on this PC, then opens the Claude sign-in page in your browser.": "يستخدم اشتراكك في Claude Pro أو Max — بدون مفتاح API وبدون تكلفة إضافية. بضغطة واحدة: يثبّت البرنامج مساعد Claude من Anthropic (Claude Code) على هذا الجهاز، ثم يفتح صفحة تسجيل الدخول إلى Claude في المتصفح.",
+"Emails are read with your Claude plan: no API key and no extra cost; they count against your plan's usage, like your chats on claude.ai.": "تُقرأ الرسائل باشتراك Claude الخاص بك: بدون مفتاح API وبدون تكلفة إضافية؛ وتُحتسب من استهلاك اشتراكك مثل محادثاتك على claude.ai.",
+"A Claude sign-in window opened. Log in with your Claude account in the browser (the one with your Pro or Max plan). The app continues by itself when you are done.": "فُتحت نافذة تسجيل الدخول إلى Claude. سجّل الدخول بحساب Claude في المتصفح (الحساب الذي عليه اشتراك Pro أو Max). سيكمل البرنامج تلقائيًا عند الانتهاء.",
+"Setting up Claude on this PC — this takes a minute or two the first time…": "جارٍ إعداد Claude على هذا الجهاز — يستغرق دقيقة أو اثنتين في المرة الأولى…",
+"Advanced: use an Anthropic API key instead, models and limits": "متقدم: استخدام مفتاح Anthropic API بدلًا من ذلك، والنماذج والحدود",
+"Advanced: other AIs, backup and budget": "متقدم: ذكاء اصطناعي آخر، واحتياطي، وميزانية",
+"(optional)": "(اختياري)",
+"Item deleted.": "تم حذف البند.",
+"Canvas refreshed — every task is shown.": "تم تحديث اللوحة — كل المهام معروضة.",
 "(ChatGPT Plus does not include API use; the API is billed separately).": "(اشتراك ChatGPT Plus لا يشمل استخدام الـ API؛ الـ API يُحاسب منفصلًا).",
 "(without media) and save the .txt or .zip here. Teams: select the messages, copy and paste them below. The AI reads the chat like an email and proposes tasks for your review.": "(بدون وسائط) واحفظ ملف ‎.txt أو ‎.zip هنا. في Teams: حدّد الرسائل وانسخها ثم الصقها بالأسفل. يقرأ الذكاء الاصطناعي المحادثة كأنها بريد ويقترح مهامًا لمراجعتك.",
 "+ Add time": "+ إضافة وقت",
@@ -11898,7 +12080,15 @@ const startView = (location.hash || '').replace('#', '');
 if (VIEWS.includes(startView)) UI.view = startView;
 render();
 initStore();
-window.__AR = { St, UI, E, mapSVG, learnedNotes }; // debugging hook
+// the desktop app calls this when an AI becomes available (Claude account connected) so emails waiting in
+// the list can be analysed without restarting
+async function recheckAI() {
+  if (typeof window.claude === 'undefined') return false;
+  St.sample = await Promise.resolve(claude.use('sample')).catch(() => null);
+  St.limits = St.sample ? await St.sample.limits().catch(() => null) : St.limits;
+  render(); return !!St.sample;
+}
+window.__AR = { St, UI, E, mapSVG, learnedNotes, recheckAI }; // debugging hook
 })();
 
 </script>
