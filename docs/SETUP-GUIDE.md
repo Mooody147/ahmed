@@ -6,7 +6,9 @@ notebooks (passage search) and tools, but emails are not read for you.
 ## 1. Install
 
 1. Open <https://github.com/Mooody147/ahmed/releases/latest> and download
-   `Action-Register-1.2.0-win-x64.exe` (Windows) or the `.dmg` (Mac).
+   `Action-Register-Setup-1.2.0.exe` (Windows installer; `Action-Register-Portable-1.2.0.exe` runs without
+   installing but does not update itself) or the Mac `.dmg` — `mac-arm64` for Apple-silicon Macs (M1 and
+   later), `mac-x64` for older Intel Macs.
 2. Windows shows *“Windows protected your PC”* because the installer is not code-signed:
    **More info › Run anyway**. Mac: right-click the app › **Open** the first time.
 3. Already on 1.1? The app updates itself (Setup › Automation › *Install updates automatically*), or just
