@@ -110,7 +110,7 @@ Object.assign(ACT, {
 function shareSig() { let n = 0, last = ''; for (const t of St.tasks.values()) { n++; if ((t.updatedAt || '') > last) last = t.updatedAt; } for (const b of St.board.values()) { n++; if ((b.updatedAt || '') > last) last = b.updatedAt || ''; } return `${n}|${last}|${JSON.stringify(St.layout && St.layout.off ? Object.keys(St.layout.off).length : 0)}`; }
 let shareTimer = null;
 HOOKS.afterRender.push(() => {
-  if (!DESKTOP || !shareList().length || !(clSt() || {}).signedIn) return;
+  if (!DESKTOP || SUBWIN || !shareList().length || !(clSt() || {}).signedIn) return;
   const sig = shareSig(); if (shareList().every(s => s.sig === sig)) return;
   clearTimeout(shareTimer);
   shareTimer = setTimeout(async () => { for (const sh of shareList()) if (sh.sig !== shareSig()) { try { await sharePush(sh); } catch {} } }, window.__shareDelay || 15000);

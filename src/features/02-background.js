@@ -36,6 +36,7 @@ async function backgroundTick() {
 }
 HOOKS.analysed.push(ok => { if (ok && (document.hidden || !document.hasFocus())) deskNotify(`${ok} new email${ok > 1 ? 's' : ''} analysed`, 'Tasks are waiting for your review.', 'review'); });
 HOOKS.ready.push(() => {
+  if (SUBWIN) return;
   clearInterval(BG.timer); BG.timer = setInterval(backgroundTick, 30000); setTimeout(backgroundTick, 4000);
   if (!DESKTOP) return;
   DK.on('quick-add', () => openQuickAdd());

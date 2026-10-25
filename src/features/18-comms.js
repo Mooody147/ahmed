@@ -54,7 +54,7 @@ async function weeklySend(manual) {
   commSave(x => { x.weekly.last = nowISO(); });
 }
 async function weeklyTick() {
-  if (!DESKTOP || !St.ready || !mailCanSend()) return;
+  if (!DESKTOP || SUBWIN || !St.ready || !mailCanSend()) return;
   const w = commPrefs().weekly; if (!w.on || !w.to) return;
   const slot = weeklySlot(w); if (Date.now() < slot.getTime()) return;
   if (w.last && Date.parse(w.last) >= slot.getTime()) return;
@@ -72,7 +72,7 @@ Object.assign(CHG, {
 });
 Object.assign(ACT, { 'toggle-snoozed': () => { UI.showSnoozed = !UI.showSnoozed; render(); } });
 function remindTick() {
-  if (!St.ready) return;
+  if (!St.ready || SUBWIN) return;
   for (const t of St.tasks.values()) {
     if (!t.remindAt || t.reminded || t.status === 'done' || t.remindAt > T()) continue;
     taskPatch(t.id, { reminded: true });

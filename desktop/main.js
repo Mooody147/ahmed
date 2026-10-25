@@ -33,9 +33,31 @@ if (!process.env.AR_TEST && !app.requestSingleInstanceLock()) app.quit();
 let win = null, store = null, config = null, updater = null, rendererReady = false, files = null, cloud = null;
 // folders the user picked in a dialog this session (or earlier, saved in the prefs); files may be copied only there
 const pickedFolders = new Set();
+// extra windows: the small "Today" window from the tray and views popped out to a second monitor
+const extraWins = new Set();
+const appWins = () => [win, ...extraWins].filter(w => w && !w.isDestroyed());
+const isAppSender = s => appWins().some(w => w.webContents === s);
+function broadcast(ch, data, except) { for (const w of appWins()) if (w.webContents !== except) w.webContents.send(ch, data); }
+function openAppWindow(view, mini) {
+  const dark = nativeTheme.shouldUseDarkColors;
+  const w = new BrowserWindow({
+    width: mini ? 400 : 1280, height: mini ? 620 : 860, minWidth: 320, minHeight: 400, alwaysOnTop: !!mini, show: false,
+    title: mini ? 'Today — Action Register' : 'Action Register', backgroundColor: dark ? '#0E1413' : '#EEF2F1', icon: path.join(__dirname, '..', 'build', 'icon.png'),
+    autoHideMenuBar: true,
+    webPreferences: { preload: path.join(__dirname, 'preload.js'), partition: PARTITION, contextIsolation: true, nodeIntegration: false, sandbox: true, spellcheck: true },
+  });
+  w.webContents.on('will-navigate', (e, url) => { if (!url.startsWith('app://')) e.preventDefault(); });
+  w.webContents.setWindowOpenHandler(({ url }) => { if (/^https:\/\//.test(url)) shell.openExternal(url); return { action: 'deny' }; });
+  w.loadURL('app://local/index.html' + (mini ? '?mini=1' : '?popout=1') + '#' + String(view || 'todo').replace(/[^\w-]/g, ''));
+  w.once('ready-to-show', () => w.show());
+  extraWins.add(w); w.on('closed', () => extraWins.delete(w));
+  return w;
+}
+let miniWin = null;
 const ctx = {
+  mini() { if (miniWin && !miniWin.isDestroyed()) { miniWin.show(); miniWin.focus(); return; } miniWin = openAppWindow('mini', true); },
   show() { if (!win) return; if (win.isMinimized()) win.restore(); win.show(); win.focus(); },
-  send(ch, data) { if (win && !win.isDestroyed()) win.webContents.send(ch, data); },
+  send(ch, data) { if (ch === 'db:remote' || ch === 'cloud:status') return broadcast(ch, data); if (win && !win.isDestroyed()) win.webContents.send(ch, data); },
   rendererReady: () => rendererReady,
 };
 
@@ -88,7 +110,7 @@ function buildMenu() {
 /* ---------- IPC ---------- */
 // Errors cross IPC as plain {code, message} objects so the renderer keeps the code.
 const handle = (ch, fn) => ipcMain.handle(ch, async (e, arg) => {
-  if (!win || e.sender !== win.webContents) return { ok: false, error: { code: 'forbidden', message: 'Unknown sender' } };
+  if (!win || !isAppSender(e.sender)) return { ok: false, error: { code: 'forbidden', message: 'Unknown sender' } };
   try { return { ok: true, value: await fn(arg, e) }; }
   catch (err) { return { ok: false, error: { code: (err && err.code) || 'error', message: String((err && err.message) || err), ...(err && err.provider ? { provider: err.provider, backup: err.backup || '' } : {}) } }; }
 });
@@ -145,8 +167,10 @@ function registerIpc() {
   ipcMain.on('desktop:status', e => { e.returnValue = status(); });
   handle('db:load', () => store.loadAll());
   handle('db:get', p => store.get(p));
-  handle('db:set', async ({ path: p, data }) => { await store.set(p, data); cloud.local(p, false); });
-  handle('db:delete', async p => { await store.delete(p); cloud.local(p, true); });
+  // a change in one window shows at once in the others (the same message cloud sync uses)
+  handle('db:set', async ({ path: p, data }, e) => { await store.set(p, data); cloud.local(p, false); broadcast('db:remote', { path: p, data }, e.sender); });
+  handle('db:delete', async (p, e) => { await store.delete(p); cloud.local(p, true); broadcast('db:remote', { path: p, data: null }, e.sender); });
+  handle('win:open', ({ view, mini }) => { if (mini) ctx.mini(); else openAppWindow(view, false); return true; });
 
   // answers { value, meta: { provider, model, fallback } }; the provider is the main AI unless the call names one
   handle('sample:json', (req, e) => ai.run(config, req, delta => { if (!e.sender.isDestroyed()) e.sender.send('sample:text', { id: req.id, delta }); }, addUsage));

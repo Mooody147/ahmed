@@ -9,6 +9,8 @@ const nowISO = () => new Date().toISOString();
 // Desktop build: platform.js adds window.claude.desktop (Electron). Absent in the web/artifact build.
 const DK = (typeof window !== 'undefined' && window.claude && window.claude.desktop) || null;
 const DESKTOP = !!DK;
+// a second window of the desktop app (tray "Today" window or a pop-out): it shows data but runs no background jobs
+const SUBWIN = typeof location !== 'undefined' && /[?&](mini|popout)=1/.test(location.search);
 
 /* ---------- icons ---------- */
 const svg = (d, s = 18) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
@@ -183,7 +185,7 @@ async function initStore() {
     St.ready = true; render(); setTimeout(() => { maybeAutoCheck(); if (UI.view === 'todo') maybeAutoCategorize(); runHooks('ready'); }, 300);
   }
 }
-function maybeAutoCheck() { if (GM.autoDone) return; GM.autoDone = true; const g = gmCfg(); if (St.mcp && g.address && g.autoCheck) checkGmail(false); }
+function maybeAutoCheck() { if (GM.autoDone || SUBWIN) return; GM.autoDone = true; const g = gmCfg(); if (St.mcp && g.address && g.autoCheck) checkGmail(false); }
 
 /* ---------- derived ---------- */
 const T = () => E.todayISO();
@@ -485,7 +487,7 @@ async function aiCategorize(ids, quiet) {
 }
 function maybeAutoCategorize() {
   // runs when the viewer opens the To-do tab; only for tasks Claude has not categorised yet
-  if (!St.sample || CAT.running || Date.now() - CAT.lastAuto < 60000) return;
+  if (!St.sample || SUBWIN || CAT.running || Date.now() - CAT.lastAuto < 60000) return;
   const ids = [...St.tasks.values()].filter(t => t.status !== 'done' && needsCat(t) && !t.catLocked).map(t => t.id);
   if (!ids.length) return;
   CAT.lastAuto = Date.now(); aiCategorize(ids, true);
@@ -1088,6 +1090,7 @@ function viewMap() {
           ${DESKTOP ? '<button class="btn sm ghost" data-act="map-share">🔗 Share link (always up to date)…</button>' : ''}
         </div></details>
         <div class="seg zoom"><button data-act="map-zoom" data-z="-1" aria-label="Zoom out">−</button><button data-act="map-fit" aria-label="Fit to screen">Fit</button><button data-act="map-zoom" data-z="1" aria-label="Zoom in">+</button></div>
+        ${DESKTOP && !SUBWIN ? '<button class="btn sm" data-act="pop-out" data-view="todo" title="Open the canvas in another window (second monitor)">⧉ Window</button>' : ''}
         <button class="btn sm" data-act="map-full" aria-pressed="${UI.mapFull}" title="${UI.mapFull ? 'Exit full screen (Esc)' : 'Full screen (Shift+F)'}">${UI.mapFull ? '⤡ Exit full screen' : '⤢ Full screen'}</button>
       </div>
     </div>
@@ -2554,8 +2557,8 @@ function viewSetup() {
         <button class="btn" data-act="export-json">${I.download} Full backup (.json)</button>
         <button class="btn" data-act="export-csv">${I.download} Tasks for Excel (.csv)</button>
         <button class="btn" data-act="export-ics">${I.download} Deadlines for Outlook calendar (.ics)</button>
-        <label class="btn ghost" for="import-json">Restore backup…</label><input id="import-json" type="file" accept=".json,application/json" hidden data-chg="import-json">
-      </div>
+        <label class="btn ghost" for="import-json">Restore backup…</label><input id="import-json" type="file" accept=".json,.arbak,application/json" hidden data-chg="import-json">
+      </div>${typeof backupExtraHTML === 'function' ? backupExtraHTML() : ''}
       <p class="small muted" style="margin:0">${St.tasks.size} tasks · ${St.emails.size} emails stored.</p>
     </section>
     <section class="card pad"><div class="section-title"><h2>Delete everything</h2></div>
@@ -2614,8 +2617,14 @@ async function exportJSON() {
   offerFile(`action-register-backup-${stamp()}.json`, JSON.stringify(await backupData(), null, 1));
 }
 async function importJSON(file) {
+  let d;
+  try { d = JSON.parse(await file.text()); } catch { toast('Restore failed: invalid file', { err: true }); return; }
+  // a password-protected backup is opened first (features/21-comfort.js)
+  if (d && d.app === 'action-register-encrypted' && typeof openEncrypted === 'function') return openEncrypted(d);
+  return importData(d);
+}
+async function importData(d) {
   try {
-    const d = JSON.parse(await file.text());
     if (d.app !== 'action-register') throw new Error('Not an Action Register backup.');
     let nt = 0, ne = 0;
     for (const t of d.tasks || []) { if (t && t.id) { St.tasks.set(t.id, t); if (St.mode === 'db') await writeDoc(St.refs.tasks.doc(t.id), t); nt++; } }

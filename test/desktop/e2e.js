@@ -468,6 +468,20 @@ async function reloaded(pg, action) {
     ({ app, pg } = await launch({ ...env4, AR_TEST_FOLDER: '', AR_START_VIEW: 'money' }));
     await waitFor(pg, "[...window.__AR.St.cols.money.values()].some(x => x.payee === 'Made on the second PC')", 20000);
 
+    step('the small Today window: a task added there shows in the main window at once, and the other way round');
+    const miniP = app.waitForEvent('window', { timeout: 20000 });
+    await ev(pg, "window.claude.desktop.call('win:open', { mini: true })");
+    const mw = await miniP; mw.on('pageerror', e => errors.push('MINI ' + e.message));
+    await mw.waitForSelector('#mini-add', { timeout: 20000 });
+    assert.ok(await mw.evaluate("document.documentElement.classList.contains('is-mini') && getComputedStyle(document.querySelector('.rail')).display === 'none'"));
+    await mw.fill('#mini-add', 'Call the crane supplier'); await mw.press('#mini-add', 'Enter');
+    await waitFor(pg, "[...window.__AR.St.tasks.values()].some(t => t.title === 'Call the crane supplier')", 10000);
+    await ev(pg, `(async () => { const db = await window.claude.use('db'); const t = [...window.__AR.St.tasks.values()].find(t => t.title === 'Call the crane supplier'); await db.doc('data/users/local/register/tasks/' + t.id).set({ ...t, title: 'Call the crane supplier today', updatedAt: new Date().toISOString() }); })()`);
+    await waitFor(mw, "/Call the crane supplier today/.test(document.querySelector('.mini-view').textContent)", 10000);
+    assert.strictEqual(await mw.evaluate('window.__AR.UI.view'), 'mini');
+    await mw.screenshot({ path: path.join(OUT, '16-today-window.png') });
+    await mw.close();
+
     errors.splice(0, errors.length, ...errors.filter(e => !/Failed to load resource|Content Security Policy/.test(e)));
     assert.deepStrictEqual(errors, [], 'no page or console errors');
     console.log('\nDESKTOP E2E PASSED');

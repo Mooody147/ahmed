@@ -87,12 +87,13 @@ const fmtRange = (a, b) => `${fmtDate(a, { day: 'numeric', month: 'short' })} �
 
 /* --- Insights view --- */
 UI.insTab = UI.insTab || 'overview'; UI.repKind = 'progress'; UI.repPeriod = 'week'; UI.repProject = ''; UI.timePeriod = 'week';
+const INS_FN = { overview: () => insOverview(), waiting: () => insWaiting(), time: () => insTime(), reports: () => insReports() };
 const INS_TABS = [['overview', '📊 Overview'], ['waiting', '⏳ Waiting on others'], ['time', '⏱ Time'], ['reports', '📄 Reports']];
 VIEWS.push('insights');
 VIEW_FN.insights = () => `<div class="wrap insights">
   <div class="page-head"><div><h1>Insights</h1><div class="sub">How your work is going, who you are waiting on, where your time goes, and reports you can send.</div></div></div>
   <div class="seg tabs" role="tablist">${INS_TABS.map(([k, l]) => `<button role="tab" data-act="ins-tab" data-tab="${k}" aria-pressed="${UI.insTab === k}">${l}</button>`).join('')}</div>
-  ${({ overview: insOverview, waiting: insWaiting, time: insTime, reports: insReports }[UI.insTab] || insOverview)()}
+  ${(INS_FN[UI.insTab] || insOverview)()}
 </div>`;
 
 // charts: thin single-series bars in the chart blue, hover tooltips, and a table view

@@ -1079,3 +1079,16 @@ details.menu > summary.on { background: var(--accent-soft); color: var(--accent)
 .pat ul { margin: 6px 0 0; padding-inline-start: 18px; }
 .uc-tbl tr.on td { background: var(--accent-soft, rgba(0,120,110,.08)); }
 .uc-tbl td.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+/* ---------- Today window, tour ---------- */
+.is-mini .rail, .is-mini .topbar, .is-mini .tabbar, .is-mini .titlebar { display: none !important; }
+.is-mini .main, .is-mini main { margin: 0 !important; padding: 0 !important; }
+.mini-view { display: grid; gap: 10px; padding: 14px; }
+.mini-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.mini-t { display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: center; padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--card, #fff); }
+.mini-t.done span { text-decoration: line-through; color: var(--muted); }
+#tour { position: fixed; inset: 0; z-index: 90; pointer-events: none; }
+.tour-hole { position: fixed; border-radius: 10px; box-shadow: 0 0 0 9999px rgba(0,0,0,.45); transition: all .2s; }
+.tour-card { position: fixed; width: 320px; pointer-events: auto; display: grid; }
+.is-mini .app { grid-template-columns: minmax(0, 1fr) !important; }
+.is-mini .titlestrip, .is-popout .titlestrip { display: none !important; }

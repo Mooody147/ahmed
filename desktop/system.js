@@ -48,6 +48,7 @@ function setupTray(ctx) {
     const menu = Menu.buildFromTemplate([
       { label: 'Open Action Register', click: () => ctx.show() },
       { label: 'Quick add task…', click: () => { ctx.show(); ctx.send('quick-add', {}); } },
+      { label: 'Today — small window', click: () => ctx.mini() },
       { label: 'Check Gmail now', click: () => ctx.send('gmail-check', {}) },
       { type: 'separator' },
       { label: 'Quit', click: () => { quitting = true; app.quit(); } },
