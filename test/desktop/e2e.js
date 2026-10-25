@@ -334,7 +334,7 @@ async function reloaded(pg, action) {
     assert.ok(await ev(pg, "window.__AR.UI.staging[0].tierOverride === 'quick' && !!document.querySelector('.chip.ai-quick')"), 'simple email set to the fast model');
     await pg.click('[data-act="analyze"]'); await idle(pg);
     const e1 = await ev(pg, "(b => ({ state: b.state, error: b.error, info: b.errInfo }))(window.__AR.UI.staging[0])");
-    assert.strictEqual(e1.state, 'error'); assert.match(e1.error, /no usable credit/); assert.strictEqual(e1.info.backup, 'openai');
+    assert.strictEqual(e1.state, 'error'); assert.match(e1.error, /no usable credit/); assert.match(e1.error, /said: “Your credit balance is too low/); assert.strictEqual(e1.info.backup, 'openai');
     await pg.click('[data-act="ai-use"][data-p="openai"]'); await idle(pg);
     const d1 = await ev(pg, "window.__AR.UI.staging[0].doneText");
     assert.match(d1 || '', /Read by ChatGPT · gpt-test-4o-mini/, 'read by the backup with the fast model');

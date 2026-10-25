@@ -15,13 +15,23 @@ function aiByTitle(meta) {
 }
 const aiSt = () => (DESKTOP && DK.status().ai) || null;
 
+// the provider's own words from an SDK error like `400 {"type":"error","error":{"message":"…"}}`
+function aiSaid(m) {
+  const t = String(m || ''); let x = '';
+  try { const j = JSON.parse(t.slice(t.indexOf('{'))); x = (j.error && j.error.message) || j.message || ''; } catch { x = t.replace(/^\d{3}\s*/, ''); }
+  return String(x).trim().slice(0, 240);
+}
 // error text that names the AI that failed (app.js aiErrorText covers Claude on claude.ai)
 function aiErrorFor(e) {
   if (!e || !e.code) return '';
   const p = e.provider || (aiSt() || {}).primary || 'claude', who = AI_LABEL[p] || 'The AI';
   const backup = e.backup ? ` You can use ${AI_LABEL[e.backup]} (your backup AI) for now.` : '';
   if (e.code === 'budget') return `${e.message} Raise the budget in Setup › Which AI, or continue just this time.`;
-  if (e.code === 'billing') return `${who} says the account has no usable credit (or this model is not enabled for it).${backup} Or try the fast model, which costs far less, or top up and press Analyse again.`;
+  if (e.code === 'billing') {
+    const said = aiSaid(e.message), perm = /permission|not allowed|not have access|forbidden/i.test(said) || /^403\b/.test(String(e.message || ''));
+    const what = perm ? `${who} refused this API key for the model (the key's workspace or organisation is not allowed to use it).` : `${who} says the account has no usable credit (or this model is not enabled for it).`;
+    return `${what}${backup} Or try the fast model, which costs far less, or top up and press Analyse again.${said ? ` ${who} said: “${said}”` : ''}`;
+  }
   if (e.code === 'unavailable') return `${e.message || who + ' could not be reached.'}${backup}`;
   if (p === 'claude') return '';
   if (e.code === 'auth_failed') return `Your ${who} API key was rejected. Check it in Setup › Which AI.${backup}`;
