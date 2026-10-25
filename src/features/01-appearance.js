@@ -8,7 +8,7 @@ const ACCENTS = {
   amber: { light: ['#9A5B00', '#7D4A00', '#F6E7CF'], dark: ['#E6A54A', '#EDB868', '#3A2A12'], label: 'Amber' },
   rose: { light: ['#B03A5B', '#912F4A', '#F6DEE5'], dark: ['#EE8BA6', '#F2A3B8', '#40202A'], label: 'Rose' },
 };
-const uiPrefs = () => Object.assign({ theme: 'system', accent: 'teal', density: 'comfortable', text: 100 }, St.settings.ui || {});
+const uiPrefs = () => Object.assign({ theme: 'system', accent: 'teal', density: 'comfortable', text: 100, lang: 'en' }, St.settings.ui || {});
 const darkMQ = typeof matchMedia === 'function' ? matchMedia('(prefers-color-scheme: dark)') : null;
 const isDark = () => { const t = uiPrefs().theme; return t === 'dark' || (t === 'system' && !!(darkMQ && darkMQ.matches)); };
 let appearanceSig = '';
@@ -18,6 +18,9 @@ function applyAppearance(force) {
   const r = document.documentElement;
   if (p.theme === 'system') r.removeAttribute('data-theme'); else r.setAttribute('data-theme', p.theme);
   r.dataset.density = p.density;
+  // Arabic: right to left, Arabic font first; the interface text is translated by features/23-arabic.js
+  r.lang = p.lang === 'ar' ? 'ar' : 'en'; r.dir = p.lang === 'ar' ? 'rtl' : 'ltr';
+  if (typeof arApply === 'function') arApply();
   const a = (ACCENTS[p.accent] || ACCENTS.teal)[dark ? 'dark' : 'light'];
   if (p.accent && p.accent !== 'teal') { r.style.setProperty('--accent', a[0]); r.style.setProperty('--accent-2', a[1]); r.style.setProperty('--accent-soft', a[2]); }
   else ['--accent', '--accent-2', '--accent-soft'].forEach(k => r.style.removeProperty(k));
@@ -34,6 +37,7 @@ function appearanceHTML() {
   const seg = (key, opts) => `<div class="seg" role="group">${opts.map(([v, l]) => `<button data-act="ui-pref" data-key="${key}" data-val="${v}" aria-pressed="${String(p[key]) === String(v)}">${l}</button>`).join('')}</div>`;
   return `<section class="card pad set-sec"><div class="section-title"><h2>Appearance</h2></div>
     <div class="set-rows">
+      <div class="set-row"><div><b>Language</b><div class="small muted">Arabic reads right to left; the canvas, charts and numbers stay left to right.</div></div>${seg('lang', [['en', 'English'], ['ar', 'العربية']])}</div>
       <div class="set-row"><div><b>Theme</b><div class="small muted">Follow Windows, or always light or dark.</div></div>${seg('theme', [['system', 'Follow system'], ['light', 'Light'], ['dark', 'Dark']])}</div>
       <div class="set-row"><div><b>Accent colour</b><div class="small muted">Buttons, highlights and links.</div></div><div class="row accent-pick">${Object.entries(ACCENTS).map(([k, a]) => `<button class="sw big ${p.accent === k ? 'on' : ''}" data-act="ui-pref" data-key="accent" data-val="${k}" style="--c:${a[isDark() ? 'dark' : 'light'][0]}" title="${a.label}" aria-label="${a.label}" aria-pressed="${p.accent === k}"></button>`).join('')}</div></div>
       <div class="set-row"><div><b>Density</b><div class="small muted">Compact fits more on screen.</div></div>${seg('density', [['comfortable', 'Comfortable'], ['compact', 'Compact']])}</div>

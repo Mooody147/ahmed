@@ -61,7 +61,7 @@ function todayStripHTML() {
   // the numbers open the list view filtered to them
   const b = todayBrief(), risks = riskList();
   return `<section class="today-strip">
-      <div class="ts-left"><div class="label">${esc(new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' }))}</div><h1>${greet}${name ? ', ' + esc(name) : ''}</h1></div>
+      <div class="ts-left"><div class="label">${esc(new Date().toLocaleDateString(DLOC(), { weekday: 'long', day: 'numeric', month: 'long' }))}</div><h1>${greet}${name ? ', ' + esc(name) : ''}</h1></div>
       <div class="ts-stats">
         ${stat('today', n.today, 'Due today', 'today', 'strip-filter')}${stat('overdue', n.overdue, 'Overdue', 'over', 'strip-filter')}${stat('waiting', waiting, 'Waiting on others', 'wait', 'strip-filter')}${stat('', n.review, 'To review', 'rev', 'goto-review')}
       </div>

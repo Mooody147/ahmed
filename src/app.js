@@ -206,9 +206,11 @@ function fmtDate(iso, opts = { day: 'numeric', month: 'short' }) {
   if (!iso) return '';
   const d = iso.length === 10 ? new Date(iso + 'T12:00:00') : new Date(iso);
   if (isNaN(d)) return iso;
-  return d.toLocaleDateString('en-GB', opts);
+  return d.toLocaleDateString(DLOC(), opts);
 }
-function fmtDateTime(iso) { if (!iso) return ''; const d = new Date(iso); if (isNaN(d)) return iso; return d.toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }); }
+// dates in the interface language (Arabic month names with Western digits, as used in engineering documents)
+const DLOC = () => (typeof document !== 'undefined' && document.documentElement.lang === 'ar' ? 'ar-EG-u-nu-latn' : 'en-GB');
+function fmtDateTime(iso) { if (!iso) return ''; const d = new Date(iso); if (isNaN(d)) return iso; return d.toLocaleString(DLOC(), { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }); }
 function dueInfo(t) {
   if (!t.deadline) return { txt: t.deadlineText ? 'Date unclear' : 'No date', cls: 'none' };
   const d = E.dayDiff(T(), t.deadline);
