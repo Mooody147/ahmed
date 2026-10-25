@@ -16,7 +16,9 @@ async def main():
         await pg.click('.rail [data-nav="notebook"]'); await pg.wait_for_selector('.notebook')
         await pg.fill('#nb-new-name', 'ELM documents'); await pg.click('[data-act="nb-create"]'); await pg.wait_for_selector('.nb-page')
         await pg.set_input_files('#nb-file', [os.path.join(FX, f) for f in ['CRS_valves.xlsx', 'MOM-17.docx', 'transmittal.pdf', 'drawing_A3.pdf', 'fwd_attachment.eml']])
-        await pg.wait_for_function("(()=>{const n=[...window.__AR.St.cols.notebooks.values()][0]; return n && n.counts && n.counts.files===5})()", timeout=60000)
+        try: await pg.wait_for_function("(()=>{const n=[...window.__AR.St.cols.notebooks.values()][0]; return n && n.counts && n.counts.files===5})()", timeout=60000)
+        except Exception:
+            print('STUCK', await ev("JSON.stringify({nb: [...window.__AR.St.cols.notebooks.values()][0], busy: window.__AR.UI.nb.busy})")); raise
         nb = await ev("[...window.__AR.St.cols.notebooks.values()][0]"); print('COUNTS', nb['counts']); assert nb['counts']['passages'] >= 5
         side = await pg.text_content('.nb-side'); assert '5 files' in side
 

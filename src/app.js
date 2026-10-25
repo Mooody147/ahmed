@@ -238,7 +238,14 @@ function keepFocus(fn) {
   fn();
   if (id) { const n = document.getElementById(id); if (n && n !== document.activeElement) { n.focus({ preventScroll: true }); try { if (ss !== null) n.setSelectionRange(ss, se); } catch {} } }
 }
+// a redraw can remove a field that still had focus; its change/blur handlers must not redraw inside this one
+let rendering = false;
 function render() {
+  if (rendering) { scheduleRender(); return; }
+  rendering = true;
+  try { renderNow(); } finally { rendering = false; }
+}
+function renderNow() {
   if (cvHold()) { UI.cvPending = true; return; }
   runHooks('beforeRender');
   const c = counts();
@@ -1668,7 +1675,7 @@ function viewDaily() {
       ${m.isToday ? '<span class="chip accent">Today</span>' : `<button class="btn sm ghost" data-act="day-today">Today</button>`}
       <b class="day-title">${esc(fmtDate(D, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }))}</b>${dayProgressHTML(L)}
       <span class="spacer"></span>
-      <button class="btn sm" data-act="day-map" title="Highlight this day’s work on the canvas">🧠 Show on canvas</button>
+      <button class="btn sm" data-act="day-map" title="Highlight this day’s work on the canvas">🧠 Show on canvas</button>${typeof dailyExtraBtns === 'function' ? dailyExtraBtns() : ''}
     </div>
     <section class="card pad day-add">
       <div class="seg" role="group" aria-label="What are you adding?">${DAY_KINDS.map(([k, l]) => `<button data-act="day-kind" data-kind="${k}" aria-pressed="${kind === k}">${l}</button>`).join('')}</div>
@@ -2801,6 +2808,8 @@ document.addEventListener('keydown', e => {
   if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('.trow,.erow,.tc-title,.todo-main .ttl')) { e.preventDefault(); e.target.click(); }
 });
 document.addEventListener('change', e => { const el = e.target.closest('[data-chg]'); if (el && CHG[el.dataset.chg]) CHG[el.dataset.chg](el, e); });
+// a file dialog can stay open while the page redraws: the replaced input still delivers its files
+HOOKS.afterRender.push(() => document.querySelectorAll('input[type=file][data-chg]:not([data-bound])').forEach(el => { el.dataset.bound = '1'; el.addEventListener('change', e => { if (!el.isConnected && CHG[el.dataset.chg]) CHG[el.dataset.chg](el, e); }); }));
 document.addEventListener('input', e => {
   const el = e.target;
   if (el.classList && (el.classList.contains('title-edit') || el.classList.contains('autogrow'))) autosize(el);

@@ -87,7 +87,7 @@ const PAL = { open: false, q: '', i: 0, items: [] };
 function paletteItems(q) {
   const nq = E.normMatch(q), out = [];
   const add = (group, label, run, hint) => out.push({ group, label, run, hint });
-  const views = [['todo', 'To-do'], ['daily', 'Daily'], ['review', 'Review'], ['import', 'Add emails'], ['emails', 'Emails'], ['docs', 'Documents'], ['insights', 'Insights'], ['notebook', 'Notebook'], ['money', 'Money'], ['tools', 'Tools'], ['setup', 'Setup']];
+  const views = [['todo', 'To-do'], ['daily', 'Daily'], ['review', 'Review'], ['import', 'Add emails'], ['emails', 'Emails'], ['docs', 'Documents'], ['insights', 'Insights'], ['plan', 'Plan'], ['notebook', 'Notebook'], ['money', 'Money'], ['tools', 'Tools'], ['setup', 'Setup']];
   const acts = [
     ['New task', () => ACT['new-task']()], ['Quick add for today', () => openQuickAdd()], ['Check Gmail now', () => checkGmail(true)],
     ['Focus mode', () => openFocus()], ['Morning briefing — write again', () => { go('todo'); makeBrief(true); }],
@@ -95,6 +95,7 @@ function paletteItems(q) {
     ['Weekly report', () => { UI.insTab = 'reports'; go('insights'); }], ['Timesheet', () => { UI.insTab = 'time'; go('insights'); }],
     ['Engineering calculators', () => { UI.toolTab = 'calc'; go('tools'); }], ['Compare datasheets / offers', () => { UI.toolTab = 'compare'; go('tools'); }],
     ['CRS responses', () => { UI.toolTab = 'crs'; go('tools'); }], ['Meeting minutes → tasks', () => { UI.toolTab = 'minutes'; go('tools'); }], ['Ask your register (Ctrl+J)', () => openAsk()], ['Waiting on others', () => { UI.insTab = 'waiting'; go('insights'); }], ['Hand-over pack', () => { UI.insTab = 'reports'; UI.repKind = 'handover'; go('insights'); }], ['Document register', () => { UI.docTab = 'register'; go('docs'); }],
+    ['Calendar', () => { UI.plan.tab = 'calendar'; go('plan'); }], ['Gantt timeline', () => { UI.plan.tab = 'gantt'; go('plan'); }], ['Workload', () => { UI.plan.tab = 'workload'; go('plan'); }], ['Contacts', () => { UI.plan.tab = 'contacts'; go('plan'); }], ['Meeting prep', () => { UI.plan.tab = 'meeting'; go('plan'); }], ['Wrap up the day', () => { go('daily'); ACT['day-wrap'](); }],
     ['New expense', () => { go('money'); ACT['mon-new']({ dataset: { kind: 'expense' } }); }], ['New income', () => { go('money'); ACT['mon-new']({ dataset: { kind: 'income' } }); }], ['Import a bank statement', () => { UI.mon.tab = 'import'; go('money'); }], ['Expense from a receipt photo', () => { UI.mon.tab = 'receipts'; go('money'); }],
     ['Full backup (.json)', () => exportJSON()], ['Recycle bin', () => { go('setup'); setTimeout(() => document.getElementById('set-bin')?.scrollIntoView(), 80); }],
     ...(DESKTOP && DK.status().desktop && DK.status().desktop.locked ? [['Lock now', () => showLock()]] : []),
@@ -215,7 +216,7 @@ Object.assign(ACT, {
   'more-menu': () => {
     const m = $('#modal');
     m.innerHTML = deco(`<div class="card more-sheet" role="dialog" aria-label="More"><div class="row"><b>More</b><span class="spacer"></span><button class="icon-btn" data-act="close-modal" aria-label="Close">${I.x}</button></div>
-      ${[['docs', '📄 Documents'], ['insights', '📊 Insights'], ['notebook', '📓 Notebook'], ['money', '💰 Money'], ['tools', '🛠 Tools'], ['setup', '⚙ Setup']].map(([v, l]) => `<button class="btn more-btn" data-act="more-go" data-view="${v}">${l}</button>`).join('')}
+      ${[['docs', '📄 Documents'], ['insights', '📊 Insights'], ['plan', '📅 Plan'], ['notebook', '📓 Notebook'], ['money', '💰 Money'], ['tools', '🛠 Tools'], ['setup', '⚙ Setup']].map(([v, l]) => `<button class="btn more-btn" data-act="more-go" data-view="${v}">${l}</button>`).join('')}
       <button class="btn more-btn" data-act="palette">🔎 Search and commands</button></div>`);
     m.hidden = false;
   },
