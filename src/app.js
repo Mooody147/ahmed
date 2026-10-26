@@ -1097,6 +1097,7 @@ function viewMap() {
           <button class="btn sm ghost" data-act="map-present">🖥 Present project by project</button>
           ${DESKTOP ? '<button class="btn sm ghost" data-act="map-share">🔗 Share link (always up to date)…</button>' : ''}
         </div></details>
+        <button class="btn sm" data-act="map-rearrange" title="Put every box back in tidy order (Shift+R)">⊞ Rearrange</button>
         <button class="btn sm" data-act="map-refresh" title="Show every task and email again">⟳ Refresh</button>
         <div class="seg"><button data-act="cv-undo" title="Undo (Ctrl+Z)" ${UI.cvUndo.length ? '' : 'disabled'}>↶ Undo</button><button data-act="cv-redo" title="Redo (Ctrl+Shift+Z)" ${UI.cvRedo.length ? '' : 'disabled'}>↷ Redo</button></div>
         <div class="seg zoom"><button data-act="map-zoom" data-z="-1" aria-label="Zoom out">−</button><button data-act="map-fit" aria-label="Fit to screen">Fit</button><button data-act="map-zoom" data-z="1" aria-label="Zoom in">+</button></div>
@@ -1621,6 +1622,7 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape') { if (UI.tool !== 'select') { UI.tool = 'select'; render(); } else if (UI.cvSel.size) { UI.cvSel.clear(); renderWorld(); } else if (UI.mapFull) toggleFull(false); return; }
   if (e.key === ' ') { if (!UI.spaceDown) { UI.spaceDown = true; const vp = $('#map-vp'); if (vp) vp.dataset.tool = 'hand'; } e.preventDefault(); return; }
   if (e.shiftKey && k === 'f') { toggleFull(); return; }
+  if (e.shiftKey && k === 'r') { ACT['map-rearrange'](); return; }
   if (!e.shiftKey && TOOL_KEY[k]) { UI.tool = TOOL_KEY[k]; render(); }
 });
 document.addEventListener('keyup', e => { if (e.key === ' ' && UI.spaceDown) { UI.spaceDown = false; const vp = $('#map-vp'); if (vp) vp.dataset.tool = UI.tool; } });
@@ -2899,6 +2901,14 @@ const ACT = {
   'map-focus': el => { UI.mapFocus = el.dataset.pk; UI.map.fitted = false; render(); },
   'map-full': () => toggleFull(),
   'map-now': () => { UI.mapAsOf = ''; UI.map.fitted = false; render(); },
+  // boxes moved by hand go back to their tidy place in the tree; sizes you set are kept; Undo puts them back
+  'map-rearrange': () => {
+    const n = Object.keys(St.layout.off || {}).length;
+    if (!n) { UI.map.fitted = false; render(); requestAnimationFrame(() => mapFit()); toast('Everything is already in order.'); return; }
+    cvApply({ layout: { off: {}, size: { ...(St.layout.size || {}) } } }); UI.map.fitted = false;
+    const w = $('#map-world'); if (w) w.classList.add('anim'); render(); requestAnimationFrame(() => mapFit());
+    toast(`⊞ ${n} box${n === 1 ? '' : 'es'} rearranged.`, { action: 'Undo', fn: cvUndo });
+  },
   'map-reset-layout': () => { cvApply({ layout: { off: {}, size: {} } }); UI.map.fitted = false; render(); toast('↺ Layout tidied.', { action: 'Undo', fn: cvUndo }); },
   'cv-tool': el => { UI.tool = el.dataset.tool; if (UI.tool !== 'select') UI.cvSel.clear(); render(); },
   'cv-color': el => { UI.cvColor = el.dataset.c; render(); },
