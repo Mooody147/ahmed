@@ -1128,3 +1128,12 @@ body:not(.viewer-mode) .viewer-bar { display: none; }
 .viewer-mode [data-act="map-refresh"], .viewer-mode [data-act="cv-undo"], .viewer-mode [data-act="cv-redo"], .viewer-mode .page-head .btn, .viewer-mode .mtick, .viewer-mode .mdel, .viewer-mode .mren, .viewer-mode .mnode .rz,
 .viewer-mode .map-hint, .viewer-mode [data-act="map-share"], .viewer-mode .ts-actions, .viewer-mode .tstat.rev, .viewer-mode .rail-foot, .viewer-mode [data-act="brief-refresh"], .viewer-mode [data-act="brief-hide"], .viewer-mode .topbar .btn, .viewer-mode [data-act="palette"], .viewer-mode .mode-bar { display: none !important; }
 .mnode .mfiles { border: 0; background: none; padding: 0 2px; cursor: pointer; font-size: 12px; }
+
+/* link handle: drag the ● on a box to another box to link them */
+.lk { position: absolute; right: -8px; top: 50%; width: 14px; height: 14px; margin-top: -7px; border-radius: 50%; background: var(--surface); border: 2.5px solid var(--accent); box-shadow: var(--elev-1); cursor: crosshair; z-index: 4; display: none; touch-action: none; }
+.lk::after { content: ""; position: absolute; inset: 2px; border-radius: 50%; background: var(--accent); }
+.mnode:hover > .lk, .mnode.sel > .lk, .bel:hover > .lk, .bel.sel > .lk, .map-viewport[data-tool="connector"] .lk { display: block; }
+.mnode.root > .lk, .map-viewport[data-tool="pen"] .lk, .map-viewport[data-tool="highlighter"] .lk, .map-viewport[data-tool="eraser"] .lk { display: none !important; }
+@media (hover: none) { .mnode.task > .lk, .bel > .lk { display: block; opacity: .7; } }
+.z-far .lk { display: none !important; }
+[dir="rtl"] .lk { right: auto; left: -8px; }

@@ -9,7 +9,12 @@ function projectBands(M) {
     walk(P);
     out.push({ id: P.id, x: x0 - 14, y: y0 - 12, w: x1 - x0 + 28, h: y1 - y0 + 24, hue: P.hue, label: P.label });
   }
-  // neighbouring bands never overlap: split the gap between them
+  // neighbouring bands never overlap: split the gap between them (side by side when the map runs top to bottom)
+  if (mapDir() === 'v') {
+    const byX = [...out].sort((a, b) => a.x - b.x);
+    for (let i = 1; i < byX.length; i++) { const a = byX[i - 1], b = byX[i], ov = a.x + a.w + 4 - b.x; if (ov > 0 && a.y < b.y + b.h && b.y < a.y + a.h && ov / 2 < Math.min(a.w, b.w) / 3) { const cut = ov / 2; a.w -= cut; b.x += cut; b.w -= cut; } }
+    return out;
+  }
   const byY = [...out].sort((a, b) => a.y - b.y);
   for (let i = 1; i < byY.length; i++) {
     const a = byY[i - 1], b = byY[i], ov = a.y + a.h + 4 - b.y;
@@ -116,9 +121,10 @@ function mapSVG(M) {
   }
   for (const el of boardEls()) {
     const e = liveEl(el), col = colorCss(e.color).startsWith('var') ? '#15201E' : e.color;
+    if (e.type === 'stroke' && e.pressure) { parts.push(`<path d="${pressurePath(e.pts, e.width)}" fill="${col}" stroke="none"/>`); continue; }
     if (e.type === 'stroke') parts.push(`<path d="${strokePath(e.pts)}" fill="none" stroke="${col}" stroke-width="${e.width}" ${e.alpha ? `stroke-opacity="${e.alpha}"` : ''} stroke-linecap="round" stroke-linejoin="round"/>`);
     if (e.type === 'line') parts.push(`<path d="M${e.x1} ${e.y1} L${e.x2} ${e.y2}" stroke="${col}" stroke-width="${e.width || 3}" fill="none" stroke-linecap="round" ${e.arrow ? 'marker-end="url(#xa)"' : ''}/>`);
-    if (e.type === 'connector') { const a = refBox(e.from, M), b = refBox(e.to, M); if (a && b) { const [p, q] = clipBoxes(a, b); parts.push(`<path d="M${p.x} ${p.y} L${q.x} ${q.y}" stroke="${col}" stroke-width="${e.width || 2.5}" fill="none" ${e.dash ? 'stroke-dasharray="7 6"' : ''} marker-end="url(#xa)"/>`); } }
+    if (e.type === 'connector') { const a = refBox(e.from, M), b = refBox(e.to, M); if (a && b) { const [p, q] = clipBoxes(a, b); parts.push(`<path d="${e.shape === 'straight' ? `M${p.x} ${p.y} L${q.x} ${q.y}` : smartPath(a, b)}" stroke="${col}" stroke-width="${e.width || 2.5}" fill="none" ${e.dash ? 'stroke-dasharray="7 6"' : ''} marker-end="url(#xa)"/>`); } }
   }
   parts.push('</g>');
   return { w: W, h: H, svg: `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"><defs><marker id="xa" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#15201E"/></marker></defs>${parts.join('')}</svg>` };

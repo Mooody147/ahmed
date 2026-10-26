@@ -125,7 +125,7 @@ function delBoard(id) { St.board.delete(id); if (St.mode === 'db') St.refs.board
 function putLayout(l) { St.layout = l; if (St.mode === 'db') writeDoc(St.refs.layout, l); else saveLocal(); }
 function putDaily(d) { d.updatedAt = nowISO(); St.daily.set(d.id, d); if (St.mode === 'db') writeDoc(St.refs.daily.doc(d.id), d); else saveLocal(); }
 function delDaily(id) { St.daily.delete(id); if (St.mode === 'db') St.refs.daily.doc(id).delete().catch(dbError); else saveLocal(); }
-const mergeLayout = l => ({ off: {}, size: {}, ...(l || {}) });
+const mergeLayout = l => ({ off: {}, offv: {}, size: {}, ...(l || {}) });
 // further collections used by feature files: document register, time log, lessons, recycle bin, learned preferences
 const COLS = ['docreg', 'time', 'lessons', 'trash', 'prefs'];
 St.cols = Object.fromEntries(COLS.map(n => [n, new Map()]));
@@ -732,6 +732,11 @@ UI.mapShowDone = true; UI.mapFocus = 'all'; UI.mapQ = ''; UI.mapActivity = true;
 UI.tool = 'select'; UI.cvColor = 'ink'; UI.cvWidth = 3; UI.cvSel = new Set(); UI.cvUndo = []; UI.cvRedo = []; UI.cvTemp = null; UI.cvDrop = null;
 UI.mapFull = false; UI.mapAsOf = ''; UI.mapDay = '';
 const MX = { root: 0, project: 250, topic: 540, task: 830, item: 1190 };
+// the mind map grows left to right (h, the default) or top to bottom (v); boxes moved by hand are remembered
+// separately for each direction (St.layout.off / St.layout.offv)
+const mapDir = () => ((St.settings.ui || {}).mapDir === 'v' ? 'v' : 'h');
+const offKey = () => (mapDir() === 'v' ? 'offv' : 'off');
+const VGAP = { root: 64, project: 54, topic: 46, task: 0 }, HGAP = { project: 44, topic: 26, task: 16, item: 8, root: 0 };
 const MW = { root: 200, project: 250, topic: 250, task: 320, item: 280 };
 const MH = { root: 78, project: 72, topic: 52, task: 82, item: 34 };
 const MGAP = { project: 20, topic: 14, task: 12, item: 6, root: 0 };
@@ -808,9 +813,40 @@ function buildMap() {
     }
     nodes.push(n);
   };
-  place(root);
+  // top to bottom: one row per level (root, projects, topics, tasks); a task's items hang below it in a column
+  const placeV = () => {
+    const all = [];
+    const measure = n => {
+      const hidden = UI.mapCollapsed.has(n.id); n.hiddenKids = hidden ? n.children.length : 0;
+      n.kids = hidden ? [] : n.children; n.w = nodeW(n); n.h = Math.max(MH[n.type], measureNode(n)); all.push(n); n.kids.forEach(measure);
+    };
+    measure(root);
+    const maxH = {}; for (const n of all) if (n.type !== 'item') maxH[n.type] = Math.max(maxH[n.type] || 0, n.h);
+    const rowY = { root: 0 }; let y = 0;
+    for (const t of ['root', 'project', 'topic', 'task']) { rowY[t] = y; y += (maxH[t] || MH[t]) + (VGAP[t] || 40); }
+    let cx = 0;
+    const put = n => {
+      n.y = rowY[n.type] ?? 0;
+      if (n.type === 'task' || !n.kids.length) {
+        const items = n.type === 'task' ? n.kids : [];
+        const w = Math.max(n.w, ...items.map(k => k.w + 22));
+        n.x = cx + (w - n.w) / 2; cx += w + (HGAP[n.type] || 16);
+        let iy = n.y + n.h + 14;
+        items.forEach(k => { k.x = n.x + 22; k.y = iy; iy += k.h + 6; nodes.push(k); edges.push({ a: n, b: k, hue: k.hue ?? n.hue ?? 186 }); });
+      } else {
+        n.kids.forEach(put);
+        const a = n.kids[0], b = n.kids[n.kids.length - 1];
+        n.x = Math.max(0, (a.x + b.x + b.w) / 2 - n.w / 2);
+        cx = Math.max(cx, n.x + n.w + (HGAP[n.type] || 16)) + (n.type === 'project' ? 30 : n.type === 'topic' ? 10 : 0);
+        n.kids.forEach(k => edges.push({ a: n, b: k, hue: k.hue ?? n.hue ?? 186 }));
+      }
+      nodes.push(n);
+    };
+    put(root);
+  };
+  if (mapDir() === 'v') placeV(); else place(root);
   // manual positions: a node's offset also moves everything branching from it
-  const off = St.layout.off || {}, tmp = UI.cvTemp && UI.cvTemp.kind === 'node' ? UI.cvTemp : null;
+  const off = St.layout[offKey()] || {}, tmp = UI.cvTemp && UI.cvTemp.kind === 'node' ? UI.cvTemp : null;
   const shift = (n, dx, dy) => {
     const o = off[n.id]; let x = dx + (o ? o.dx : 0), y = dy + (o ? o.dy : 0);
     if (tmp && tmp.id === n.id) { x += tmp.dx; y += tmp.dy; }
@@ -843,11 +879,13 @@ function mapNodeHTML(n, hits, day) {
     return `<div class="mnode project${drag}${drop}" data-node="${esc(n.id)}" data-type="project" data-pk="${esc(n.id)}" data-label="${esc(n.label)}" style="${st}">
       ${n.id === 'p:~' ? '<span class="gicon">🗂️</span>' : projBadge(n.label)}
       <div class="mtxt"><b dir="auto" data-edit="${esc(n.id)}">${esc(n.label)}</b><small>${n.n - n.done} open · ${n.done} done</small></div>${ring(pct, 34)}${more}
+<span class="lk" data-link="1" title="Drag to another box to link them" aria-hidden="true"></span>
       <button class="mfocus" data-map="focus" title="Show only this project" aria-label="Show only this project">⤢</button>${n.id === 'p:~' ? '' : '<button class="mfocus mren" data-map="rename" title="Rename project" aria-label="Rename project">✎</button>'}<button class="mfocus mdel" data-map="del" title="Delete this project and its tasks" aria-label="Delete this project and its tasks">🗑</button>${rz}</div>`;
   }
   if (n.type === 'topic') {
     const open = n.tasks.filter(t => t.status !== 'done').length;
     return `<div class="mnode topic${drag}${drop}" data-node="${esc(n.id)}" data-type="topic" data-topic="${esc(n.key === '~' ? '' : n.label)}" data-plabel="${esc(n.tasks[0] ? projKeyLabel(n.tasks[0])[1] : '')}" style="${st}">
+<span class="lk" data-link="1" title="Drag to another box to link them" aria-hidden="true"></span>
       <span class="cicon">${n.key === '~' ? '🗂️' : '🧩'}</span><div class="mtxt"><b dir="auto" data-edit="${esc(n.id)}">${esc(n.label)}</b><small>${open} open · ${n.tasks.length - open} done</small></div>${more}${n.key === '~' ? '' : '<button class="mfocus mren" data-map="rename" title="Rename topic" aria-label="Rename topic">✎</button>'}<button class="mfocus mdel" data-map="del" title="Delete this topic and its tasks" aria-label="Delete this topic and its tasks">🗑</button>${rz}</div>`;
   }
   if (n.type === 'task') {
@@ -857,6 +895,7 @@ function mapNodeHTML(n, hits, day) {
     const fresh = Date.now() - (FRESH.get(t.id) || 0) < 2500;
     const cls = ['mnode', 'task', 'p-' + (t.priority || 'medium'), t.status === 'done' ? 'done' : '', UI.mapSel === t.id ? 'sel' : '', hits && hits.has(t.id) ? 'hit' : '', day && day.has(t.id) ? 'dayhit' : '', sug ? 'suggest' : '', fresh ? 'fresh' : ''].join(' ') + drag + drop;
     return `<div class="${cls}" data-node="${esc(n.id)}" data-type="task" data-tid="${esc(t.id)}" style="${st}">
+<span class="lk" data-link="1" title="Drag to another box to link them" aria-hidden="true"></span>
       <button class="mtick" data-map="tick" aria-label="${t.status === 'done' ? 'Reopen' : 'Mark done'}">${I.check}</button>
       <div class="mtxt"><b dir="auto">${esc(t.title)}</b>
         <small><span class="mono">${esc(t.ref || '')}</span>${t.status === 'done' ? `<span class="mdone">✓ ${esc(fmtDate((t.completedAt || t.updatedAt || '').slice(0, 10)))}</span>` : `<span class="duepill ${d.cls}">${dueEmoji(d)}${esc(d.txt)}</span>`}
@@ -882,8 +921,15 @@ function measureNode(n) {
   measureCache.set(key, h); return h;
 }
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { measureCache.clear(); if (UI.view === 'todo' && UI.todoMode === 'map') render(); });
-function edgePath(a, b) { const x1 = a.x + a.w, y1 = a.y + a.h / 2, x2 = b.x, y2 = b.y + b.h / 2, c = (x2 - x1) * 0.5; return `M${x1} ${y1} C${x1 + c} ${y1}, ${x2 - c} ${y2}, ${x2} ${y2}`; }
-function linkPath(a, b) { const x = a.x + a.w, y1 = a.y + a.h / 2, y2 = b.y + b.h / 2, bend = 46 + Math.min(160, Math.abs(y2 - y1) * 0.22); return `M${x} ${y1} C${x + bend} ${y1}, ${x + bend} ${y2}, ${x + 6} ${y2}`; }
+function edgePath(a, b) {
+  if (mapDir() === 'v') {
+    if (b.type === 'item') { const x1 = a.x + 12, y1 = a.y + a.h, y2 = b.y + b.h / 2; return `M${x1} ${y1} C${x1} ${y2}, ${x1} ${y2}, ${b.x} ${y2}`; }
+    const x1 = a.x + a.w / 2, y1 = a.y + a.h, x2 = b.x + b.w / 2, y2 = b.y, c = (y2 - y1) * 0.5; return `M${x1} ${y1} C${x1} ${y1 + c}, ${x2} ${y2 - c}, ${x2} ${y2}`;
+  }
+  const x1 = a.x + a.w, y1 = a.y + a.h / 2, x2 = b.x, y2 = b.y + b.h / 2, c = (x2 - x1) * 0.5; return `M${x1} ${y1} C${x1 + c} ${y1}, ${x2 - c} ${y2}, ${x2} ${y2}`;
+}
+function linkPath(a, b) { if (mapDir() === 'v') return smartPath(a, b); return linkPathH(a, b); }
+function linkPathH(a, b) { const x = a.x + a.w, y1 = a.y + a.h / 2, y2 = b.y + b.h / 2, bend = 46 + Math.min(160, Math.abs(y2 - y1) * 0.22); return `M${x} ${y1} C${x + bend} ${y1}, ${x + bend} ${y2}, ${x + 6} ${y2}`; }
 function activityList() {
   const ev = [];
   for (const t of St.tasks.values()) {
@@ -913,7 +959,7 @@ const TOOLS = [
   ['diamond', 'D', 'Diamond (decision)', '<path d="M12 3l9 9-9 9-9-9z"/>'],
   ['arrow', 'A', 'Arrow', '<path d="M5 19 19 5M10 5h9v9"/>'],
   ['line', 'L', 'Line', '<path d="M5 19 19 5"/>'],
-  ['connector', 'C', 'Connector — drag from one item to another. Between two tasks it links them.', '<circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="5.5" r="2.5"/><path d="M7.5 16.5c2-5 4-7 9-9"/>'],
+  ['connector', 'C', 'Link — drag from one box to another to link them (or drag the ● on any box). Between two tasks it links the tasks.', '<circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="5.5" r="2.5"/><path d="M7.5 16.5c2-5 4-7 9-9"/>'],
   ['pen', 'P', 'Pen', '<path d="M4 20l1-4L16 5l3 3L8 19z"/><path d="m14 7 3 3"/>'],
   ['highlighter', 'M', 'Highlighter', '<path d="m9 15-3 5h5l2-3"/><path d="M9 15 17 4l3 3-8 11z"/>'],
   ['eraser', 'E', 'Eraser — removes ink, shapes, notes and connectors it touches', '<path d="M4 16 14 6l6 6-8 8H8z"/><path d="M11 9l6 6M8 20h12"/>'],
@@ -964,23 +1010,51 @@ function belHTML(el, hits) {
   const st = `left:${el.x}px;top:${el.y}px;width:${el.w}px;height:${el.h}px`;
   const rz = UI.cvSel.size === 1 && sel ? `<span class="rz" data-rz="${esc(el.id)}" data-kind="el" aria-hidden="true"></span>` : '';
   const txt = `<div class="btxt" dir="auto">${esc(el.text || '')}</div>`;
-  if (el.type === 'sticky') return `<div class="bel sticky${sel}${hit}" data-el="${esc(el.id)}" style="${st};--c:${colorCss(el.color === 'ink' ? '#FFD966' : el.color)}">${txt}${rz}</div>`;
-  if (el.type === 'text') return `<div class="bel btext${sel}${hit}" data-el="${esc(el.id)}" style="${st};color:${colorCss(el.color)};font-size:${el.size || 20}px">${txt}${rz}</div>`;
-  if (el.type === 'shape') return `<div class="bel shape${sel}${hit}" data-el="${esc(el.id)}" style="${st};--c:${colorCss(el.color)}"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${shapeSVG(el.kind)}</svg>${txt}${rz}</div>`;
-  if (el.type === 'frame') return `<div class="bel frame${sel}${hit}" data-el="${esc(el.id)}" style="${st};--c:${colorCss(el.color === 'ink' ? '#8EC5FF' : el.color)}"><div class="ftitle btxt" dir="auto">${esc(el.text || 'Frame')}</div>${rz}</div>`;
+  const LK = '<span class="lk" data-link="1" title="Drag to another box to link them" aria-hidden="true"></span>';
+  if (el.type === 'sticky') return `<div class="bel sticky${sel}${hit}" data-el="${esc(el.id)}" style="${st};--c:${colorCss(el.color === 'ink' ? '#FFD966' : el.color)}">${txt}${rz}${LK}</div>`;
+  if (el.type === 'text') return `<div class="bel btext${sel}${hit}" data-el="${esc(el.id)}" style="${st};color:${colorCss(el.color)};font-size:${el.size || 20}px">${txt}${rz}${LK}</div>`;
+  if (el.type === 'shape') return `<div class="bel shape${sel}${hit}" data-el="${esc(el.id)}" style="${st};--c:${colorCss(el.color)}"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${shapeSVG(el.kind)}</svg>${txt}${rz}${LK}</div>`;
+  if (el.type === 'frame') return `<div class="bel frame${sel}${hit}" data-el="${esc(el.id)}" style="${st};--c:${colorCss(el.color === 'ink' ? '#8EC5FF' : el.color)}"><div class="ftitle btxt" dir="auto">${esc(el.text || 'Frame')}</div>${rz}${LK}</div>`;
   return '';
 }
 function inkSVG(el, M) {
   el = liveEl(el);
   const sel = UI.cvSel.has(el.id) ? ' sel' : '';
+  if (el.type === 'stroke' && el.pressure) return `<g class="ink${sel}" data-el="${esc(el.id)}"><path d="${pressurePath(el.pts, el.width)}" fill="${colorCss(el.color)}" stroke="none"/></g>`;
   if (el.type === 'stroke') { const d = strokePath(el.pts); return `<g class="ink${sel}" data-el="${esc(el.id)}"><path d="${d}" stroke="${colorCss(el.color)}" stroke-width="${el.width}" ${el.alpha ? `stroke-opacity="${el.alpha}"` : ''} fill="none" stroke-linecap="round" stroke-linejoin="round"/><path class="hit" d="${d}" stroke-width="${Math.max(14, el.width + 10)}"/></g>`; }
   if (el.type === 'line') { const d = `M${el.x1} ${el.y1} L${el.x2} ${el.y2}`; return `<g class="ink${sel}" data-el="${esc(el.id)}" style="color:${colorCss(el.color)}"><path d="${d}" stroke="currentColor" stroke-width="${el.width || 3}" fill="none" stroke-linecap="round" ${el.arrow ? 'marker-end="url(#cv-arrow)"' : ''}/><path class="hit" d="${d}" stroke-width="16"/></g>`; }
   if (el.type === 'connector') {
     const a = refBox(el.from, M), b = refBox(el.to, M); if (!a || !b) return '';
-    const [p, q] = clipBoxes(a, b); const d = `M${p.x} ${p.y} L${q.x} ${q.y}`;
-    return `<g class="ink conn${sel}" data-el="${esc(el.id)}" style="color:${colorCss(el.color)}"><path d="${d}" stroke="currentColor" stroke-width="${el.width || 2.5}" fill="none" stroke-dasharray="${el.dash ? '7 6' : ''}" marker-end="url(#cv-arrow)"/><path class="hit" d="${d}" stroke-width="16"/></g>`;
+    let d; if (el.shape === 'straight') { const [p, q] = clipBoxes(a, b); d = `M${p.x} ${p.y} L${q.x} ${q.y}`; } else d = smartPath(a, b);
+    return `<g class="ink conn${sel}" data-el="${esc(el.id)}" style="color:${colorCss(el.color)}"><path d="${d}" stroke="currentColor" stroke-width="${el.width || 2.5}" fill="none" stroke-linecap="round" stroke-dasharray="${el.dash ? '7 6' : ''}" ${el.arrow === false ? '' : 'marker-end="url(#cv-arrow)"'}/><path class="hit" d="${d}" stroke-width="16"/></g>`;
   }
   return '';
+}
+// a link that leaves and enters the two boxes on the sides that face each other, as a smooth curve; it follows the
+// boxes when they move
+function smartPath(a, b) {
+  const ca = { x: a.x + a.w / 2, y: a.y + a.h / 2 }, cb = { x: b.x + b.w / 2, y: b.y + b.h / 2 }, dx = cb.x - ca.x, dy = cb.y - ca.y;
+  const gapX = Math.abs(dx) - (a.w + b.w) / 2, gapY = Math.abs(dy) - (a.h + b.h) / 2;
+  let p, q, n1, n2;
+  if (gapX >= gapY) { const sx = Math.sign(dx) || 1; p = { x: sx > 0 ? a.x + a.w : a.x, y: ca.y }; q = { x: sx > 0 ? b.x : b.x + b.w, y: cb.y }; n1 = [sx, 0]; n2 = [-sx, 0]; }
+  else { const sy = Math.sign(dy) || 1; p = { x: ca.x, y: sy > 0 ? a.y + a.h : a.y }; q = { x: cb.x, y: sy > 0 ? b.y : b.y + b.h }; n1 = [0, sy]; n2 = [0, -sy]; }
+  const r = v => Math.round(v * 10) / 10, k = Math.max(28, Math.min(170, Math.hypot(q.x - p.x, q.y - p.y) * 0.42));
+  return `M${r(p.x)} ${r(p.y)} C${r(p.x + n1[0] * k)} ${r(p.y + n1[1] * k)}, ${r(q.x + n2[0] * k)} ${r(q.y + n2[1] * k)}, ${r(q.x)} ${r(q.y)}`;
+}
+// a stylus stroke that is thicker where you press harder: the outline of the line, filled
+function pressurePath(pts, width) {
+  const n = pts.length; if (n < 2) return strokePath(pts);
+  const P = i => { const a = pts[Math.max(0, i - 1)][2], b = pts[i][2], c = pts[Math.min(n - 1, i + 1)][2]; return ((a ?? .5) + 2 * (b ?? .5) + (c ?? .5)) / 4; };
+  const L = [], R = [];
+  for (let i = 0; i < n; i++) {
+    const pr = pts[Math.max(0, i - 1)], nx = pts[Math.min(n - 1, i + 1)], dx = nx[0] - pr[0], dy = nx[1] - pr[1], len = Math.hypot(dx, dy) || 1;
+    const rr = width * (0.3 + 0.9 * P(i)) / 2, ox = -dy / len * rr, oy = dx / len * rr;
+    L.push([pts[i][0] + ox, pts[i][1] + oy]); R.push([pts[i][0] - ox, pts[i][1] - oy]);
+  }
+  const f = v => Math.round(v * 10) / 10, seq = [...L, ...R.reverse()];
+  let d = `M${f(seq[0][0])} ${f(seq[0][1])}`;
+  for (let i = 1; i < seq.length - 1; i++) { const mx = (seq[i][0] + seq[i + 1][0]) / 2, my = (seq[i][1] + seq[i + 1][1]) / 2; d += ` Q${f(seq[i][0])} ${f(seq[i][1])} ${f(mx)} ${f(my)}`; }
+  return d + ' Z';
 }
 function refBox(ref, M) {
   if (!ref) return null;
@@ -1037,11 +1111,12 @@ function ctxHTML() {
     ${PALETTE.map(c => `<button class="sw" data-act="cv-recolor" data-c="${c}" style="--c:${colorCss(c)}" aria-label="Colour ${c}"></button>`).join('')}
     ${inked ? `<button class="btn sm ghost" data-act="cv-width" data-d="-1" aria-label="Thinner">−</button><button class="btn sm ghost" data-act="cv-width" data-d="1" aria-label="Thicker">＋</button>` : ''}
     ${canTask ? `<button class="btn sm" data-act="cv-to-task" title="Turn this note into a task in your to-do list">→ Task</button>` : ''}
+    ${one && one.type === 'connector' ? `<button class="btn sm ghost" data-act="cv-conn" data-k="shape" title="Curved or straight">${one.shape === 'straight' ? '╱ Straight' : '∿ Curved'}</button><button class="btn sm ghost" data-act="cv-conn" data-k="dash" aria-pressed="${!!one.dash}" title="Dashed line">┄</button><button class="btn sm ghost" data-act="cv-conn" data-k="arrow" aria-pressed="${one.arrow !== false}" title="Arrow at the end">➝</button>` : ''}
     <button class="btn sm ghost" data-act="cv-front" title="Bring to front">⬆</button><button class="btn sm ghost" data-act="cv-dup" title="Duplicate (Ctrl+D)">⧉</button>
     <button class="btn sm ghost danger" data-act="cv-del" title="Delete (Del)">${I.trash}</button></div>`;
 }
 // tools in groups; a group shows its last-used tool and opens a flyout with the others
-const TOOL_GROUPS = [['select'], ['hand'], ['task'], ['sticky'], ['text'], ['rect', 'ellipse', 'diamond'], ['arrow', 'line', 'connector'], ['pen', 'highlighter', 'eraser'], ['frame']];
+const TOOL_GROUPS = [['select'], ['hand'], ['task'], ['sticky'], ['text'], ['connector'], ['rect', 'ellipse', 'diamond'], ['arrow', 'line'], ['pen', 'highlighter', 'eraser'], ['frame']];
 UI.toolPick = UI.toolPick || {};
 function toolsHTML() {
   const T_ = Object.fromEntries(TOOLS.map(t => [t[0], t]));
@@ -1061,6 +1136,7 @@ function toolsHTML() {
   </div>`;
 }
 // Map / Board / List: at the start of the canvas toolbar in Map, above the list in Board and List
+function saveSettingsUi(patch) { const st = clone(St.settings); st.ui = { ...(st.ui || {}), ...patch }; putSettings(st); }
 function modeSegHTML() { return `<div class="seg mode-seg" role="group" aria-label="Layout"><button data-act="todo-mode" data-mode="map" aria-pressed="${UI.todoMode === 'map'}">🧠 Map</button><button data-act="todo-mode" data-mode="board" aria-pressed="${UI.todoMode === 'board'}">▦ Board</button><button data-act="todo-mode" data-mode="list" aria-pressed="${UI.todoMode === 'list'}">☰ List</button></div>`; }
 function viewMap() {
   const M = buildMap(); UI.mapLayout = M;
@@ -1068,7 +1144,7 @@ function viewMap() {
   const allProjects = [...new Map([...St.tasks.values()].map(t => projKeyLabel(t))).entries()].sort((a, b) => (a[0] === 'p:~') - (b[0] === 'p:~') || a[1].localeCompare(b[1]));
   const sugN = [...St.tasks.values()].filter(t => t.placement && t.placement.status === 'suggested').length;
   const act = UI.mapActivity ? activityList() : [];
-  const offN = Object.keys(St.layout.off || {}).length + Object.keys(St.layout.size || {}).length;
+  const offN = Object.keys(St.layout[offKey()] || {}).length + Object.keys(St.layout.size || {}).length;
   return `<div class="map-wrap ${UI.mapFull ? 'full' : ''} ${UI.present ? 'presenting' : ''}">
     ${sugN ? callout('info', `<div class="row"><span>❓ Claude wasn’t sure where ${sugN} task${sugN > 1 ? 's belong' : ' belongs'}. Pick the right place from its suggestions.</span><span class="spacer"></span><button class="btn sm primary" data-act="map-next-suggest">Review</button></div>`) : ''}
     ${UI.mapRefresh && (UI.mapRefresh.pending || UI.mapRefresh.binned) ? callout('info', `<div class="row"><span>⟳ Canvas refreshed.${UI.mapRefresh.pending ? ` <b>${UI.mapRefresh.pending}</b> analysed email${UI.mapRefresh.pending > 1 ? 's have' : ' has'} tasks not added yet.` : ''}${UI.mapRefresh.binned ? ` <b>${UI.mapRefresh.binned}</b> task${UI.mapRefresh.binned > 1 ? 's' : ''} from emails ${UI.mapRefresh.binned > 1 ? 'were' : 'was'} deleted in the last 30 days.` : ''}</span><span class="spacer"></span>${UI.mapRefresh.pending ? '<button class="btn sm primary" data-act="map-add-pending">Add their tasks</button>' : ''}${UI.mapRefresh.binned ? '<button class="btn sm" data-act="map-restore-binned">Put them back</button>' : ''}<button class="btn sm ghost" data-act="map-refresh-close">✕</button></div>`) : ''}
@@ -1088,6 +1164,11 @@ function viewMap() {
         ${DESKTOP && !SUBWIN ? '<button class="btn sm" data-act="pop-out" data-view="todo" title="Open the canvas in another window (second monitor)">⧉</button>' : ''}
         <button class="btn sm" data-act="map-full" aria-pressed="${UI.mapFull}" title="${UI.mapFull ? 'Exit full screen (Esc)' : 'Full screen (Shift+F)'}" aria-label="Full screen">${UI.mapFull ? '⤡' : '⤢'}</button>
         <details class="menu mt-more" ${UI.menuOpen === 'options' ? 'open' : ''} data-menu="options"><summary class="btn sm ${UI.mapDay || UI.mapAsOf ? 'on' : ''}" title="Show, history and export">⋯<span class="lbl">More</span>${UI.mapDay || UI.mapAsOf ? ' ·' : ''}</summary><div class="menu-pop mt-pop">
+          <div class="mt-sec"><div class="label">Direction</div>
+            <div class="seg" role="group" aria-label="Map direction"><button data-act="map-dir" data-dir="h" aria-pressed="${mapDir() === 'h'}">→ Left to right</button><button data-act="map-dir" data-dir="v" aria-pressed="${mapDir() === 'v'}">↓ Top to bottom</button></div></div>
+          <div class="mt-sec"><div class="label">Stylus</div>
+            <label class="check small"><input type="checkbox" id="stylus-draw" data-chg="stylus-draw" ${(St.settings.ui || {}).stylusDraw !== false ? 'checked' : ''}>The pen draws on empty canvas; fingers move and zoom</label>
+            <p class="small muted" style="margin:0">Press harder for a thicker line. The pen's eraser end or side button erases. Two-finger tap: undo · three-finger tap: redo. Your palm is ignored while the pen is on the screen.</p></div>
           <div class="mt-sec"><div class="label">Show</div>
             <label class="check small"><input type="checkbox" id="map-done" data-chg="map-opt" data-key="mapShowDone" ${UI.mapShowDone ? 'checked' : ''}>Completed tasks (history)</label>
             <label class="check small"><input type="checkbox" id="map-act" data-chg="map-opt" data-key="mapActivity" ${UI.mapActivity ? 'checked' : ''}>Activity panel</label>
@@ -1211,7 +1292,7 @@ function cvApply(ch) {
 }
 function cvUndo() { const op = UI.cvUndo.pop(); if (!op) { toast('Nothing to undo.'); return; } UI.cvRedo.push(cvSnapshot(op)); cvApplyRaw(op); render(); }
 function cvRedo() { const op = UI.cvRedo.pop(); if (!op) return; UI.cvUndo.push(cvSnapshot(op)); cvApplyRaw(op); render(); }
-const newLayout = () => ({ off: { ...(St.layout.off || {}) }, size: { ...(St.layout.size || {}) } });
+const newLayout = () => ({ off: { ...(St.layout.off || {}) }, offv: { ...(St.layout.offv || {}) }, size: { ...(St.layout.size || {}) } });
 function newEl(type, props) { return { id: E.uid('b'), type, color: UI.cvColor, createdAt: nowISO(), ...props }; }
 
 /* --- pointer: tools, pan, pinch, select, move, resize, draw, erase, connect --- */
@@ -1234,21 +1315,34 @@ function eraseAt(e) {
   if (b && !MP.erased.has(b.dataset.el)) { MP.erased.add(b.dataset.el); b.style.opacity = '.15'; }
 }
 document.addEventListener('pointerdown', e => {
-  const vp = e.target.closest && e.target.closest('#map-vp'); if (!vp || e.button > 1) return;
+  const isPen = e.pointerType === 'pen', isTouch = e.pointerType === 'touch';
+  const vp = e.target.closest && e.target.closest('#map-vp'); if (!vp || (e.button > 1 && !isPen)) return;
   if (e.target.closest('.cv-tools,.cv-sub,.cv-ctx,.map-empty,.minimap,.present-bar,[contenteditable],input,textarea,select')) return;
+  // palm rejection: while the stylus touches the screen every other touch is ignored, and once a stylus has been
+  // used a broad touch (the side of a hand) is ignored too
+  if (isPen) { UI.penSeen = true; MP.penDown = true; }
+  if (isTouch && (MP.penDown || (UI.penSeen && (e.width > 34 || e.height > 34)))) return;
   if (UI.cvEditing) commitEdit();
-  MP.ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  MP.ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY, type: e.pointerType });
   if (MP.ptrs.size === 2) { const [a, b] = [...MP.ptrs.values()]; MP.pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), k: UI.map.k }; MP.mode = 'pinch'; UI.cvTemp = null; live(''); return; }
-  const tool = e.button === 1 || UI.spaceDown ? 'hand' : UI.tool;
+  let tool = e.button === 1 || UI.spaceDown ? 'hand' : UI.tool;
   const node = e.target.closest('.mnode'), bel = e.target.closest('[data-el]'), rz = e.target.closest('[data-rz]');
+  // stylus: the eraser end or the side button erases; on empty canvas the pen draws whatever tool is chosen;
+  // once a stylus has been used, a finger moves the canvas instead of drawing
+  if (isPen && (e.button === 5 || (e.buttons & 32) || (e.buttons & 2))) tool = 'eraser';
+  else if (isPen && ['select', 'hand'].includes(tool) && !node && !bel && (St.settings.ui || {}).stylusDraw !== false) tool = 'pen';
+  else if (isTouch && UI.penSeen && ['pen', 'highlighter', 'eraser'].includes(tool)) tool = 'hand';
+  MP.isPen = isPen;
   Object.assign(MP, { sx: e.clientX, sy: e.clientY, w0: toWorld(e.clientX, e.clientY), mx: UI.map.x, my: UI.map.y, tool, node, bel, target: e.target, shift: e.shiftKey, far: false });
   vp.setPointerCapture && vp.setPointerCapture(e.pointerId);
   if (e.button === 1) e.preventDefault();
+  // the ● on a box: drag it to another box to link them, whatever tool is chosen
+  if (e.target.closest('[data-link]')) { const ref = refAt(e.target); if (ref) { MP.mode = 'connect'; MP.from = ref; MP.free = true; return; } }
   if (tool === 'hand') { MP.mode = 'pan'; return; }
-  if (tool === 'pen' || tool === 'highlighter') { MP.mode = 'draw'; MP.pts = [[MP.w0.x, MP.w0.y]]; return; }
+  if (tool === 'pen' || tool === 'highlighter') { MP.mode = 'draw'; MP.tool = tool; MP.pts = [isPen ? [MP.w0.x, MP.w0.y, Math.round((e.pressure || .5) * 100) / 100] : [MP.w0.x, MP.w0.y]]; return; }
   if (tool === 'eraser') { MP.mode = 'erase'; MP.erased = new Set(); eraseAt(e); return; }
   if (CREATE_TOOLS.includes(tool)) { MP.mode = 'create'; return; }
-  if (tool === 'connector') { const ref = refAt(e.target); MP.mode = ref ? 'connect' : 'press-empty'; MP.from = ref; return; }
+  if (tool === 'connector') { const ref = refAt(e.target); MP.mode = ref ? 'connect' : 'press-empty'; MP.from = ref; MP.free = false; return; }
   if (tool === 'task') { MP.mode = 'task'; return; }
   if (rz) { MP.mode = 'resize'; MP.rz = rz.dataset.rz; MP.rzKind = rz.dataset.kind; if (MP.rzKind === 'el') { const x = St.board.get(MP.rz); MP.base = { w: x.w, h: x.h }; } else { const n = UI.mapLayout.byId.get(MP.rz); MP.base = { w: n ? n.w : 250 }; } return; }
   if (bel && !node) {
@@ -1273,8 +1367,9 @@ document.addEventListener('pointermove', e => {
     case 'pan': UI.map.x = MP.mx + dx; UI.map.y = MP.my + dy; applyCam(false); return;
     case 'draw': {
       const l = MP.pts[MP.pts.length - 1]; if (Math.hypot(w.x - l[0], w.y - l[1]) * k < 2) return;
-      MP.pts.push([Math.round(w.x * 10) / 10, Math.round(w.y * 10) / 10]);
+      MP.pts.push(MP.isPen ? [Math.round(w.x * 10) / 10, Math.round(w.y * 10) / 10, Math.round((e.pressure || .5) * 100) / 100] : [Math.round(w.x * 10) / 10, Math.round(w.y * 10) / 10]);
       const hl = MP.tool === 'highlighter';
+      if (MP.isPen && !hl) { live(`<path d="${pressurePath(MP.pts, UI.cvWidth)}" fill="${colorCss(UI.cvColor)}" stroke="none"/>`); return; }
       live(`<path d="${strokePath(MP.pts)}" stroke="${colorCss(hl && UI.cvColor === 'ink' ? '#FFD966' : UI.cvColor)}" stroke-width="${hl ? 18 : UI.cvWidth}" ${hl ? 'stroke-opacity=".45"' : ''} fill="none" stroke-linecap="round" stroke-linejoin="round"/>`); return;
     }
     case 'erase': eraseAt(e); return;
@@ -1287,7 +1382,7 @@ document.addEventListener('pointermove', e => {
     case 'connect': {
       const a = refBox(MP.from, UI.mapLayout); if (!a) return;
       const over = refAt(underPointer(e)); UI.cvDrop = over && over.k === 'n' && over.id !== MP.from.id ? over.id : null;
-      live(`<path d="M${a.x + a.w / 2} ${a.y + a.h / 2} L${w.x} ${w.y}" stroke="var(--accent)" stroke-width="2.5" stroke-dasharray="6 5" fill="none" marker-end="url(#cv-arrow)" style="color:var(--accent)"/>`); return;
+      live(`<path d="${smartPath(a, { x: w.x, y: w.y, w: 0, h: 0 })}" stroke="var(--accent)" stroke-width="2.5" stroke-dasharray="6 5" fill="none" marker-end="url(#cv-arrow)" style="color:var(--accent)"/>`); return;
     }
     case 'marquee': if (MP.far) live(`<rect x="${Math.min(w0.x, w.x)}" y="${Math.min(w0.y, w.y)}" width="${Math.abs(w.x - w0.x)}" height="${Math.abs(w.y - w0.y)}" class="live-box sel"/>`); return;
     case 'resize': {
@@ -1310,6 +1405,7 @@ document.addEventListener('pointermove', e => {
   }
 }, { passive: true });
 function endPointer(e) {
+  if (e.pointerType === 'pen') MP.penDown = false;
   if (!MP.ptrs.has(e.pointerId)) return;
   MP.ptrs.delete(e.pointerId);
   if (MP.mode === 'pinch') { if (MP.ptrs.size === 0) MP.mode = null; return; }
@@ -1330,7 +1426,7 @@ function finishPointer(mode, e, w, tmp, drop) {
       if (MP.pts.length < 2) MP.pts.push([MP.pts[0][0] + 0.5, MP.pts[0][1] + 0.5]);
       const hl = MP.tool === 'highlighter';
       const pts = MP.pts.length > 1500 ? MP.pts.filter((_, i) => i % Math.ceil(MP.pts.length / 1500) === 0) : MP.pts;
-      const el = newEl('stroke', { pts, width: hl ? 18 : UI.cvWidth, alpha: hl ? 0.45 : 0, color: hl && UI.cvColor === 'ink' ? '#FFD966' : UI.cvColor, kind: MP.tool });
+      const el = newEl('stroke', { pts, width: hl ? 18 : UI.cvWidth, alpha: hl ? 0.45 : 0, color: hl && UI.cvColor === 'ink' ? '#FFD966' : UI.cvColor, kind: MP.tool, ...(MP.isPen && !hl ? { pressure: true } : {}) });
       cvApply({ els: { [el.id]: el } }); render(); return true;
     }
     case 'erase': {
@@ -1358,7 +1454,8 @@ function finishPointer(mode, e, w, tmp, drop) {
     case 'connect': {
       const to = refAt(underPointer(e)), from = MP.from;
       if (!to || !from || to.id === from.id) return false;
-      if (from.tid && to.tid) { linkTasks(from.tid, to.tid); return true; }
+      // the ● handle always draws a free line you can restyle; the Link tool between two tasks also relates them
+      if (from.tid && to.tid && !MP.free) { linkTasks(from.tid, to.tid); return true; }
       const el = newEl('connector', { from: { k: from.k, id: from.id }, to: { k: to.k, id: to.id }, width: 2.5 });
       cvApply({ els: { [el.id]: el } }); render(); return true;
     }
@@ -1391,14 +1488,14 @@ function finishPointer(mode, e, w, tmp, drop) {
       if (!tmp) return false;
       const tid = MP.node.dataset.tid, over = drop && document.querySelector(`.mnode[data-node="${CSS.escape(drop)}"]`);
       if (over) { mapDrop(tid, over); return true; }
-      const L = newLayout(); const o = L.off[tmp.id] || { dx: 0, dy: 0 };
-      L.off[tmp.id] = { dx: Math.round(o.dx + tmp.dx), dy: Math.round(o.dy + tmp.dy) };
+      const L = newLayout(); const o = L[offKey()][tmp.id] || { dx: 0, dy: 0 };
+      L[offKey()][tmp.id] = { dx: Math.round(o.dx + tmp.dx), dy: Math.round(o.dy + tmp.dy) };
       cvApply({ layout: L }); render(); return true;
     }
     case 'move-node': {
       if (!tmp) return false;
-      const L = newLayout(); const o = L.off[tmp.id] || { dx: 0, dy: 0 };
-      L.off[tmp.id] = { dx: Math.round(o.dx + tmp.dx), dy: Math.round(o.dy + tmp.dy) };
+      const L = newLayout(); const o = L[offKey()][tmp.id] || { dx: 0, dy: 0 };
+      L[offKey()][tmp.id] = { dx: Math.round(o.dx + tmp.dx), dy: Math.round(o.dy + tmp.dy) };
       cvApply({ layout: L }); render(); return true;
     }
     case 'press-node': return clickNode(MP.node, MP.target);
@@ -1449,7 +1546,7 @@ function mapDrop(tid, over) {
   if (typeof learnCorrection === 'function') { learnCorrection(t0, 'project', t0.project || '', t.project || ''); if (over.dataset.type === 'topic') learnCorrection(t0, 'topic', topicOf(t0), topicOf(t)); }
   if (t.placement) t.placement = { ...t.placement, status: 'confirmed' };
   (t.history = t.history || []).push({ at: now, text: 'Moved on the map — ' + notes.join('; ') });
-  const L = newLayout(); delete L.off['t:' + tid]; // it takes its natural place in the new branch
+  const L = newLayout(); delete L[offKey()]['t:' + tid]; // it takes its natural place in the new branch
   cvApply({ tasks: { [tid]: t }, layout: L }); UI.mapSel = tid; render();
   toast(`🧭 ${t.ref} moved.`, { action: 'Undo', fn: cvUndo });
 }
@@ -1470,7 +1567,7 @@ function createTaskAt(w, node) {
   if (kind === 'topic') { if (node.dataset.plabel !== 'No project') { t.project = node.dataset.plabel; t.projectLocked = true; } if (node.dataset.topic) { t.topic = node.dataset.topic; t.topicLocked = true; } }
   if (kind === 'task') { const o = St.tasks.get(node.dataset.tid); if (o) { t.project = o.project || ''; t.topic = o.topic || ''; t.relatedIds = [o.id]; t.projectLocked = !!o.project; t.topicLocked = !!o.topic; } }
   const ch = { tasks: { [t.id]: t } };
-  if (!kind) { const p = autoPos(t); if (p) { const L = newLayout(); L.off['t:' + t.id] = { dx: Math.round(w.x - p.x), dy: Math.round(w.y - p.y) }; ch.layout = L; } }
+  if (!kind) { const p = autoPos(t); if (p) { const L = newLayout(); L[offKey()]['t:' + t.id] = { dx: Math.round(w.x - p.x), dy: Math.round(w.y - p.y) }; ch.layout = L; } }
   cvApply(ch); UI.mapSel = t.id; UI.tool = 'select'; render();
   openDrawer('task', t.id); setTimeout(() => { const ta = $('#d-title'); if (ta) { ta.focus(); ta.select(); } }, 50);
 }
@@ -1481,7 +1578,7 @@ function noteToTask() {
   localPlace(t);
   const ch = { tasks: { [t.id]: t }, els: { [el.id]: null } };
   for (const c of St.board.values()) if (c.type === 'connector' && (c.from.id === el.id || c.to.id === el.id)) ch.els[c.id] = null;
-  if (!t.project) { const p = autoPos(t); if (p) { const L = newLayout(); L.off['t:' + t.id] = { dx: Math.round(el.x - p.x), dy: Math.round(el.y - p.y) }; ch.layout = L; } }
+  if (!t.project) { const p = autoPos(t); if (p) { const L = newLayout(); L[offKey()]['t:' + t.id] = { dx: Math.round(el.x - p.x), dy: Math.round(el.y - p.y) }; ch.layout = L; } }
   cvApply(ch); UI.cvSel.clear(); UI.mapSel = t.id; render();
   if (St.sample) queueCategorize([t.id]);
   toast(`✅ ${t.ref} added to your to-do${t.project ? ' under ' + t.project : ''}.`, { action: 'Undo', fn: cvUndo });
@@ -2817,7 +2914,7 @@ async function importData(d) {
     for (const b of d.board || []) if (b && b.id) putBoard(b);
     for (const x of d.daily || []) if (x && x.id) putDaily(x);
     for (const n of COLS) for (const x of (d.cols && d.cols[n]) || []) if (x && x.id) colPut(n, x);
-    if (d.layout) putLayout(mergeLayout({ off: { ...(d.layout.off || {}), ...St.layout.off }, size: { ...(d.layout.size || {}), ...St.layout.size } }));
+    if (d.layout) putLayout(mergeLayout({ off: { ...(d.layout.off || {}), ...St.layout.off }, offv: { ...(d.layout.offv || {}), ...(St.layout.offv || {}) }, size: { ...(d.layout.size || {}), ...St.layout.size } }));
     if (d.settings && !St.settings.setupDone) putSettings(mergeSettings(d.settings));
     if (St.mode !== 'db') saveLocal();
     toast(`Restored ${nt} tasks and ${ne} emails.`); render();
@@ -2908,16 +3005,18 @@ const ACT = {
   'map-now': () => { UI.mapAsOf = ''; UI.map.fitted = false; render(); },
   // boxes moved by hand go back to their tidy place in the tree; sizes you set are kept; Undo puts them back
   'map-rearrange': () => {
-    const n = Object.keys(St.layout.off || {}).length;
+    const n = Object.keys(St.layout[offKey()] || {}).length;
     if (!n) { UI.map.fitted = false; render(); requestAnimationFrame(() => mapFit()); toast('Everything is already in order.'); return; }
-    cvApply({ layout: { off: {}, size: { ...(St.layout.size || {}) } } }); UI.map.fitted = false;
+    cvApply({ layout: { ...newLayout(), [offKey()]: {} } }); UI.map.fitted = false;
     const w = $('#map-world'); if (w) w.classList.add('anim'); render(); requestAnimationFrame(() => mapFit());
     toast(`⊞ ${n} box${n === 1 ? '' : 'es'} rearranged.`, { action: 'Undo', fn: cvUndo });
   },
-  'map-reset-layout': () => { cvApply({ layout: { off: {}, size: {} } }); UI.map.fitted = false; render(); toast('↺ Layout tidied.', { action: 'Undo', fn: cvUndo }); },
+  'map-reset-layout': () => { cvApply({ layout: { ...newLayout(), [offKey()]: {}, size: {} } }); UI.map.fitted = false; render(); toast('↺ Layout tidied.', { action: 'Undo', fn: cvUndo }); },
   'cv-tool': el => { UI.tool = el.dataset.tool; if (UI.tool !== 'select') UI.cvSel.clear(); render(); },
   'cv-color': el => { UI.cvColor = el.dataset.c; render(); },
   'cv-recolor': el => { const ch = { els: {} }; for (const id of UI.cvSel) { const x = St.board.get(id); if (x) ch.els[id] = { ...x, color: el.dataset.c }; } UI.cvColor = el.dataset.c; cvApply(ch); render(); },
+  'cv-conn': el => { const id = [...UI.cvSel][0], c = St.board.get(id); if (!c || c.type !== 'connector') return; const k = el.dataset.k; const n = { ...c, [k]: k === 'shape' ? (c.shape === 'straight' ? 'curve' : 'straight') : k === 'arrow' ? c.arrow === false : !c.dash }; cvApply({ els: { [id]: n } }); render(); },
+  'map-dir': el => { const d = el.dataset.dir === 'v' ? 'v' : 'h'; if (mapDir() === d) return; saveSettingsUi({ mapDir: d }); UI.map.fitted = false; render(); requestAnimationFrame(() => mapFit()); },
   'cv-width': el => { const d = +el.dataset.d; const ch = { els: {} }; for (const id of UI.cvSel) { const x = St.board.get(id); if (x && ['stroke', 'line', 'connector'].includes(x.type)) ch.els[id] = { ...x, width: Math.max(1, Math.min(24, (x.width || 3) + d)) }; } UI.cvWidth = Math.max(1, Math.min(24, UI.cvWidth + d)); cvApply(ch); render(); },
   'cv-front': () => { const ch = { els: {} }; let z = Date.now(); for (const id of UI.cvSel) { const x = St.board.get(id); if (x) ch.els[id] = { ...x, z: z++ }; } cvApply(ch); render(); },
   'cv-dup': () => duplicateSelection(),
@@ -2977,6 +3076,7 @@ const ACT = {
   'copy-modal': async () => { const ta = $('#modal-text'); try { await navigator.clipboard.writeText(ta.value); toast('Copied.'); } catch { ta.focus(); ta.select(); toast('Press Ctrl+C / ⌘C to copy the selected text.'); } },
 };
 const CHG = {
+  'stylus-draw': el => { saveSettingsUi({ stylusDraw: !!el.checked }); },
   'sub-text': el => { const t = clone(St.tasks.get(UI.drawer && UI.drawer.id)); if (!t) return; const x = subsOf(t).find(y => y.id === el.dataset.sid); if (!x || x.text === el.value.trim()) return; if (!el.value.trim()) { t.subtasks = subsOf(t).filter(y => y.id !== x.id); } else x.text = el.value.trim(); putTask(t); render(); },
   'map-opt': el => { UI[el.dataset.key] = el.checked; UI.map.fitted = false; render(); },
   'map-day': el => { UI.mapDay = el.value || ''; render(); },
