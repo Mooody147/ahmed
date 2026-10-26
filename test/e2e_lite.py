@@ -67,6 +67,10 @@ async def main():
         await mp.goto('https://app.test/#todo'); await mp.wait_for_selector('h1'); await mp.wait_for_timeout(1200)
         tabs = await mp.evaluate("[...document.querySelectorAll('.tabbar [data-nav]')].map(b => b.dataset.nav)"); print('TABS', tabs)
         assert 'daily' not in tabs
+        await mp.click('.tabbar [data-act="more-menu"]'); await mp.wait_for_timeout(300)
+        more = await mp.evaluate("[...document.querySelectorAll('.more-sheet [data-act=\"more-go\"]')].map(b => b.dataset.view)"); print('MORE', more)
+        assert more == ['setup'], more
+        await mp.keyboard.press('Escape')
         await mp.screenshot(path=SHOTS + '/lite-3-phone.png')
         print('MOBILE overflow', await mp.evaluate("document.documentElement.scrollWidth>innerWidth"))
         print('ERRORS', errors); assert not errors

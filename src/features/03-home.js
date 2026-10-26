@@ -61,7 +61,7 @@ function todayStripHTML() {
   // the numbers open the list view filtered to them
   const b = todayBrief(), risks = riskList();
   return `<section class="today-strip">
-      <div class="ts-left"><div class="label">${esc(new Date().toLocaleDateString(DLOC(), { weekday: 'long', day: 'numeric', month: 'long' }))}</div><h1>${greet}${name ? ', ' + esc(name) : ''}</h1></div>
+      <div class="ts-left"><div class="label">${esc(new Date().toLocaleDateString(DLOC(), { weekday: 'long', day: 'numeric', month: 'long' }))}</div><h1>${St.mode === 'viewer' ? esc(((St.shared && St.shared.by) || 'Shared') + '’s work') : greet + (name ? ', ' + esc(name) : '')}</h1></div>
       <div class="ts-stats">
         ${stat('today', n.today, 'Due today', 'today', 'strip-filter')}${stat('overdue', n.overdue, 'Overdue', 'over', 'strip-filter')}${stat('waiting', waiting, 'Waiting on others', 'wait', 'strip-filter')}${stat('', n.review, 'To review', 'rev', 'goto-review')}
       </div>
@@ -220,7 +220,7 @@ Object.assign(ACT, {
   'more-menu': () => {
     const m = $('#modal');
     m.innerHTML = deco(`<div class="card more-sheet" role="dialog" aria-label="More"><div class="row"><b>More</b><span class="spacer"></span><button class="icon-btn" data-act="close-modal" aria-label="Close">${I.x}</button></div>
-      ${[['docs', '📄 Documents'], ['insights', '📊 Insights'], ['plan', '📅 Plan'], ['notebook', '📓 Notebook'], ['money', '💰 Money'], ['tools', '🛠 Tools'], ['setup', '⚙ Setup']].map(([v, l]) => `<button class="btn more-btn" data-act="more-go" data-view="${v}">${l}</button>`).join('')}
+      ${[['docs', '📄 Documents'], ['insights', '📊 Insights'], ['plan', '📅 Plan'], ['notebook', '📓 Notebook'], ['money', '💰 Money'], ['tools', '🛠 Tools'], ['setup', '⚙ Setup']].filter(([v]) => typeof AR_LITE === 'undefined' || document.querySelector(`.rail [data-nav="${v}"]`)).map(([v, l]) => `<button class="btn more-btn" data-act="more-go" data-view="${v}">${l}</button>`).join('')}
       <button class="btn more-btn" data-act="palette">🔎 Search and commands</button></div>`);
     m.hidden = false;
   },

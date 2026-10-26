@@ -1114,6 +1114,14 @@ html[dir="rtl"] .nav[aria-current="page"] { box-shadow: inset -3px 0 0 var(--acc
 [dir="rtl"] .mnode .mdel { right: auto; left: 49px; }
 [dir="rtl"] .mnode.task .mdel, [dir="rtl"] .mnode.item .mdel { left: -9px; }
 
+/* shared canvas, read-only (features/25-share.js) */
+.viewer-bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 30; padding: 8px max(16px, env(safe-area-inset-left, 0px)); background: var(--accent-soft, var(--surface)); color: var(--ink); border-bottom: 1px solid var(--line); font-size: 13px; text-align: center; }
+body:not(.viewer-mode) .viewer-bar { display: none; }
+.viewer-mode .rail [data-nav]:not([data-nav="todo"]), .viewer-mode .tabbar [data-nav]:not([data-nav="todo"]), .viewer-mode .cv-tools, .viewer-mode .cv-sub, .viewer-mode .cv-ctx,
+.viewer-mode [data-act="map-refresh"], .viewer-mode [data-act="cv-undo"], .viewer-mode [data-act="cv-redo"], .viewer-mode .page-head .btn, .viewer-mode .mtick, .viewer-mode .mdel, .viewer-mode .mren, .viewer-mode .mnode .rz,
+.viewer-mode .map-hint, .viewer-mode [data-act="map-share"], .viewer-mode .ts-actions, .viewer-mode .tstat.rev, .viewer-mode .rail-foot, .viewer-mode [data-act="brief-refresh"], .viewer-mode [data-act="brief-hide"], .viewer-mode .topbar .btn, .viewer-mode [data-act="palette"], .viewer-mode .mode-bar { display: none !important; }
+.mnode .mfiles { border: 0; background: none; padding: 0 2px; cursor: pointer; font-size: 12px; }
+
 </style>
 <div class="titlestrip" id="titlestrip"><span class="ts-brand"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c3.3 4 6 7.2 6 10.4a6 6 0 0 1-12 0C6 10.2 8.7 7 12 3z"/><path d="m9.3 13.6 1.9 1.9 3.6-4.1"/></svg> Action Register</span><button class="ts-search" data-act="palette" title="Search and commands (Ctrl+K)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg><span>Search or type a command</span><kbd>Ctrl K</kbd></button><span class="ts-space"></span></div>
 <div class="app">
@@ -3240,6 +3248,7 @@ function dbError(e) {
 }
 let lsTimer = null;
 function saveLocal() {
+  if (St.mode === 'viewer') return;   // someone viewing a shared canvas changes nothing
   clearTimeout(lsTimer);
   lsTimer = setTimeout(() => {
     try { localStorage.setItem(LS_KEY, JSON.stringify({ tasks: [...St.tasks.values()], emails: [...St.emails.values()], settings: St.settings, board: [...St.board.values()], daily: [...St.daily.values()], layout: St.layout, cols: Object.fromEntries(COLS.map(n => [n, colList(n)])) })); }
@@ -3313,6 +3322,8 @@ async function initStore() {
     if (user) { try { const me = await user.me(); St.profileName = me.name || ''; St.uid = me.id || await user.id(); } catch {} }
   }
   St.capsResolved = true;
+  // anyone but the owner who opens a shared link sees the canvas the owner shared, read-only (features/25-share.js)
+  if (db && user && typeof initViewer === 'function' && (await Promise.resolve(user.isOwner()).catch(() => true)) === false) return initViewer(db, user);
   if (db && St.uid) {
     St.db = db; St.mode = 'db';
     const base = db.doc('data/users/' + St.uid + '/register');
@@ -3472,7 +3483,7 @@ function setupCardHTML() {
 }
 
 /* ---------- task drawer ---------- */
-function openDrawer(kind, id) { UI.drawer = { kind, id }; renderDrawer(); }
+function openDrawer(kind, id) { if (St.mode === 'viewer') return; UI.drawer = { kind, id }; renderDrawer(); }
 function closeDrawer() { UI.drawer = null; $('#drawer').hidden = true; $('#scrim').hidden = true; document.body.style.overflow = ''; }
 function renderDrawer() {
   const dr = UI.drawer; if (!dr) return closeDrawer();
@@ -5798,6 +5809,7 @@ function emailDrawerHTML(e) {
   <div class="drawer-b">
     <div style="display:grid;gap:4px"><h2 style="font-size:20px" dir="auto">${esc(e.subject || '(no subject)')}</h2>
       <dl class="kv">${e.from ? `<dt>From</dt><dd dir="auto">${esc(e.from)}</dd>` : ''}${e.to ? `<dt>To</dt><dd dir="auto">${esc(e.to)}</dd>` : ''}${e.cc ? `<dt>Cc</dt><dd dir="auto">${esc(e.cc)}</dd>` : ''}<dt>Sent</dt><dd>${esc(fmtDateTime(e.date) || 'unknown')}</dd><dt>Imported</dt><dd>${esc(fmtDateTime(e.importedAt))}${e.fileName ? ' · ' + esc(e.fileName) : ''}</dd>${a.readBy && typeof aiName === 'function' ? `<dt>Read by</dt><dd>${esc(aiName(a.readBy))}${a.readBy.fallback ? ` <span class="small muted">(${esc(aiByTitle(a.readBy))})</span>` : ''}</dd>` : ''}${e.forwardedBy ? `<dt>Forwarded by</dt><dd dir="auto">${esc(e.forwardedBy)}${e.forwardMode === 'inline' ? ' <span class="small muted">(original header read from the forwarded text)</span>' : ''}</dd>` : ''}</dl><div class="row">${/^https:\/\/mail\.google\.com\//.test(e.gmailUrl || '') ? `<a class="btn ghost sm" href="${esc(e.gmailUrl)}" target="_blank" rel="noopener">${I.mail} Open in Gmail</a>` : ''}${typeof openMail === 'function' && (DESKTOP || e.original) ? `<button class="btn ghost sm" data-act="email-file-open" data-id="${esc(e.id)}">✉ Open in Outlook</button>` : ''}${tasks.length && typeof openFiling === 'function' ? `<button class="btn ghost sm" data-act="file-email" data-id="${esc(e.id)}">📁 ${e.filed ? 'Filed on the server' : 'Save to company server…'}</button>` : ''}${typeof threadBtn === 'function' ? threadBtn(e) : ''}</div></div>
+    ${emailActionsHTML(e)}
     ${a.summary ? `<div><div class="label" style="margin-bottom:4px">Summary</div><p style="margin:0" dir="auto">${esc(a.summary)}</p>${a.actionRequired === false ? `<p class="small" style="margin:6px 0 0"><span class="chip ok">No action for you</span> ${esc(a.noActionReason || '')}</p>` : ''}</div>` : ''}
     ${(a.flags || []).length ? callout('warn', `<ul style="margin:0">${a.flags.map(f => `<li><b>${esc(FLAG[f.kind] || f.kind)}</b>${f.source ? ` <span class="mono">(${esc(srcName(e, f.source))})</span>` : ''}: ${esc(f.detail)}</li>`).join('')}</ul>`) : ''}
     ${tasks.length ? `<div><div class="label" style="margin-bottom:6px">Tasks from this email</div><div class="register">${tasks.map(taskRow).join('')}</div></div>` : ''}
@@ -5988,11 +6000,14 @@ const VIEW_FN = { todo: () => viewTodo(), daily: () => viewDaily(), review: () =
 const DRAWER_FN = {};
 // buttons shown under the status row of the task panel; feature files push (t) => html
 const TASK_ACTIONS = [];
+// feature files add buttons/sections to the email panel (EMAIL_ACTIONS: e → html) and sections to Setup (SETUP_EXTRA: () → html)
+const EMAIL_ACTIONS = [], SETUP_EXTRA = [];
+function emailActionsHTML(e) { return EMAIL_ACTIONS.map(f => { try { return f(e) || ''; } catch { return ''; } }).join(''); }
 function taskActionsHTML(t) { const parts = TASK_ACTIONS.map(f => { try { return f(t) || ''; } catch { return ''; } }).filter(Boolean); return parts.length ? `<div class="row task-actions">${parts.join('')}</div>` : ''; }
 // feature hooks: beforeRender / afterRender (every full render), ready (data loaded), analysed (after a run), taskChanged (old, new)
 const HOOKS = { beforeRender: [], afterRender: [], ready: [], analysed: [], taskChanged: [], deleted: [], proposals: [], approved: [], emailStored: [] };
 const runHooks = (k, ...a) => { for (const f of HOOKS[k]) { try { f(...a); } catch (e) { console.warn('hook ' + k, e); } } };
-function go(view) { if (!VIEWS.includes(view)) view = 'todo'; if (view === 'todo') setTimeout(maybeAutoCategorize, 400); UI.view = view; UI.confirm = null; closeDrawer(); render(); window.scrollTo(0, 0); try { history.replaceState(null, '', '#' + view); } catch {} }
+function go(view) { if (!VIEWS.includes(view) || St.mode === 'viewer') view = 'todo'; if (view === 'todo') setTimeout(maybeAutoCategorize, 400); UI.view = view; UI.confirm = null; closeDrawer(); render(); window.scrollTo(0, 0); try { history.replaceState(null, '', '#' + view); } catch {} }
 
 /* ---------- events ---------- */
 const ACT = {
@@ -6517,7 +6532,7 @@ function todayStripHTML() {
   // the numbers open the list view filtered to them
   const b = todayBrief(), risks = riskList();
   return `<section class="today-strip">
-      <div class="ts-left"><div class="label">${esc(new Date().toLocaleDateString(DLOC(), { weekday: 'long', day: 'numeric', month: 'long' }))}</div><h1>${greet}${name ? ', ' + esc(name) : ''}</h1></div>
+      <div class="ts-left"><div class="label">${esc(new Date().toLocaleDateString(DLOC(), { weekday: 'long', day: 'numeric', month: 'long' }))}</div><h1>${St.mode === 'viewer' ? esc(((St.shared && St.shared.by) || 'Shared') + '’s work') : greet + (name ? ', ' + esc(name) : '')}</h1></div>
       <div class="ts-stats">
         ${stat('today', n.today, 'Due today', 'today', 'strip-filter')}${stat('overdue', n.overdue, 'Overdue', 'over', 'strip-filter')}${stat('waiting', waiting, 'Waiting on others', 'wait', 'strip-filter')}${stat('', n.review, 'To review', 'rev', 'goto-review')}
       </div>
@@ -6676,7 +6691,7 @@ Object.assign(ACT, {
   'more-menu': () => {
     const m = $('#modal');
     m.innerHTML = deco(`<div class="card more-sheet" role="dialog" aria-label="More"><div class="row"><b>More</b><span class="spacer"></span><button class="icon-btn" data-act="close-modal" aria-label="Close">${I.x}</button></div>
-      ${[['docs', '📄 Documents'], ['insights', '📊 Insights'], ['plan', '📅 Plan'], ['notebook', '📓 Notebook'], ['money', '💰 Money'], ['tools', '🛠 Tools'], ['setup', '⚙ Setup']].map(([v, l]) => `<button class="btn more-btn" data-act="more-go" data-view="${v}">${l}</button>`).join('')}
+      ${[['docs', '📄 Documents'], ['insights', '📊 Insights'], ['plan', '📅 Plan'], ['notebook', '📓 Notebook'], ['money', '💰 Money'], ['tools', '🛠 Tools'], ['setup', '⚙ Setup']].filter(([v]) => typeof AR_LITE === 'undefined' || document.querySelector(`.rail [data-nav="${v}"]`)).map(([v, l]) => `<button class="btn more-btn" data-act="more-go" data-view="${v}">${l}</button>`).join('')}
       <button class="btn more-btn" data-act="palette">🔎 Search and commands</button></div>`);
     m.hidden = false;
   },
@@ -6689,7 +6704,7 @@ Object.assign(ACT, { print: () => window.print() });
 /* ===== features/04-setup.js ===== */
 /* ---------- Setup: section index and the extra sections ---------- */
 VIEW_FN.setup = () => {
-  const extra = [projectMetaHTML(), rulesHTML(), typeof learnedHTML === 'function' ? learnedHTML() : '', workweekHTML(), appearanceHTML(), automationHTML(), templatesHTML(), recurringHTML(), typeof serverHTML === 'function' ? serverHTML() : '', DESKTOP && typeof cloudHTML === 'function' ? cloudHTML() : '', typeof weeklyHTML === 'function' ? weeklyHTML() : '', typeof tabsHTML === 'function' ? tabsHTML() : '', typeof helpHTML === 'function' ? helpHTML() : '', DESKTOP ? usageHTML() : '', binHTML()].join('');
+  const extra = [projectMetaHTML(), rulesHTML(), typeof learnedHTML === 'function' ? learnedHTML() : '', workweekHTML(), appearanceHTML(), automationHTML(), templatesHTML(), recurringHTML(), typeof serverHTML === 'function' ? serverHTML() : '', DESKTOP && typeof cloudHTML === 'function' ? cloudHTML() : '', typeof weeklyHTML === 'function' ? weeklyHTML() : '', typeof tabsHTML === 'function' ? tabsHTML() : '', typeof helpHTML === 'function' ? helpHTML() : '', DESKTOP ? usageHTML() : '', ...SETUP_EXTRA.map(f => { try { return f() || ''; } catch { return ''; } }), binHTML()].join('');
   const h = viewSetup().replace('<!--SETUP-EXTRA-->', extra);
   const secs = [...h.matchAll(/<section[^>]*\bid="([^"]+)"[^>]*\bdata-sec="([^"]+)"/g)].map(m => [m[1], m[2]]);
   return `<div class="set-layout"><nav class="set-index" aria-label="Setup sections">${secs.map(([id, l]) => `<button data-act="set-jump" data-id="${esc(id)}">${esc(l)}</button>`).join('')}</nav><div class="set-main">${h}</div></div>`;
@@ -8304,6 +8319,186 @@ function arApply() {
 }
 HOOKS.afterRender.push(() => { if (arOn()) { arNode(document.body); if (AR_ORIG.size > 20000) for (const n of [...AR_ORIG.keys()]) if (!n.isConnected) AR_ORIG.delete(n); } });
 window.__AR_TR = { arText, size: AR_T.size }; // test hook
+
+/* ===== features/24-files.js ===== */
+/* ---------- email files on every device: the original email and its attachments kept with the record ---------- */
+// On claude.ai the files go to the artifact's own storage (the `assets` capability, up to 20 MB each), so the PDF
+// or drawing behind a task opens from any device. PDFs and images are stored as they are and open in the browser;
+// other files (Word, Excel, .eml / .msg, ZIP…) are packed in a small JSON wrapper and saved back as the original file.
+// Each email record lists them in `files: [{ id, name, size, role: 'original'|'attachment', wrapped }]`.
+const AF = { busy: new Set(), urls: {} };
+const AF_NATIVE = { pdf: 'application/pdf', png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif', webp: 'image/webp' };
+const AF_MAX = 20 * 1048576, AF_WRAP_MAX = 14.5 * 1048576;
+HOOKS.ready.push(async () => {
+  if (St.mode === 'viewer' || typeof window.claude === 'undefined') return;
+  St.assets = await Promise.resolve(claude.use('assets')).catch(() => null);
+  if (St.assets) render();
+});
+const afUrl = id => AF.urls[id] || '/_blob/' + id;
+function afB64(u8) { let s = ''; for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000)); return btoa(s); }
+function afUnB64(b) { const s = atob(b), u = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i); return u; }
+async function afStore(name, bytes) {
+  const type = AF_NATIVE[E.extOf(name)];
+  if (type) {
+    if (bytes.length > AF_MAX) throw { code: 'too_large' };
+    const r = await St.assets.upload(new Blob([bytes], { type }), { type }); AF.urls[r.id] = r.url;
+    return { id: r.id, wrapped: false };
+  }
+  if (bytes.length > AF_WRAP_MAX) throw { code: 'too_large' };
+  const json = JSON.stringify({ app: 'action-register-file', name, mime: E.guessMime(name) || '', b64: afB64(bytes) });
+  const r = await St.assets.upload(new Blob([json], { type: 'application/json' }), { type: 'application/json' }); AF.urls[r.id] = r.url;
+  return { id: r.id, wrapped: true };
+}
+// after an email is analysed: keep its original and attachments (signature logos and placeholders skipped)
+HOOKS.emailStored.push(async (rec, b) => {
+  if (!St.assets || !b) return;
+  const todo = [];
+  if (b.original && b.original.bytes) todo.push({ name: b.original.name || 'email.' + (b.original.kind || 'eml'), bytes: b.original.bytes, role: 'original' });
+  for (const a of b.atts || []) if (a.bytes && !a.missing && !(a.inline && (a.size || a.bytes.length) < 40000)) todo.push({ name: a.name.split(' › ').pop(), bytes: a.bytes, role: 'attachment' });
+  if (!todo.length) return;
+  AF.busy.add(rec.id);
+  const files = [], skipped = [];
+  for (const f of todo) {
+    try { const r = await afStore(f.name, f.bytes); files.push({ id: r.id, name: f.name, size: f.bytes.length, role: f.role, wrapped: r.wrapped }); }
+    catch (e) { skipped.push(f.name + (e && e.code === 'too_large' ? ' (over 20 MB)' : '')); if (e && ['quota_or_state', 'not_granted', 'capability_disabled'].includes(e.code)) break; }
+  }
+  AF.busy.delete(rec.id);
+  const cur = St.emails.get(rec.id); if (!cur) return;
+  const c = clone(cur); c.files = [...(c.files || []), ...files]; if (skipped.length) c.filesSkipped = skipped;
+  putEmail(c); if (UI.drawer && UI.drawer.id === rec.id) renderDrawer();
+});
+async function afBytes(f) {
+  const res = await fetch(afUrl(f.id)); if (!res.ok) throw new Error('not found');
+  if (!f.wrapped) return new Uint8Array(await res.arrayBuffer());
+  const j = await res.json(); return afUnB64(j.b64);
+}
+async function afSave(f) {
+  try {
+    const data = await afBytes(f);
+    if (!St.downloads) { toast('Saving files is not available in this view.', { err: true }); return; }
+    await St.downloads.save({ filename: f.name, data: new Blob([data], { type: E.guessMime(f.name) || 'application/octet-stream' }) });
+  } catch (e) { if (!e || e.code !== 'cancelled') toast('Could not get the file: ' + ((e && (e.message || e.code)) || 'unknown error'), { err: true }); }
+}
+const afFiles = e => (e && e.files) || [];
+const taskFiles = t => (t.emailIds || []).map(id => St.emails.get(id)).filter(Boolean).flatMap(e => afFiles(e).map(f => ({ ...f, emailId: e.id })));
+function afListHTML(e) {
+  const fs = afFiles(e);
+  if (!fs.length && !AF.busy.has(e.id) && !(e.filesSkipped || []).length) return '';
+  const row = (f, i) => `<div class="att"><span>${AF_NATIVE[E.extOf(f.name)] ? (/pdf$/i.test(f.name) ? '📄' : '🖼') : f.role === 'original' ? '✉' : '📎'}</span>
+    <div style="min-width:0"><div class="name" dir="auto">${esc(f.name)}</div><div class="note">${f.role === 'original' ? 'Original email · ' : ''}${fmtBytes(f.size || 0)}</div></div>
+    <div class="att-side">${!f.wrapped ? `<a class="btn ghost sm" href="${esc(afUrl(f.id))}" target="_blank" rel="noopener">Open</a>` : ''}<button class="btn sm" data-act="af-save" data-eid="${esc(e.id)}" data-i="${i}">Save</button></div></div>`;
+  return `<div><div class="label" style="margin-bottom:4px">Files (on every device)</div><div class="att-list">${fs.map(row).join('')}</div>
+    ${AF.busy.has(e.id) ? '<p class="small muted" style="margin:6px 0 0">Saving the files…</p>' : ''}${(e.filesSkipped || []).length ? `<p class="small muted" style="margin:6px 0 0">Not kept: ${esc(e.filesSkipped.join(', '))}.</p>` : ''}</div>`;
+}
+EMAIL_ACTIONS.push(e => afListHTML(e));
+TASK_ACTIONS.push(t => { const fs = taskFiles(t); return fs.length ? `<button class="btn sm ghost" data-act="af-open-email" data-id="${esc(fs[0].emailId)}">📎 Files (${fs.length})</button>` : ''; });
+NODE_EXTRA.push(t => taskFiles(t).length && St.mode !== 'viewer' ? `<button class="mfiles" data-map="files" title="Open the email's files">📎</button>` : '');
+MAP_BTN.files = id => { const t = St.tasks.get(id); const f = t && taskFiles(t)[0]; if (f) openDrawer('email', f.emailId); };
+Object.assign(ACT, {
+  'af-save': el => { const e = St.emails.get(el.dataset.eid); const f = afFiles(e)[+el.dataset.i]; if (f) afSave(f); },
+  'af-open-email': el => openDrawer('email', el.dataset.id),
+});
+// Setup: how much of the artifact's file storage is used
+SETUP_EXTRA.push(() => {
+  if (!St.assets) return '';
+  const n = [...St.emails.values()].reduce((s, e) => s + afFiles(e).length, 0);
+  return `<section class="card pad" id="set-files" data-sec="Email files" style="display:grid;gap:8px"><div class="section-title"><h2>Email files</h2></div>
+    <p class="small muted" style="margin:0">Each analysed email keeps its original and its attachments here, so you can open them from any device (Emails › open an email › Files). Files over 20 MB are not kept.</p>
+    <p class="small" style="margin:0"><b>${n}</b> file${n === 1 ? '' : 's'} kept${AF.usage ? ` · ${fmtBytes(AF.usage.bytes)} of ${fmtBytes(AF.usage.maxBytes)} used` : ''}. <button class="btn ghost sm" data-act="af-usage">Check storage</button></p></section>`;
+});
+ACT['af-usage'] = async () => { try { AF.usage = (await St.assets.list()).usage; } catch (e) { toast('Could not read the storage use.', { err: true }); } render(); };
+
+/* ===== features/25-share.js ===== */
+/* ---------- share the canvas: a read-only view for the people you share the link with ---------- */
+// Your register stays private (data/users/<you>). When sharing is on, the page writes a copy of the canvas — tasks
+// (title, project, topic, status, dates, items), notes and shapes, and the layout; no emails, quotes or files — to
+// `shared/canvas`, which everyone the link is shared with can read and only you can write (db rules: read "view",
+// write "owner"). Anyone but you who opens the link sees that copy, kept up to date while your page is open.
+const SH = { last: '', timer: null, busy: false, err: '' };
+const SH_PART = 200000; // characters per stored part (a document holds at most 256 KB)
+const shCfg = () => St.settings.share || { on: false, projects: [] };
+function shSnapshot() {
+  const c = shCfg(), only = new Set(c.projects || []);
+  const inScope = t => !only.size || only.has(projKeyLabel(t)[1]);
+  const tasks = [...St.tasks.values()].filter(inScope).map(t => ({
+    id: t.id, ref: t.ref, title: t.title, project: t.project || '', topic: topicOf(t) || '', status: t.status, priority: t.priority, deadline: t.deadline || null,
+    owner: t.owner, ownership: t.ownership, createdAt: t.createdAt, completedAt: t.completedAt || null, updatedAt: t.updatedAt, workType: t.workType, discipline: t.discipline,
+    relatedIds: t.relatedIds || [], subtasks: (t.subtasks || []).map(x => ({ id: x.id, text: x.text, done: !!x.done, doneAt: x.doneAt || null })),
+  }));
+  return { v: 1, by: St.profileName || St.settings.me.name || '', projects: St.settings.projects || [], ui: St.settings.ui || {}, tasks, board: only.size ? [] : [...St.board.values()], layout: St.layout };
+}
+async function shWrite(force) {
+  if (St.mode !== 'db' || !St.db || SH.busy) return;
+  const c = shCfg();
+  if (!c.on) return;
+  const snap = shSnapshot(), json = JSON.stringify({ ...snap, at: undefined });
+  if (!force && json === SH.last) return;
+  SH.busy = true;
+  try {
+    const at = nowISO(), body = JSON.stringify({ ...snap, at });
+    const parts = []; for (let i = 0; i < body.length; i += SH_PART) parts.push(body.slice(i, i + SH_PART));
+    for (let i = 0; i < parts.length; i++) await St.db.doc('shared/canvas/parts/p' + i).set({ s: parts[i] });
+    await St.db.doc('shared/canvas').set({ parts: parts.length, at, by: snap.by, tasks: snap.tasks.length });
+    SH.last = json; SH.err = ''; SH.at = at;
+  } catch (e) { SH.err = (e && (e.message || e.code)) || 'error'; }
+  finally { SH.busy = false; }
+}
+async function shStop() {
+  if (!St.db) return;
+  try {
+    const m = await St.db.doc('shared/canvas').get(); const n = m.exists ? (m.data().parts || 0) : 0;
+    await St.db.doc('shared/canvas').delete();
+    for (let i = 0; i < n; i++) await St.db.doc('shared/canvas/parts/p' + i).delete();
+  } catch {}
+  SH.last = ''; SH.at = null;
+}
+// while sharing is on, changes are copied a few seconds after they happen
+HOOKS.afterRender.push(() => { if (St.mode !== 'db' || !shCfg().on) return; clearTimeout(SH.timer); SH.timer = setTimeout(() => shWrite(false), 4000); });
+HOOKS.ready.push(() => { if (shCfg().on) shWrite(true); });
+
+SETUP_EXTRA.push(() => {
+  if (St.mode !== 'db') return '';
+  const c = shCfg(), projs = projectsList();
+  return `<section class="card pad" id="set-share" data-sec="Share the canvas" style="display:grid;gap:10px"><div class="section-title"><h2>Share the canvas</h2></div>
+    <p class="small muted" style="margin:0">Let your manager or colleagues see your canvas, read-only and always up to date. Turn this on, then share this page from its Share menu (claude.ai) with the people who should see it. They see your tasks, items, notes and the layout — never your emails, quotes or files — and cannot change anything. The copy updates while your page is open.</p>
+    <label class="check"><input type="checkbox" id="sh-on" data-chg="sh-on" ${c.on ? 'checked' : ''}>Share my canvas with the people I share this page with</label>
+    ${c.on ? `<div class="field"><span class="small">Projects to show (none ticked = all, with notes and shapes)</span><div class="row" style="flex-wrap:wrap;gap:6px 14px">${projs.map(p => `<label class="check small"><input type="checkbox" data-chg="sh-proj" data-p="${esc(p)}" ${(c.projects || []).includes(p) ? 'checked' : ''}>${esc(p)}</label>`).join('') || '<span class="small muted">No projects yet.</span>'}</div></div>
+      <p class="small" style="margin:0">${SH.err ? `<span class="chip warn">Not updated</span> ${esc(SH.err)}` : SH.at ? `<span class="chip ok">Shared</span> last updated ${esc(fmtDateTime(SH.at))}` : 'Preparing the shared copy…'} <button class="btn ghost sm" data-act="sh-now">Update now</button></p>` : ''}
+  </section>`;
+});
+Object.assign(CHG, {
+  'sh-on': async el => { const on = el.checked; saveSettings(s => { s.share = { ...(s.share || { projects: [] }), on }; }); if (on) await shWrite(true); else await shStop(); render(); toast(on ? 'Your canvas is shared. Now share this page from its Share menu.' : 'Sharing stopped; the shared copy was removed.'); },
+  'sh-proj': async el => { const p = el.dataset.p; saveSettings(s => { const sh = s.share || { on: true, projects: [] }; const set = new Set(sh.projects || []); el.checked ? set.add(p) : set.delete(p); s.share = { ...sh, projects: [...set] }; }); await shWrite(true); render(); },
+});
+ACT['sh-now'] = async () => { await shWrite(true); render(); toast(SH.err ? 'Could not update the shared copy.' : 'Shared copy updated.'); };
+
+/* --- the view for everyone else: the shared copy, read-only --- */
+async function initViewer(db) {
+  St.mode = 'viewer'; St.sample = null; St.mcp = null; St.assets = null;
+  document.body.classList.add('viewer-mode');
+  UI.view = 'todo'; UI.todoMode = 'map';
+  St.settings = mergeSettings({ setupDone: true });
+  const load = async m => {
+    if (!m) { St.shared = { off: true }; St.tasks = new Map(); St.board = new Map(); St.ready = true; render(); return; }
+    try {
+      const parts = await Promise.all(Array.from({ length: m.parts || 0 }, (_, i) => db.doc('shared/canvas/parts/p' + i).get()));
+      const snap = JSON.parse(parts.map(p => (p.exists ? p.data().s : '')).join(''));
+      St.tasks = new Map((snap.tasks || []).map(t => [t.id, t])); St.board = new Map((snap.board || []).map(b => [b.id, b])); St.layout = mergeLayout(snap.layout);
+      St.settings = mergeSettings({ setupDone: true, projects: snap.projects || [], ui: snap.ui || {} });
+      St.shared = { at: m.at, by: m.by || snap.by || '' };
+    } catch { St.shared = { error: true }; }
+    St.ready = true; UI.map.fitted = false; render();
+  };
+  db.doc('shared/canvas').onSnapshot(d => load(d.exists ? d.data() : null), () => { St.shared = { error: true }; St.ready = true; render(); });
+}
+HOOKS.beforeRender.push(() => {
+  if (St.mode !== 'viewer') return;
+  let bar = document.getElementById('viewer-bar');
+  if (!bar) { bar = document.createElement('div'); bar.id = 'viewer-bar'; bar.className = 'viewer-bar'; document.body.prepend(bar); }
+  const s = St.shared || {};
+  bar.textContent = s.off ? 'Nothing is shared here yet. The owner can turn on Setup › Share the canvas.' : s.error ? 'The shared canvas could not be loaded. Reload the page to try again.'
+    : `${s.by ? s.by + '’s' : 'Shared'} canvas · read-only${s.at ? ' · updated ' + fmtDateTime(s.at) : ''}`;
+});
 
 /* ---------- boot ---------- */
 const startView = (location.hash || '').replace('#', '');

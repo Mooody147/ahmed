@@ -89,6 +89,7 @@ function dbError(e) {
 }
 let lsTimer = null;
 function saveLocal() {
+  if (St.mode === 'viewer') return;   // someone viewing a shared canvas changes nothing
   clearTimeout(lsTimer);
   lsTimer = setTimeout(() => {
     try { localStorage.setItem(LS_KEY, JSON.stringify({ tasks: [...St.tasks.values()], emails: [...St.emails.values()], settings: St.settings, board: [...St.board.values()], daily: [...St.daily.values()], layout: St.layout, cols: Object.fromEntries(COLS.map(n => [n, colList(n)])) })); }
@@ -162,6 +163,8 @@ async function initStore() {
     if (user) { try { const me = await user.me(); St.profileName = me.name || ''; St.uid = me.id || await user.id(); } catch {} }
   }
   St.capsResolved = true;
+  // anyone but the owner who opens a shared link sees the canvas the owner shared, read-only (features/25-share.js)
+  if (db && user && typeof initViewer === 'function' && (await Promise.resolve(user.isOwner()).catch(() => true)) === false) return initViewer(db, user);
   if (db && St.uid) {
     St.db = db; St.mode = 'db';
     const base = db.doc('data/users/' + St.uid + '/register');
@@ -321,7 +324,7 @@ function setupCardHTML() {
 }
 
 /* ---------- task drawer ---------- */
-function openDrawer(kind, id) { UI.drawer = { kind, id }; renderDrawer(); }
+function openDrawer(kind, id) { if (St.mode === 'viewer') return; UI.drawer = { kind, id }; renderDrawer(); }
 function closeDrawer() { UI.drawer = null; $('#drawer').hidden = true; $('#scrim').hidden = true; document.body.style.overflow = ''; }
 function renderDrawer() {
   const dr = UI.drawer; if (!dr) return closeDrawer();
@@ -2647,6 +2650,7 @@ function emailDrawerHTML(e) {
   <div class="drawer-b">
     <div style="display:grid;gap:4px"><h2 style="font-size:20px" dir="auto">${esc(e.subject || '(no subject)')}</h2>
       <dl class="kv">${e.from ? `<dt>From</dt><dd dir="auto">${esc(e.from)}</dd>` : ''}${e.to ? `<dt>To</dt><dd dir="auto">${esc(e.to)}</dd>` : ''}${e.cc ? `<dt>Cc</dt><dd dir="auto">${esc(e.cc)}</dd>` : ''}<dt>Sent</dt><dd>${esc(fmtDateTime(e.date) || 'unknown')}</dd><dt>Imported</dt><dd>${esc(fmtDateTime(e.importedAt))}${e.fileName ? ' · ' + esc(e.fileName) : ''}</dd>${a.readBy && typeof aiName === 'function' ? `<dt>Read by</dt><dd>${esc(aiName(a.readBy))}${a.readBy.fallback ? ` <span class="small muted">(${esc(aiByTitle(a.readBy))})</span>` : ''}</dd>` : ''}${e.forwardedBy ? `<dt>Forwarded by</dt><dd dir="auto">${esc(e.forwardedBy)}${e.forwardMode === 'inline' ? ' <span class="small muted">(original header read from the forwarded text)</span>' : ''}</dd>` : ''}</dl><div class="row">${/^https:\/\/mail\.google\.com\//.test(e.gmailUrl || '') ? `<a class="btn ghost sm" href="${esc(e.gmailUrl)}" target="_blank" rel="noopener">${I.mail} Open in Gmail</a>` : ''}${typeof openMail === 'function' && (DESKTOP || e.original) ? `<button class="btn ghost sm" data-act="email-file-open" data-id="${esc(e.id)}">✉ Open in Outlook</button>` : ''}${tasks.length && typeof openFiling === 'function' ? `<button class="btn ghost sm" data-act="file-email" data-id="${esc(e.id)}">📁 ${e.filed ? 'Filed on the server' : 'Save to company server…'}</button>` : ''}${typeof threadBtn === 'function' ? threadBtn(e) : ''}</div></div>
+    ${emailActionsHTML(e)}
     ${a.summary ? `<div><div class="label" style="margin-bottom:4px">Summary</div><p style="margin:0" dir="auto">${esc(a.summary)}</p>${a.actionRequired === false ? `<p class="small" style="margin:6px 0 0"><span class="chip ok">No action for you</span> ${esc(a.noActionReason || '')}</p>` : ''}</div>` : ''}
     ${(a.flags || []).length ? callout('warn', `<ul style="margin:0">${a.flags.map(f => `<li><b>${esc(FLAG[f.kind] || f.kind)}</b>${f.source ? ` <span class="mono">(${esc(srcName(e, f.source))})</span>` : ''}: ${esc(f.detail)}</li>`).join('')}</ul>`) : ''}
     ${tasks.length ? `<div><div class="label" style="margin-bottom:6px">Tasks from this email</div><div class="register">${tasks.map(taskRow).join('')}</div></div>` : ''}
@@ -2837,11 +2841,14 @@ const VIEW_FN = { todo: () => viewTodo(), daily: () => viewDaily(), review: () =
 const DRAWER_FN = {};
 // buttons shown under the status row of the task panel; feature files push (t) => html
 const TASK_ACTIONS = [];
+// feature files add buttons/sections to the email panel (EMAIL_ACTIONS: e → html) and sections to Setup (SETUP_EXTRA: () → html)
+const EMAIL_ACTIONS = [], SETUP_EXTRA = [];
+function emailActionsHTML(e) { return EMAIL_ACTIONS.map(f => { try { return f(e) || ''; } catch { return ''; } }).join(''); }
 function taskActionsHTML(t) { const parts = TASK_ACTIONS.map(f => { try { return f(t) || ''; } catch { return ''; } }).filter(Boolean); return parts.length ? `<div class="row task-actions">${parts.join('')}</div>` : ''; }
 // feature hooks: beforeRender / afterRender (every full render), ready (data loaded), analysed (after a run), taskChanged (old, new)
 const HOOKS = { beforeRender: [], afterRender: [], ready: [], analysed: [], taskChanged: [], deleted: [], proposals: [], approved: [], emailStored: [] };
 const runHooks = (k, ...a) => { for (const f of HOOKS[k]) { try { f(...a); } catch (e) { console.warn('hook ' + k, e); } } };
-function go(view) { if (!VIEWS.includes(view)) view = 'todo'; if (view === 'todo') setTimeout(maybeAutoCategorize, 400); UI.view = view; UI.confirm = null; closeDrawer(); render(); window.scrollTo(0, 0); try { history.replaceState(null, '', '#' + view); } catch {} }
+function go(view) { if (!VIEWS.includes(view) || St.mode === 'viewer') view = 'todo'; if (view === 'todo') setTimeout(maybeAutoCategorize, 400); UI.view = view; UI.confirm = null; closeDrawer(); render(); window.scrollTo(0, 0); try { history.replaceState(null, '', '#' + view); } catch {} }
 
 /* ---------- events ---------- */
 const ACT = {

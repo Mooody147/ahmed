@@ -15,9 +15,13 @@
    get:async()=>{const docs=[...store.entries()].filter(([k])=>k.startsWith(path+'/')&&k.split('/').length===path.split('/').length+1).map(([k,v])=>mkSnap(k,v));return {docs,size:docs.length,empty:!docs.length,docChanges:()=>[]}},
    onSnapshot(next,err){const s={fire:async()=>next(await this.get())};subs.push(s);setTimeout(s.fire,10);return()=>{}}});
  window.__store=store; window.__prompts=[]; window.__saves=[];
+ // a viewer page can start with documents copied from the owner's page (shared canvas test)
+ if(window.__seed) for(const [k,v] of Object.entries(window.__seed)) store.set(k,v);
+ window.__assets={};
  window.claude={use:async(name)=>{
    if(name==='db') return {doc:docRef,collection:colRef};
-   if(name==='user') return {me:async()=>({id:'u123',name:'Mahmoud Sobeah',email:null}),id:async()=>'u123',isOwner:async()=>true,canEdit:async()=>true,can:async()=>true};
+   if(name==='assets') return window.__noAssets?null:{upload:async(blob,o)=>{const t=(o&&o.type)||blob.type; if(!/^(application\/pdf|image\/(png|jpeg|gif|webp)|application\/json|text\/plain)$/.test(t)) throw {code:'unsupported_type',message:t}; if(blob.size>20*1048576) throw {code:'too_large',message:'big'}; const id=Math.random().toString(16).slice(2).padEnd(32,'0').slice(0,32); window.__assets[id]={type:t,size:blob.size}; return {id,url:URL.createObjectURL(blob),sizeBytes:blob.size,contentType:t};},list:async()=>({assets:[],usage:{files:Object.keys(window.__assets).length,bytes:Object.values(window.__assets).reduce((s,a)=>s+a.size,0),maxFiles:5000,maxBytes:1073741824}}),delete:async()=>({deleted:true})};
+   if(name==='user') return {me:async()=>({id:window.__viewer?'u999':'u123',name:window.__viewer?'Manager':'Mahmoud Sobeah',email:null}),id:async()=>window.__viewer?'u999':'u123',isOwner:async()=>!window.__viewer,canEdit:async()=>true,can:async()=>true};
    if(name==='downloads') return {save:async(r)=>{window.__saves.push({filename:r.filename,len:(r.data.length||r.data.size)}); (window.__saveData=window.__saveData||{})[r.filename]=r.data; return {status:'saved'};}};
    if(name==='sample'){ const f=async(i,o)=>({text:'x',truncated:false});
      f.limits=async()=>({maxPromptBytes:262144,images:{maxCount:20,maxInputBytes:20e6,mediaTypes:['image/jpeg','image/png','image/webp','image/gif']}});
