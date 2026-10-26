@@ -30,11 +30,33 @@ async def main():
             await pg.click('[data-act="todo-mode"][data-mode="map"]'); await pg.wait_for_timeout(800)
         assert await ev("document.querySelectorAll('.mnode.task').length") >= 3
 
-        # 1. direction: top to bottom, then back
+        # 0. tasks that need action by me are marked; My actions fades everything else
+        mine = await ev("[...window.__AR.St.tasks.values()].filter(t => t.status !== 'done' && t.status !== 'waiting' && t.ownership !== 'waiting' && t.ownership !== 'fyi').map(t => t.id)")
+        others = await ev("[...window.__AR.St.tasks.values()].map(t => t.id)"); others = [x for x in others if x not in mine]
+        print('MINE', len(mine), 'OTHERS', len(others)); assert mine and others, 'mock has both kinds'
+        assert await ev("[...document.querySelectorAll('.mnode.task.me')].map(n => n.dataset.tid).sort().join()") == ','.join(sorted(mine))
+        assert await ev(f"!!document.querySelector('.mnode.task[data-tid=\"{mine[0]}\"] .mme')")
+        cnt = await ev("document.querySelector('[data-act=\"map-mine\"] .mt-count').textContent"); assert cnt == str(len(mine)), cnt
+        await pg.click('[data-act="map-mine"]'); await pg.wait_for_timeout(400)
+        assert await ev("window.__AR.St.settings.ui.mapMine") is True
+        assert await ev("document.getElementById('map-vp').classList.contains('mine-on')")
+        dimmed = await ev("[...document.querySelectorAll('.mnode.task.dim')].map(n => n.dataset.tid)"); print('FADED', len(dimmed))
+        assert sorted(dimmed) == sorted(others) and not await ev("!!document.querySelector('.mnode.task.me.dim')")
+        print('FADED groups', await ev("[...document.querySelectorAll('.mnode.dim:not(.task)')].map(n => n.dataset.type + ':' + (n.dataset.label || n.dataset.topic))"))
+        await pg.screenshot(path=SHOTS + '/pen-0-my-actions.png')
+        await pg.keyboard.press('Shift+M'); await pg.wait_for_timeout(300)
+        assert await ev("window.__AR.St.settings.ui.mapMine") is False and not await ev("!!document.querySelector('.mnode.dim')")
+        await pg.click('[data-act="map-mine"]'); await pg.wait_for_timeout(300)
+
+        # 1. direction: one tap in the toolbar flips it, Shift+V flips it back
         pos = "(() => { const L = window.__AR.UI.mapLayout; const by = t => [...L.byId.values()].filter(n => n.type === t); const r = by('root')[0], ps = by('project'), ts = by('task'); return { r: [r.x, r.y], p: ps.map(n => [n.x, n.y]), t: ts.map(n => [n.x, n.y]) }; })()"
         h = await ev(pos)
-        await pg.click('[data-menu="options"] summary'); await pg.click('[data-act="map-dir"][data-dir="v"]'); await pg.wait_for_timeout(700)
+        await pg.click('.map-tools > [data-act="map-dir"]'); await pg.wait_for_timeout(700)
         assert await ev("window.__AR.St.settings.ui.mapDir") == 'v'
+        assert await ev("document.querySelector('.map-tools > [data-act=\"map-dir\"]').dataset.dir") == 'h', 'button now offers horizontal'
+        await pg.focus('#map-vp'); await pg.keyboard.press('Shift+V'); await pg.wait_for_timeout(500); assert await ev("window.__AR.St.settings.ui.mapDir") == 'h'
+        await pg.keyboard.press('Shift+V'); await pg.wait_for_timeout(700); assert await ev("window.__AR.St.settings.ui.mapDir") == 'v'
+        assert await ev("document.querySelectorAll('.mnode.task.dim').length") == len(others), 'highlight kept after flipping'
         v = await ev(pos); print('HORIZONTAL', h['r'], h['p'][:2], ' VERTICAL', v['r'], v['p'][:2])
         assert all(py > v['r'][1] + 30 for px, py in v['p']), 'projects sit below the root'
         assert all(px > h['r'][0] + 30 for px, py in h['p']), 'projects sit right of the root'
@@ -133,7 +155,7 @@ async def main():
         await pen('mouseReleased', x0 + 70, y0 + 10, 0, 'left', 0); await pg.wait_for_timeout(300)
         assert await ev("[...window.__AR.St.board.values()].filter(e => e.type === 'stroke').length") == s0 + 1, 'no stroke when the setting is off'
         # back to left to right
-        await pg.click('[data-menu="options"] summary'); await pg.click('[data-act="map-dir"][data-dir="h"]'); await pg.wait_for_timeout(500)
+        await pg.click('.map-tools > [data-act="map-dir"]'); await pg.wait_for_timeout(500)
         assert await ev("window.__AR.St.settings.ui.mapDir") == 'h'
         await pg.screenshot(path=SHOTS + '/pen-2-horizontal.png')
         print('ERRORS', errors); assert not errors

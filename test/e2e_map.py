@@ -33,6 +33,7 @@ async def main():
         assert await pg.evaluate("!document.querySelector('[data-act=\"map-next-suggest\"]') && !document.querySelectorAll('.mnode.suggest').length"), 'no "Claude was not sure" banner'
         nid = await pg.evaluate("[...window.__AR.St.tasks.values()].find(t=>/NPSH/.test(t.title)).id")
         await pg.click('[data-act="close-drawer"]'); await pg.wait_for_timeout(300); await pg.click('[data-act="map-fit"]'); await pg.wait_for_timeout(500)
+        await pg.evaluate("document.querySelector('#minimap') && (document.querySelector('#minimap').style.display = 'none')")  # the box can sit under the minimap after Fit
         await pg.click(f'.mnode.task[data-tid="{nid}"] .mtxt'); await pg.wait_for_selector('#drawer:not([hidden])'); await pg.wait_for_timeout(300)
         assert 'not sure' not in (await pg.text_content('#drawer'))
         await pg.click('details.wrong-place > summary'); await pg.wait_for_timeout(200)

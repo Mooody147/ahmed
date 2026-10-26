@@ -1137,3 +1137,23 @@ body:not(.viewer-mode) .viewer-bar { display: none; }
 @media (hover: none) { .mnode.task > .lk, .bel > .lk { display: block; opacity: .7; } }
 .z-far .lk { display: none !important; }
 [dir="rtl"] .lk { right: auto; left: -8px; }
+
+/* tasks that need action by me: always marked, and with My actions on everything else fades */
+.mme { justify-self: start; display: inline-flex; align-items: center; gap: 3px; align-self: flex-start; margin-bottom: 3px; padding: 1px 7px; border-radius: 999px; font-size: 10.5px; font-weight: 700; letter-spacing: .02em; background: color-mix(in srgb, var(--accent) 14%, var(--surface)); color: var(--accent); }
+.mnode.task.me { border-left-color: var(--accent); }
+.mnode.task.me.me-urgent .mme { background: var(--accent); color: var(--surface); }
+.mnode.dim { opacity: .28; filter: saturate(.2); box-shadow: none; }
+.mnode.dim:hover { opacity: .75; }
+.map-viewport.mine-on .mnode.task.me:not(.dim) { box-shadow: 0 0 0 2.5px var(--accent), 0 10px 26px -8px color-mix(in srgb, var(--accent) 55%, transparent); z-index: 2; }
+.map-viewport.mine-on .mnode.task.me-urgent { animation: me-pulse 2.2s ease-in-out infinite; }
+@keyframes me-pulse { 50% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--accent) 35%, transparent), 0 10px 26px -8px color-mix(in srgb, var(--accent) 55%, transparent); } }
+@media (prefers-reduced-motion: reduce) { .map-viewport.mine-on .mnode.task.me-urgent { animation: none; } }
+.mt-mine.on { background: var(--accent); border-color: var(--accent); color: var(--surface); }
+.mt-mine .mt-count { min-width: 18px; padding: 0 5px; border-radius: 999px; background: color-mix(in srgb, var(--accent) 14%, transparent); font-size: 11px; }
+.mt-mine.on .mt-count { background: color-mix(in srgb, var(--surface) 25%, transparent); }
+/* the toolbar sizes itself to the canvas, not the window: labels go first, My actions keeps its name longest */
+.map-toolbar { container-type: inline-size; }
+@container (max-width: 1360px) { .map-tools .btn:not(.mt-mine) .lbl { display: none; } }
+@container (min-width: 641px) { .map-tools .btn.mt-mine .lbl { display: inline; } }
+@container (max-width: 900px) { .map-tools .todo-search { flex: 1 1 160px; min-width: 120px; } }
+@container (max-width: 640px) { .map-tools .mt-mine .lbl { display: none; } }

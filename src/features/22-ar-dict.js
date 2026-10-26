@@ -1,6 +1,13 @@
 /* ---------- Arabic interface text: English → Arabic. {0}, {1}… stand for numbers in the sentence. ---------- */
 // Generated from the strings shown in the app, translated for Egyptian / Gulf engineering use. Add a line to extend it.
 const AR_DICT = {
+"My actions": "مهامي المطلوبة",
+"Your action": "مطلوب منك",
+"Needs action by you": "يحتاج إجراءً منك",
+"Vertical": "رأسي",
+"Horizontal": "أفقي",
+"Nothing needs action by you right now": "لا شيء يحتاج إجراءً منك الآن",
+"Highlight the tasks that need action by you and fade the rest (Shift+M)": "أبرز المهام التي تحتاج إجراءً منك وخفّف الباقي (Shift+M)",
 "⟳ Refresh": "⟳ تحديث",
 "↶ Undo": "↶ تراجع",
 "↷ Redo": "↷ إعادة",

@@ -864,19 +864,25 @@ function buildMap() {
   for (const el of boardEls()) grow(elBox(el));
   return { nodes, edges, links, root, projects, byId, byTask, x0: x0 - 40, y0: y0 - 40, w: x1 - x0 + 260, h: y1 - y0 + 80 };
 }
+// tasks waiting on me: open, mine, not handed to someone else
+const needsMe = t => t.status !== 'done' && t.status !== 'waiting' && isMine(t);
+const myFocus = () => St.mode !== 'viewer' && !!(St.settings.ui || {}).mapMine;
+const nodeTasks = n => n.tasks || (n.cats ? [...n.cats.values()].flatMap(c => c.tasks) : []);
+const urgentForMe = t => { const c = dueInfo(t).cls; return c === 'over' || c === 'today' || t.priority === 'critical'; };
 function mapNodeHTML(n, hits, day) {
   const st = `left:${n.x || 0}px;top:${n.y || 0}px;width:${n.w}px;${n.h ? `height:${n.h}px;` : ''}--h:${n.hue ?? 186}`;
   const more = n.hiddenKids ? `<span class="mmore">+${n.hiddenKids}</span>` : '';
   const rz = `<span class="rz" data-rz="${esc(n.id)}" data-kind="node" title="Drag to resize" aria-hidden="true"></span>`;
   const drag = UI.cvTemp && UI.cvTemp.kind === 'node' && UI.cvTemp.id === n.id ? ' dragging' : '';
   const drop = UI.cvDrop === n.id ? ' drop' : '';
+  const dim = myFocus() && (n.type === 'project' || n.type === 'topic') && !nodeTasks(n).some(needsMe) ? ' dim' : '';
   if (n.type === 'root') {
     const all = [...St.tasks.values()]; const open = all.filter(t => t.status !== 'done').length;
     return `<div class="mnode root${drag}" data-node="root" style="${st}"><span class="brand-mark">${I.brand}</span><div><b>My work</b><small>${open} open · ${all.length - open} done</small></div></div>`;
   }
   if (n.type === 'project') {
     const pct = n.n ? 100 * n.done / n.n : 0;
-    return `<div class="mnode project${drag}${drop}" data-node="${esc(n.id)}" data-type="project" data-pk="${esc(n.id)}" data-label="${esc(n.label)}" style="${st}">
+    return `<div class="mnode project${drag}${drop}${dim}" data-node="${esc(n.id)}" data-type="project" data-pk="${esc(n.id)}" data-label="${esc(n.label)}" style="${st}">
       ${n.id === 'p:~' ? '<span class="gicon">🗂️</span>' : projBadge(n.label)}
       <div class="mtxt"><b dir="auto" data-edit="${esc(n.id)}">${esc(n.label)}</b><small>${n.n - n.done} open · ${n.done} done</small></div>${ring(pct, 34)}${more}
 <span class="lk" data-link="1" title="Drag to another box to link them" aria-hidden="true"></span>
@@ -884,7 +890,7 @@ function mapNodeHTML(n, hits, day) {
   }
   if (n.type === 'topic') {
     const open = n.tasks.filter(t => t.status !== 'done').length;
-    return `<div class="mnode topic${drag}${drop}" data-node="${esc(n.id)}" data-type="topic" data-topic="${esc(n.key === '~' ? '' : n.label)}" data-plabel="${esc(n.tasks[0] ? projKeyLabel(n.tasks[0])[1] : '')}" style="${st}">
+    return `<div class="mnode topic${drag}${drop}${dim}" data-node="${esc(n.id)}" data-type="topic" data-topic="${esc(n.key === '~' ? '' : n.label)}" data-plabel="${esc(n.tasks[0] ? projKeyLabel(n.tasks[0])[1] : '')}" style="${st}">
 <span class="lk" data-link="1" title="Drag to another box to link them" aria-hidden="true"></span>
       <span class="cicon">${n.key === '~' ? '🗂️' : '🧩'}</span><div class="mtxt"><b dir="auto" data-edit="${esc(n.id)}">${esc(n.label)}</b><small>${open} open · ${n.tasks.length - open} done</small></div>${more}${n.key === '~' ? '' : '<button class="mfocus mren" data-map="rename" title="Rename topic" aria-label="Rename topic">✎</button>'}<button class="mfocus mdel" data-map="del" title="Delete this topic and its tasks" aria-label="Delete this topic and its tasks">🗑</button>${rz}</div>`;
   }
@@ -893,11 +899,11 @@ function mapNodeHTML(n, hits, day) {
     const sug = t.placement && t.placement.status === 'suggested';
     const ach = [...St.daily.values()].filter(a => a.kind === 'achievement' && a.taskId === t.id).length;
     const fresh = Date.now() - (FRESH.get(t.id) || 0) < 2500;
-    const cls = ['mnode', 'task', 'p-' + (t.priority || 'medium'), t.status === 'done' ? 'done' : '', UI.mapSel === t.id ? 'sel' : '', hits && hits.has(t.id) ? 'hit' : '', day && day.has(t.id) ? 'dayhit' : '', sug ? 'suggest' : '', fresh ? 'fresh' : ''].join(' ') + drag + drop;
+    const cls = ['mnode', 'task', 'p-' + (t.priority || 'medium'), t.status === 'done' ? 'done' : '', UI.mapSel === t.id ? 'sel' : '', hits && hits.has(t.id) ? 'hit' : '', day && day.has(t.id) ? 'dayhit' : '', sug ? 'suggest' : '', fresh ? 'fresh' : '', needsMe(t) ? 'me' : '', needsMe(t) && urgentForMe(t) ? 'me-urgent' : '', myFocus() && !needsMe(t) ? 'dim' : ''].join(' ') + drag + drop;
     return `<div class="${cls}" data-node="${esc(n.id)}" data-type="task" data-tid="${esc(t.id)}" style="${st}">
 <span class="lk" data-link="1" title="Drag to another box to link them" aria-hidden="true"></span>
       <button class="mtick" data-map="tick" aria-label="${t.status === 'done' ? 'Reopen' : 'Mark done'}">${I.check}</button>
-      <div class="mtxt"><b dir="auto">${esc(t.title)}</b>
+      <div class="mtxt">${needsMe(t) ? `<span class="mme" title="Needs action by you">🙋 Your action</span>` : ''}<b dir="auto">${esc(t.title)}</b>
         <small><span class="mono">${esc(t.ref || '')}</span>${t.status === 'done' ? `<span class="mdone">✓ ${esc(fmtDate((t.completedAt || t.updatedAt || '').slice(0, 10)))}</span>` : `<span class="duepill ${d.cls}">${dueEmoji(d)}${esc(d.txt)}</span>`}
         ${t.status === 'in_progress' ? '<span title="In progress">▶</span>' : ''}${subs ? `<button class="mitems" data-map="items" title="Show items">🗂️ ${subsDone(t)}/${subs}</button>` : ''}${links ? `<span title="Linked tasks">🔗 ${links}</span>` : ''}${isFromManager(t) ? '<span title="Assigned by your manager">👔</span>' : ''}${(t.days || []).includes(T()) ? '<span title="On today’s plan">📌</span>' : ''}${ach ? `<span title="Achievements">⭐ ${ach}</span>` : ''}${t.status === 'waiting' || t.ownership === 'waiting' ? '<span>⏳</span>' : ''}${t.status === 'blocked' ? '<span>⛔</span>' : ''}${sug ? '<span class="msug" title="Claude needs your confirmation">❓ Confirm</span>' : ''}${NODE_EXTRA.map(f => { try { return f(t) || ''; } catch { return ''; } }).join('')}</small></div><button class="mfocus mdel" data-map="del" title="Delete this task" aria-label="Delete this task">🗑</button>${rz}</div>`;
   }
@@ -1155,6 +1161,8 @@ function viewMap() {
         <label class="search todo-search">${I.search}<span class="sr">Find on map</span><input class="input" id="map-q" type="search" placeholder="Find a task, item or note…" value="${esc(UI.mapQ)}" data-inp="mapQ"></label>
         ${hits ? `<span class="small muted mt-hits">${hits.size} found</span>` : ''}
         <span class="mt-spacer"></span>
+        ${St.mode !== 'viewer' ? (() => { const n = [...St.tasks.values()].filter(needsMe).length; return `<button class="btn sm mt-mine ${myFocus() ? 'on' : ''}" data-act="map-mine" aria-pressed="${myFocus()}" title="Highlight the tasks that need action by you and fade the rest (Shift+M)">🙋<span class="lbl">My actions</span> <b class="mt-count">${n}</b></button>`; })() : ''}
+        <button class="btn sm mt-dir" data-act="map-dir" data-dir="${mapDir() === 'v' ? 'h' : 'v'}" title="${mapDir() === 'v' ? 'Switch to a left-to-right map' : 'Switch to a top-to-bottom map'} (Shift+V)" aria-label="${mapDir() === 'v' ? 'Switch to horizontal map' : 'Switch to vertical map'}">${mapDir() === 'v' ? '↔' : '↕'}<span class="lbl">${mapDir() === 'v' ? 'Horizontal' : 'Vertical'}</span></button>
         <div class="mt-group">
           <button class="btn sm" data-act="map-rearrange" title="Put every box back in tidy order (Shift+R)">⊞<span class="lbl">Rearrange</span></button>
           <button class="btn sm" data-act="map-refresh" title="Show every task and email again">⟳<span class="lbl">Refresh</span></button>
@@ -1192,7 +1200,7 @@ function viewMap() {
       </div>
     </div>
     <div class="map-body ${UI.mapActivity ? 'with-act' : ''}">
-      <div class="map-viewport ${UI.mapDay ? 'dayon' : ''}" id="map-vp" data-tool="${esc(UI.tool)}" tabindex="0" aria-label="Task canvas. Drag to move around, scroll or pinch to zoom.">
+      <div class="map-viewport ${UI.mapDay ? 'dayon' : ''} ${myFocus() ? 'mine-on' : ''}" id="map-vp" data-tool="${esc(UI.tool)}" tabindex="0" aria-label="Task canvas. Drag to move around, scroll or pinch to zoom.">
         <div class="map-world" id="map-world" style="width:${M.w}px;height:${M.h}px;transform:translate(${UI.map.x}px,${UI.map.y}px) scale(${UI.map.k})">${worldHTML(M)}</div>
         ${M.projects.length || St.board.size ? '' : `<div class="empty map-empty"><div class="big-emoji">🧠</div><h3>Your canvas is empty</h3><p>Approved tasks appear here, branching from projects and topics. Use the tools on the left to add notes, shapes and drawings.</p><button class="btn primary" data-act="nav" data-view="import">${I.upload} Add emails</button></div>`}
         ${toolsHTML()}
@@ -1725,6 +1733,8 @@ document.addEventListener('keydown', e => {
   if (e.key === ' ') { if (!UI.spaceDown) { UI.spaceDown = true; const vp = $('#map-vp'); if (vp) vp.dataset.tool = 'hand'; } e.preventDefault(); return; }
   if (e.shiftKey && k === 'f') { toggleFull(); return; }
   if (e.shiftKey && k === 'r') { ACT['map-rearrange'](); return; }
+  if (e.shiftKey && k === 'm') { ACT['map-mine'](); return; }
+  if (e.shiftKey && k === 'v') { ACT['map-dir']({ dataset: { dir: mapDir() === 'v' ? 'h' : 'v' } }); return; }
   if (!e.shiftKey && TOOL_KEY[k]) { UI.tool = TOOL_KEY[k]; render(); }
 });
 document.addEventListener('keyup', e => { if (e.key === ' ' && UI.spaceDown) { UI.spaceDown = false; const vp = $('#map-vp'); if (vp) vp.dataset.tool = UI.tool; } });
@@ -3016,6 +3026,7 @@ const ACT = {
   'cv-color': el => { UI.cvColor = el.dataset.c; render(); },
   'cv-recolor': el => { const ch = { els: {} }; for (const id of UI.cvSel) { const x = St.board.get(id); if (x) ch.els[id] = { ...x, color: el.dataset.c }; } UI.cvColor = el.dataset.c; cvApply(ch); render(); },
   'cv-conn': el => { const id = [...UI.cvSel][0], c = St.board.get(id); if (!c || c.type !== 'connector') return; const k = el.dataset.k; const n = { ...c, [k]: k === 'shape' ? (c.shape === 'straight' ? 'curve' : 'straight') : k === 'arrow' ? c.arrow === false : !c.dash }; cvApply({ els: { [id]: n } }); render(); },
+  'map-mine': () => { saveSettingsUi({ mapMine: !myFocus() }); render(); if (myFocus()) { const n = [...St.tasks.values()].filter(needsMe).length; toast(n ? `🙋 ${n} task${n > 1 ? 's need' : ' needs'} action by you` : 'Nothing needs action by you right now'); } },
   'map-dir': el => { const d = el.dataset.dir === 'v' ? 'v' : 'h'; if (mapDir() === d) return; saveSettingsUi({ mapDir: d }); UI.map.fitted = false; render(); requestAnimationFrame(() => mapFit()); },
   'cv-width': el => { const d = +el.dataset.d; const ch = { els: {} }; for (const id of UI.cvSel) { const x = St.board.get(id); if (x && ['stroke', 'line', 'connector'].includes(x.type)) ch.els[id] = { ...x, width: Math.max(1, Math.min(24, (x.width || 3) + d)) }; } UI.cvWidth = Math.max(1, Math.min(24, UI.cvWidth + d)); cvApply(ch); render(); },
   'cv-front': () => { const ch = { els: {} }; let z = Date.now(); for (const id of UI.cvSel) { const x = St.board.get(id); if (x) ch.els[id] = { ...x, z: z++ }; } cvApply(ch); render(); },
