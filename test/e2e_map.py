@@ -27,21 +27,30 @@ async def main():
         await pg.fill('#d-title','Check pump NPSH for PS-2 wet well'); await pg.dispatch_event('#d-title','change'); await pg.wait_for_timeout(900)
         t=await pg.evaluate("[...window.__AR.St.tasks.values()].filter(t=>/NPSH/.test(t.title)).map(t=>({rel:t.relatedIds,pl:t.placement&&t.placement.status,opts:(t.placement&&t.placement.options||[]).length}))")
         print('PLACEMENT', t)
-        await pg.click('[data-act="close-drawer"]'); await pg.wait_for_timeout(600)
-        print('LINKS drawn', await pg.evaluate("document.querySelectorAll('.map-edges .link').length"), 'suggest nodes', await pg.evaluate("document.querySelectorAll('.mnode.suggest').length"))
-        await pg.click('[data-act="map-fit"]'); await pg.wait_for_timeout(500)
-        await pg.screenshot(path=SHOTS+'/71-map-suggest.png')
-        await pg.click('[data-act="map-next-suggest"]'); await pg.wait_for_selector('#drawer:not([hidden])'); await pg.wait_for_timeout(300)
+        # Claude was not sure: the task is placed anyway (no question), its other options kept in the task panel
+        assert t and t[0]['pl'] == 'auto' and t[0]['opts'] >= 1, t
+        await pg.wait_for_timeout(300)
+        assert await pg.evaluate("!document.querySelector('[data-act=\"map-next-suggest\"]') && !document.querySelectorAll('.mnode.suggest').length"), 'no "Claude was not sure" banner'
+        nid = await pg.evaluate("[...window.__AR.St.tasks.values()].find(t=>/NPSH/.test(t.title)).id")
+        await pg.click('[data-act="close-drawer"]'); await pg.wait_for_timeout(300); await pg.click('[data-act="map-fit"]'); await pg.wait_for_timeout(500)
+        await pg.click(f'.mnode.task[data-tid="{nid}"] .mtxt'); await pg.wait_for_selector('#drawer:not([hidden])'); await pg.wait_for_timeout(300)
+        assert 'not sure' not in (await pg.text_content('#drawer'))
+        await pg.click('details.wrong-place > summary'); await pg.wait_for_timeout(200)
         await pg.screenshot(path=SHOTS+'/72-drawer-suggest.png')
         await pg.click('[data-act="use-placement"][data-i="0"]'); await pg.wait_for_timeout(300)
         print('AFTER CHOOSE', await pg.evaluate("[...window.__AR.St.tasks.values()].filter(t=>/NPSH/.test(t.title)).map(t=>[t.project,t.discipline,t.placement.status,t.relatedIds.length])"))
-        await pg.click('[data-act="close-drawer"]'); await pg.wait_for_timeout(300); await pg.click('[data-act="map-fit"]'); await pg.wait_for_timeout(500)
+        await pg.click('[data-act="close-drawer"]'); await pg.wait_for_timeout(300)
+        await pg.click('[data-act="map-fit"]'); await pg.wait_for_timeout(500)
+        await pg.screenshot(path=SHOTS+'/71-map-suggest.png')
         # drag T-0001 onto WTP-21 project node
         src=await pg.query_selector('.mnode.task[data-tid] >> nth=0'); sb=await src.bounding_box()
         tgt=await pg.query_selector('.mnode.project[data-label="WTP-21"]'); tb=await tgt.bounding_box()
         await pg.mouse.move(sb['x']+sb['width']/2, sb['y']+20); await pg.mouse.down(); await pg.mouse.move(sb['x']+40, sb['y']+40, steps=5)
         await pg.mouse.move(tb['x']+tb['width']/2, tb['y']+tb['height']/2, steps=12); await pg.mouse.up(); await pg.wait_for_timeout(400)
         print('MOVED', await pg.evaluate("[...window.__AR.St.tasks.values()].map(t=>[t.ref,t.project]).slice(0,6)"))
+        lr = await pg.evaluate("((window.__AR.St.cols.prefs.get('learned')||{}).items||[]).map(x=>[x.field,x.from,x.to])"); print('LEARNED', lr)
+        assert any(x[0] == 'project' and x[2] == 'WTP-21' for x in lr), 'moving a task on the canvas teaches Claude'
+        assert 'CORRECTIONS I MADE BEFORE' in (await pg.evaluate("window.__AR.learnedNotes ? window.__AR.learnedNotes(null) : ''"))
         # pan & zoom
         vp=await (await pg.query_selector('#map-vp')).bounding_box()
         before=await pg.evaluate("JSON.stringify(window.__AR.UI.map)")

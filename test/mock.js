@@ -70,7 +70,7 @@
    {id:'m1',date:'2026-10-23T17:10:00Z',toRecipients:[ADDR],labelIds:['INBOX']},
    {id:'m2',date:'2026-10-23T18:00:00Z',toRecipients:[ADDR],labelIds:['INBOX']},
    {id:'m3',date:'2026-10-23T18:30:00Z',toRecipients:[ADDR],labelIds:['INBOX'],sizeEstimate:7002442,viewUrl:'https://mail.google.com/mail/?x#m3'},
-   {id:'m4',date:'2026-10-23T18:35:00Z',toRecipients:['m.sobeah@contractor.example'],labelIds:['INBOX'],delivered:true},
+   ...(window.__gmExtra?[{id:'m4',date:'2026-10-23T18:35:00Z',toRecipients:['m.sobeah@contractor.example'],labelIds:['INBOX'],delivered:true}]:[]),
    {id:'mX',date:'2026-10-23T18:40:00Z',toRecipients:['someone@else.com'],labelIds:['INBOX']}];
  // like Gmail: the query {to: cc: bcc: deliveredto:} finds messages sent to the address, including Bcc ("delivered")
  const sentTo=(m,q)=>!q.includes(ADDR)||m.delivered||[...(m.toRecipients||[]),...(m.ccRecipients||[])].includes(ADDR);

@@ -343,7 +343,7 @@ function taskDrawerHTML(t) {
   return `<div class="drawer-h"><span class="mono muted">${esc(t.ref || '')}</span>${chipPrio(t.priority)}<span class="spacer"></span><button class="icon-btn" data-act="close-drawer" aria-label="Close">${I.x}</button></div>
   <div class="drawer-b two"><div class="dcol-main">
     <textarea class="title-edit" id="d-title" rows="1" data-chg="task-field" data-field="title" dir="auto" aria-label="Title">${esc(t.title)}</textarea>
-    ${t.placement && t.placement.status === 'suggested' ? callout('info', `<p><b>❓ Claude isn’t sure where this belongs.</b> Choose one:</p><div style="display:grid;gap:6px;margin-top:8px">${(t.placement.options || []).map((o, i) => { const r = o.relatedTaskId && St.tasks.get(o.relatedTaskId); return `<button class="btn sm opt-btn" data-act="use-placement" data-i="${i}">${o.project ? '📁 ' + esc(o.project) : ''}${o.discipline ? ' › ' + esc(E.DISCIPLINES[o.discipline]) : ''}${r ? ' · 🔗 ' + esc(r.ref) : ''}${o.reason ? `<span class="muted small"> — ${esc(o.reason)}</span>` : ''}</button>`; }).join('')}<button class="btn sm ghost" data-act="keep-placement">Keep where it is${t.project ? ': ' + esc(t.project) : ''}</button></div>`) : ''}
+    ${t.placement && t.placement.status !== 'confirmed' && (t.placement.options || []).length ? `<details class="small wrong-place"><summary class="muted">Wrong place? Other places Claude considered</summary><div style="display:grid;gap:6px;margin-top:8px">${(t.placement.options || []).map((o, i) => { const r = o.relatedTaskId && St.tasks.get(o.relatedTaskId); return `<button class="btn sm opt-btn" data-act="use-placement" data-i="${i}">${o.project ? '📁 ' + esc(o.project) : ''}${o.discipline ? ' › ' + esc(E.DISCIPLINES[o.discipline]) : ''}${r ? ' · 🔗 ' + esc(r.ref) : ''}${o.reason ? `<span class="muted small"> — ${esc(o.reason)}</span>` : ''}</button>`; }).join('')}<button class="btn sm ghost" data-act="keep-placement">Keep it here${t.project ? ': ' + esc(t.project) : ''}</button></div></details>` : ''}
     <div class="seg" role="group" aria-label="Status">${Object.entries(STATUS).map(([k, v]) => `<button data-act="set-status" data-id="${esc(t.id)}" data-status="${k}" aria-pressed="${t.status === k}">${v}</button>`).join('')}</div>
     ${taskActionsHTML(t)}
     ${t.status === 'blocked' ? `<label class="field"><span>Blocked because</span><input class="input" id="d-blocked" data-chg="task-field" data-field="blockedReason" value="${esc(t.blockedReason)}" placeholder="What is stopping this?"></label>` : ''}
@@ -405,7 +405,7 @@ function setTaskField(id, field, value) {
 function usePlacement(id, i) {
   const t0 = St.tasks.get(id); const o = t0 && t0.placement && (t0.placement.options || [])[i]; if (!o) return;
   const t = clone(t0); const notes = [];
-  if (o.project && o.project !== t.project) { notes.push(`Project → ${o.project}`); t.project = o.project; t.projectLocked = true; }
+  if (o.project && o.project !== t.project) { notes.push(`Project → ${o.project}`); if (typeof learnCorrection === 'function') learnCorrection(t0, 'project', t0.project || '', o.project); t.project = o.project; t.projectLocked = true; }
   if (o.discipline && o.discipline !== t.discipline) { notes.push(`Category → ${E.DISCIPLINES[o.discipline]}`); t.discipline = o.discipline; t.catLocked = true; t.catBy = 'me'; }
   if (o.relatedTaskId && St.tasks.has(o.relatedTaskId) && !relIds(t).includes(o.relatedTaskId)) { t.relatedIds = [...relIds(t), o.relatedTaskId]; notes.push(`Linked to ${St.tasks.get(o.relatedTaskId).ref}`); }
   t.placement = { ...t.placement, status: 'confirmed' };
@@ -459,7 +459,7 @@ async function aiCategorize(ids, quiet) {
     for (let i = 0; i < list.length; i += 50) {
       const chunk = list.slice(i, i + 50);
       const ids = new Set(chunk.map(x => x.id)); const cands = [...St.tasks.values()].filter(x => !ids.has(x.id)).sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || '')).slice(0, 80);
-      const ans = await St.sample.json(E.buildCategorizePrompt(chunk, allProjects(), cands, allTopics()), { modelTier: 'quick' });
+      const ans = await St.sample.json(E.buildCategorizePrompt(chunk, allProjects(), cands, allTopics(), typeof learnedNotes === 'function' ? learnedNotes(null) : ''), { modelTier: 'quick' });
       for (const a of (Array.isArray(ans) ? ans : [])) {
         const t0 = St.tasks.get(String(a && a.id)); if (!t0) continue;
         const t = clone(t0); const notes = [];
@@ -1440,6 +1440,7 @@ function mapDrop(tid, over) {
   if ((t.project || '') !== newProj) { notes.push(`Project: ${t.project || '—'} → ${newProj || '—'}`); t.project = newProj; t.projectLocked = true; }
   if (over.dataset.type === 'topic') { const tp = over.dataset.topic || ''; if (topicOf(t) !== tp) { notes.push(`Topic: ${topicOf(t) || '—'} → ${tp || '—'}`); t.topic = tp; t.topicLocked = true; } }
   if (!notes.length) { renderWorld(); return; }
+  if (typeof learnCorrection === 'function') { learnCorrection(t0, 'project', t0.project || '', t.project || ''); if (over.dataset.type === 'topic') learnCorrection(t0, 'topic', topicOf(t0), topicOf(t)); }
   if (t.placement) t.placement = { ...t.placement, status: 'confirmed' };
   (t.history = t.history || []).push({ at: now, text: 'Moved on the map — ' + notes.join('; ') });
   const L = newLayout(); delete L.off['t:' + tid]; // it takes its natural place in the new branch
@@ -1933,7 +1934,9 @@ function updateProposal(eid, pid, field, value) {
 function placementFrom(p) {
   const opts = (p.placementOptions || []).filter(o => !o.relatedTaskId || St.tasks.has(o.relatedTaskId));
   const c = p.placementConfidence;
-  return (c !== null && c !== undefined && c < 0.7 && opts.length) ? { status: 'suggested', confidence: c, options: opts } : { status: 'auto', confidence: c ?? null };
+  // never held back: the task goes where Claude put it; when it was not sure, its other options are kept so you
+  // can switch with one tap in the task panel ("Wrong place?")
+  return (c !== null && c !== undefined && c < 0.7 && opts.length) ? { status: 'auto', confidence: c, options: opts } : { status: 'auto', confidence: c ?? null };
 }
 function approveEmail(eid, quiet) {
   const e = clone(St.emails.get(eid)); if (!e) return;

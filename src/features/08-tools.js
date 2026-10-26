@@ -254,32 +254,6 @@ Reply with JSON only: {"answer":"…","refs":["T-0001"]}`;
 document.addEventListener('keydown', e => { if (e.target && e.target.id === 'ask-q' && e.key === 'Enter') { e.preventDefault(); askGo(); } });
 document.addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'j' && St.ready) { e.preventDefault(); openAsk(); } });
 
-/* --- learn from corrections: when you change what Claude chose, later analyses are told --- */
-const LEARN_FIELDS = ['project', 'priority', 'ownership', 'topic', 'discipline'];
-const learned = () => ((St.cols.prefs.get('learned') || {}).items || []);
-const senderKey = em => { const a = String((em && (em.fromEmail || em.from)) || '').toLowerCase(); const m = /@([\w.-]+)/.exec(a); return m ? '@' + m[1] : ''; };
-const taskFieldChg = CHG['task-field'];
-CHG['task-field'] = el => {
-  const t = UI.drawer && UI.drawer.kind === 'task' && St.tasks.get(UI.drawer.id), f = el.dataset.field, before = t ? String(t[f] ?? '') : '';
-  taskFieldChg(el);
-  if (!t || !LEARN_FIELDS.includes(f) || !(t.emailIds || []).length || autoPrefs().learn === false) return;
-  const after = String((St.tasks.get(t.id) || {})[f] ?? ''); if (!after || before === after) return;
-  const em = St.emails.get(t.emailIds[0]), sender = senderKey(em);
-  const items = learned().filter(x => !(x.field === f && x.sender === sender && x.from === before)).concat({ field: f, sender, from: before, to: after, subject: E.clip((em && em.subject) || '', 80), at: nowISO() }).slice(-60);
-  colPut('prefs', { id: 'learned', items });
-};
-function learnedNotes(em) {
-  const s = senderKey(em), items = learned();
-  const pick = [...items.filter(x => x.sender && x.sender === s), ...items.filter(x => x.sender !== s)].slice(0, 12);
-  if (!pick.length) return '';
-  return 'CORRECTIONS I MADE BEFORE (prefer my choice in similar cases):\n' + pick.map(x => `- ${x.sender ? 'For emails from ' + x.sender + ' ' : ''}${x.subject ? '(e.g. “' + x.subject + '”) ' : ''}the ${FIELD_LABEL[x.field] || x.field} was “${x.from || 'empty'}” and I changed it to “${x.to}”.`).join('\n');
-}
-function learnedHTML() {
-  const items = learned();
-  return `<section class="card pad set-sec" id="set-learn" data-sec="Learned corrections"><div class="section-title"><h2>Learned from your corrections</h2></div>
-    <p class="small muted" style="margin-top:0">When you change the project, priority, topic, category or whose action Claude chose for an emailed task, the next analyses are told about it.</p>
-    ${items.length ? `<ul class="learn-list">${items.slice().reverse().slice(0, 20).map(x => `<li><span class="small">${esc(x.sender || 'Any sender')}</span> · ${esc(FIELD_LABEL[x.field] || x.field)}: <s>${esc(x.from || '—')}</s> → <b dir="auto">${esc(x.to)}</b></li>`).join('')}</ul><button class="btn sm ghost" data-act="learn-clear">Forget all corrections</button>` : '<p class="small muted">Nothing learned yet.</p>'}</section>`;
-}
 TASK_ACTIONS.push(t => t.status !== 'done' && isMine(t) && (t.emailIds || []).length ? `<button class="btn sm ghost" data-act="draft-mail" data-kind="reply" data-id="${esc(t.id)}">✉ Draft a reply</button>` : '');
 
 Object.assign(ACT, {
@@ -294,7 +268,6 @@ Object.assign(ACT, {
   'crs-open': () => crsOpen(), 'crs-draft': () => crsDraft(), 'crs-save': () => crsSave(), 'crs-close': () => { UI.crs = null; render(); },
   'mtg-extract': () => mtgExtract(), 'mtg-create': () => mtgCreate(),
   'ask-go': () => askGo(), 'ask-sug': el => { UI.ask.q = el.dataset.q; openAsk(); askGo(); }, 'ask-open': el => { $('#modal').hidden = true; openDrawer('task', el.dataset.id); }, 'open-ask': () => openAsk(),
-  'learn-clear': () => { colPut('prefs', { id: 'learned', items: [] }); render(); toast('Corrections forgotten.'); },
 });
 document.addEventListener('input', e => { if (e.target && e.target.dataset && e.target.dataset.crs !== undefined && UI.crs) { const r = UI.crs.rows[+e.target.dataset.crs]; if (r) r.response = e.target.value; } });
 window.addEventListener('hashchange', () => { const v = location.hash.slice(1); if (St.ready && VIEWS.includes(v) && v !== UI.view) go(v); });

@@ -9,7 +9,7 @@ SHOTS = os.path.join(HERE, 'shots'); os.makedirs(SHOTS, exist_ok=True)
 
 async def main():
     async with async_playwright() as p:
-        b = await p.chromium.launch(); pg = await (await b.new_context(viewport={'width': 1366, 'height': 950})).new_page()
+        b = await p.chromium.launch(); fc = await b.new_context(viewport={'width': 1366, 'height': 950}); await fc.add_init_script('window.__gmExtra = true;'); pg = await fc.new_page()
         pg.on('pageerror', lambda e: errors.append('PAGEERROR ' + str(e)))
         await pg.route('**/*', route); await pg.goto('https://app.test/#import'); await pg.wait_for_selector('[data-act="gmail-check"]')
         ev = pg.evaluate
