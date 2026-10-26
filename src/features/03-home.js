@@ -101,9 +101,12 @@ function paletteItems(q) {
     ['Full backup (.json)', () => exportJSON()], ['Recycle bin', () => { go('setup'); setTimeout(() => document.getElementById('set-bin')?.scrollIntoView(), 80); }],
     ...(DESKTOP && DK.status().desktop && DK.status().desktop.locked ? [['Lock now', () => showLock()]] : []),
   ];
-  for (const [v, l] of views) if (!nq || E.normMatch('go to ' + l).includes(nq)) add('Go to', l, () => go(v));
-  for (const [l, f] of acts) if (!nq || E.normMatch(l).includes(nq)) add('Actions', l, f);
-  if (q.trim().length > 2 && St.sample) add('Ask Claude', `Ask: “${q.trim()}”`, () => openAsk(q.trim()));
+  // the lite build (tasks, canvas and emails only) offers just what it has
+  const LITE_ACTS = ['New task', 'Quick add for today', 'Check Gmail now', 'Focus mode', 'Morning briefing — write again', 'Privacy mode on/off', 'Keyboard shortcuts', 'Full backup (.json)', 'Recycle bin'];
+  const lite = typeof AR_LITE !== 'undefined';
+  for (const [v, l] of views) if ((!lite || document.querySelector(`.rail [data-nav="${v}"]`)) && (!nq || E.normMatch('go to ' + l).includes(nq))) add('Go to', l, () => go(v));
+  for (const [l, f] of acts) if ((!lite || LITE_ACTS.includes(l)) && (!nq || E.normMatch(l).includes(nq))) add('Actions', l, f);
+  if (q.trim().length > 2 && St.sample && typeof openAsk === 'function') add('Ask Claude', `Ask: “${q.trim()}”`, () => openAsk(q.trim()));
   if (nq) {
     const words = nq.split(' ');
     const hit = s => { const h = E.normMatch(s); return words.every(w => h.includes(w)); };

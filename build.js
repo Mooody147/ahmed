@@ -8,11 +8,11 @@ const ic = { I_TODO: svg('<rect x="4" y="4" width="16" height="16" rx="3"/><path
 const read = f => fs.readFileSync(f, 'utf8').replace(/\r\n/g, '\n');
 // app.js plus src/features/*.js (in name order), inserted before app.js's boot section so the
 // feature files share its scope (state, helpers, action tables)
-function appSource() {
+function appSource(keep) {
   const app = read('src/app.js'); const mark = '/* ---------- boot ---------- */';
   const i = app.indexOf(mark); if (i < 0) throw new Error('app.js: boot marker missing');
   const dir = 'src/features';
-  const parts = fs.existsSync(dir) ? fs.readdirSync(dir).filter(f => f.endsWith('.js')).sort().map(f => `/* ===== features/${f} ===== */\n` + read(path.join(dir, f))) : [];
+  const parts = fs.existsSync(dir) ? fs.readdirSync(dir).filter(f => f.endsWith('.js') && (!keep || keep.includes(f.slice(0, 2)))).sort().map(f => `/* ===== features/${f} ===== */\n` + read(path.join(dir, f))) : [];
   return app.slice(0, i) + parts.join('\n') + '\n' + app.slice(i);
 }
 // the workbook engine and converter run next to core.js (they set globalThis.WBE / WBC)
@@ -20,6 +20,17 @@ const coreSource = () => read('src/wb/engine.js') + '\n' + read('src/wb/convert.
 let h = read('src/shell.html');
 for (const [k, v] of Object.entries(ic)) h = h.split('/*' + k + '*/').join(v);
 
+// node build.js lite -> dist/action-register-lite.html: only tasks, the canvas and reading emails (a claude.ai
+// artifact you open on any device; data in your Claude account, emails read by your Claude plan, Gmail through
+// the claude.ai Gmail connector)
+if (process.argv[2] === 'lite') {
+  const KEEP = ['00', '01', '02', '03', '04', '05', '12', '22', '23'];
+  const NAV_OFF = ['daily', 'docs', 'insights', 'plan', 'notebook', 'money', 'tools'];
+  const lite = h.split('\n').filter(l => !NAV_OFF.some(v => l.includes(`data-nav="${v}"`))).join('\n');
+  const out = lite.replace('/*STYLE*/', () => read('src/style.css')).replace('/*CORE*/', () => 'const AR_LITE = true;\n' + coreSource()).replace('/*APP*/', () => appSource(KEEP));
+  fs.mkdirSync('dist', { recursive: true }); fs.writeFileSync('dist/action-register-lite.html', out); console.log('built dist/action-register-lite.html', out.length);
+  return;
+}
 if (process.argv[2] !== 'desktop') {
   const out = h.replace('/*STYLE*/', () => read('src/style.css')).replace('/*CORE*/', () => coreSource()).replace('/*APP*/', () => appSource());
   fs.mkdirSync('dist', { recursive: true }); fs.writeFileSync('dist/action-register.html', out); console.log('built dist/action-register.html', out.length);

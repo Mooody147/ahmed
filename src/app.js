@@ -3005,5 +3005,5 @@ async function recheckAI() {
   St.limits = St.sample ? await St.sample.limits().catch(() => null) : St.limits;
   render(); return !!St.sample;
 }
-window.__AR = { St, UI, E, mapSVG, learnedNotes, recheckAI }; // debugging hook
+window.__AR = { St, UI, E, mapSVG, learnedNotes: typeof learnedNotes === 'function' ? learnedNotes : null, recheckAI }; // debugging hook
 })();

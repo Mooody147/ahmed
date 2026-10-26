@@ -17,7 +17,7 @@ def gmail_fixtures_js():
         fx['m%d' % i] = base64.urlsafe_b64encode(open(os.path.join(FX, f + '.eml'), 'rb').read()).decode().rstrip('=')
     return 'window.__GMFX=' + json.dumps(fx) + ';'
 def skeleton(no_gmail=False):
-    page = open(os.path.join(ROOT, 'dist', 'action-register.html')).read()
+    page = open(os.path.join(ROOT, 'dist', os.environ.get('AR_PAGE', 'action-register.html'))).read()
     pre = '<script>window.__noGmail=true;</script>' if no_gmail else ''
     return ('<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover">'
             '<style>[hidden]{display:none!important}body{margin:0}</style>' + pre +
