@@ -123,7 +123,7 @@ async def main():
         assert abs(tn['x'] - cx) < 30 and abs(tn['y'] - cy) < 30
 
         # rename a project inline
-        await pg.click('details[data-menu="view"] > summary'); await pg.click('[data-act="map-reset-layout"]'); await pg.wait_for_timeout(300)
+        await pg.click('details[data-menu="options"] > summary'); await pg.click('[data-act="map-reset-layout"]'); await pg.wait_for_timeout(300)
         assert not await ev("Object.keys(window.__AR.St.layout.off).length"), 'tidy layout clears manual positions'
         await pg.click('[data-act="map-fit"]'); await pg.wait_for_timeout(500)
         await pg.hover('.mnode.project >> nth=0'); await pg.click('.mnode.project >> nth=0 >> [data-map="rename"]'); await pg.wait_for_timeout(150)
@@ -174,10 +174,10 @@ async def main():
         await pg.screenshot(path=SHOTS + '/83-canvas-day.png')
         # as of yesterday: today's tasks disappear
         y = await ev("window.__AR.E.addDays(window.__AR.E.todayISO(), -1)")
-        await pg.click('details[data-menu="hist"] > summary'); await pg.wait_for_timeout(100)
+        await pg.click('details[data-menu="options"] > summary'); await pg.wait_for_timeout(100)
         await pg.fill('#map-asof', y); await pg.dispatch_event('#map-asof', 'change'); await pg.wait_for_timeout(600)
         print('AS OF yesterday task nodes', await ev("document.querySelectorAll('.mnode.task').length")); assert await ev("document.querySelectorAll('.mnode.task').length") == 0
-        assert await ev("!!document.querySelector('details[data-menu=\"hist\"][open]')"), 'History menu stays open after a change'
+        assert await ev("!!document.querySelector('details[data-menu=\"options\"][open]')"), 'History menu stays open after a change'
         await pg.click('[data-act="map-now"]'); await pg.wait_for_timeout(400)
         assert await ev("document.querySelectorAll('.mnode.task').length") > 0
 
@@ -191,12 +191,12 @@ async def main():
         await pg.screenshot(path=SHOTS + '/86-canvas-far.png')
         await pg.click('[data-act="map-fit"]'); await pg.wait_for_timeout(300)
         # export PNG and PDF (web build: PNG saved, PDF opens print)
-        await pg.click('details[data-menu="export"] > summary'); await pg.click('[data-act="map-export"][data-f="png"]')
+        await pg.click('details[data-menu="options"] > summary'); await pg.click('[data-act="map-export"][data-f="png"]')
         await pg.wait_for_function("(window.__saves||[]).some(s=>s.filename.endsWith('.png'))", timeout=10000)
         sv = await ev("(window.__saves||[]).map(s=>s.filename)"); print('EXPORT saves', sv); assert any(n.endswith('.png') for n in sv)
         svgok = await ev("(()=>{const x=window.__AR.mapSVG(); return x.svg.startsWith('<svg') && x.svg.includes('My work') && x.w>300})()"); assert svgok
         # presentation
-        await pg.click('details[data-menu="export"] > summary'); await pg.click('[data-act="map-present"]'); await pg.wait_for_timeout(700)
+        await pg.click('details[data-menu="options"] > summary'); await pg.click('[data-act="map-present"]'); await pg.wait_for_timeout(700)
         pres = await ev("document.querySelector('.present-bar') && document.querySelector('.present-bar').textContent"); print('PRESENT', ' '.join((pres or '').split()))
         assert pres and '1 /' in pres
         await pg.screenshot(path=SHOTS + '/87-canvas-present.png')

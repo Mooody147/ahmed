@@ -51,42 +51,45 @@ h2 { font-weight: 700; letter-spacing: -.005em; }
 .label { letter-spacing: .1em; color: var(--wine-3); }
 :focus-visible { outline-color: var(--wine-3); }
 
-/* ---------- command bar (desktop and tablets) ---------- */
-@media (min-width: 861px) {
-  .app { display: block; }
-  .rail { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 30; height: auto; flex-direction: row; align-items: center; flex-wrap: nowrap; gap: 4px;
-    padding-block: 10px; padding-left: max(20px, env(safe-area-inset-left, 0px)); padding-right: max(20px, env(safe-area-inset-right, 0px));
-    background: var(--bar); border: 0; box-shadow: 0 1px 0 rgba(255,255,255,.08) inset, 0 8px 24px -14px rgba(60, 14, 30, .55); backdrop-filter: none; }
-  .rail .brand { padding: 0 18px 0 0; margin-right: 6px; border-right: 1px solid rgba(255,255,255,.18); }
-  .rail .brand-name { color: #fff; font-size: 17px; letter-spacing: .01em; }
-  .rail .brand-sub { color: rgba(255,255,255,.62); font-size: 11px; }
-  .rail .brand-mark { background: #fff; color: #7A1F3D; box-shadow: 0 6px 14px -8px rgba(0,0,0,.6); }
-  .rail .nav { width: auto; padding: 9px 14px; border-radius: 10px; color: rgba(255,255,255,.78); font-family: var(--f-display); font-weight: 600; font-size: 14px; letter-spacing: .01em; position: relative; white-space: nowrap; }
-  .rail .nav svg { opacity: .9; }
-  .rail .nav:hover { background: rgba(255,255,255,.1); color: #fff; }
-  .rail .nav[aria-current="page"] { background: rgba(255,255,255,.14); color: #fff; box-shadow: none; }
-  .rail .nav[aria-current="page"]::after { content: ""; position: absolute; left: 14px; right: 14px; bottom: -10px; height: 3px; border-radius: 3px 3px 0 0; background: #fff; }
-  .rail .nav .count { background: rgba(255,255,255,.18); color: #fff; margin-left: 4px; }
-  .rail .nav .count.hot { background: #fff; color: #7A1F3D; }
-  .rail .nav[data-nav="setup"] { margin-left: auto; }
-  .rail .rail-foot { order: 99; margin: 0 0 0 10px; padding: 0 0 0 14px; border-top: 0; border-left: 1px solid rgba(255,255,255,.18); color: rgba(255,255,255,.7); font-size: 11.5px; display: block; max-width: 210px; }
-  .rail .rail-foot > div:not(#storage-mode) { display: none; }
-  main { padding-top: 26px; }
-}
-@media (min-width: 861px) and (max-width: 1120px) { .rail .brand-sub, .rail .rail-foot { display: none !important; } .rail .nav { padding: 9px 10px; } }
 
-/* ---------- phones ---------- */
-@media (max-width: 860px) {
-  .topbar { background: var(--bar); border-bottom: 0; color: #fff; }
-  .topbar .brand-name { color: #fff; }
-  .topbar .brand-mark { background: #fff; color: #7A1F3D; }
-  .topbar .icon-btn { color: #fff; }
-  .topbar .icon-btn:hover { background: rgba(255,255,255,.12); }
-  .tabbar { background: var(--surface); border-top: 1px solid var(--line); box-shadow: 0 -10px 24px -18px rgba(60, 14, 30, .45); }
-  .tab { font-family: var(--f-display); font-weight: 600; font-size: 11px; }
-  .tab[aria-current="page"] { color: var(--wine); }
-  .tab[aria-current="page"]::before { content: ""; position: absolute; top: -4px; left: 28%; right: 28%; height: 3px; border-radius: 0 0 3px 3px; background: var(--wine); }
+/* ---------- command bar ---------- */
+
+.rail { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 30; height: auto; flex-direction: row; align-items: center; flex-wrap: nowrap; gap: 4px;
+  padding-block: 10px; padding-left: max(20px, env(safe-area-inset-left, 0px)); padding-right: max(20px, env(safe-area-inset-right, 0px));
+  background: var(--bar); border: 0; box-shadow: 0 1px 0 rgba(255,255,255,.08) inset, 0 8px 24px -14px rgba(60, 14, 30, .55); backdrop-filter: none; }
+.rail .brand { padding: 0 18px 0 0; margin-right: 6px; border-right: 1px solid rgba(255,255,255,.18); }
+.rail .brand-name { color: #fff; font-size: 17px; letter-spacing: .01em; }
+.rail .brand-sub { color: rgba(255,255,255,.62); font-size: 11px; }
+.rail .brand-mark { background: #fff; color: #7A1F3D; box-shadow: 0 6px 14px -8px rgba(0,0,0,.6); }
+.rail .nav { width: auto; padding: 9px 14px; border-radius: 10px; color: rgba(255,255,255,.78); font-family: var(--f-display); font-weight: 600; font-size: 14px; letter-spacing: .01em; position: relative; white-space: nowrap; }
+.rail .nav svg { opacity: .9; }
+.rail .nav:hover { background: rgba(255,255,255,.1); color: #fff; }
+.rail .nav[aria-current="page"] { background: rgba(255,255,255,.14); color: #fff; box-shadow: none; }
+.rail .nav[aria-current="page"]::after { content: ""; position: absolute; left: 14px; right: 14px; bottom: -10px; height: 3px; border-radius: 3px 3px 0 0; background: #fff; }
+.rail .nav .count { background: rgba(255,255,255,.18); color: #fff; margin-left: 4px; }
+.rail .nav .count.hot { background: #fff; color: #7A1F3D; }
+.rail .nav[data-nav="setup"] { margin-left: auto; }
+.rail .rail-foot { order: 99; margin: 0 0 0 10px; padding: 0 0 0 14px; border-top: 0; border-left: 1px solid rgba(255,255,255,.18); color: rgba(255,255,255,.7); font-size: 11.5px; display: block; max-width: 210px; }
+.rail .rail-foot > div:not(#storage-mode) { display: none; }
+main { padding-top: 26px; }
+
+/* the tabs stay in the header on every screen: labels shrink to icons on narrow screens; no bottom tab bar */
+.app { display: block; }
+.rail { display: flex !important; }
+.topbar, .tabbar { display: none !important; }
+.toasts { bottom: calc(16px + env(safe-area-inset-bottom, 0px)) !important; }
+main { padding-bottom: 40px !important; }
+@media (max-width: 1120px) { .rail .brand-sub, .rail .rail-foot { display: none !important; } .rail .nav { padding: 9px 10px; } }
+@media (max-width: 760px) {
+  .rail { gap: 2px; padding-block: 8px; padding-left: max(12px, env(safe-area-inset-left, 0px)); padding-right: max(12px, env(safe-area-inset-right, 0px)); }
+  .rail .brand { padding-right: 10px; margin-right: 4px; gap: 8px; }
+  .rail .brand-name { font-size: 15px; }
+  .rail .nav { font-size: 0; gap: 0; padding: 9px; justify-content: center; }
+  .rail .nav svg { width: 20px; height: 20px; }
+  .rail .nav .count { font-size: 10.5px; min-width: 18px; padding: 0 5px; margin-left: 2px; }
+  .rail .nav[aria-current="page"]::after { left: 8px; right: 8px; bottom: -8px; }
 }
+@media (max-width: 420px) { .rail .brand-name { display: none; } .rail .brand { border-right: 0; padding-right: 0; } }
 
 /* ---------- sheets, buttons, fields ---------- */
 .wrap { max-width: 1180px; gap: 20px; }

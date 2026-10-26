@@ -447,8 +447,20 @@ body { background-color: var(--bg); background-image: linear-gradient(var(--grid
 .mp-chip:first-child { padding-left: 12px; }
 .mp-chip.on { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-2); }
 .pbadge.xs { width: 26px; height: 26px; border-radius: 8px; font-size: 10.5px; }
-.map-tools { gap: 10px 12px; }
-.map-tools .todo-search { flex: 1 1 220px; }
+.map-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--elev-1); }
+.map-tools .todo-search { flex: 1 1 200px; min-width: 150px; }
+.map-tools .mt-spacer { flex: 0 1 auto; }
+.map-tools .mt-group { display: inline-flex; gap: 6px; }
+.map-tools .btn .lbl { margin-inline-start: 6px; }
+.map-tools .btn, .map-tools .seg button { min-width: 34px; }
+.map-tools .mode-seg { flex: none; }
+.mt-more .menu-pop { right: 0; left: auto; }
+.mt-pop { min-width: 270px; display: grid; gap: 14px; }
+.mt-sec { display: grid; gap: 6px; }
+.mt-sec + .mt-sec { border-top: 1px solid var(--line-2); padding-top: 12px; }
+@media (max-width: 1180px) { .map-tools .btn .lbl { display: none; } }
+@media (max-width: 1040px) { .map-tools .todo-search { order: 9; flex-basis: 100%; } .map-tools .mt-spacer { flex: 1 1 auto; } }
+@media (max-width: 640px) { .map-tools .zoom [data-z] { display: none; } .map-tools { gap: 6px; } }
 .seg.zoom button { min-width: 36px; font-weight: 700; }
 .map-body { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
 .map-body.with-act { grid-template-columns: minmax(0, 1fr) 300px; }

@@ -74,12 +74,9 @@ async def main():
         m = await b.new_context(viewport={'width': 390, 'height': 844}, is_mobile=True, has_touch=True, color_scheme='dark'); mp = await m.new_page(); await mp.route('**/*', route)
         mp.on('pageerror', lambda e: errors.append('PAGEERROR mobile ' + str(e)))
         await mp.goto('https://app.test/#todo'); await mp.wait_for_selector('h1'); await mp.wait_for_timeout(1200)
-        tabs = await mp.evaluate("[...document.querySelectorAll('.tabbar [data-nav]')].map(b => b.dataset.nav)"); print('TABS', tabs)
-        assert 'daily' not in tabs
-        await mp.click('.tabbar [data-act="more-menu"]'); await mp.wait_for_timeout(300)
-        more = await mp.evaluate("[...document.querySelectorAll('.more-sheet [data-act=\"more-go\"]')].map(b => b.dataset.view)"); print('MORE', more)
-        assert more == ['setup'], more
-        await mp.keyboard.press('Escape')
+        tabs = await mp.evaluate("[...document.querySelectorAll('.rail [data-nav]')].filter(b => b.offsetParent && b.getBoundingClientRect().top < 80).map(b => b.dataset.nav)"); print('HEADER TABS on phone', tabs)
+        assert tabs == ['todo', 'review', 'import', 'emails', 'setup'], tabs
+        assert not await mp.evaluate("!!(document.querySelector('.tabbar') && document.querySelector('.tabbar').offsetParent)"), 'no bottom tab bar'
         await mp.screenshot(path=SHOTS + '/lite-3-phone.png')
         print('MOBILE overflow', await mp.evaluate("document.documentElement.scrollWidth>innerWidth"))
         print('ERRORS', errors); assert not errors

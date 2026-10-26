@@ -689,7 +689,7 @@ function viewTodo() {
     ${!St.settings.setupDone ? setupCardHTML() : ''}
     ${uncategorised && St.sample ? callout('info', `<div class="row"><span>${CAT.running ? '🧠 Claude is sorting your tasks into projects and categories…' : `🏷️ ${uncategorised} task${uncategorised > 1 ? 's are' : ' is'} not categorised yet.`}</span><span class="spacer"></span>${CAT.running ? '<div class="progress indet" style="width:90px"><i></i></div>' : `<button class="btn sm primary" data-act="ai-categorize">Categorise with Claude</button>`}</div>`) : ''}
     ${CAT.error && !CAT.running ? callout('warn', `<p>${esc(CAT.error)}</p>`) : ''}
-    ${St.tasks.size ? `<div class="mode-bar"><div class="seg mode-seg" role="group" aria-label="Layout"><button data-act="todo-mode" data-mode="map" aria-pressed="${UI.todoMode === 'map'}">🧠 Map</button><button data-act="todo-mode" data-mode="board" aria-pressed="${UI.todoMode === 'board'}">▦ Board</button><button data-act="todo-mode" data-mode="list" aria-pressed="${UI.todoMode === 'list'}">☰ List</button></div></div>` : ''}
+    ${St.tasks.size && UI.todoMode !== 'map' ? `<div class="mode-bar">${modeSegHTML()}</div>` : ''}
     ${St.tasks.size && UI.todoMode === 'map' ? viewMap() : ''}
     ${St.tasks.size && UI.todoMode !== 'map' ? `<div class="tiles" role="toolbar" aria-label="Filter">${tiles.map(([k, e, l, cls]) => `<button class="tile ${cls} ${c[k] ? '' : 'zero'}" data-act="todo-filter" data-filter="${k}" aria-pressed="${f === k}"><span class="tile-e">${e}</span><span class="tile-n num">${c[k]}</span><span class="tile-l">${l}</span></button>`).join('')}</div>
     <div class="todo-bar">
@@ -1060,6 +1060,8 @@ function toolsHTML() {
     <button class="cvt" data-act="cv-redo" title="Redo (Ctrl+Shift+Z)" aria-label="Redo" ${UI.cvRedo.length ? '' : 'disabled'}>${svg('<path d="m15 14 5-5-5-5"/><path d="M20 9H9a5 5 0 0 0 0 10h3"/>', 18)}</button>
   </div>`;
 }
+// Map / Board / List: at the start of the canvas toolbar in Map, above the list in Board and List
+function modeSegHTML() { return `<div class="seg mode-seg" role="group" aria-label="Layout"><button data-act="todo-mode" data-mode="map" aria-pressed="${UI.todoMode === 'map'}">🧠 Map</button><button data-act="todo-mode" data-mode="board" aria-pressed="${UI.todoMode === 'board'}">▦ Board</button><button data-act="todo-mode" data-mode="list" aria-pressed="${UI.todoMode === 'list'}">☰ List</button></div>`; }
 function viewMap() {
   const M = buildMap(); UI.mapLayout = M;
   const hits = mapHits();
@@ -1072,37 +1074,40 @@ function viewMap() {
     ${UI.mapRefresh && (UI.mapRefresh.pending || UI.mapRefresh.binned) ? callout('info', `<div class="row"><span>⟳ Canvas refreshed.${UI.mapRefresh.pending ? ` <b>${UI.mapRefresh.pending}</b> analysed email${UI.mapRefresh.pending > 1 ? 's have' : ' has'} tasks not added yet.` : ''}${UI.mapRefresh.binned ? ` <b>${UI.mapRefresh.binned}</b> task${UI.mapRefresh.binned > 1 ? 's' : ''} from emails ${UI.mapRefresh.binned > 1 ? 'were' : 'was'} deleted in the last 30 days.` : ''}</span><span class="spacer"></span>${UI.mapRefresh.pending ? '<button class="btn sm primary" data-act="map-add-pending">Add their tasks</button>' : ''}${UI.mapRefresh.binned ? '<button class="btn sm" data-act="map-restore-binned">Put them back</button>' : ''}<button class="btn sm ghost" data-act="map-refresh-close">✕</button></div>`) : ''}
     ${UI.mapAsOf ? callout('info', `<div class="row"><span>🕒 Showing the map as it was on <b>${esc(fmtDate(UI.mapAsOf, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }))}</b>: later tasks are hidden and work finished later shows as open. Projects and topics are shown as they are now.</span><span class="spacer"></span><button class="btn sm" data-act="map-now">Back to now</button></div>`) : ''}
     <div class="map-toolbar">
+      <div class="map-tools" role="toolbar" aria-label="Canvas">
+        ${modeSegHTML()}
+        <label class="search todo-search">${I.search}<span class="sr">Find on map</span><input class="input" id="map-q" type="search" placeholder="Find a task, item or note…" value="${esc(UI.mapQ)}" data-inp="mapQ"></label>
+        ${hits ? `<span class="small muted mt-hits">${hits.size} found</span>` : ''}
+        <span class="mt-spacer"></span>
+        <div class="mt-group">
+          <button class="btn sm" data-act="map-rearrange" title="Put every box back in tidy order (Shift+R)">⊞<span class="lbl">Rearrange</span></button>
+          <button class="btn sm" data-act="map-refresh" title="Show every task and email again">⟳<span class="lbl">Refresh</span></button>
+        </div>
+        <div class="seg mt-seg"><button data-act="cv-undo" title="Undo (Ctrl+Z)" aria-label="Undo" ${UI.cvUndo.length ? '' : 'disabled'}>↶</button><button data-act="cv-redo" title="Redo (Ctrl+Shift+Z)" aria-label="Redo" ${UI.cvRedo.length ? '' : 'disabled'}>↷</button></div>
+        <div class="seg zoom mt-seg"><button data-act="map-zoom" data-z="-1" aria-label="Zoom out" title="Zoom out">−</button><button data-act="map-fit" aria-label="Fit to screen" title="Fit to screen">Fit</button><button data-act="map-zoom" data-z="1" aria-label="Zoom in" title="Zoom in">+</button></div>
+        ${DESKTOP && !SUBWIN ? '<button class="btn sm" data-act="pop-out" data-view="todo" title="Open the canvas in another window (second monitor)">⧉</button>' : ''}
+        <button class="btn sm" data-act="map-full" aria-pressed="${UI.mapFull}" title="${UI.mapFull ? 'Exit full screen (Esc)' : 'Full screen (Shift+F)'}" aria-label="Full screen">${UI.mapFull ? '⤡' : '⤢'}</button>
+        <details class="menu mt-more" ${UI.menuOpen === 'options' ? 'open' : ''} data-menu="options"><summary class="btn sm ${UI.mapDay || UI.mapAsOf ? 'on' : ''}" title="Show, history and export">⋯<span class="lbl">More</span>${UI.mapDay || UI.mapAsOf ? ' ·' : ''}</summary><div class="menu-pop mt-pop">
+          <div class="mt-sec"><div class="label">Show</div>
+            <label class="check small"><input type="checkbox" id="map-done" data-chg="map-opt" data-key="mapShowDone" ${UI.mapShowDone ? 'checked' : ''}>Completed tasks (history)</label>
+            <label class="check small"><input type="checkbox" id="map-act" data-chg="map-opt" data-key="mapActivity" ${UI.mapActivity ? 'checked' : ''}>Activity panel</label>
+            <label class="check small"><input type="checkbox" id="map-bands" data-chg="map-opt" data-key="mapBands" ${UI.mapBands !== false ? 'checked' : ''}>Project colour bands</label>
+            <label class="check small"><input type="checkbox" id="map-mini" data-chg="map-opt" data-key="mapMini" ${UI.mapMini !== false ? 'checked' : ''}>Minimap</label>
+            ${offN || Object.keys(St.layout.size || {}).length ? `<button class="btn sm ghost" data-act="map-reset-layout" title="Put every box back in its place and its normal size">↺ Reset positions and sizes</button>` : ''}</div>
+          <div class="mt-sec"><div class="label">History</div>
+            <label class="small map-date" title="Highlight the tasks worked on that day">📌 Highlight day <input class="input" type="date" id="map-day" data-chg="map-day" value="${esc(UI.mapDay)}" max="${T()}"></label>
+            <label class="small map-date" title="Show the map as it was on a past date">🕒 Map as of <input class="input" type="date" id="map-asof" data-chg="map-asof" value="${esc(UI.mapAsOf)}" max="${T()}"></label>
+            ${UI.mapDay || UI.mapAsOf ? '<button class="btn sm ghost" data-act="map-hist-clear">Clear</button>' : ''}</div>
+          <div class="mt-sec"><div class="label">Export</div>
+            <button class="btn sm ghost" data-act="map-export" data-f="png">🖼 Image (PNG)</button>
+            <button class="btn sm ghost" data-act="map-export" data-f="pdf">📄 PDF</button>
+            <button class="btn sm ghost" data-act="map-present">🖥 Present project by project</button>
+            ${DESKTOP ? '<button class="btn sm ghost" data-act="map-share">🔗 Share link (always up to date)…</button>' : ''}</div>
+        </div></details>
+      </div>
       <div class="map-projects" role="toolbar" aria-label="Projects">
         <button class="mp-chip ${UI.mapFocus === 'all' ? 'on' : ''}" data-act="map-focus" data-pk="all">🌐 All projects</button>
         ${allProjects.map(([k, l]) => `<button class="mp-chip ${UI.mapFocus === k ? 'on' : ''}" data-act="map-focus" data-pk="${esc(k)}">${k === 'p:~' ? '🗂️' : projBadge(l, 'xs')}<span dir="auto">${esc(l)}</span></button>`).join('')}
-      </div>
-      <div class="row map-tools">
-        <label class="search todo-search">${I.search}<span class="sr">Find on map</span><input class="input" id="map-q" type="search" placeholder="Find a task, item or note…" value="${esc(UI.mapQ)}" data-inp="mapQ"></label>
-        ${hits ? `<span class="small muted">${hits.size} found</span>` : ''}
-        <details class="menu" ${UI.menuOpen === 'view' ? 'open' : ''} data-menu="view"><summary class="btn sm">👁 View</summary><div class="menu-pop">
-          <label class="check small"><input type="checkbox" id="map-done" data-chg="map-opt" data-key="mapShowDone" ${UI.mapShowDone ? 'checked' : ''}>Completed tasks (history)</label>
-          <label class="check small"><input type="checkbox" id="map-act" data-chg="map-opt" data-key="mapActivity" ${UI.mapActivity ? 'checked' : ''}>Activity panel</label>
-          <label class="check small"><input type="checkbox" id="map-bands" data-chg="map-opt" data-key="mapBands" ${UI.mapBands !== false ? 'checked' : ''}>Project colour bands</label>
-          <label class="check small"><input type="checkbox" id="map-mini" data-chg="map-opt" data-key="mapMini" ${UI.mapMini !== false ? 'checked' : ''}>Minimap</label>
-          ${offN ? `<button class="btn sm ghost" data-act="map-reset-layout" title="Put every node back in its automatic place">↺ Tidy layout</button>` : ''}
-        </div></details>
-        <details class="menu" ${UI.menuOpen === 'hist' ? 'open' : ''} data-menu="hist"><summary class="btn sm ${UI.mapDay || UI.mapAsOf ? 'on' : ''}">🕒 History${UI.mapDay || UI.mapAsOf ? ' ·' : ''}</summary><div class="menu-pop">
-          <label class="small map-date" title="Highlight the tasks worked on that day">📌 Highlight day <input class="input" type="date" id="map-day" data-chg="map-day" value="${esc(UI.mapDay)}" max="${T()}"></label>
-          <label class="small map-date" title="Show the map as it was on a past date">🕒 Map as of <input class="input" type="date" id="map-asof" data-chg="map-asof" value="${esc(UI.mapAsOf)}" max="${T()}"></label>
-          ${UI.mapDay || UI.mapAsOf ? '<button class="btn sm ghost" data-act="map-hist-clear">Clear</button>' : ''}
-        </div></details>
-        <details class="menu" ${UI.menuOpen === 'export' ? 'open' : ''} data-menu="export"><summary class="btn sm">⬇ Export</summary><div class="menu-pop">
-          <button class="btn sm ghost" data-act="map-export" data-f="png">🖼 Image (PNG)</button>
-          <button class="btn sm ghost" data-act="map-export" data-f="pdf">📄 PDF</button>
-          <button class="btn sm ghost" data-act="map-present">🖥 Present project by project</button>
-          ${DESKTOP ? '<button class="btn sm ghost" data-act="map-share">🔗 Share link (always up to date)…</button>' : ''}
-        </div></details>
-        <button class="btn sm" data-act="map-rearrange" title="Put every box back in tidy order (Shift+R)">⊞ Rearrange</button>
-        <button class="btn sm" data-act="map-refresh" title="Show every task and email again">⟳ Refresh</button>
-        <div class="seg"><button data-act="cv-undo" title="Undo (Ctrl+Z)" ${UI.cvUndo.length ? '' : 'disabled'}>↶ Undo</button><button data-act="cv-redo" title="Redo (Ctrl+Shift+Z)" ${UI.cvRedo.length ? '' : 'disabled'}>↷ Redo</button></div>
-        <div class="seg zoom"><button data-act="map-zoom" data-z="-1" aria-label="Zoom out">−</button><button data-act="map-fit" aria-label="Fit to screen">Fit</button><button data-act="map-zoom" data-z="1" aria-label="Zoom in">+</button></div>
-        ${DESKTOP && !SUBWIN ? '<button class="btn sm" data-act="pop-out" data-view="todo" title="Open the canvas in another window (second monitor)">⧉ Window</button>' : ''}
-        <button class="btn sm" data-act="map-full" aria-pressed="${UI.mapFull}" title="${UI.mapFull ? 'Exit full screen (Esc)' : 'Full screen (Shift+F)'}">${UI.mapFull ? '⤡ Exit full screen' : '⤢ Full screen'}</button>
       </div>
     </div>
     <div class="map-body ${UI.mapActivity ? 'with-act' : ''}">
