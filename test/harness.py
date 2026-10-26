@@ -15,6 +15,7 @@ def gmail_fixtures_js():
     fx = {}
     for i, f in enumerate(['fwd_attachment', 'fwd_inline', 'fwd_gmail']):
         fx['m%d' % i] = base64.urlsafe_b64encode(open(os.path.join(FX, f + '.eml'), 'rb').read()).decode().rstrip('=')
+    fx['m4'] = base64.urlsafe_b64encode(open(os.path.join(FX, 'fwd_multi.eml'), 'rb').read()).decode().rstrip('=')
     return 'window.__GMFX=' + json.dumps(fx) + ';'
 def skeleton(no_gmail=False):
     page = open(os.path.join(ROOT, 'dist', os.environ.get('AR_PAGE', 'action-register.html'))).read()

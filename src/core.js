@@ -455,6 +455,67 @@ function unwrapForward(em) {
   return { ...em, forwardMode: 'direct' };
 }
 
+/* Several emails forwarded together as attachments (Outlook: select them › Forward): each becomes its own email,
+   keeping my forwarding note. Otherwise the one email it carries (unwrapForward). */
+function splitForwards(em) {
+  const real = (em.attachments || []).filter(a => !a.inline);
+  const emailAtts = real.filter(a => a.email);
+  if (emailAtts.length >= 2 && real.length === emailAtts.length) return emailAtts.map(a => unwrapForward({ ...em, attachments: [a] }));
+  return [unwrapForward(em)];
+}
+
+/* ---------- Outlook winmail.dat (TNEF): the attachments and the text inside ---------- */
+// Outlook sends this when a message is in rich-text format; every attachment is packed into it.
+function parseTnef(u8) {
+  const dv = new DataView(u8.buffer, u8.byteOffset, u8.byteLength);
+  if (u8.length < 6 || dv.getUint32(0, true) !== 0x223E9F78) return null;
+  const ansi = d => { try { return new TextDecoder('windows-1252').decode(d).replace(/\0+$/, ''); } catch { return ''; } };
+  const out = { body: '', rtf: null, attachments: [] }; let cur = null, p = 6;
+  while (p + 9 <= u8.length) {
+    const lvl = u8[p], id = dv.getUint32(p + 1, true), len = dv.getUint32(p + 5, true);
+    if (p + 9 + len > u8.length) break;
+    const data = u8.subarray(p + 9, p + 9 + len), name = id & 0xFFFF; p += 9 + len + 2;
+    if (lvl === 2) {
+      if (name === 0x9002) { cur = { name: '', mime: '', bytes: null }; out.attachments.push(cur); }
+      else if (cur && name === 0x8010) cur.name = cur.name || ansi(data);
+      else if (cur && name === 0x800F) cur.bytes = data;
+      else if (cur && name === 0x9005) { const pr = mapiProps(data); if (pr[0x3707]) cur.name = pr[0x3707]; else if (pr[0x3704] && !cur.name) cur.name = pr[0x3704]; if (pr[0x370E]) cur.mime = pr[0x370E]; if (!cur.bytes && pr[0x3701] instanceof Uint8Array) cur.bytes = pr[0x3701]; }
+    } else if (name === 0x800C) out.body = ansi(data);
+    else if (name === 0x9003) { const pr = mapiProps(data); if (typeof pr[0x1000] === 'string' && !out.body) out.body = pr[0x1000]; if (pr[0x1009] instanceof Uint8Array) out.rtf = pr[0x1009]; }
+  }
+  out.attachments = out.attachments.filter(a => a.bytes && a.bytes.length).map((a, i) => ({ ...a, name: a.name || 'attachment-' + (i + 1) }));
+  if (!out.body && out.rtf) { try { out.body = rtfToText(bytesToBin(decompressRTF(out.rtf))); } catch {} }
+  return out;
+}
+// MAPI property block (inside TNEF): id → string, number or bytes
+function mapiProps(u8) {
+  const dv = new DataView(u8.buffer, u8.byteOffset, u8.byteLength), props = {};
+  const u16 = new TextDecoder('utf-16le'), a8 = new TextDecoder('windows-1252');
+  const FIX = { 0x0002: 2, 0x0003: 4, 0x0004: 4, 0x0005: 8, 0x0006: 8, 0x0007: 8, 0x000A: 4, 0x000B: 2, 0x0014: 8, 0x0040: 8, 0x0048: 16 };
+  let p = 0;
+  try {
+    const n = dv.getUint32(p, true); p += 4;
+    for (let i = 0; i < n && p + 4 <= u8.length; i++) {
+      let type = dv.getUint16(p, true); const id = dv.getUint16(p + 2, true); p += 4;
+      if (id >= 0x8000) { p += 16; const kind = dv.getUint32(p, true); p += 4; if (kind === 0) p += 4; else { const l = dv.getUint32(p, true); p += 4 + l; p += (4 - l % 4) % 4; } }
+      const multi = !!(type & 0x1000); type &= 0x0FFF;
+      const count = multi ? (dv.getUint32(p, true), p += 4, dv.getUint32(p - 4, true)) : 1;
+      let val;
+      for (let k = 0; k < count; k++) {
+        if (FIX[type] !== undefined) { const z = FIX[type]; val = type === 0x0003 ? dv.getInt32(p, true) : null; p += z < 4 ? 4 : z; continue; }
+        const vc = (type === 0x001E || type === 0x001F || type === 0x0102 || type === 0x000D) && !multi ? (dv.getUint32(p, true), p += 4, dv.getUint32(p - 4, true)) : 1;
+        for (let j = 0; j < vc; j++) {
+          const l = dv.getUint32(p, true); p += 4; let d = u8.subarray(p, p + l); p += l + (4 - l % 4) % 4;
+          if (type === 0x000D && d.length > 16) d = d.subarray(16);
+          val = type === 0x001F ? u16.decode(d).replace(/\0+$/, '') : type === 0x001E ? a8.decode(d).replace(/\0+$/, '') : d;
+        }
+      }
+      if (!multi) props[id] = val;
+    }
+  } catch {}
+  return props;
+}
+
 /* ---------- thread key ---------- */
 const SUBJ_PREFIX = /^\s*((re|fw|fwd|aw|wg|tr|rv|sv|vs|antw|ref|رد|إعادة توجيه|توجيه)\s*(\[\d+\])?\s*[:：]\s*|\[(external|ext|caution)[^\]]*\]\s*|(external|caution)\s*:\s*)/i;
 function normSubject(s) { let x = (s || '').trim(), prev; do { prev = x; x = x.replace(SUBJ_PREFIX, ''); } while (x !== prev); return x.replace(/\s+/g, ' ').trim(); }
@@ -474,8 +535,10 @@ const KIND_BY_EXT = {
   eml: 'eml', msg: 'msg', zip: 'zip', '7z': 'archive', rar: 'archive',
   dxf: 'dxf', dwg: 'cad', dgn: 'cad', rvt: 'cad', rfa: 'cad', nwd: 'cad', nwc: 'cad', ifc: 'cad', step: 'cad', stp: 'cad', igs: 'cad', iges: 'cad', sat: 'cad', skp: 'cad', dwf: 'cad', dwfx: 'cad', sldprt: 'cad', sldasm: 'cad', slddrw: 'cad',
   mp4: 'media', mov: 'media', mp3: 'media', wav: 'media', m4a: 'media', exe: 'binary', dll: 'binary',
+  rpmsg: 'rpmsg',
 };
 function kindOf(name, mime) {
+  if (/(^|[\\/])winmail\.dat$/i.test(name || '') || /ms-tnef/i.test(mime || '')) return 'tnef';
   const k = KIND_BY_EXT[extOf(name)];
   if (k) return k;
   if (/^image\//.test(mime || '')) return 'image';
@@ -485,7 +548,7 @@ function kindOf(name, mime) {
   if (mime === 'message/rfc822') return 'eml';
   return 'unknown';
 }
-const KIND_LABEL = { pdf: 'PDF', image: 'Image', docx: 'Word', sheet: 'Spreadsheet', pptx: 'PowerPoint', text: 'Text', html: 'HTML', eml: 'Email', msg: 'Outlook item', zip: 'ZIP', dxf: 'DXF drawing', cad: 'CAD model', rtf: 'RTF', legacy: 'Legacy Office', tiff: 'TIFF image', heic: 'HEIC image', odt: 'OpenDocument', archive: 'Archive', media: 'Audio/video', binary: 'Program', unknown: 'File' };
+const KIND_LABEL = { pdf: 'PDF', image: 'Image', docx: 'Word', sheet: 'Spreadsheet', pptx: 'PowerPoint', text: 'Text', html: 'HTML', eml: 'Email', msg: 'Outlook item', zip: 'ZIP', dxf: 'DXF drawing', cad: 'CAD model', rtf: 'RTF', legacy: 'Legacy Office', tiff: 'TIFF image', heic: 'HEIC image', odt: 'OpenDocument', archive: 'Archive', media: 'Audio/video', binary: 'Program', tnef: 'Outlook winmail.dat', rpmsg: 'Protected email', unknown: 'File' };
 
 /* ---------- library loader (browser) ---------- */
 // The desktop app sets globalThis.ETM_CDN to locally bundled copies of the same versions.
@@ -730,6 +793,8 @@ async function extract(att, opts = {}) {
       case 'eml': { const em = parseEml(att.bytes); return { ...base, kind: 'email', kindLabel: 'Email', ...emailAsAttachment(em), nested: em }; }
       case 'msg': { const XLSX = await need('xlsx'); const em = readMsgFromCfb(XLSX.CFB.read(att.bytes, { type: 'array' })); return { ...base, kind: 'email', kindLabel: 'Email', ...emailAsAttachment(em), nested: em }; }
       case 'zip': return { ...base, status: 'container', note: 'ZIP archive — its files are listed separately.' };
+      case 'tnef': return { ...base, status: 'unreadable', note: 'Outlook packed this email\'s attachments in winmail.dat and it could not be opened. Ask the sender to send in HTML format, or save the attachments from Outlook and add them here.' };
+      case 'rpmsg': return { ...base, status: 'unsupported', note: 'This email is protected by your company (encrypted or "Do not forward"), so only Outlook can open it. Open it in Outlook and copy the text or save it as PDF, then add that here.' };
       case 'cad': return { ...base, status: 'unsupported', note: 'CAD/model file — can\'t be read in the browser. Add a PDF print of the drawing instead.' };
       case 'legacy': return { ...base, status: 'unsupported', note: 'Legacy Office format (.doc/.ppt) — save as .docx/.pptx or PDF and add it again.' };
       case 'odt': return { ...base, status: 'unsupported', note: 'OpenDocument text — save as .docx or PDF.' };
@@ -1017,7 +1082,11 @@ function relatedOpenTasks(tasks, email, thread, limit = 25) {
 function localFlags(email, atts) {
   const f = [];
   const b = (email.body || '').slice(0, 4000);
-  if (/\b(attached|enclosed|please find|see attachment|attachment)\b|مرفق/i.test(b) && !atts.some(a => !a.inline)) f.push({ kind: 'missing_attachment', detail: 'The email mentions an attachment but none was provided with it.', source: 'BODY', local: true });
+  const all = email.body || '';
+  const cloud = [...new Set([...all.matchAll(/https?:\/\/([\w.-]*(sharepoint\.com|1drv\.ms|onedrive\.live\.com|drive\.google\.com|docs\.google\.com|dropbox\.com|wetransfer\.com|we\.tl))[^\s>\])"']*/gi)].map(m => m[1].toLowerCase()))];
+  if (cloud.length) f.push({ kind: 'missing_attachment', detail: `The email links to files on ${cloud.slice(0, 3).join(', ')} instead of attaching them, so they were not read. Open the link, download the files and add them to this email.`, source: 'BODY', local: true });
+  else if (/\b(attached|enclosed|please find|see attachment|attachment)\b|مرفق/i.test(b) && !atts.some(a => !a.inline)) f.push({ kind: 'missing_attachment', detail: 'The email mentions an attachment but none was provided with it.', source: 'BODY', local: true });
+  if (atts.some(a => /\.rpmsg$/i.test(a.name || ''))) f.push({ kind: 'unreadable', detail: 'This email is protected by your company (encrypted or "Do not forward"); only Outlook can open it. Copy its text from Outlook or save it as PDF and add that here.', source: '', local: true });
   return f;
 }
 
@@ -1026,7 +1095,7 @@ return {
   parseEml, readMsgFromCfb, unwrapForward, b64urlToBytes, findHeaderBlock, decompressRTF, rtfToText, parsePasted, htmlToText, tidyText, decodeMimeWords, parseParams,
   normSubject, threadKey, kindOf, KIND_LABEL, extract, need, guessMime, firstEmail,
   WORK_TYPES, DISCIPLINES, buildCategorizePrompt,
-  makeMasker, buildPrompt, normalizeAnalysis, verifyEvidence, normMatch, findDuplicate, relatedOpenTasks, localFlags, tokens, jaccard,
+  makeMasker, buildPrompt, normalizeAnalysis, verifyEvidence, normMatch, findDuplicate, relatedOpenTasks, localFlags, tokens, jaccard, splitForwards, parseTnef,
   RTF_PREBUF,
 };
 })();

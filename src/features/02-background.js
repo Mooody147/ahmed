@@ -50,7 +50,7 @@ HOOKS.ready.push(() => {
       await intakeFiles([f]);
       await DK.call('watch:done', { path, ok: true });
       toast(`Imported ${name} from your watch folder.`, { action: 'Show', fn: () => go('import') });
-      if (gmCfg().autoAnalyse && St.sample && !UI.analyzing) { await extractPending(); runAnalysis(); }
+      if (gmCfg().autoAnalyse && St.sample && !UI.analyzing) { await extractPending(); runAnalysis({ auto: true }); }
     } catch { DK.call('watch:done', { path, ok: false }).catch(() => {}); }
   });
   DK.call('watch:ready').catch(() => {});

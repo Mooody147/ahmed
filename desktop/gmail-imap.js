@@ -78,14 +78,19 @@ async function call(config, tool, input = {}) {
     const { path, boxes } = await allMail(c);
     switch (tool) {
       case 'search_threads': {
-        // the app sends: to:(address) newer_than:Nd [-label:...]; already-imported mail carries LABEL
+        // the app sends: {to:a cc:a bcc:a deliveredto:a} newer_than:Nd [-label:...]; already-imported mail carries LABEL
         const q = String(input.query || '');
-        const to = (/to:\(([^)]+)\)/.exec(q) || /to:(\S+)/.exec(q) || [])[1];
+        const to = ((/to:\(([^)]+)\)/.exec(q) || /to:([^\s}]+)/.exec(q) || [])[1] || '').trim();
         const days = +((/newer_than:(\d+)d/.exec(q) || [])[1] || 14);
         if (!to) return { payload: { threads: [] } };
         const lock = await c.getMailboxLock(path);
         try {
-          const uids = (await c.search({ to: to.trim(), since: new Date(Date.now() - days * 864e5) }, { uid: true })) || [];
+          const since = new Date(Date.now() - days * 864e5);
+          // the forwarding address in To, Cc or Bcc, or only in Delivered-To (Bcc as Gmail delivered it)
+          let uids;
+          try { uids = await c.search({ since, or: [{ to }, { cc: to }, { bcc: to }, { header: { 'delivered-to': to } }] }, { uid: true }); }
+          catch { uids = await c.search({ to, since }, { uid: true }); }
+          uids = uids || [];
           const threads = [];
           if (uids.length) {
             for await (const m of c.fetch(uids.slice(-Math.min(50, input.pageSize || 25) * 2), { uid: true, envelope: true, labels: true, emailId: true, threadId: true, internalDate: true }, { uid: true })) {

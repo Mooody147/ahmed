@@ -2033,7 +2033,7 @@ function pastePanelHTML() {
     <div class="row"><label class="btn" for="paste-files">${I.clip} Add attachments</label><input id="paste-files" type="file" multiple hidden data-chg="paste-files"><span class="small muted" id="paste-files-n"></span><span class="spacer"></span><button class="btn ghost" data-act="toggle-paste">Cancel</button><button class="btn primary" data-act="add-paste">Add to list</button></div>
   </div>`;
 }
-const ATT_STATUS = { text: ['Text read', 'ok'], vision: ['As images', 'med'], mixed: ['Text + images', 'ok'], unreadable: ['Not readable', 'crit'], unsupported: ['Not supported', 'warn'], skipped: ['Skipped', ''], container: ['Archive', ''], excluded: ['Not sent', ''] };
+const ATT_STATUS = { text: ['Text read', 'ok'], vision: ['As images', 'med'], mixed: ['Text + images', 'ok'], unreadable: ['Not readable', 'crit'], unsupported: ['Not supported', 'warn'], skipped: ['Skipped', ''], container: ['Archive', ''], excluded: ['Not sent', ''], missing: ['Add the file', 'warn'] };
 function attRow(b, a) {
   const st = a.extracting ? ['Reading…', ''] : a.res ? (ATT_STATUS[a.res.status] || ['?', '']) : ['Waiting', ''];
   const detail = a.res ? [a.res.kindLabel, a.res.pages ? a.res.pages + ' p.' : '', a.res.images && a.res.images.length ? a.res.images.length + ' image' + (a.res.images.length > 1 ? 's' : '') : '', a.size ? fmtBytes(a.size) : ''].filter(Boolean).join(' · ') : (a.size ? fmtBytes(a.size) : '');
@@ -2044,6 +2044,7 @@ function attRow(b, a) {
     ${a.res && (a.res.kind === 'image' || (a.res.images || []).length) ? I.image : I.file}
     <div style="min-width:0"><div class="name" dir="auto">${esc(a.name)}</div><div class="note">${esc(detail)}${a.res && a.res.note ? ' — ' + esc(a.res.note) : ''}</div></div>
     <div class="att-side"><span class="chip ${st[1]}">${st[0]}</span>
+      ${a.missing && !['done', 'analyzing'].includes(b.state) ? `<label class="btn sm primary" for="sup-${esc(pk)}">${I.clip} Add file</label><input id="sup-${esc(pk)}" type="file" hidden data-chg="att-supply" data-bid="${esc(b.id)}" data-aid="${esc(a.id)}">${b.gmailUrl ? `<a class="btn ghost sm" href="${esc(b.gmailUrl)}" target="_blank" rel="noopener">Open in Gmail</a>` : ''}` : ''}
       ${canInclude ? `<label class="check small"><input type="checkbox" id="inc-${esc(pk)}" data-chg="att-include" data-bid="${esc(b.id)}" data-aid="${esc(a.id)}" ${a.include ? 'checked' : ''}>Send</label>` : ''}
       ${a.res && a.res.text ? `<button class="btn ghost sm" data-act="preview" data-key="${esc(pk)}">${UI.previews.has(pk) ? 'Hide' : 'Text'}</button>` : ''}
       ${others.length && !UI.analyzing ? `<select class="input" style="height:30px;width:auto;max-width:150px;font-size:12.5px" id="mv-${esc(pk)}" data-chg="move-att" data-bid="${esc(b.id)}" data-aid="${esc(a.id)}" aria-label="Move to another email"><option value="">Move to…</option>${others.map(o => `<option value="${esc(o.id)}">${esc(E.clip(o.email.subject || o.fileName || 'email', 40))}</option>`).join('')}</select>` : ''}
@@ -2075,7 +2076,7 @@ function stagingHTML() {
 function rerenderStaging() { const n = $('#staging'); if (n && UI.view === 'import') keepFocus(() => { n.innerHTML = deco(stagingHTML()); }); if (UI.view === 'import') { const btnRow = document.querySelector('[data-act="analyze"]'); if (btnRow || UI.analyzing) scheduleRender(); } }
 
 /* ----- file intake ----- */
-const mkAtt = o => ({ id: E.uid('a'), name: o.name, mime: o.mime || E.guessMime(o.name), size: o.size ?? (o.bytes ? o.bytes.length : 0), bytes: o.bytes || null, email: o.email || null, inline: !!o.inline, include: true, res: null, extracting: false });
+const mkAtt = o => ({ id: E.uid('a'), name: o.name, mime: o.mime || E.guessMime(o.name), size: o.size ?? (o.bytes ? o.bytes.length : 0), bytes: o.bytes || null, email: o.email || null, inline: !!o.inline, include: !o.missing, missing: !!o.missing, res: null, extracting: false });
 async function intakeFiles(fileList, target) {
   const files = [...fileList];
   if (!files.length) return;
@@ -2137,6 +2138,14 @@ async function addAttTo(b, a, prefix, depth) {
     (a.email.warnings || []).forEach(w => b.warnings.push(w));
     return;
   }
+  if (kind === 'tnef' && a.bytes && depth < 3) {
+    const t = E.parseTnef(a.bytes);
+    if (t && (t.attachments.length || t.body)) {
+      for (const x of t.attachments) await addAttTo(b, { name: x.name, mime: x.mime, bytes: x.bytes }, prefix, depth + 1);
+      if (t.body && t.body.trim().length > 20 && !(b.email.body || '').includes(t.body.trim().slice(0, 60))) b.atts.push(mkAtt({ name: prefix + 'Message text (from winmail.dat).txt', bytes: new TextEncoder().encode(t.body) }));
+      return;
+    }
+  }
   if (kind === 'zip' && a.bytes && depth < 3) {
     try {
       const JSZip = await E.need('jszip'); const zip = await JSZip.loadAsync(a.bytes);
@@ -2166,6 +2175,7 @@ async function extractPending() {
       const b = UI.staging.find(x => x.state === 'parsing'); if (!b) break;
       for (const a of b.atts) {
         if (a.res) continue;
+        if (a.missing) { a.res = { kind: E.kindOf(a.name, a.mime), kindLabel: E.KIND_LABEL[E.kindOf(a.name, a.mime)] || 'File', status: 'missing', note: 'Too large to download through Gmail — add the file to include it', text: '', images: [] }; a.include = false; continue; }
         a.extracting = true; rerenderStaging();
         a.res = await E.extract(a, extractOpts());
         a.extracting = false;
@@ -2209,7 +2219,7 @@ function aiErrorText(e) {
     model_not_found: 'The Claude model set in Setup › Connections was not found. Check the model names there.',
   })[c] || ('Analysis failed' + (c ? ' (' + c + ')' : '') + '.');
 }
-async function runAnalysis() {
+async function runAnalysis(opts = {}) {
   if (UI.analyzing) return;
   if (!St.sample && DESKTOP) await recheckAI();
   if (!St.sample) {
@@ -2217,7 +2227,9 @@ async function runAnalysis() {
     return;
   }
   UI.analyzing = true; render();
-  const queue = UI.staging.filter(b => b.state === 'ready' && !b.skip);
+  // automatic analysis waits for emails whose attachments you still have to add (too large for Gmail);
+  // pressing Analyse reads them as they are
+  const queue = UI.staging.filter(b => b.state === 'ready' && !b.skip && !(opts.auto && b.atts.some(a => a.missing)));
   let ok = 0;
   for (const b of queue) {
     if (!UI.analyzing) break;
@@ -2298,7 +2310,8 @@ async function analyzeBundle(b, signal, onProgress) {
   const flags = [];
   b.atts.forEach((a, i) => {
     const r = a.res || {}; const key = 'A' + (i + 1);
-    if (!a.include && r.status && !['skipped', 'container'].includes(r.status)) flags.push({ kind: ['unreadable', 'unsupported'].includes(r.status) ? 'unreadable' : 'excluded', detail: r.note || 'Not sent for analysis.', source: key, local: true });
+    if (!a.include && r.status === 'missing') flags.push({ kind: 'missing_attachment', detail: `“${a.name}” was too large to download through Gmail and was not added, so it was not read.`, source: key, local: true });
+    else if (!a.include && r.status && !['skipped', 'container'].includes(r.status)) flags.push({ kind: ['unreadable', 'unsupported'].includes(r.status) ? 'unreadable' : 'excluded', detail: r.note || 'Not sent for analysis.', source: key, local: true });
     else if (!a.include && !r.status) flags.push({ kind: 'excluded', detail: 'Not sent for analysis.', source: key, local: true });
     else if (a.include && r.note && /cannot be read|not prepared|Only the first/.test(r.note)) flags.push({ kind: 'truncated', detail: r.note, source: key, local: true });
   });
@@ -2333,7 +2346,8 @@ async function analyzeBundle(b, signal, onProgress) {
   if (s.storeText) await saveTexts(id, em.body || '', b.atts.map(a => ({ name: a.name, include: a.include, status: a.res && a.res.status, kindLabel: a.res && a.res.kindLabel, note: a.res && a.res.note, text: (a.res && a.res.text) || '' })));
   putEmail(rec);
   runHooks('emailStored', rec, b); // feature files keep the original email and its attachments
-  if (b.gmailId) { markSeen(b.gmailId, id); labelImported(b.gmailId); }
+  // several emails forwarded in one message share its Gmail id ("id:n" for the extra ones)
+  if (b.gmailId) { markSeen(b.gmailId, id); labelImported(b.gmailId.split(':')[0]); }
   return rec;
 }
 /* Long emails: every source is cut into pieces that fit one request (at page / sheet / row boundaries where
@@ -2448,6 +2462,7 @@ async function reanalyze(eid) {
 
 /* ---------- Gmail forwarding inbox (via the viewer's Gmail connector) ---------- */
 const GMAIL = 'Gmail';
+const GM_RAW_MAX = 4.5 * 1048576;
 const GM_LABEL = 'Action Register/Imported';
 const GM = { status: 'idle', error: '', lastChecked: null, newCount: 0, seen: null, autoDone: false, busy: false };
 const gmDefaults = () => ({ address: DESKTOP ? DK.suggestedAddress() : 'msobeah12+tasks@gmail.com', days: 14, autoCheck: true, autoAnalyse: true, label: true, labelId: '' });
@@ -2495,14 +2510,18 @@ async function ensureLabel() {
     return id;
   } catch { return ''; }
 }
+const LABELED = new Set();
 async function labelImported(msgId) {
-  if (!msgId || !gmCfg().label || !St.mcp) return;
+  if (!msgId || !gmCfg().label || !St.mcp || LABELED.has(msgId)) return; LABELED.add(msgId);
   try { const id = await ensureLabel(); if (id) await gmCall('label_message', { messageId: msgId, labelIds: [id] }); }
   catch (e) { if (e && e.code === 'not_in_manifest') return; }
 }
-const hasAddr = (m, addr) => [...(m.toRecipients || []), ...(m.ccRecipients || []), ...(m.bccRecipients || [])].some(r => String(r).toLowerCase().includes(addr));
+// a +tasks address is only ever used for forwards, so a message Gmail delivered to it counts even when the
+// address was in Bcc (and so is not in the recipient list); a plain address must appear in To / Cc / Bcc
+const hasAddr = (m, addr) => [...(m.toRecipients || []), ...(m.ccRecipients || []), ...(m.bccRecipients || [])].some(r => String(r).toLowerCase().includes(addr)) || (/\+/.test(addr.split('@')[0]) && !(m.labelIds || []).includes('SENT') && !(m.labelIds || []).includes('DRAFT'));
 function gmQuery(g) {
-  const parts = [`to:(${g.address.trim()})`, `newer_than:${Math.max(1, Math.min(365, +g.days || 14))}d`];
+  const a = g.address.trim();
+  const parts = [`{to:${a} cc:${a} bcc:${a} deliveredto:${a}}`, `newer_than:${Math.max(1, Math.min(365, +g.days || 14))}d`];
   if (g.label) parts.push('-label:' + GM_LABEL.toLowerCase().replace(/[\s/]+/g, '-'));
   return parts.join(' ');
 }
@@ -2530,27 +2549,33 @@ async function checkGmail(manual) {
     cands.sort((a, b) => (a.internalDate || a.date || '').localeCompare(b.internalDate || b.date || ''));
     for (const m of cands.slice(0, 15)) {
       GM.status = 'checking'; GM.error = `Downloading ${added + 1} of ${Math.min(cands.length, 15)}…`; render();
-      let b;
+      let b, more = [];
       try {
+        // Gmail's connector cannot send a whole message much over 4 MB (big drawings and PDFs): those come as text
+        // with each attachment listed, to be added by hand
+        if ((+m.sizeEstimate || 0) > GM_RAW_MAX) throw { code: 'too_large', message: 'too large' };
         const raw = payloadOf(await gmCall('get_message', { messageId: m.id, messageFormat: 'RAW' })).raw;
         if (!raw) throw { code: 'tool_error', message: 'empty message' };
         const rawBytes = E.b64urlToBytes(raw);
-        const em = E.unwrapForward(E.parseEml(rawBytes));
-        b = await bundleFromEmail(em, 'gmail', 'Forwarded · Gmail');
-        b.original = { bytes: rawBytes, kind: 'eml', name: (em.subject || 'email') + '.eml' };
+        const ems = E.splitForwards(E.parseEml(rawBytes));
+        b = await bundleFromEmail(ems[0], 'gmail', 'Forwarded · Gmail');
+        b.original = { bytes: rawBytes, kind: 'eml', name: (ems[0].subject || 'email') + '.eml' };
+        for (const x of ems.slice(1)) { const bx = await bundleFromEmail(x, 'gmail', 'Forwarded · Gmail (one of several)'); bx.gmailId = m.id + ':' + more.length; bx.gmailUrl = m.viewUrl || ''; more.push(bx); }
       } catch (e) {
         if (e && ['needs_reauth', 'server_not_connected', 'not_in_manifest', 'approval_required', 'consent_required', 'blocked_by_policy', 'selection_required'].includes(e.code)) throw e;
         // fallback: text only
         try {
           const pm = payloadOf(await gmCall('get_message', { messageId: m.id, messageFormat: 'PLAIN_TEXT' }));
           const em = E.unwrapForward({ subject: pm.subject || '', from: pm.sender || '', fromEmail: E.firstEmail(pm.sender || ''), to: (pm.toRecipients || []).join('; '), cc: (pm.ccRecipients || []).join('; '), date: pm.date || '', messageId: '', inReplyTo: '', references: '', convIndex: '', body: E.tidyText(pm.plaintextBody || pm.snippet || ''), attachments: [], warnings: [] });
-          b = await bundleFromEmail(em, 'gmail', 'Forwarded · Gmail (text only)');
-          const names = (pm.attachments || []).map(a => a.filename || a.name).filter(Boolean);
-          b.warnings.push(`The full message could not be downloaded (it may be too large), so its attachments were not read${names.length ? ': ' + names.join(', ') : ''}. Save the original from Outlook and add it here instead.`);
+          b = await bundleFromEmail(em, 'gmail', 'Forwarded · Gmail (text + attachment list)');
+          const list = (pm.attachments || []).filter(a => (a.filename || a.name) && !/^image\d{3}\.(png|jpe?g|gif)$/i.test(a.filename || a.name));
+          for (const x of list) b.atts.push(mkAtt({ name: x.filename || x.name, mime: x.mimeType || '', size: +x.size || 0, missing: true }));
+          const mb = m.sizeEstimate ? ` (${(m.sizeEstimate / 1048576).toFixed(1)} MB)` : '';
+          b.warnings.push(list.length ? `This email is larger than Gmail lets the app download${mb}, so its text was read but its ${list.length === 1 ? 'attachment' : list.length + ' attachments'} must be added by hand: press “Add file” next to each (Open in Gmail to download it), or analyse the text only.` : `The full message could not be downloaded${mb}; its text was read.`);
         } catch { continue; }
       }
       b.gmailId = m.id; b.gmailUrl = m.viewUrl || '';
-      UI.staging.push(b); checkDuplicateEmail(b); added++;
+      for (const x of [b, ...more]) { UI.staging.push(x); checkDuplicateEmail(x); added++; }
     }
     GM.status = 'idle'; GM.error = ''; GM.lastChecked = nowISO(); GM.newCount = added;
     if (manual || added) toast(added ? `${added} forwarded email${added > 1 ? 's' : ''} downloaded from Gmail.` : 'No new forwarded emails.', added ? { action: 'Show', fn: () => go('import') } : {});
@@ -2560,7 +2585,7 @@ async function checkGmail(manual) {
   } finally { GM.busy = false; render(); }
   if (added) {
     await extractPending();
-    if (gmCfg().autoAnalyse && St.sample && !UI.analyzing) runAnalysis();
+    if (gmCfg().autoAnalyse && St.sample && !UI.analyzing) runAnalysis({ auto: true });
   }
   return added;
 }
@@ -2938,6 +2963,16 @@ const CHG = {
   upd: el => { const e = clone(St.emails.get(el.dataset.eid)); const u = e && (e.analysis.updates || []).find(x => x.uid === el.dataset.uid); if (!u) return; u.accept = el.checked; putEmail(e); render(); },
   files: el => { const f = el.files; if (f && f.length) intakeFiles(f); el.value = ''; },
   'paste-files': el => { UI.pasteFiles = [...el.files]; const n = $('#paste-files-n'); if (n) n.textContent = UI.pasteFiles.map(f => f.name).join(', '); },
+  // a file you add for an attachment Gmail could not send (too large): read like any attachment
+  'att-supply': async el => {
+    const b = UI.staging.find(x => x.id === el.dataset.bid); const a = b && b.atts.find(x => x.id === el.dataset.aid); const f = el.files && el.files[0]; if (!a || !f) return;
+    const bytes = new Uint8Array(await f.arrayBuffer());
+    const i = b.atts.indexOf(a); b.atts.splice(i, 1);
+    const before = b.atts.length; await addAttTo(b, { name: f.name, mime: f.type, bytes }, '', 0);
+    const added = b.atts.splice(before); b.atts.splice(i, 0, ...added);
+    b.warnings = b.warnings.filter(w => !/larger than Gmail lets/.test(w) || b.atts.some(x => x.missing));
+    if (b.state !== 'analyzing') b.state = 'parsing'; render(); extractPending();
+  },
   'att-include': el => { const b = UI.staging.find(x => x.id === el.dataset.bid); const a = b && b.atts.find(x => x.id === el.dataset.aid); if (a) { a.include = el.checked; rerenderStaging(); } },
   'move-att': el => {
     const b = UI.staging.find(x => x.id === el.dataset.bid); const to = UI.staging.find(x => x.id === el.value); if (!b || !to) return;

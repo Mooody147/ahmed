@@ -161,8 +161,10 @@ function start() {
       if (p === '/profile') return json(res, 200, { emailAddress: 'tester@gmail.com' });
       if (p === '/threads') {
         const q = u.searchParams.get('q') || '';
-        if (!/to:\(tester\+tasks@gmail\.com\) newer_than:\d+d -label:action-register-imported/.test(q)) return json(res, 200, {});
-        return json(res, 200, { threads: msgs.filter(x => !labeled.has(x.id)).map(x => ({ id: 't' + x.id })) });
+        // the app looks for the forwarding address in To, Cc, Bcc or Delivered-To
+        if (!/\{to:tester\+tasks@gmail\.com cc:tester\+tasks@gmail\.com bcc:tester\+tasks@gmail\.com deliveredto:tester\+tasks@gmail\.com\} newer_than:\d+d -label:action-register-imported/.test(q)) return json(res, 200, {});
+        // like Gmail, only messages sent or delivered to the address match the query
+        return json(res, 200, { threads: msgs.filter(x => !labeled.has(x.id) && x.to === ADDR).map(x => ({ id: 't' + x.id })) });
       }
       if ((m = /^\/threads\/t(\w+)$/.exec(p))) { const x = msgs.find(y => y.id === m[1]); return json(res, 200, { id: 't' + x.id, messages: [meta(x)] }); }
       if ((m = /^\/messages\/(\w+)$/.exec(p))) { const x = msgs.find(y => y.id === m[1]); return json(res, 200, { ...meta(x), raw: b64url(fs.readFileSync(path.join(FX, x.file))) }); }

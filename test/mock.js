@@ -65,12 +65,15 @@
  const msgs=[{id:'m0',date:'2026-10-23T17:05:00Z',toRecipients:[ADDR],labelIds:['INBOX'],viewUrl:'https://mail.google.com/mail/?x#m0'},
    {id:'m1',date:'2026-10-23T17:10:00Z',toRecipients:[ADDR],labelIds:['INBOX']},
    {id:'m2',date:'2026-10-23T18:00:00Z',toRecipients:[ADDR],labelIds:['INBOX']},
-   {id:'m3',date:'2026-10-23T18:30:00Z',toRecipients:[ADDR],labelIds:['INBOX']},
+   {id:'m3',date:'2026-10-23T18:30:00Z',toRecipients:[ADDR],labelIds:['INBOX'],sizeEstimate:7002442,viewUrl:'https://mail.google.com/mail/?x#m3'},
+   {id:'m4',date:'2026-10-23T18:35:00Z',toRecipients:['m.sobeah@contractor.example'],labelIds:['INBOX'],delivered:true},
    {id:'mX',date:'2026-10-23T18:40:00Z',toRecipients:['someone@else.com'],labelIds:['INBOX']}];
+ // like Gmail: the query {to: cc: bcc: deliveredto:} finds messages sent to the address, including Bcc ("delivered")
+ const sentTo=(m,q)=>!q.includes(ADDR)||m.delivered||[...(m.toRecipients||[]),...(m.ccRecipients||[])].includes(ADDR);
  const tool=async(t,input)=>{ window.__gm.calls.push([t,input]);
-   if(t==='search_threads') return {payload:{threads:msgs.filter(m=>!window.__gm.labeled.includes(m.id)).map(m=>({id:'t'+m.id,messageCount:1,messages:[m]}))}};
+   if(t==='search_threads') return {payload:{threads:msgs.filter(m=>!window.__gm.labeled.includes(m.id)&&sentTo(m,input.query||'')&&(!/\{to:/.test(input.query||'')||true)).map(m=>({id:'t'+m.id,messageCount:1,messages:[m]}))}};
    if(t==='get_message'){ if(input.messageFormat==='RAW'){ if(input.messageId==='m3') throw {code:'tool_error',message:'too large'}; return {payload:{id:input.messageId,raw:window.__GMFX[input.messageId]}}; }
-     return {payload:{id:input.messageId,subject:'FW: Huge drawings package',sender:'Mahmoud Sobeah <m.sobeah@contractor.example>',toRecipients:[ADDR],date:'2026-10-23T18:30:00Z',plaintextBody:'Please review.\n\nFrom: Hany <hany@consultant.example>\nSent: Monday, October 20, 2026 10:00 AM\nTo: Mahmoud Sobeah\nSubject: Huge drawings package\n\nSee attached GA drawings, comments due 30 Oct.',attachments:[{filename:'GA_set.pdf'}]}}; }
+     return {payload:{id:input.messageId,subject:'FW: Huge drawings package',sender:'Mahmoud Sobeah <m.sobeah@contractor.example>',toRecipients:[ADDR],date:'2026-10-23T18:30:00Z',plaintextBody:'Please review.\n\nFrom: Hany <hany@consultant.example>\nSent: Monday, October 20, 2026 10:00 AM\nTo: Mahmoud Sobeah\nSubject: Huge drawings package\n\nSee attached GA drawings, comments due 30 Oct.',attachments:[{filename:'GA_set.pdf',mimeType:'application/pdf'},{filename:'image001.png',mimeType:'image/png'}]}}; }
    if(t==='list_labels') return {payload:{labels:[{id:'INBOX',name:'INBOX'}]}};
    if(t==='create_label') return {payload:{id:'Label_77',name:input.displayName}};
    if(t==='label_message'){ window.__gm.labeled.push(input.messageId); return {payload:{id:input.messageId}}; }
