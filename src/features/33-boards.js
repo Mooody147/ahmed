@@ -156,3 +156,7 @@ ACT['cv-align'] = el => {
   } else for (const i of items) put(i, a === 'l' ? L - i.b.x : a === 'r' ? R - (i.b.x + i.b.w) : a === 'c' ? (L + R) / 2 - (i.b.x + i.b.w / 2) : 0, a === 't' ? T0 - i.b.y : a === 'b' ? B - (i.b.y + i.b.h) : a === 'm' ? (T0 + B) / 2 - (i.b.y + i.b.h / 2) : 0);
   if (Object.keys(ch.els).length) { cvApply(ch); render(); }
 };
+
+// Fit fits what is on the board you are looking at
+const mapFitAct = ACT['map-fit'];
+ACT['map-fit'] = el => { if (curPage() !== 'main') { fitBoard(); return; } mapFitAct(el); };

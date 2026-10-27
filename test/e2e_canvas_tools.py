@@ -299,6 +299,33 @@ async def main():
         assert len(subs) == k0 + 3 and 'Recalculate NPSHa' in subs[-2]
         print('CANVAS AI OK')
 
+        # ---- fishbone, board templates, people lanes ----
+        await pg.keyboard.press('Escape'); await pg.wait_for_timeout(200)
+        await ev("""window.__mockBaseL = window.__mockBaseL || window.__mockAnswer; window.__mockAnswer = p => /^Build an Ishikawa/.test(p) ? { branches: [{ name: 'Equipment', causes: ['Impeller wear', 'Wrong pump curve'] }, { name: 'Process', causes: ['Low wet-well level'] }] } : window.__mockBaseL(p); 0""")
+        nb0 = await ev("(window.__AR.St.layout.pages || []).length")
+        await pg.click('[data-menu="options"] summary'); await pg.click('[data-act="fish-open"]'); await pg.fill('#fish-q', 'RAS pump cavitation'); await pg.click('[data-act="fish-draw"]'); await pg.wait_for_timeout(900)
+        pg_now = await ev("window.__AR.UI.page"); assert pg_now != 'main' and await ev("(window.__AR.St.layout.pages || []).length") == nb0 + 1
+        texts = await ev(f"[...window.__AR.St.board.values()].filter(e => e.page === '{pg_now}' && e.type === 'text').map(e => e.text)"); print('FISH', texts)
+        assert all(c in texts for c in ['Design', 'Equipment', 'Process', 'Materials', 'Measurement', 'Site & people']) and 'Impeller wear' in texts and 'Low wet-well level' in texts
+        assert await ev(f"[...window.__AR.St.board.values()].some(e => e.page === '{pg_now}' && e.type === 'shape' && e.text === 'RAS pump cavitation')")
+        await pg.screenshot(path=SHOTS + '/tools-5-fishbone.png')
+        await pg.click('[data-menu="options"] summary'); await pg.click('[data-act="tpl-board-open"]'); await pg.click('#drawer [data-act="tpl-board"][data-k="submittal"]'); await pg.wait_for_timeout(600)
+        fr = await ev("[...window.__AR.St.board.values()].filter(e => e.page === window.__AR.UI.page && e.type === 'frame').map(e => e.text)"); print('TEMPLATE', fr)
+        assert 'Code 3 — revise & resubmit' in fr and len(fr) == 5
+        names = await ev("window.__AR.St.layout.pages.map(p => p.name)"); print('BOARDS', names); assert 'Submittal tracker' in names
+        await pg.click('[data-act="board-go"][data-id="main"]'); await pg.wait_for_timeout(500)
+        # people lanes
+        await pg.click('[data-act="todo-mode"][data-mode="people"]'); await pg.wait_for_timeout(500)
+        lanes = await ev("[...document.querySelectorAll('.pl-lane')].map(l => l.dataset.lane + ':' + l.querySelectorAll('.pl-card').length)"); print('LANES', lanes)
+        assert lanes[0].startswith('me:') and len(lanes) >= 2
+        other = [l for l in lanes if not l.startswith('me:')][0].split(':')[0]
+        card = await ev(f"document.querySelector('.pl-lane[data-lane=\"{other}\"] .pl-card').dataset.dragTask")
+        await pg.drag_and_drop(f'.pl-card[data-drag-task="{card}"]', '.pl-lane[data-lane="me"] .pl-cards'); await pg.wait_for_timeout(400)
+        t = await ev(f"window.__AR.St.tasks.get('{card}')"); print('TAKEN BACK', t['ownership'], t['owner']); assert t['ownership'] == 'mine'
+        await pg.screenshot(path=SHOTS + '/tools-6-people.png')
+        await pg.click('[data-act="todo-mode"][data-mode="map"]'); await pg.wait_for_timeout(500)
+        print('LAYOUTS OK')
+
         print('ERRORS', errors); assert not errors
         print('CANVAS TOOLS E2E PASSED')
         await b.close()

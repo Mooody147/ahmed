@@ -35,8 +35,9 @@ function drawMinimap() {
   const css = getComputedStyle(document.documentElement), v = k => css.getPropertyValue(k).trim();
   const X = x => ox + (x - M.x0) * s, Y = y => oy + (y - M.y0) * s;
   ctx.clearRect(0, 0, W, H);
-  for (const b of projectBands(M)) { ctx.fillStyle = `hsla(${b.hue},55%,55%,.18)`; ctx.fillRect(X(b.x), Y(b.y), b.w * s, b.h * s); }
-  for (const n of M.nodes) {
+  const onMap = typeof curPage !== 'function' || curPage() === 'main';
+  if (onMap) for (const b of projectBands(M)) { ctx.fillStyle = `hsla(${b.hue},55%,55%,.18)`; ctx.fillRect(X(b.x), Y(b.y), b.w * s, b.h * s); }
+  for (const n of onMap ? M.nodes : []) {
     ctx.fillStyle = n.type === 'root' ? v('--accent') || '#0A6B74' : n.type === 'task' ? (n.t.status === 'done' ? 'rgba(128,128,128,.45)' : `hsl(${n.hue},45%,48%)`) : `hsl(${n.hue ?? 186},50%,40%)`;
     ctx.fillRect(X(n.x), Y(n.y), Math.max(1.5, n.w * s), Math.max(1.5, n.h * s));
   }

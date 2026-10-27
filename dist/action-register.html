@@ -1140,7 +1140,7 @@ body:not(.viewer-mode) .viewer-bar { display: none; }
 .lk::after { content: ""; position: absolute; inset: 2px; border-radius: 50%; background: var(--accent); }
 .mnode:hover > .lk, .mnode.sel > .lk, .bel:hover > .lk, .bel.sel > .lk, .map-viewport[data-tool="connector"] .lk { display: block; }
 .mnode.root > .lk, .map-viewport[data-tool="pen"] .lk, .map-viewport[data-tool="highlighter"] .lk, .map-viewport[data-tool="eraser"] .lk { display: none !important; }
-@media (hover: none) { .mnode.task > .lk, .bel > .lk { display: block; opacity: .7; } }
+@media (hover: none) { .mnode.task.sel > .lk, .bel.sel > .lk { display: block; opacity: .8; } }
 .z-far .lk { display: none !important; }
 [dir="rtl"] .lk { right: auto; left: -8px; }
 
@@ -1265,7 +1265,7 @@ html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; 
 .map-viewport[data-tool="lasso"] { cursor: crosshair; }
 
 /* boards bar, saved views */
-.board-bar { position: absolute; left: 12px; right: 230px; bottom: 10px; z-index: 5; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; pointer-events: none; }
+.board-bar { position: absolute; left: 64px; right: 12px; top: 10px; z-index: 5; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; pointer-events: none; }
 .board-bar > * { pointer-events: auto; }
 .bb-tab { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--ink-2); font: inherit; font-size: 13px; font-weight: 600; box-shadow: var(--elev-1); cursor: pointer; }
 .bb-tab.on { background: var(--accent); border-color: var(--accent); color: var(--surface); }
@@ -1275,11 +1275,10 @@ html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; 
 .bb-name { height: 26px; width: 150px; padding: 0 8px; font-size: 13px; }
 .bb-spacer { flex: 1; }
 .bb-views { position: relative; }
-.bb-pop { position: absolute; bottom: 40px; right: 0; min-width: 240px; max-height: 320px; overflow: auto; padding: 6px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); box-shadow: var(--elev-3); }
+.bb-pop { position: absolute; top: 40px; right: 0; min-width: 240px; max-height: 320px; overflow: auto; padding: 6px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); box-shadow: var(--elev-3); }
 .bb-view { display: flex; align-items: center; gap: 4px; } .bb-view .btn { flex: 1; justify-content: flex-start; }
 .bb-confirm { display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; border-radius: 10px; background: var(--surface); box-shadow: var(--elev-2); }
-.map-hint { bottom: 50px; }
-@media (max-width: 760px) { .board-bar { right: 12px; bottom: 6px; } }
+@media (max-width: 760px) { .board-bar { left: 56px; right: 8px; top: 6px; } }
 /* layers, guides, align */
 .layer-row { display: grid; grid-template-columns: 1fr auto auto; gap: 4px; align-items: center; }
 .layer-row .icon-btn.off, .layer-row .icon-btn.on { background: color-mix(in srgb, var(--accent) 12%, var(--surface)); }
@@ -1305,9 +1304,25 @@ html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; 
 .bel.stamp b { font-size: 15px; font-weight: 800; letter-spacing: .06em; line-height: 1.1; }
 .bel.stamp small { font-size: 11px; font-weight: 700; opacity: .85; }
 .bel.stamp.sel .st-in { box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 50%, transparent); }
-.stamp-pick { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); z-index: 6; display: flex; gap: 4px; flex-wrap: wrap; justify-content: center; padding: 6px; border-radius: 12px; background: var(--surface); box-shadow: var(--elev-3); max-width: calc(100% - 140px); }
+.stamp-pick { position: absolute; bottom: 64px; left: 50%; transform: translateX(-50%); z-index: 6; display: flex; gap: 4px; flex-wrap: wrap; justify-content: center; padding: 6px; border-radius: 12px; background: var(--surface); box-shadow: var(--elev-3); max-width: calc(100% - 140px); }
 .st-opt { border: 2px solid var(--c); color: var(--c); background: var(--surface); border-radius: 8px; padding: 4px 9px; font: inherit; font-size: 12px; font-weight: 800; cursor: pointer; }
 .st-opt.on { background: var(--c); color: #fff; }
+/* people swimlanes */
+.pl { display: grid; gap: 12px; margin-top: 12px; }
+.pl-lane { padding: 0; overflow: hidden; display: grid; grid-template-columns: 210px 1fr; min-height: 96px; }
+.pl-lane.over { box-shadow: 0 0 0 2.5px var(--accent), var(--elev-2); }
+.pl-lane header { display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto; column-gap: 10px; align-content: center; padding: 12px 14px; border-right: 1px solid var(--line); background: color-mix(in srgb, var(--accent) 4%, var(--surface)); }
+.pl-lane header small { grid-column: 2; color: var(--ink-3); font-size: 11.5px; } .pl-lane header .crit { color: var(--crit); font-weight: 700; }
+.pl-av { grid-row: span 2; width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: var(--surface); font-weight: 800; font-size: 13px; }
+.pl-cards { display: flex; gap: 8px; padding: 10px; overflow-x: auto; align-items: flex-start; }
+.pl-card { flex: 0 0 230px; display: grid; gap: 4px; padding: 9px 12px 9px 10px; border-radius: 12px; border: 1px solid var(--line); border-left: 4px solid var(--med); background: var(--surface); box-shadow: var(--elev-1); cursor: grab; }
+.pl-card.dragging { opacity: .4; }
+@media (max-width: 760px) { .pl-lane { grid-template-columns: 1fr; } .pl-lane header { border-right: 0; border-bottom: 1px solid var(--line); } }
+.tpl-card { display: grid; gap: 4px; text-align: start; font: inherit; color: inherit; cursor: pointer; border: 1px solid var(--line); }
+.tpl-card:hover { border-color: var(--accent); }
+
+/* the selection bar sits under the board tabs */
+.cv-ctx { top: 52px; }
 
 </style>
 <div class="titlestrip" id="titlestrip"><span class="ts-brand"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c3.3 4 6 7.2 6 10.4a6 6 0 0 1-12 0C6 10.2 8.7 7 12 3z"/><path d="m9.3 13.6 1.9 1.9 3.6-4.1"/></svg> Action Register</span><button class="ts-search" data-act="palette" title="Search and commands (Ctrl+K)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg><span>Search or type a command</span><kbd>Ctrl K</kbd></button><span class="ts-space"></span></div>
@@ -7553,8 +7568,9 @@ function drawMinimap() {
   const css = getComputedStyle(document.documentElement), v = k => css.getPropertyValue(k).trim();
   const X = x => ox + (x - M.x0) * s, Y = y => oy + (y - M.y0) * s;
   ctx.clearRect(0, 0, W, H);
-  for (const b of projectBands(M)) { ctx.fillStyle = `hsla(${b.hue},55%,55%,.18)`; ctx.fillRect(X(b.x), Y(b.y), b.w * s, b.h * s); }
-  for (const n of M.nodes) {
+  const onMap = typeof curPage !== 'function' || curPage() === 'main';
+  if (onMap) for (const b of projectBands(M)) { ctx.fillStyle = `hsla(${b.hue},55%,55%,.18)`; ctx.fillRect(X(b.x), Y(b.y), b.w * s, b.h * s); }
+  for (const n of onMap ? M.nodes : []) {
     ctx.fillStyle = n.type === 'root' ? v('--accent') || '#0A6B74' : n.type === 'task' ? (n.t.status === 'done' ? 'rgba(128,128,128,.45)' : `hsl(${n.hue},45%,48%)`) : `hsl(${n.hue ?? 186},50%,40%)`;
     ctx.fillRect(X(n.x), Y(n.y), Math.max(1.5, n.w * s), Math.max(1.5, n.h * s));
   }
@@ -13871,6 +13887,10 @@ ACT['cv-align'] = el => {
   if (Object.keys(ch.els).length) { cvApply(ch); render(); }
 };
 
+// Fit fits what is on the board you are looking at
+const mapFitAct = ACT['map-fit'];
+ACT['map-fit'] = el => { if (curPage() !== 'main') { fitBoard(); return; } mapFitAct(el); };
+
 /* ===== features/34-drawings.js ===== */
 /* ---------- drawings on the canvas: images and PDF pages (with redline reading), tables, stamps ---------- */
 // Image tool (I), drag-and-drop or paste: a photo, screenshot or drawing — a PDF puts its first pages side by side —
@@ -14294,6 +14314,121 @@ MORE_SECTIONS.unshift(() => St.mode === 'viewer' ? '' : `<div class="mt-sec"><di
   <button class="btn sm" data-act="flow-open">⇢ Process flow from text</button>
   ${typeof fishboneOpen === 'function' ? '<button class="btn sm" data-act="fish-open">🐟 Fishbone (root cause)</button>' : ''}
   ${typeof TEMPLATES !== 'undefined' ? '<button class="btn sm" data-act="tpl-board-open">▦ Board templates</button>' : ''}</div></div>`);
+
+/* ===== features/36-layouts.js ===== */
+/* ---------- layouts: fishbone, people swimlanes, board templates ---------- */
+// 🐟 Fishbone: type a problem ("RAS pump cavitation"), or start from the selected task, and a root-cause diagram is
+//    drawn on its own board — the problem at the head, six cause branches (Design, Equipment, Process, Materials,
+//    Measurement, Site & people) — with Claude's likely causes on each when Claude is available. Edit freely after.
+// 👥 People: every open task in a lane per person — mine first, then whoever owes me what — oldest deadline first;
+//    drag a card to another lane to hand it over (or take it back).
+// ▦ Templates: ready boards — project kick-off, submittal tracker, weekly plan (Sun–Thu), meeting board, risk board.
+const FISH_CATS = ['Design', 'Equipment', 'Process', 'Materials', 'Measurement', 'Site & people'];
+function fishboneEls(problem, cats) {
+  const els = [], W = 1500, spineY = 420, x0 = 80, headX = x0 + W;
+  const mk = (type, p) => { const e = newEl(type, p); els.push(e); return e; };
+  mk('line', { x1: x0, y1: spineY, x2: headX, y2: spineY, width: 5, arrow: true, color: 'ink' });
+  mk('shape', { kind: 'rect', x: headX + 10, y: spineY - 70, w: 300, h: 140, text: problem, color: '#C62828' });
+  const n = cats.length, step = W / (Math.ceil(n / 2) + 1);
+  cats.forEach((c, i) => {
+    const top = i % 2 === 0, k = Math.floor(i / 2), bx = x0 + step * (k + 1), tipX = bx - 220, tipY = top ? spineY - 300 : spineY + 300;
+    mk('line', { x1: tipX, y1: tipY, x2: bx, y2: spineY, width: 3, color: 'ink' });
+    mk('text', { x: tipX - 90, y: top ? tipY - 46 : tipY + 8, w: 240, h: 36, text: c.name, size: 22, color: '#0A6B74' });
+    (c.causes || []).slice(0, 5).forEach((cause, j) => {
+      const f = (j + 1) / ((c.causes || []).length + 1), cx = tipX + (bx - tipX) * f, cy = tipY + (spineY - tipY) * f;
+      mk('line', { x1: cx - 150, y1: cy, x2: cx, y2: cy, width: 1.5, color: 'ink' });
+      mk('text', { x: cx - 300, y: cy - 22, w: 290, h: 30, text: cause, size: 15, color: 'ink' });
+    });
+  });
+  return els;
+}
+const FISH = { busy: false };
+function fishboneOpen() {
+  const m = $('#modal'); if (!m) return; const t = UI.mapSel && St.tasks.get(UI.mapSel);
+  m.innerHTML = deco(`<div class="card pad mail-draft" role="dialog" aria-label="Fishbone"><div class="row"><b>🐟 Fishbone — find the root cause</b><span class="spacer"></span><button class="icon-btn" data-act="close-modal" aria-label="Close">${I.x}</button></div>
+    <label class="field"><span>The problem (the fish's head)</span><input class="input" id="fish-q" dir="auto" value="${esc(t ? t.title : '')}" placeholder="e.g. RAS pump cavitation at low wet-well level"></label>
+    <label class="check small"><input type="checkbox" id="fish-ai" ${St.sample ? 'checked' : 'disabled'}>${St.sample ? 'Let Claude suggest likely causes on each branch' : 'Empty branches to fill in'}</label>
+    <div class="row end"><button class="btn" data-act="close-modal">Cancel</button><button class="btn primary" data-act="fish-draw" ${FISH.busy ? 'disabled' : ''}>${FISH.busy ? 'Thinking…' : 'Draw'}</button></div></div>`);
+  m.hidden = false; setTimeout(() => { const i = $('#fish-q'); if (i) i.focus(); }, 30);
+}
+ACT['fish-open'] = () => { UI.menuOpen = ''; fishboneOpen(); };
+ACT['fish-draw'] = async () => {
+  const q = (($('#fish-q') || {}).value || '').trim(); if (!q) return;
+  let cats = FISH_CATS.map(name => ({ name, causes: [] }));
+  if (($('#fish-ai') || {}).checked && St.sample) {
+    FISH.busy = true; fishboneOpen(); $('#fish-q').value = q;
+    try {
+      const r = await St.sample.json(`Build an Ishikawa (fishbone) diagram for this engineering problem in water/wastewater plants. Use exactly these 6 branches: ${FISH_CATS.join(', ')}. Give 2–4 likely, specific causes per branch (≤ 7 words each), in the problem's language. Reply with JSON only: {"branches":[{"name":"Design","causes":["…"]}]}
+PROBLEM: ${q}`, { modelTier: 'default' });
+      const by = new Map(((r && r.branches) || []).map(b => [E.normMatch(b.name || ''), (b.causes || []).map(String).filter(Boolean)]));
+      cats = FISH_CATS.map(name => ({ name, causes: by.get(E.normMatch(name)) || [] }));
+    } catch (e) { toast('Claude could not suggest causes now — empty branches drawn.', { err: true }); }
+    FISH.busy = false;
+  }
+  $('#modal').hidden = true;
+  const id = newBoard(E.clip('Fishbone: ' + q, 40), fishboneEls(q, cats)); goBoard(id);
+  toast('🐟 Fishbone drawn on its own board — edit any cause, add notes, or draw on it.', { action: 'Undo', fn: () => { cvUndo(); goBoard('main'); } });
+};
+
+/* --- people swimlanes --- */
+TODO_MODES.splice(TODO_MODES.findIndex(m => m[0] === 'board'), 0, ['people', '👥', 'People', 'Swimlanes: every task in a lane per person']);
+const laneOf = t => (isMine(t) && t.status !== 'waiting') ? 'me' : (t.owner && !/^me$/i.test(t.owner) ? t.owner : (t.requestedBy || 'Someone'));
+function viewPeople() {
+  const ts = viewTasks(), lanes = new Map([['me', []]]);
+  for (const t of ts) { const k = laneOf(t); if (!lanes.has(k)) lanes.set(k, []); lanes.get(k).push(t); }
+  const order = (a, b) => (a.deadline || '9').localeCompare(b.deadline || '9') || PRIO_RANK[a.priority] - PRIO_RANK[b.priority];
+  const rows = [...lanes.entries()].sort((a, b) => (a[0] === 'me' ? -1 : b[0] === 'me' ? 1 : b[1].length - a[1].length));
+  const card = t => { const d = dueInfo(t); return `<div class="${cardCls(t)} pl-card" draggable="true" data-drag-task="${esc(t.id)}" data-act="open-task" data-id="${esc(t.id)}" role="button" tabindex="0"><span class="tl-tags">${cardTags(t)}</span><b dir="auto">${esc(t.title)}</b><small><span class="mono">${esc(t.ref || '')}</span><span class="duepill ${d.cls}">${esc(d.txt)}</span>${t.project ? `<span dir="auto">${esc(E.clip(t.project, 24))}</span>` : ''}</small></div>`; };
+  return `${vHeader('People', 'A lane per person · drag a card to another lane to hand it over')}
+  <div class="pl">${rows.map(([who, list]) => { const over = list.filter(t => t.deadline && t.deadline < T()).length; return `<section class="pl-lane card" data-lane="${esc(who)}">
+    <header><span class="pl-av">${esc(who === 'me' ? '🙋' : who.split(/\s+/).map(w => w[0] || '').join('').slice(0, 2).toUpperCase())}</span><b dir="auto">${esc(who === 'me' ? 'Me' : who)}</b><small>${list.length} open${over ? ` · <span class="crit">${over} overdue</span>` : ''}</small></header>
+    <div class="pl-cards">${list.sort(order).map(card).join('') || '<p class="small muted">Nothing here.</p>'}</div></section>`; }).join('')}</div>`;
+}
+TODO_VIEWS.people = viewPeople;
+let plDrag = null;
+document.addEventListener('dragstart', e => { const c = e.target.closest && e.target.closest('[data-drag-task]'); if (!c) return; plDrag = c.dataset.dragTask; e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', plDrag); c.classList.add('dragging'); });
+document.addEventListener('dragend', () => { plDrag = null; document.querySelectorAll('.pl-lane.over,.pl-card.dragging').forEach(x => x.classList.remove('over', 'dragging')); });
+document.addEventListener('dragover', e => { if (!plDrag) return; const l = e.target.closest && e.target.closest('.pl-lane'); if (!l) return; e.preventDefault(); document.querySelectorAll('.pl-lane.over').forEach(x => x !== l && x.classList.remove('over')); l.classList.add('over'); });
+document.addEventListener('drop', e => {
+  if (!plDrag) return; const l = e.target.closest && e.target.closest('.pl-lane'); if (!l) return; e.preventDefault(); e.stopImmediatePropagation();
+  const t0 = St.tasks.get(plDrag), who = l.dataset.lane; plDrag = null; if (!t0 || laneOf(t0) === who) { render(); return; }
+  const t = clone(t0), now = nowISO();
+  if (who === 'me') { t.ownership = 'mine'; t.owner = 'me'; if (t.status === 'waiting') t.status = 'todo'; }
+  else { t.ownership = 'waiting'; t.owner = who; if (t.status === 'todo' || t.status === 'in_progress') t.status = 'waiting'; }
+  (t.history = t.history || []).push({ at: now, text: who === 'me' ? 'Taken back: now mine' : `Handed over: waiting on ${who}` }); t.updatedAt = now;
+  cvApply({ tasks: { [t.id]: t } }); render(); toast(who === 'me' ? `${t.ref} is yours now.` : `${t.ref} handed to ${who}.`, { action: 'Undo', fn: cvUndo });
+}, true);
+
+/* --- board templates --- */
+const TEMPLATES = [
+  ['kickoff', '🚀 Project kick-off', 'Scope, stakeholders, deliverables, risks and key dates for a new project', () => frameRow([['Scope', ['What is in', 'What is out']], ['Stakeholders', ['Client', 'Consultant', 'Contractor', 'Vendors']], ['Deliverables', ['Drawings', 'Calculations', 'Datasheets', 'Specifications']], ['Risks', ['Long-lead items', 'Interfaces']], ['Key dates', ['Kick-off', 'IFR', 'IFC']]])],
+  ['submittal', '📑 Submittal tracker', 'Documents moving from preparation to approval, by review code', () => frameRow([['To prepare', []], ['Submitted — awaiting review', []], ['Code 2 — approved with comments', []], ['Code 3 — revise & resubmit', []], ['Code 1 — approved', []]], 300)],
+  ['week', '🗓 Weekly plan (Sun–Thu)', 'One column per working day plus a parking lot', () => frameRow([['Sunday', []], ['Monday', []], ['Tuesday', []], ['Wednesday', []], ['Thursday', []], ['Parking lot', []]], 260)],
+  ['meeting', '🤝 Meeting board', 'Agenda, notes, decisions and actions with owners', () => frameRow([['Agenda', ['1.', '2.', '3.']], ['Notes', []], ['Decisions', []], ['Actions (who · what · when)', []]])],
+  ['risk', '⚠️ Risk board', 'Risks sorted by likelihood and impact, with mitigations', () => frameGrid([['High impact · likely', []], ['High impact · unlikely', []], ['Low impact · likely', []], ['Low impact · unlikely', []]])],
+];
+function frameRow(cols, fw) {
+  const els = [], w = fw || 320, h = 620, gap = 40; let x = 80;
+  for (const [title, notes] of cols) {
+    els.push(newEl('frame', { x, y: 80, w, h, text: title, color: 'ink' }));
+    notes.forEach((n, i) => els.push(newEl('sticky', { x: x + 20, y: 130 + i * 110, w: w - 40, h: 90, text: n, color: '#FFD966' })));
+    x += w + gap;
+  }
+  return els;
+}
+function frameGrid(cells) {
+  const els = [], w = 560, h = 380, gap = 40;
+  cells.forEach(([title], i) => els.push(newEl('frame', { x: 80 + (i % 2) * (w + gap), y: 80 + Math.floor(i / 2) * (h + gap), w, h, text: title, color: i === 0 ? '#E5484D' : i === 3 ? '#9EE0A7' : '#FFB27A' })));
+  return els;
+}
+DRAWER_FN.tpl = () => `<div class="drawer-h"><b>▦ Board templates</b><span class="spacer"></span><button class="icon-btn" data-act="close-drawer" aria-label="Close">${I.x}</button></div>
+  <div class="drawer-b" style="display:grid;gap:10px"><p class="small muted" style="margin:0">Each template opens as a new board, ready to fill with notes, tasks and drawings.</p>
+  ${TEMPLATES.map(([k, n, d]) => `<button class="card pad tpl-card" data-act="tpl-board" data-k="${k}"><b>${esc(n)}</b><span class="small muted">${esc(d)}</span></button>`).join('')}
+  <button class="card pad tpl-card" data-act="fish-open"><b>🐟 Fishbone (root cause)</b><span class="small muted">The problem at the head, six cause branches${St.sample ? ', filled with Claude’s suggestions' : ''}</span></button></div>`;
+Object.assign(ACT, {
+  'tpl-board-open': () => { UI.menuOpen = ''; openDrawer('tpl', 'all'); },
+  'tpl-board': el => { const tp = TEMPLATES.find(t => t[0] === el.dataset.k); if (!tp) return; closeDrawer(); const id = newBoard(tp[1].replace(/^\S+\s/, ''), tp[3]()); goBoard(id); toast(`${tp[1]} board ready.`, { action: 'Undo', fn: () => { cvUndo(); goBoard('main'); } }); },
+});
 
 /* ---------- boot ---------- */
 const startView = (location.hash || '').replace('#', '');
