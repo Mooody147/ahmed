@@ -100,6 +100,7 @@ function mapSVG(M) {
     if (e.type === 'frame') parts.push(`<rect x="${e.x}" y="${e.y}" width="${e.w}" height="${e.h}" rx="10" fill="none" stroke="${e.color === 'ink' ? '#8EC5FF' : col}" stroke-width="2" stroke-dasharray="8 6"/>` + svgText(e.x + 10, e.y + 22, [e.text || 'Frame'], 14, '#334', 600));
     if (e.type === 'sticky') parts.push(`<rect x="${e.x}" y="${e.y}" width="${e.w}" height="${e.h}" rx="4" fill="${e.color === 'ink' ? '#FFD966' : col}"/>` + svgText(e.x + 12, e.y + 26, wrapText(e.text, Math.max(8, (e.w - 24) / 7.6), Math.floor((e.h - 16) / 19)), 14, '#1F1A00'));
     if (e.type === 'text') parts.push(svgText(e.x, e.y + (e.size || 20), wrapText(e.text, Math.max(6, e.w / ((e.size || 20) * 0.55)), 12), e.size || 20, col));
+    if (typeof EL_SVG !== 'undefined' && EL_SVG[e.type]) { parts.push(EL_SVG[e.type](e, col)); continue; }
     if (e.type === 'shape') {
       const sh = e.kind === 'ellipse' ? `<ellipse cx="${e.x + e.w / 2}" cy="${e.y + e.h / 2}" rx="${e.w / 2}" ry="${e.h / 2}"` : e.kind === 'diamond' ? `<path d="M${e.x + e.w / 2} ${e.y} L${e.x + e.w} ${e.y + e.h / 2} L${e.x + e.w / 2} ${e.y + e.h} L${e.x} ${e.y + e.h / 2}z"` : `<rect x="${e.x}" y="${e.y}" width="${e.w}" height="${e.h}" rx="4"`;
       parts.push(`${sh} fill="none" stroke="${col}" stroke-width="2"/>` + svgText(e.x + e.w / 2 - Math.min(e.w / 2 - 8, (e.text || '').length * 3.6), e.y + e.h / 2 + 5, wrapText(e.text, Math.max(6, (e.w - 20) / 7.6), 3), 14, '#15201E'));

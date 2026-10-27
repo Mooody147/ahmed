@@ -993,7 +993,7 @@ const STAY_TOOLS = ['pen', 'highlighter', 'eraser', 'connector', 'hand', 'lasso'
 // (STROKE_HOOKS), extra drawing on the world (WORLD_EXTRA), classes on task boxes (NODE_CLASS), snapping while
 // moving (SNAP.fn)
 const MORE_SECTIONS = []; // extra sections in the canvas ⋯ More menu
-const EL_HTML = {}, BOX_TYPES = ['sticky', 'text', 'shape'], CREATE_EL = {}, CTX_EXTRA = [], CTX_PRE = [], STROKE_HOOKS = [], WORLD_EXTRA = [], NODE_CLASS = [], SNAP = { fn: null };
+const EL_EDIT = {}, EL_HTML = {}, BOX_TYPES = ['sticky', 'text', 'shape'], CREATE_EL = {}, CTX_EXTRA = [], CTX_PRE = [], STROKE_HOOKS = [], WORLD_EXTRA = [], NODE_CLASS = [], SNAP = { fn: null };
 // boards (pages): the task map lives on the main board; other boards hold notes and drawings only
 const curPage = () => UI.page || 'main';
 // layers: ink (pen, highlighter, lines), notes (notes, shapes, frames, tables…), tasks (the map) — each can be hidden or locked
@@ -1726,6 +1726,7 @@ function noteToTask() {
 }
 /* --- inline text editing --- */
 function startEdit(id, fresh) {
+  const el0 = St.board.get(id); if (el0 && EL_EDIT[el0.type]) return EL_EDIT[el0.type](id, fresh);
   const box = document.querySelector(`[data-el="${CSS.escape(id)}"] .btxt`); if (!box) return;
   UI.cvEditing = { kind: 'el', id, fresh };
   box.setAttribute('contenteditable', 'plaintext-only'); box.setAttribute('spellcheck', 'true');

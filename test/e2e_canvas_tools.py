@@ -1,7 +1,7 @@
 """Canvas tools on the lite artifact, driven with a real stylus (pen pointer events) and mouse: smart pen gestures
 (✓ done, scribble delete, line link, loop select, hold-to-snap shapes), lasso; then the other canvas tools as they
 are added (see the sections below)."""
-import asyncio, os, sys, json
+import asyncio, os, sys, json, math
 os.environ['AR_PAGE'] = 'action-register-lite.html'
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from playwright.async_api import async_playwright
@@ -177,6 +177,55 @@ async def main():
         assert await ev("(window.__AR.St.layout.pages || []).length") == 1 and await ev(f"[...window.__AR.St.board.values()].filter(e => e.page === '{pid}').length") == 2
         await pg.click('[data-act="board-go"][data-id="main"]'); await pg.wait_for_timeout(400)
         print('BOARDS OK')
+
+        # ---- images (with redline reading), stamps, tables ----
+        await pg.keyboard.press('Escape'); await pg.keyboard.press('v')
+        n_imgs = "[...window.__AR.St.board.values()].filter(e => e.type === 'image').length"
+        async with pg.expect_file_chooser() as fc:
+            await pg.click('.cv-tools [data-act="cv-tool"][data-tool="image"]', timeout=5000) if await ev("!!document.querySelector('.cv-tools [data-act=\"cv-tool\"][data-tool=\"image\"]:not(.cvt-fly *)')") else await pg.keyboard.press('i')
+        await (await fc.value).set_files(os.path.join(HERE, 'fixtures', 'drawing.png')); await pg.wait_for_timeout(1200)
+        assert await ev(n_imgs) == 1, 'image placed'
+        img = await ev("[...window.__AR.St.board.values()].find(e => e.type === 'image')"); print('IMAGE', img['w'], img['h'], img['src'][:30], img.get('assetId'))
+        assert img['src'] and img['h'] == 400
+        await pg.wait_for_timeout(300)
+        ib = await box(f'[data-el="{img["id"]}"]')
+        assert await ev(f"document.querySelector('[data-el=\"{img['id']}\"] img').naturalWidth") > 0, 'image shows'
+        # mark it up: a pen circle on the pump (starting inside the drawing, so it stays ink), and a Code 3 stamp
+        await pg.keyboard.press('p')
+        cx, cy = ib['x'] + ib['width'] * .33, ib['y'] + ib['height'] * .44
+        await pen([(cx + 60 * math.cos(i / 20 * 2 * math.pi), cy + 60 * math.sin(i / 20 * 2 * math.pi)) for i in range(21)])
+        assert await ev("[...window.__AR.St.board.values()].filter(e => e.type === 'stroke').length") >= 2, 'circle kept as ink on the drawing'
+        await pg.keyboard.press('Escape'); await pg.keyboard.press('j'); await pg.wait_for_timeout(200)
+        assert await ev("!!document.querySelector('.stamp-pick')"), 'stamp chooser'
+        await pg.click('.stamp-pick [data-k="c3"]'); await pg.mouse.click(ib['x'] + ib['width'] * .7, ib['y'] + ib['height'] * .2); await pg.wait_for_timeout(300)
+        stp = await ev("[...window.__AR.St.board.values()].find(e => e.type === 'stamp')"); print('STAMP', stp and stp['kind']); assert stp and stp['kind'] == 'c3'
+        assert 'REVISE' in await pg.text_content(f'[data-el="{stp["id"]}"]')
+        # read the markups
+        await ev("""window.__mockBaseCT = window.__mockBaseCT || window.__mockAnswer; window.__mockAnswer = p => /marked up by hand/.test(p) ? { title: 'ELM-ME-DWG-0101 Rev B', comments: [{ no: 1, where: 'pump P-101', comment: 'Check NPSH at minimum level', action: 'check' }, { no: 2, where: 'top right', comment: 'Code 3 — revise and resubmit', action: 'revise' }] } : window.__mockBaseCT(p); 0""")
+        await pg.keyboard.press('Escape'); await pg.mouse.click(ib['x'] + 30, ib['y'] + ib['height'] - 30); await pg.wait_for_timeout(250)
+        assert img['id'] in await ev("[...window.__AR.UI.cvSel]")
+        await pg.click('[data-act="mk-read"]'); await pg.wait_for_timeout(1500)
+        last = await ev("window.__prompts.filter(p => /marked up by hand/.test(p.prompt)).slice(-1)[0]"); print('SENT images', last and last['images'], last and last['tier'])
+        assert last and last['images'] == 1
+        tb = await ev("[...window.__AR.St.board.values()].find(e => e.type === 'table' && e.fromImage)"); print('CRS TABLE', tb and tb['rows'])
+        assert tb and len(tb['rows']) == 3 and 'NPSH' in tb['rows'][1][2]
+        await pg.screenshot(path=SHOTS + '/tools-3-redline.png')
+        n0 = await ev("window.__AR.St.tasks.size")
+        await pg.click('.toast:has-text("read from your markups") button'); await pg.wait_for_timeout(400)
+        t = await ev("[...window.__AR.St.tasks.values()].find(t => /markups/i.test(t.title))"); print('TASK', t and t['title'], t and len(t['subtasks']))
+        assert t and len(t['subtasks']) == 2 and await ev("window.__AR.St.tasks.size") == n0 + 1
+        # a table: place, type in a cell, add a row
+        await pg.keyboard.press('Escape'); await pg.keyboard.press('g'); vp = await box('#map-vp')
+        await pg.mouse.click(vp['x'] + 140, vp['y'] + vp['height'] - 330); await pg.wait_for_timeout(300)
+        t2 = await ev("[...window.__AR.St.board.values()].filter(e => e.type === 'table' && !e.fromImage).slice(-1)[0]"); assert t2
+        cell = await box(f'[data-el="{t2["id"]}"] td[data-cell="0,0"]')
+        await pg.mouse.click(cell['x'] + 10, cell['y'] + 10); await pg.wait_for_timeout(120); await pg.mouse.click(cell['x'] + 10, cell['y'] + 10); await pg.wait_for_timeout(300)
+        await pg.keyboard.type('Duty flow'); await pg.keyboard.press('Enter'); await pg.wait_for_timeout(400)
+        rows = await ev(f"window.__AR.St.board.get('{t2['id']}').rows"); print('TABLE rows', rows); assert rows[0][0] == 'Duty flow'
+        await pg.mouse.click(cell['x'] + 10, cell['y'] + 10); await pg.wait_for_timeout(200)
+        await pg.click('[data-act="tb-row"][data-d="1"]'); await pg.wait_for_timeout(200)
+        assert len(await ev(f"window.__AR.St.board.get('{t2['id']}').rows")) == 4
+        print('DRAWINGS OK')
 
         print('ERRORS', errors); assert not errors
         print('CANVAS TOOLS E2E PASSED')

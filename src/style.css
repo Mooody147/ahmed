@@ -1282,3 +1282,24 @@ html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; 
 .cv-guides line { stroke: #E5484D; stroke-dasharray: 4 3; }
 .ctx-group { display: inline-flex; gap: 0; padding-left: 4px; border-left: 1px solid var(--line); }
 .bel.locked { pointer-events: none; }
+/* images, tables, stamps on the canvas */
+.bel.image { background: #fff; border-radius: 4px; box-shadow: var(--elev-2); overflow: visible; }
+.bel.image img { display: block; width: 100%; height: 100%; object-fit: contain; border-radius: 4px; pointer-events: none; user-select: none; -webkit-user-drag: none; }
+.bel.image .img-cap { position: absolute; left: 0; top: calc(100% + 6px); font-size: 13px; color: var(--ink-2); white-space: nowrap; }
+.bel.image .img-cap:empty { display: none; }
+.bel.image.sel { outline: 2.5px solid var(--accent); outline-offset: 3px; }
+.bel.table { background: var(--surface); border-radius: 8px; box-shadow: var(--elev-1); overflow: hidden; }
+.bel.table .tb-title { padding: 6px 10px; font-weight: 700; font-size: 13px; border-bottom: 1px solid var(--line); }
+.bel.table table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 13px; }
+.bel.table td { border: 1px solid var(--line); padding: 6px 8px; min-height: 32px; height: 32px; vertical-align: top; overflow-wrap: anywhere; outline: none; }
+.bel.table table.head tr:first-child td { background: color-mix(in srgb, var(--accent) 9%, var(--surface)); font-weight: 700; }
+.bel.table td[contenteditable] { background: color-mix(in srgb, #FFD966 25%, var(--surface)); box-shadow: inset 0 0 0 2px var(--accent); cursor: text; }
+.bel.table.sel { box-shadow: 0 0 0 2.5px var(--accent), var(--elev-2); }
+.bel.stamp { display: grid; place-items: center; transform: rotate(-6deg); color: var(--c); }
+.bel.stamp .st-in { width: 100%; height: 100%; display: grid; align-content: center; gap: 2px; padding: 6px 12px; border: 3px solid var(--c); border-radius: 8px; outline: 1.2px solid var(--c); outline-offset: -8px; background: color-mix(in srgb, var(--c) 6%, transparent); text-align: center; }
+.bel.stamp b { font-size: 15px; font-weight: 800; letter-spacing: .06em; line-height: 1.1; }
+.bel.stamp small { font-size: 11px; font-weight: 700; opacity: .85; }
+.bel.stamp.sel .st-in { box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 50%, transparent); }
+.stamp-pick { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); z-index: 6; display: flex; gap: 4px; flex-wrap: wrap; justify-content: center; padding: 6px; border-radius: 12px; background: var(--surface); box-shadow: var(--elev-3); max-width: calc(100% - 140px); }
+.st-opt { border: 2px solid var(--c); color: var(--c); background: var(--surface); border-radius: 8px; padding: 4px 9px; font: inherit; font-size: 12px; font-weight: 800; cursor: pointer; }
+.st-opt.on { background: var(--c); color: #fff; }
