@@ -1258,3 +1258,27 @@ html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; 
 /* lasso */
 .mnode.task.lassoed { box-shadow: 0 0 0 3px var(--accent), var(--elev-3) !important; }
 .map-viewport[data-tool="lasso"] { cursor: crosshair; }
+
+/* boards bar, saved views */
+.board-bar { position: absolute; left: 12px; right: 230px; bottom: 10px; z-index: 5; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; pointer-events: none; }
+.board-bar > * { pointer-events: auto; }
+.bb-tab { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--ink-2); font: inherit; font-size: 13px; font-weight: 600; box-shadow: var(--elev-1); cursor: pointer; }
+.bb-tab.on { background: var(--accent); border-color: var(--accent); color: var(--surface); }
+.bb-tab small { font-size: 10.5px; opacity: .75; }
+.bb-ic { padding: 0 9px; }
+.bb-add { padding: 0 11px; font-size: 16px; }
+.bb-name { height: 26px; width: 150px; padding: 0 8px; font-size: 13px; }
+.bb-spacer { flex: 1; }
+.bb-views { position: relative; }
+.bb-pop { position: absolute; bottom: 40px; right: 0; min-width: 240px; max-height: 320px; overflow: auto; padding: 6px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); box-shadow: var(--elev-3); }
+.bb-view { display: flex; align-items: center; gap: 4px; } .bb-view .btn { flex: 1; justify-content: flex-start; }
+.bb-confirm { display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; border-radius: 10px; background: var(--surface); box-shadow: var(--elev-2); }
+.map-hint { bottom: 50px; }
+@media (max-width: 760px) { .board-bar { right: 12px; bottom: 6px; } }
+/* layers, guides, align */
+.layer-row { display: grid; grid-template-columns: 1fr auto auto; gap: 4px; align-items: center; }
+.layer-row .icon-btn.off, .layer-row .icon-btn.on { background: color-mix(in srgb, var(--accent) 12%, var(--surface)); }
+.cv-guides { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; z-index: 6; }
+.cv-guides line { stroke: #E5484D; stroke-dasharray: 4 3; }
+.ctx-group { display: inline-flex; gap: 0; padding-left: 4px; border-left: 1px solid var(--line); }
+.bel.locked { pointer-events: none; }

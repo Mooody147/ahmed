@@ -992,6 +992,7 @@ const STAY_TOOLS = ['pen', 'highlighter', 'eraser', 'connector', 'hand', 'lasso'
 // from a tool (CREATE_EL), buttons for a selection (CTX_EXTRA, CTX_PRE), what a finished pen stroke turns into
 // (STROKE_HOOKS), extra drawing on the world (WORLD_EXTRA), classes on task boxes (NODE_CLASS), snapping while
 // moving (SNAP.fn)
+const MORE_SECTIONS = []; // extra sections in the canvas ⋯ More menu
 const EL_HTML = {}, BOX_TYPES = ['sticky', 'text', 'shape'], CREATE_EL = {}, CTX_EXTRA = [], CTX_PRE = [], STROKE_HOOKS = [], WORLD_EXTRA = [], NODE_CLASS = [], SNAP = { fn: null };
 // boards (pages): the task map lives on the main board; other boards hold notes and drawings only
 const curPage = () => UI.page || 'main';
@@ -1307,6 +1308,7 @@ function viewMap() {
             <label class="small map-date" title="Highlight the tasks worked on that day">📌 Highlight day <input class="input" type="date" id="map-day" data-chg="map-day" value="${esc(UI.mapDay)}" max="${T()}"></label>
             <label class="small map-date" title="Show the map as it was on a past date">🕒 Map as of <input class="input" type="date" id="map-asof" data-chg="map-asof" value="${esc(UI.mapAsOf)}" max="${T()}"></label>
             ${UI.mapDay || UI.mapAsOf ? '<button class="btn sm ghost" data-act="map-hist-clear">Clear</button>' : ''}</div>
+          ${MORE_SECTIONS.map(f => { try { return f() || ''; } catch { return ''; } }).join('')}
           <div class="mt-sec"><div class="label">Export</div>
             <button class="btn sm ghost" data-act="map-export" data-f="png">🖼 Image (PNG)</button>
             <button class="btn sm ghost" data-act="map-export" data-f="pdf">📄 PDF</button>
@@ -1423,8 +1425,9 @@ function cvApply(ch) {
 }
 function cvUndo() { const op = UI.cvUndo.pop(); if (!op) { toast('Nothing to undo.'); return; } UI.cvRedo.push(cvSnapshot(op)); cvApplyRaw(op); render(); }
 function cvRedo() { const op = UI.cvRedo.pop(); if (!op) return; UI.cvUndo.push(cvSnapshot(op)); cvApplyRaw(op); render(); }
-const newLayout = () => ({ off: { ...(St.layout.off || {}) }, offv: { ...(St.layout.offv || {}) }, size: { ...(St.layout.size || {}) } });
-function newEl(type, props) { return { id: E.uid('b'), type, color: UI.cvColor, createdAt: nowISO(), ...props }; }
+// a copy of the layout to change: box positions and sizes, plus anything feature files keep there (boards, saved views)
+const newLayout = () => ({ ...clone(St.layout || {}), off: { ...(St.layout.off || {}) }, offv: { ...(St.layout.offv || {}) }, size: { ...(St.layout.size || {}) } });
+function newEl(type, props) { return { id: E.uid('b'), type, color: UI.cvColor, createdAt: nowISO(), ...(curPage() !== 'main' ? { page: curPage() } : {}), ...props }; }
 
 /* --- pointer: tools, pan, pinch, select, move, resize, draw, erase, connect --- */
 const MP = { ptrs: new Map(), mode: null, pinch: null };
@@ -1448,7 +1451,7 @@ function eraseAt(e) {
 document.addEventListener('pointerdown', e => {
   const isPen = e.pointerType === 'pen', isTouch = e.pointerType === 'touch';
   const vp = e.target.closest && e.target.closest('#map-vp'); if (!vp || (e.button > 1 && !isPen)) return;
-  if (e.target.closest('.cv-tools,.cv-sub,.cv-ctx,.map-empty,.minimap,.present-bar,[contenteditable],input,textarea,select')) return;
+  if (e.target.closest('.cv-tools,.cv-sub,.cv-ctx,.map-empty,.minimap,.present-bar,.board-bar,.cv-overlay,[contenteditable],input,textarea,select')) return;
   // palm rejection: while the stylus touches the screen every other touch is ignored, and once a stylus has been
   // used a broad touch (the side of a hand) is ignored too
   if (isPen) { UI.penSeen = true; MP.penDown = true; }
@@ -1729,6 +1732,7 @@ function startEdit(id, fresh) {
   box.focus();
   const r = document.createRange(); r.selectNodeContents(box); const s = getSelection(); s.removeAllRanges(); s.addRange(r);
   box.addEventListener('blur', commitEdit, { once: true });
+  box.addEventListener('keydown', ev => { if (ev.key === 'Escape') { ev.preventDefault(); ev.stopPropagation(); box.blur(); } });
 }
 function startNodeEdit(nodeId) {
   const b = document.querySelector(`.mnode[data-node="${CSS.escape(nodeId)}"] [data-edit]`); if (!b) return;
@@ -1737,8 +1741,10 @@ function startNodeEdit(nodeId) {
   const r = document.createRange(); r.selectNodeContents(b); const s = getSelection(); s.removeAllRanges(); s.addRange(r);
   b.addEventListener('blur', commitEdit, { once: true });
 }
-function commitEdit() {
+function commitEdit(ev) {
   const ed = UI.cvEditing; if (!ed) return; UI.cvEditing = null;
+  // leaving the note by pressing a canvas button: draw again after that press, so the press is not lost
+  const toBtn = ev && ev.relatedTarget && ev.relatedTarget.closest && ev.relatedTarget.closest('#map-vp button, .map-toolbar button, .board-bar button');
   if (ed.kind === 'el') {
     const box = document.querySelector(`[data-el="${CSS.escape(ed.id)}"] .btxt`); const el = St.board.get(ed.id);
     if (el && box) {
@@ -1755,8 +1761,9 @@ function commitEdit() {
     const name = b ? b.innerText.trim() : '';
     if (name && name !== ed.old) renameNode(ed.id, ed.old, name);
   }
-  render();
+  if (toBtn) setTimeout(render, 350); else render();
 }
+
 function renameNode(nodeId, oldName, name) {
   const ch = { tasks: {} }; const L = newLayout(); const now = nowISO();
   const isProj = nodeId.startsWith('p:');

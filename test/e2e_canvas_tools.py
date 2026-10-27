@@ -117,6 +117,67 @@ async def main():
         await ev("window.__AR.St.settings.ui = { ...(window.__AR.St.settings.ui || {}), penGestures: true }; 0")
         print('PEN TOOLS OK')
 
+        # ---- boards, saved views, layers, align & snap ----
+        await pg.keyboard.press('Escape'); await pg.keyboard.press('v')
+        assert await ev("document.querySelectorAll('.board-bar .bb-tab').length") >= 2, 'board tabs'
+        await pg.click('[data-act="board-add"]'); await pg.wait_for_timeout(400)
+        await pg.fill('#bb-name', 'Pumps scratch'); await pg.keyboard.press('Enter'); await pg.wait_for_timeout(300)
+        pages = await ev("window.__AR.St.layout.pages"); print('BOARDS', pages); assert pages and pages[-1]['name'] == 'Pumps scratch'
+        pid = pages[-1]['id']
+        assert await ev("document.querySelectorAll('.mnode').length") == 0, 'the task map stays on the Tasks board'
+        # two notes on the new board
+        vp = await box('#map-vp')
+        for i, (x, y) in enumerate([(vp['x'] + 300, vp['y'] + 300), (vp['x'] + 620, vp['y'] + 340)]):
+            await pg.keyboard.press('n'); await pg.mouse.click(x, y); await pg.wait_for_timeout(200); await pg.keyboard.type(f'Note {i + 1}'); await pg.keyboard.press('Escape'); await pg.wait_for_timeout(150); await pg.keyboard.press('Escape')
+        notes = await ev(f"[...window.__AR.St.board.values()].filter(e => e.page === '{pid}' && e.type === 'sticky').map(e => [e.id, e.x, e.y])"); print('NOTES', notes); assert len(notes) == 2
+        # select both (click, Shift+click) and align their tops
+        await pg.keyboard.press('Escape')
+        nb = await box(f'[data-el="{notes[0][0]}"]'); nb2 = await box(f'[data-el="{notes[1][0]}"]')
+        await pg.mouse.click(nb['x'] + 20, nb['y'] + 20); await pg.wait_for_timeout(150)
+        await pg.keyboard.down('Shift'); await pg.mouse.click(nb2['x'] + 20, nb2['y'] + 20); await pg.keyboard.up('Shift'); await pg.wait_for_timeout(200)
+        print('SEL', await ev("[...window.__AR.UI.cvSel]")); assert len(await ev("[...window.__AR.UI.cvSel]")) == 2
+        await pg.click('[data-act="cv-align"][data-a="t"]'); await pg.wait_for_timeout(300)
+        ys = await ev(f"[...window.__AR.St.board.values()].filter(e => e.page === '{pid}' && e.type === 'sticky').map(e => e.y)"); print('ALIGNED tops', ys); assert len(set(ys)) == 1
+        # drag one note near the other: it snaps to its left edge (guide shown while dragging)
+        n1 = await box(f'[data-el="{notes[0][0]}"]'); n2 = await box(f'[data-el="{notes[1][0]}"]')
+        await pg.mouse.click(vp['x'] + 40, vp['y'] + vp['height'] - 120); await pg.wait_for_timeout(100)
+        await pg.mouse.move(n2['x'] + 30, n2['y'] + 30); await pg.mouse.down()
+        tx = n1['x'] + 30 + 3; ty = n2['y'] + 30 + 260
+        await pg.mouse.move(tx, ty, steps=12); await pg.wait_for_timeout(120)
+        guide = await ev("!!document.querySelector('.cv-guides line')"); await pg.mouse.up(); await pg.wait_for_timeout(300)
+        xs = await ev(f"[...window.__AR.St.board.values()].filter(e => e.page === '{pid}' && e.type === 'sticky').map(e => e.x)"); print('SNAP xs', xs, 'guide', guide)
+        assert len(set(xs)) == 1 and guide, 'snapped to the other note with a guide line'
+        # saved view: name it, move away, jump back
+        await pg.click('[data-act="views-toggle"]'); await pg.click('[data-act="view-new"]'); await pg.fill('#view-name', 'Pump notes'); await pg.click('[data-act="view-save"]'); await pg.wait_for_timeout(200)
+        cam = await ev("[window.__AR.UI.map.x, window.__AR.UI.map.y, window.__AR.UI.map.k]")
+        await pg.click('[data-act="board-go"][data-id="main"]'); await pg.wait_for_timeout(600)
+        assert await ev("window.__AR.UI.page") == 'main' and await ev("document.querySelectorAll('.mnode.task').length") > 0
+        await pg.click('[data-act="views-toggle"]'); await pg.click('[data-act="view-go"]'); await pg.wait_for_timeout(600)
+        cam2 = await ev("[window.__AR.UI.map.x, window.__AR.UI.map.y, window.__AR.UI.map.k]"); print('VIEW', cam, cam2)
+        assert await ev("window.__AR.UI.page") == pid and all(abs(a - b) < 2 for a, b in zip(cam, cam2))
+        await pg.screenshot(path=SHOTS + '/tools-2-boards.png')
+        # layers: hide notes, then lock ink
+        await pg.click('[data-act="board-go"][data-id="main"]'); await pg.wait_for_timeout(500)
+        await pg.click('[data-menu="options"] summary'); await pg.click('[data-act="layer"][data-k="tasks"][data-f="hide"]'); await pg.wait_for_timeout(300)
+        assert await ev("document.querySelectorAll('.mnode').length") == 0, 'task layer hidden'
+        await pg.click('[data-menu="options"] summary'); await pg.click('[data-act="layer"][data-k="tasks"][data-f="hide"]'); await pg.wait_for_timeout(300)
+        assert await ev("document.querySelectorAll('.mnode').length") > 0
+        await pg.click('[data-menu="options"] summary'); await pg.click('[data-act="layer"][data-k="ink"][data-f="lock"]'); await pg.wait_for_timeout(200)
+        stroke = await ev("[...window.__AR.St.board.values()].find(e => e.type === 'stroke' && !e.page)")
+        if stroke:
+            await pg.keyboard.press('Escape'); sb = await box(f'[data-el="{stroke["id"]}"] path')
+            await pg.mouse.move(sb['x'] + sb['width'] / 2, sb['y'] + sb['height'] / 2); await pg.mouse.down(); await pg.mouse.move(sb['x'] + 200, sb['y'] + 120, steps=6); await pg.mouse.up(); await pg.wait_for_timeout(200)
+            assert await ev(f"window.__AR.St.board.get('{stroke['id']}').pts[0][0]") == stroke['pts'][0][0], 'locked ink does not move'
+        await pg.click('[data-menu="options"] summary'); await pg.click('[data-act="layer"][data-k="ink"][data-f="lock"]'); await pg.keyboard.press('Escape')
+        # delete the board (Undo brings it back)
+        await pg.click(f'[data-act="board-go"][data-id="{pid}"]'); await pg.wait_for_timeout(300)
+        await pg.click('[data-act="board-del"]'); await pg.click('[data-act="board-del-yes"]'); await pg.wait_for_timeout(300)
+        assert not await ev("(window.__AR.St.layout.pages || []).length") and not await ev(f"[...window.__AR.St.board.values()].some(e => e.page === '{pid}')")
+        await pg.click('.toast:has-text("Board deleted") button'); await pg.wait_for_timeout(400)
+        assert await ev("(window.__AR.St.layout.pages || []).length") == 1 and await ev(f"[...window.__AR.St.board.values()].filter(e => e.page === '{pid}').length") == 2
+        await pg.click('[data-act="board-go"][data-id="main"]'); await pg.wait_for_timeout(400)
+        print('BOARDS OK')
+
         print('ERRORS', errors); assert not errors
         print('CANVAS TOOLS E2E PASSED')
         await b.close()
