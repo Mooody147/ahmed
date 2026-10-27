@@ -103,7 +103,7 @@ function mapSVG(M) {
     }
   }
   for (const e of M.edges) parts.push(`<path d="${edgePath(e.a, e.b)}" fill="none" stroke="hsl(${e.hue},40%,${e.b.type === 'task' && e.b.t.status === 'done' ? 80 : 62}%)" stroke-width="2"/>`);
-  for (const l of M.links) parts.push(`<path d="${linkPath(l.from, l.to)}" fill="none" stroke="#B26B00" stroke-width="1.6" stroke-dasharray="5 4"/>`);
+  for (const l of M.links) parts.push(`<path d="${routePath(l.from, l.to, routeObstacles(M, ['n:' + l.from.id, 'n:' + l.to.id])) || linkPath(l.from, l.to)}" fill="none" stroke="#B26B00" stroke-width="1.6" stroke-dasharray="5 4"/>`);
   for (const n of M.nodes) {
     const h = n.hue ?? 186;
     if (n.type === 'root') { parts.push(`<rect x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" rx="16" fill="#0A6B74"/>` + svgText(n.x + 18, n.y + n.h / 2 + 6, ['My work'], 18, '#FFFFFF', 600)); continue; }
@@ -124,7 +124,7 @@ function mapSVG(M) {
     if (e.type === 'stroke' && e.pressure) { parts.push(`<path d="${pressurePath(e.pts, e.width)}" fill="${col}" stroke="none"/>`); continue; }
     if (e.type === 'stroke') parts.push(`<path d="${strokePath(e.pts)}" fill="none" stroke="${col}" stroke-width="${e.width}" ${e.alpha ? `stroke-opacity="${e.alpha}"` : ''} stroke-linecap="round" stroke-linejoin="round"/>`);
     if (e.type === 'line') parts.push(`<path d="M${e.x1} ${e.y1} L${e.x2} ${e.y2}" stroke="${col}" stroke-width="${e.width || 3}" fill="none" stroke-linecap="round" ${e.arrow ? 'marker-end="url(#xa)"' : ''}/>`);
-    if (e.type === 'connector') { const a = refBox(e.from, M), b = refBox(e.to, M); if (a && b) { const [p, q] = clipBoxes(a, b); parts.push(`<path d="${e.shape === 'straight' ? `M${p.x} ${p.y} L${q.x} ${q.y}` : smartPath(a, b)}" stroke="${col}" stroke-width="${e.width || 2.5}" fill="none" ${e.dash ? 'stroke-dasharray="7 6"' : ''} marker-end="url(#xa)"/>`); } }
+    if (e.type === 'connector') { const d = connD(e, M); if (d) { parts.push(`<path d="${d}" stroke="${col}" stroke-width="${e.width || 2.5}" fill="none" ${e.dash ? 'stroke-dasharray="7 6"' : ''} marker-end="url(#xa)"/>`); } }
   }
   parts.push('</g>');
   return { w: W, h: H, svg: `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"><defs><marker id="xa" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#15201E"/></marker></defs>${parts.join('')}</svg>` };

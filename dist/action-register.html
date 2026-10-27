@@ -4239,8 +4239,7 @@ function inkSVG(el, M) {
   if (el.type === 'stroke') { const d = strokePath(el.pts); return `<g class="ink${sel}" data-el="${esc(el.id)}"><path d="${d}" stroke="${colorCss(el.color)}" stroke-width="${el.width}" ${el.alpha ? `stroke-opacity="${el.alpha}"` : ''} fill="none" stroke-linecap="round" stroke-linejoin="round"/><path class="hit" d="${d}" stroke-width="${Math.max(14, el.width + 10)}"/></g>`; }
   if (el.type === 'line') { const d = `M${el.x1} ${el.y1} L${el.x2} ${el.y2}`; return `<g class="ink${sel}" data-el="${esc(el.id)}" style="color:${colorCss(el.color)}"><path d="${d}" stroke="currentColor" stroke-width="${el.width || 3}" fill="none" stroke-linecap="round" ${el.arrow ? 'marker-end="url(#cv-arrow)"' : ''}/><path class="hit" d="${d}" stroke-width="16"/></g>`; }
   if (el.type === 'connector') {
-    const a = refBox(el.from, M), b = refBox(el.to, M); if (!a || !b) return '';
-    let d; if (el.shape === 'straight') { const [p, q] = clipBoxes(a, b); d = `M${p.x} ${p.y} L${q.x} ${q.y}`; } else d = smartPath(a, b);
+    const d = connD(el, M); if (!d) return '';
     return `<g class="ink conn${sel}" data-el="${esc(el.id)}" style="color:${colorCss(el.color)}"><path d="${d}" stroke="currentColor" stroke-width="${el.width || 2.5}" fill="none" stroke-linecap="round" stroke-dasharray="${el.dash ? '7 6' : ''}" ${el.arrow === false ? '' : 'marker-end="url(#cv-arrow)"'}/><path class="hit" d="${d}" stroke-width="16"/></g>`;
   }
   return '';
@@ -4255,6 +4254,90 @@ function smartPath(a, b) {
   else { const sy = Math.sign(dy) || 1; p = { x: ca.x, y: sy > 0 ? a.y + a.h : a.y }; q = { x: cb.x, y: sy > 0 ? b.y : b.y + b.h }; n1 = [0, sy]; n2 = [0, -sy]; }
   const r = v => Math.round(v * 10) / 10, k = Math.max(28, Math.min(170, Math.hypot(q.x - p.x, q.y - p.y) * 0.42));
   return `M${r(p.x)} ${r(p.y)} C${r(p.x + n1[0] * k)} ${r(p.y + n1[1] * k)}, ${r(q.x + n2[0] * k)} ${r(q.y + n2[1] * k)}, ${r(q.x)} ${r(q.y)}`;
+}
+// a smart link: right-angle steps that go around every box on the canvas (never through one), with as few turns as
+// possible and rounded corners; it re-routes whenever boxes move
+const ROUTES = new Map();
+function routeObstacles(M, skip) {
+  const obs = [];
+  for (const n of M.nodes) if (!skip.includes('n:' + n.id)) obs.push({ x: n.x, y: n.y, w: n.w, h: n.h || 40 });
+  for (const el of boardEls()) if (['sticky', 'text', 'shape'].includes(el.type) && !skip.includes('e:' + el.id)) obs.push(elBox(liveEl(el)));
+  return obs;
+}
+function routePath(a, b, obsAll) {
+  const PAD = 14, BEND = 36, rr = v => Math.round(v);
+  // only boxes near the two ends matter
+  const X0 = Math.min(a.x, b.x) - 260, Y0 = Math.min(a.y, b.y) - 260, X1 = Math.max(a.x + a.w, b.x + b.w) + 260, Y1 = Math.max(a.y + a.h, b.y + b.h) + 260;
+  const obs = obsAll.filter(o => o.x < X1 && o.x + o.w > X0 && o.y < Y1 && o.y + o.h > Y0);
+  const key = [a, b, ...obs].map(o => `${rr(o.x)},${rr(o.y)},${rr(o.w)},${rr(o.h)}`).join(';');
+  if (ROUTES.has(key)) return ROUTES.get(key);
+  const inf = [...obs.map(o => [o.x - PAD, o.y - PAD, o.x + o.w + PAD, o.y + o.h + PAD]), ...[a, b].map(o => [o.x - PAD + 1, o.y - PAD + 1, o.x + o.w + PAD - 1, o.y + o.h + PAD - 1])];
+  const inside = (x, y) => inf.some(r => x > r[0] && x < r[2] && y > r[1] && y < r[3]);
+  const DIRS = [[1, 0], [0, 1], [-1, 0], [0, -1]];
+  const ports = o => [[o.x + o.w, o.y + o.h / 2, 0], [o.x + o.w / 2, o.y + o.h, 1], [o.x, o.y + o.h / 2, 2], [o.x + o.w / 2, o.y, 3]]
+    .map(([x, y, d]) => ({ x, y, d, ex: x + DIRS[d][0] * PAD, ey: y + DIRS[d][1] * PAD })).filter(p => !inside(p.ex, p.ey));
+  const pa = ports(a), pb = ports(b);
+  let res = null;
+  if (pa.length && pb.length) {
+    const uniq = v => [...new Set(v.map(rr))].sort((m, n) => m - n);
+    const addMid = v => { const out = [...v]; for (let i = 0; i + 1 < v.length; i++) if (v[i + 1] - v[i] > 2 * PAD) out.push((v[i] + v[i + 1]) / 2); return uniq(out); };
+    const xs = addMid(uniq([X0, X1, ...inf.flatMap(r => [r[0], r[2]]), ...pa.map(p => p.ex), ...pb.map(p => p.ex)]));
+    const ys = addMid(uniq([Y0, Y1, ...inf.flatMap(r => [r[1], r[3]]), ...pa.map(p => p.ey), ...pb.map(p => p.ey)]));
+    const NX = xs.length, NY = ys.length, xi = new Map(xs.map((v, i) => [v, i])), yi = new Map(ys.map((v, i) => [v, i]));
+    const S = (i, j, d) => ((j * NX + i) << 2) | d;
+    const cost = new Float64Array(NX * NY * 4).fill(Infinity), prev = new Int32Array(NX * NY * 4).fill(-1);
+    const goal = new Map(pb.map(p => [yi.get(rr(p.ey)) * NX + xi.get(rr(p.ex)), p]));
+    const tx = b.x + b.w / 2, ty = b.y + b.h / 2, hgt = (i, j) => Math.abs(xs[i] - tx) + Math.abs(ys[j] - ty) * 0.999;
+    // a small binary heap
+    const H = []; const push = (f, s) => { H.push([f, s]); let i = H.length - 1; while (i) { const p = (i - 1) >> 1; if (H[p][0] <= H[i][0]) break; [H[p], H[i]] = [H[i], H[p]]; i = p; } };
+    const pop = () => { const top = H[0], last = H.pop(); if (H.length) { H[0] = last; let i = 0; for (;;) { const l = 2 * i + 1, r = l + 1; let m = i; if (l < H.length && H[l][0] < H[m][0]) m = l; if (r < H.length && H[r][0] < H[m][0]) m = r; if (m === i) break; [H[m], H[i]] = [H[i], H[m]]; i = m; } } return top; };
+    for (const p of pa) { const i = xi.get(rr(p.ex)), j = yi.get(rr(p.ey)), s = S(i, j, p.d); cost[s] = 0; push(hgt(i, j), s); }
+    let best = null, bestCost = Infinity, steps = 0;
+    while (H.length && steps++ < 60000) {
+      const [f, s] = pop(); const c = cost[s]; if (f - hgt(((s >> 2) % NX), Math.floor((s >> 2) / NX)) > c + 1e-6) continue;
+      if (c >= bestCost) break;
+      const cell = s >> 2, d = s & 3, i = cell % NX, j = (cell - i) / NX;
+      const g = goal.get(cell);
+      if (g) { const into = (g.d + 2) & 3, total = c + (d === into ? 0 : (d === g.d ? 2 : 1) * BEND); if (total < bestCost) { bestCost = total; best = { s, g }; } }
+      for (let nd = 0; nd < 4; nd++) {
+        if (nd === ((d + 2) & 3)) continue;
+        const ni = i + DIRS[nd][0], nj = j + DIRS[nd][1]; if (ni < 0 || nj < 0 || ni >= NX || nj >= NY) continue;
+        if (inside((xs[i] + xs[ni]) / 2, (ys[j] + ys[nj]) / 2) || inside(xs[ni], ys[nj])) continue;
+        const ns = S(ni, nj, nd), nc = c + Math.abs(xs[ni] - xs[i]) + Math.abs(ys[nj] - ys[j]) + (nd === d ? 0 : BEND);
+        if (nc < cost[ns]) { cost[ns] = nc; prev[ns] = s; push(nc + hgt(ni, nj), ns); }
+      }
+    }
+    if (best) {
+      const pts = [[best.g.x, best.g.y]];
+      for (let s = best.s; s >= 0; s = prev[s]) { const cell = s >> 2, i = cell % NX; pts.push([xs[i], ys[(cell - i) / NX]]); }
+      const first = pts[pts.length - 1], start = pa.find(p => rr(p.ex) === first[0] && rr(p.ey) === first[1]) || pa[0];
+      pts.push([start.x, start.y]); pts.reverse();
+      res = roundedPath(pts);
+    }
+  }
+  if (ROUTES.size > 400) ROUTES.clear();
+  ROUTES.set(key, res);
+  return res;
+}
+function roundedPath(raw) {
+  const pts = raw.filter((p, i) => !i || p[0] !== raw[i - 1][0] || p[1] !== raw[i - 1][1]);
+  const P = pts.filter((p, i) => i === 0 || i === pts.length - 1 || !((pts[i - 1][0] === p[0] && p[0] === pts[i + 1][0]) || (pts[i - 1][1] === p[1] && p[1] === pts[i + 1][1])));
+  const f = v => Math.round(v * 10) / 10;
+  let d = `M${f(P[0][0])} ${f(P[0][1])}`;
+  for (let i = 1; i < P.length - 1; i++) {
+    const [px, py] = P[i - 1], [x, y] = P[i], [nx, ny] = P[i + 1];
+    const r = Math.min(12, Math.hypot(x - px, y - py) / 2, Math.hypot(nx - x, ny - y) / 2);
+    const ux = Math.sign(x - px), uy = Math.sign(y - py), vx = Math.sign(nx - x), vy = Math.sign(ny - y);
+    d += ` L${f(x - ux * r)} ${f(y - uy * r)} Q${f(x)} ${f(y)} ${f(x + vx * r)} ${f(y + vy * r)}`;
+  }
+  const L = P[P.length - 1]; return d + ` L${f(L[0])} ${f(L[1])}`;
+}
+// the path of a free link: smart (around boxes, the default), curved or straight
+function connD(el, M) {
+  const a = refBox(el.from, M), b = refBox(el.to, M); if (!a || !b) return '';
+  if (el.shape === 'straight') { const [p, q] = clipBoxes(a, b); return `M${p.x} ${p.y} L${q.x} ${q.y}`; }
+  if (el.shape === 'curve') return smartPath(a, b);
+  return routePath(a, b, routeObstacles(M, [el.from.k + ':' + el.from.id, el.to.k + ':' + el.to.id])) || smartPath(a, b);
 }
 // a stylus stroke that is thicker where you press harder: the outline of the line, filled
 function pressurePath(pts, width) {
@@ -4303,7 +4386,7 @@ function worldHTML(M) {
       <defs><marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="arrowhead"/></marker></defs>
       ${UI.mapBands !== false ? projectBands(M).map(b => `<rect class="band" x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" rx="26" style="--h:${b.hue}"/>`).join('') : ''}
       ${M.edges.map(e => `<path class="edge ${e.b.type === 'task' && e.b.t.status === 'done' ? 'done' : ''}" style="--h:${e.hue}" d="${edgePath(e.a, e.b)}"/>`).join('')}
-      ${M.links.map(l => `<path class="link ${sel && (l.from.t.id === sel || l.to.t.id === sel) ? 'hot' : ''}" d="${linkPath(l.from, l.to)}" marker-end="url(#arrow)"/>`).join('')}
+      ${M.links.map(l => `<path class="link ${sel && (l.from.t.id === sel || l.to.t.id === sel) ? 'hot' : ''}" d="${routePath(l.from, l.to, routeObstacles(M, ['n:' + l.from.id, 'n:' + l.to.id])) || linkPath(l.from, l.to)}" marker-end="url(#arrow)"/>`).join('')}
     </svg>
     ${blocks.map(e => belHTML(e, hits)).join('')}
     ${UI.mapBands !== false ? projectBands(M).map(b => `<div class="band-label" style="left:${b.x + 14}px;top:${b.y + 10}px;--h:${b.hue}" dir="auto">${esc(b.label)}</div>`).join('') : ''}
@@ -4326,7 +4409,7 @@ function ctxHTML() {
     ${PALETTE.map(c => `<button class="sw" data-act="cv-recolor" data-c="${c}" style="--c:${colorCss(c)}" aria-label="Colour ${c}"></button>`).join('')}
     ${inked ? `<button class="btn sm ghost" data-act="cv-width" data-d="-1" aria-label="Thinner">−</button><button class="btn sm ghost" data-act="cv-width" data-d="1" aria-label="Thicker">＋</button>` : ''}
     ${canTask ? `<button class="btn sm" data-act="cv-to-task" title="Turn this note into a task in your to-do list">→ Task</button>` : ''}
-    ${one && one.type === 'connector' ? `<button class="btn sm ghost" data-act="cv-conn" data-k="shape" title="Curved or straight">${one.shape === 'straight' ? '╱ Straight' : '∿ Curved'}</button><button class="btn sm ghost" data-act="cv-conn" data-k="dash" aria-pressed="${!!one.dash}" title="Dashed line">┄</button><button class="btn sm ghost" data-act="cv-conn" data-k="arrow" aria-pressed="${one.arrow !== false}" title="Arrow at the end">➝</button>` : ''}
+    ${one && one.type === 'connector' ? `<button class="btn sm ghost" data-act="cv-conn" data-k="shape" title="Line style: smart (goes around boxes), curved or straight">${one.shape === 'straight' ? '╱ Straight' : one.shape === 'curve' ? '∿ Curved' : '⌐ Smart'}</button><button class="btn sm ghost" data-act="cv-conn" data-k="dash" aria-pressed="${!!one.dash}" title="Dashed line">┄</button><button class="btn sm ghost" data-act="cv-conn" data-k="arrow" aria-pressed="${one.arrow !== false}" title="Arrow at the end">➝</button>` : ''}
     <button class="btn sm ghost" data-act="cv-front" title="Bring to front">⬆</button><button class="btn sm ghost" data-act="cv-dup" title="Duplicate (Ctrl+D)">⧉</button>
     <button class="btn sm ghost danger" data-act="cv-del" title="Delete (Del)">${I.trash}</button></div>`;
 }
@@ -6234,7 +6317,7 @@ const ACT = {
   'cv-tool': el => { UI.tool = el.dataset.tool; if (UI.tool !== 'select') UI.cvSel.clear(); render(); },
   'cv-color': el => { UI.cvColor = el.dataset.c; render(); },
   'cv-recolor': el => { const ch = { els: {} }; for (const id of UI.cvSel) { const x = St.board.get(id); if (x) ch.els[id] = { ...x, color: el.dataset.c }; } UI.cvColor = el.dataset.c; cvApply(ch); render(); },
-  'cv-conn': el => { const id = [...UI.cvSel][0], c = St.board.get(id); if (!c || c.type !== 'connector') return; const k = el.dataset.k; const n = { ...c, [k]: k === 'shape' ? (c.shape === 'straight' ? 'curve' : 'straight') : k === 'arrow' ? c.arrow === false : !c.dash }; cvApply({ els: { [id]: n } }); render(); },
+  'cv-conn': el => { const id = [...UI.cvSel][0], c = St.board.get(id); if (!c || c.type !== 'connector') return; const k = el.dataset.k; const n = { ...c, [k]: k === 'shape' ? (c.shape === 'straight' ? 'smart' : c.shape === 'curve' ? 'straight' : 'curve') : k === 'arrow' ? c.arrow === false : !c.dash }; cvApply({ els: { [id]: n } }); render(); },
   'map-mine': () => { saveSettingsUi({ mapMine: !myFocus() }); render(); if (myFocus()) { const n = [...St.tasks.values()].filter(needsMe).length; toast(n ? `🙋 ${n} task${n > 1 ? 's need' : ' needs'} action by you` : 'Nothing needs action by you right now'); } },
   'map-dir': el => { const d = el.dataset.dir === 'v' ? 'v' : 'h'; if (mapDir() === d) return; saveSettingsUi({ mapDir: d }); UI.map.fitted = false; render(); requestAnimationFrame(() => mapFit()); },
   'cv-width': el => { const d = +el.dataset.d; const ch = { els: {} }; for (const id of UI.cvSel) { const x = St.board.get(id); if (x && ['stroke', 'line', 'connector'].includes(x.type)) ch.els[id] = { ...x, width: Math.max(1, Math.min(24, (x.width || 3) + d)) }; } UI.cvWidth = Math.max(1, Math.min(24, UI.cvWidth + d)); cvApply(ch); render(); },
@@ -7219,7 +7302,7 @@ function mapSVG(M) {
     }
   }
   for (const e of M.edges) parts.push(`<path d="${edgePath(e.a, e.b)}" fill="none" stroke="hsl(${e.hue},40%,${e.b.type === 'task' && e.b.t.status === 'done' ? 80 : 62}%)" stroke-width="2"/>`);
-  for (const l of M.links) parts.push(`<path d="${linkPath(l.from, l.to)}" fill="none" stroke="#B26B00" stroke-width="1.6" stroke-dasharray="5 4"/>`);
+  for (const l of M.links) parts.push(`<path d="${routePath(l.from, l.to, routeObstacles(M, ['n:' + l.from.id, 'n:' + l.to.id])) || linkPath(l.from, l.to)}" fill="none" stroke="#B26B00" stroke-width="1.6" stroke-dasharray="5 4"/>`);
   for (const n of M.nodes) {
     const h = n.hue ?? 186;
     if (n.type === 'root') { parts.push(`<rect x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" rx="16" fill="#0A6B74"/>` + svgText(n.x + 18, n.y + n.h / 2 + 6, ['My work'], 18, '#FFFFFF', 600)); continue; }
@@ -7240,7 +7323,7 @@ function mapSVG(M) {
     if (e.type === 'stroke' && e.pressure) { parts.push(`<path d="${pressurePath(e.pts, e.width)}" fill="${col}" stroke="none"/>`); continue; }
     if (e.type === 'stroke') parts.push(`<path d="${strokePath(e.pts)}" fill="none" stroke="${col}" stroke-width="${e.width}" ${e.alpha ? `stroke-opacity="${e.alpha}"` : ''} stroke-linecap="round" stroke-linejoin="round"/>`);
     if (e.type === 'line') parts.push(`<path d="M${e.x1} ${e.y1} L${e.x2} ${e.y2}" stroke="${col}" stroke-width="${e.width || 3}" fill="none" stroke-linecap="round" ${e.arrow ? 'marker-end="url(#xa)"' : ''}/>`);
-    if (e.type === 'connector') { const a = refBox(e.from, M), b = refBox(e.to, M); if (a && b) { const [p, q] = clipBoxes(a, b); parts.push(`<path d="${e.shape === 'straight' ? `M${p.x} ${p.y} L${q.x} ${q.y}` : smartPath(a, b)}" stroke="${col}" stroke-width="${e.width || 2.5}" fill="none" ${e.dash ? 'stroke-dasharray="7 6"' : ''} marker-end="url(#xa)"/>`); } }
+    if (e.type === 'connector') { const d = connD(e, M); if (d) { parts.push(`<path d="${d}" stroke="${col}" stroke-width="${e.width || 2.5}" fill="none" ${e.dash ? 'stroke-dasharray="7 6"' : ''} marker-end="url(#xa)"/>`); } }
   }
   parts.push('</g>');
   return { w: W, h: H, svg: `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"><defs><marker id="xa" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#15201E"/></marker></defs>${parts.join('')}</svg>` };
@@ -12617,7 +12700,7 @@ async function recheckAI() {
   St.limits = St.sample ? await St.sample.limits().catch(() => null) : St.limits;
   render(); return !!St.sample;
 }
-window.__AR = { St, UI, E, mapSVG, learnedNotes: typeof learnedNotes === 'function' ? learnedNotes : null, recheckAI }; // debugging hook
+window.__AR = { St, UI, E, mapSVG, routePath, learnedNotes: typeof learnedNotes === 'function' ? learnedNotes : null, recheckAI }; // debugging hook
 })();
 
 </script>

@@ -80,7 +80,20 @@ async def main():
         conns = await ev("[...window.__AR.St.board.values()].filter(e => e.type === 'connector')")
         assert len(conns) == n0 + 1, conns
         c = conns[-1]; print('LINK', c['from'], '→', c['to']); cid = c['id']
-        d = await ev(f"document.querySelector('[data-el=\"{cid}\"] path').getAttribute('d')"); assert ' C' in d or 'C' in d, d
+        d = await ev(f"document.querySelector('[data-el=\"{cid}\"] path').getAttribute('d')"); assert 'Q' in d and 'C' not in d, d
+        # the smart line never runs through a box (tasks, items, projects, topics or notes)
+        crossings = f"""(() => {{ const c = window.__AR.St.board.get('{cid}'), p = document.querySelector('[data-el="{cid}"] path'), M = window.__AR.UI.mapLayout;
+          const skip = new Set([c.from.id, c.to.id]); const boxes = M.nodes.filter(n => !skip.has(n.id)).map(n => [n.x, n.y, n.w, n.h || 40])
+            .concat([...window.__AR.St.board.values()].filter(e => ['sticky', 'text', 'shape'].includes(e.type) && !skip.has(e.id)).map(e => [e.x, e.y, e.w, e.h]));
+          const L = p.getTotalLength(); let n = 0; for (let s = 0; s <= L; s += 3) {{ const q = p.getPointAtLength(s); if (boxes.some(([x, y, w, h]) => q.x > x + 1 && q.x < x + w - 1 && q.y > y + 1 && q.y < y + h - 1)) n++; }} return [n, Math.round(L)]; }})()"""
+        cr = await ev(crossings); print('CROSSINGS (points inside boxes, length)', cr); assert cr[0] == 0, cr
+        # drop a note right in its way: the line goes around it
+        mid = await ev(f"""(() => {{ const p = document.querySelector('[data-el="{cid}"] path'); const m = p.getPointAtLength(p.getTotalLength() / 2), s = p.getScreenCTM(); return [m.x * s.a + s.e, m.y * s.d + s.f]; }})()""")
+        await pg.click('[data-act="cv-tool"][data-tool="sticky"]'); await pg.mouse.click(mid[0] - 40, mid[1] - 40); await pg.wait_for_timeout(300)
+        await pg.keyboard.type('In the way'); await pg.keyboard.press('Escape'); await pg.wait_for_timeout(200); await pg.keyboard.press('Escape'); await pg.wait_for_timeout(300)
+        assert await ev("[...window.__AR.St.board.values()].some(e => e.type === 'sticky')"), 'note placed'
+        cr2 = await ev(crossings); print('WITH A NOTE IN THE WAY', cr2); assert cr2[0] == 0, cr2
+        await pg.screenshot(path=SHOTS + '/pen-3-smart-link.png')
         # the line follows when a box moves
         tb2 = await (await pg.query_selector(f'.mnode.task[data-tid="{z}"]')).bounding_box()
         await pg.mouse.move(tb2['x'] + 30, tb2['y'] + tb2['height'] / 2); await pg.mouse.down(); await pg.mouse.move(tb2['x'] + 230, tb2['y'] + 140, steps=8); await pg.mouse.up(); await pg.wait_for_timeout(300)
@@ -90,6 +103,10 @@ async def main():
         await pg.mouse.click(hit[0], hit[1]); await pg.wait_for_timeout(300)
         btns = await ev("[...document.querySelectorAll('[data-act=\"cv-conn\"]')].map(b => b.dataset.k + ':' + (b.dataset.v || ''))"); print('CONN OPTIONS', btns)
         assert btns, 'line options shown'
+        assert 'Smart' in await pg.text_content('[data-act="cv-conn"][data-k="shape"]')
+        await pg.click('[data-act="cv-conn"][data-k="shape"]'); await pg.wait_for_timeout(200)
+        print('OLD CURVE would cross', await ev(crossings))
+        assert await ev(f"window.__AR.St.board.get('{cid}').shape") == 'curve' and 'C' in await ev(f"document.querySelector('[data-el=\"{cid}\"] path').getAttribute('d')")
         for k in ['shape', 'dash', 'arrow']:
             el = await pg.query_selector(f'[data-act="cv-conn"][data-k="{k}"]')
             if el: await el.click(); await pg.wait_for_timeout(200)
