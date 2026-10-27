@@ -1,5 +1,5 @@
 /* ---------- smart pen: gestures, shapes that snap clean, lasso ---------- */
-// With the pen tool (or the stylus on empty canvas):
+// With the pen tool chosen (the stylus drawing on its own leaves plain ink):
 //  • draw a ✓ over a task → it is done          • scribble over a box → it is deleted
 //  • a line from one box to another → a link    • a loop around boxes → they are selected
 //  • draw a rough shape or line and hold the pen still for a moment at the end → it snaps into a clean rectangle,
@@ -69,7 +69,7 @@ function cleanShape(pts, bb) {
 }
 // hold the pen still at the end of a stroke: show the clean shape it will become
 document.addEventListener('pointermove', e => {
-  if (MP.mode !== 'draw' || MP.tool !== 'pen' || !penSmart()) return;
+  if (MP.mode !== 'draw' || MP.tool !== 'pen' || MP.auto || !penSmart()) return;
   const p = [e.clientX, e.clientY];
   if (PEN.last && Math.hypot(p[0] - PEN.last[0], p[1] - PEN.last[1]) < 4) return;
   PEN.last = p; MP.hold = false; clearTimeout(PEN.holdT);
@@ -101,7 +101,8 @@ STROKE_HOOKS.push((pts, info) => {
     UI.tool = 'select'; render(); if (!n) toast('Nothing inside — draw around the boxes to select them.');
     return true;
   }
-  if (info.tool !== 'pen' || !penSmart()) return false;
+  // gestures belong to the pen tool; the stylus drawing on its own (no tool chosen) always leaves plain ink
+  if (info.tool !== 'pen' || info.auto || !penSmart()) return false;
   const boxes = boxesNow();
   // ✓ over a task
   if (isTick(pts, bb, k)) {
@@ -123,8 +124,8 @@ STROKE_HOOKS.push((pts, info) => {
     }
   }
   const closed = isClosed(pts, bb);
-  // a line from one box to another
-  if (!closed && !info.hold) {
+  // a fairly straight line from one box to another (handwriting that wanders across two boxes stays ink)
+  if (!closed && !info.hold && Math.hypot(pts[0][0] - pts[pts.length - 1][0], pts[0][1] - pts[pts.length - 1][1]) > 0.8 * plen(pts)) {
     const a = boxAt(pts[0][0], pts[0][1], boxes), z = boxAt(pts[pts.length - 1][0], pts[pts.length - 1][1], boxes);
     if (a && z && a.id !== z.id && !(a.frame && z.frame) && Math.hypot(bb.w, bb.h) * k > 40) {
       const ref = b => b.kind === 'n' ? { k: 'n', id: b.id } : { k: 'e', id: b.id };

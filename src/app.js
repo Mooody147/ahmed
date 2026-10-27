@@ -1335,7 +1335,8 @@ function viewMap() {
             <div class="seg" role="group" aria-label="Map direction"><button data-act="map-dir" data-dir="h" aria-pressed="${mapDir() === 'h'}">→ Left to right</button><button data-act="map-dir" data-dir="v" aria-pressed="${mapDir() === 'v'}">↓ Top to bottom</button></div></div>
           ${St.mode !== 'viewer' && typeof traceAll === 'function' ? `<div class="mt-sec"><div class="label">Tasks</div><button class="btn sm" data-act="trace-all" ${TRC.running ? 'disabled' : ''}>🔎 ${TRC.running ? 'Tracing…' : 'Trace open tasks in my emails'}</button></div>` : ''}
           <div class="mt-sec"><div class="label">Stylus</div>
-            <label class="check small"><input type="checkbox" id="stylus-draw" data-chg="stylus-draw" ${(St.settings.ui || {}).stylusDraw !== false ? 'checked' : ''}>The pen draws on empty canvas; fingers move and zoom</label>
+            <label class="check small"><input type="checkbox" id="stylus-draw" data-chg="stylus-draw" ${(St.settings.ui || {}).stylusDraw !== false ? 'checked' : ''}>The stylus always draws, without choosing the pen (a tap still selects)</label>
+            <label class="check small"><input type="checkbox" id="stylus-only" data-chg="stylus-only" ${penOnly() ? 'checked' : ''}>Only the stylus draws — fingers move and zoom, a resting palm is ignored</label>
             <label class="check small"><input type="checkbox" id="pen-gestures" data-chg="pen-gestures" ${(St.settings.ui || {}).penGestures !== false ? 'checked' : ''}>Smart pen: ✓ marks done, scribble deletes, a line links two boxes, hold still to snap a clean shape</label>
             <p class="small muted" style="margin:0">Press harder for a thicker line. The pen's eraser end or side button erases. Two-finger tap: undo · three-finger tap: redo. Your palm is ignored while the pen is on the screen.</p></div>
           <div class="mt-sec"><div class="label">Show</div>
@@ -1472,6 +1473,22 @@ function newEl(type, props) { return { id: E.uid('b'), type, color: UI.cvColor, 
 
 /* --- pointer: tools, pan, pinch, select, move, resize, draw, erase, connect --- */
 const MP = { ptrs: new Map(), mode: null, pinch: null };
+// the stylus: once one has touched this device's canvas it is remembered, and from then on only the stylus draws —
+// fingers move, zoom and select. A touch while the pen is on or just above the screen (or just lifted), or a broad
+// contact, is a resting palm and is ignored.
+const PEN_LS = 'ar-pen-seen';
+UI.penSeen = (() => { try { return localStorage.getItem(PEN_LS) === '1'; } catch { return false; } })();
+const penOnly = () => { const v = (St.settings.ui || {}).stylusOnly; return v === undefined ? !!UI.penSeen : !!v; };
+const penIsDown = () => [...MP.ptrs.values()].some(p => p.type === 'pen');
+function palmLikely(e) {
+  if (e.pointerType !== 'touch') return false;
+  const now = Date.now();
+  return penIsDown() || now - (MP.penNear || 0) < 500 || now - (MP.penUpAt || 0) < 350 || (UI.penSeen && (e.width > 34 || e.height > 34));
+}
+document.addEventListener('pointermove', e => { if (e.pointerType === 'pen') MP.penNear = Date.now(); }, { passive: true, capture: true });
+// iPad Safari: without this a Pencil stroke can start a page scroll or a text selection and be cancelled mid-line
+document.addEventListener('touchmove', e => { if (e.target.closest && e.target.closest('#map-vp') && !e.target.closest('.cv-tools,.cv-sub,.cv-ctx,.board-bar,.cv-overlay,input,textarea,select,[contenteditable]')) e.preventDefault(); }, { passive: false });
+document.addEventListener('touchstart', e => { if ([...e.touches].some(t => t.touchType === 'stylus') && e.target.closest && e.target.closest('#map-vp') && !e.target.closest('button,a,input,textarea,select,[contenteditable],.cv-tools,.cv-sub,.cv-ctx,.board-bar,.cv-overlay,.minimap')) e.preventDefault(); }, { passive: false });
 function toWorld(cx, cy) { const vp = $('#map-vp'); const r = vp.getBoundingClientRect(); return { x: (cx - r.left - UI.map.x) / UI.map.k, y: (cy - r.top - UI.map.y) / UI.map.k }; }
 function refAt(el) {
   const n = el && el.closest && el.closest('.mnode'); if (n && n.dataset.type !== 'item') return { k: 'n', id: n.dataset.node, tid: n.dataset.tid || null };
@@ -1513,10 +1530,19 @@ document.addEventListener('pointerdown', e => {
   if (e.target.closest('.cv-tools,.cv-sub,.cv-ctx,.map-empty,.minimap,.present-bar,.board-bar,.cv-overlay,[contenteditable],input,textarea,select')) return;
   // palm rejection: while the stylus touches the screen every other touch is ignored, and once a stylus has been
   // used a broad touch (the side of a hand) is ignored too
-  if (isPen) { UI.penSeen = true; MP.penDown = true; }
-  if (isTouch && (MP.penDown || (UI.penSeen && (e.width > 34 || e.height > 34)))) return;
+  if (isTouch && palmLikely(e)) return;
+  if (isPen) {
+    MP.penNear = Date.now();
+    if (!UI.penSeen) { UI.penSeen = true; try { localStorage.setItem(PEN_LS, '1'); } catch {} toast('✍ Stylus ready — it draws anywhere, a tap selects; fingers move and zoom. Your palm is ignored.'); }
+    // the palm often lands a moment before the pen tip: forget it and undo the little pan or zoom it started
+    if (MP.ptrs.size) {
+      if (['pan', 'pinch'].includes(MP.mode) && Date.now() - (MP.downAt || 0) < 900 && MP.mx != null) { UI.map.x = MP.mx; UI.map.y = MP.my; if (MP.pinch) UI.map.k = MP.pinch.k; applyCam(); }
+      MP.ptrs.clear(); MP.mode = null; MP.pinch = null; UI.cvTemp = null; live('');
+    }
+  }
   if (UI.cvEditing) commitEdit();
   MP.ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY, type: e.pointerType });
+  if (MP.ptrs.size === 1) MP.downAt = Date.now();
   if (MP.ptrs.size === 2) { const [a, b] = [...MP.ptrs.values()]; MP.pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), k: UI.map.k }; MP.mode = 'pinch'; UI.cvTemp = null; live(''); return; }
   let tool = e.button === 1 || UI.spaceDown ? 'hand' : UI.tool;
   let node = e.target.closest('.mnode'), bel = e.target.closest('[data-el]'); const rz = e.target.closest('[data-rz]');
@@ -1525,11 +1551,13 @@ document.addEventListener('pointerdown', e => {
   if (node && layerSet('tasks').lock) node = null;
   // stylus: the eraser end or the side button erases; on empty canvas the pen draws whatever tool is chosen;
   // once a stylus has been used, a finger moves the canvas instead of drawing
+  // the stylus draws without choosing the pen: over empty canvas, tasks and notes alike (a tap still selects or opens)
+  let auto = false;
   if (isPen && (e.button === 5 || (e.buttons & 32) || (e.buttons & 2))) tool = 'eraser';
-  else if (isPen && ['select', 'hand'].includes(tool) && !node && !bel && (St.settings.ui || {}).stylusDraw !== false) tool = 'pen';
-  else if (isTouch && UI.penSeen && ['pen', 'highlighter'].includes(tool)) tool = 'hand';
+  else if (isPen && ['select', 'hand'].includes(tool) && !rz && (St.settings.ui || {}).stylusDraw !== false) { tool = 'pen'; auto = true; }
+  else if (isTouch && penOnly() && ['pen', 'highlighter'].includes(tool)) tool = 'hand';
   MP.isPen = isPen;
-  Object.assign(MP, { sx: e.clientX, sy: e.clientY, w0: toWorld(e.clientX, e.clientY), mx: UI.map.x, my: UI.map.y, tool, node, bel, target: e.target, shift: e.shiftKey, far: false });
+  Object.assign(MP, { auto, tapNode: auto ? node : null, tapBel: auto ? bel : null,  sx: e.clientX, sy: e.clientY, w0: toWorld(e.clientX, e.clientY), mx: UI.map.x, my: UI.map.y, tool, node, bel, target: e.target, shift: e.shiftKey, far: false });
   vp.setPointerCapture && vp.setPointerCapture(e.pointerId);
   if (e.button === 1) e.preventDefault();
   // the ● on a box: drag it to another box to link them, whatever tool is chosen
@@ -1552,7 +1580,7 @@ document.addEventListener('pointerdown', e => {
 });
 document.addEventListener('pointermove', e => {
   if (!MP.ptrs.has(e.pointerId)) return;
-  MP.ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  MP.ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY, type: e.pointerType });
   const vp = $('#map-vp'); if (!vp || !MP.mode) return;
   if (MP.mode === 'pinch') { if (MP.ptrs.size === 2) { const [a, b] = [...MP.ptrs.values()]; const d = Math.hypot(a.x - b.x, a.y - b.y); const r = vp.getBoundingClientRect(); mapZoom((MP.pinch.k * d / MP.pinch.d) / UI.map.k, (a.x + b.x) / 2 - r.left, (a.y + b.y) / 2 - r.top); } return; }
   const dx = e.clientX - MP.sx, dy = e.clientY - MP.sy, k = UI.map.k;
@@ -1602,11 +1630,12 @@ document.addEventListener('pointermove', e => {
   }
 }, { passive: true });
 function endPointer(e) {
-  if (e.pointerType === 'pen') MP.penDown = false;
+  if (e.pointerType === 'pen') { MP.penDown = false; MP.penUpAt = Date.now(); }
   if (!MP.ptrs.has(e.pointerId)) return;
   MP.ptrs.delete(e.pointerId);
   if (MP.mode === 'pinch') { if (MP.ptrs.size === 0) MP.mode = null; return; }
-  const mode = MP.mode, up = e.type === 'pointerup'; MP.mode = null;
+  // a stroke the browser cancelled part way (a system gesture, the page trying to scroll) is kept as drawn
+  const mode = MP.mode, up = e.type === 'pointerup' || (e.type === 'pointercancel' && mode === 'draw' && MP.tool !== 'lasso' && MP.pts && MP.pts.length > 2); MP.mode = null;
   const tmp = UI.cvTemp, drop = UI.cvDrop; UI.cvTemp = null; UI.cvDrop = null; live('');
   const w = MP.w0 ? toWorld(e.clientX, e.clientY) : null;
   let handled = false;
@@ -1620,8 +1649,14 @@ function finishPointer(mode, e, w, tmp, drop) {
     case 'press-empty': if (UI.cvSel.size || UI.mapSel) { UI.cvSel.clear(); UI.mapSel = null; renderWorld(); } return true;
     case 'pan': return true;
     case 'draw': {
+      // the stylus without the pen chosen: a tap (no stroke) on a task or note selects or opens it, as a click would
+      if (MP.auto && !MP.far) {
+        if (MP.tapBel && !MP.tapNode) { const id = MP.tapBel.dataset.el; if (!UI.cvSel.has(id)) { UI.cvSel = new Set([id]); renderWorld(); } MP.elId = id; return finishPointer('press-el', e, w, tmp, drop); }
+        if (MP.tapNode) { MP.node = MP.tapNode; return finishPointer('press-node', e, w, tmp, drop); }
+        if (UI.cvSel.size || UI.mapSel) return finishPointer('press-empty', e, w, tmp, drop);
+      }
       if (MP.pts.length < 2) MP.pts.push([MP.pts[0][0] + 0.5, MP.pts[0][1] + 0.5]);
-      for (const h of STROKE_HOOKS) { try { if (h(MP.pts, { tool: MP.tool, isPen: MP.isPen, hold: MP.hold, e })) return true; } catch (err) { console.warn(err); } }
+      for (const h of STROKE_HOOKS) { try { if (h(MP.pts, { tool: MP.tool, isPen: MP.isPen, hold: MP.hold, auto: MP.auto, e })) return true; } catch (err) { console.warn(err); } }
       const hl = MP.tool === 'highlighter';
       const pts = MP.pts.length > 1500 ? MP.pts.filter((_, i) => i % Math.ceil(MP.pts.length / 1500) === 0) : MP.pts;
       const el = newEl('stroke', { pts, width: hl ? 18 : UI.cvWidth, alpha: hl ? 0.45 : 0, color: hl && UI.cvColor === 'ink' ? '#FFD966' : UI.cvColor, kind: MP.tool, ...(MP.isPen && !hl ? { pressure: true } : {}) });
@@ -3363,6 +3398,7 @@ const ACT = {
 };
 const CHG = {
   'stylus-draw': el => { saveSettingsUi({ stylusDraw: !!el.checked }); },
+  'stylus-only': el => { saveSettingsUi({ stylusOnly: !!el.checked }); },
   'sub-text': el => { const t = clone(St.tasks.get(UI.drawer && UI.drawer.id)); if (!t) return; const x = subsOf(t).find(y => y.id === el.dataset.sid); if (!x || x.text === el.value.trim()) return; if (!el.value.trim()) { t.subtasks = subsOf(t).filter(y => y.id !== x.id); } else x.text = el.value.trim(); putTask(t); render(); },
   'map-opt': el => { UI[el.dataset.key] = el.checked; UI.map.fitted = false; render(); },
   'map-day': el => { UI.mapDay = el.value || ''; render(); },

@@ -3,7 +3,7 @@
 // the stylus itself — pressure, eraser end, side button, palm rejection — is handled with the other canvas pointers.
 const FT = { n: 0, max: 0, t0: 0, moved: false, start: new Map() };
 document.addEventListener('pointerdown', e => {
-  if (e.pointerType !== 'touch' || MP.penDown || !e.target.closest || !e.target.closest('#map-vp')) return;
+  if (e.pointerType !== 'touch' || palmLikely(e) || !e.target.closest || !e.target.closest('#map-vp')) return;
   if (!FT.n) { FT.max = 0; FT.t0 = Date.now(); FT.moved = false; FT.start.clear(); }
   FT.n++; FT.max = Math.max(FT.max, FT.n); FT.start.set(e.pointerId, [e.clientX, e.clientY]);
 }, true);
