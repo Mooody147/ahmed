@@ -906,6 +906,10 @@ RULES
 10. Flags: attachment referenced but not provided; content unreadable/truncated that may hold requirements; conflicting instructions; owner unclear; deadline uncertain; revision mismatch (comments refer to a different revision than attached).
 11. Relationships and placement: in "relatedTaskIds" list TRACKED TASK ids that this task follows on from, depends on, answers, or continues (e.g. a resubmission after comments, a reply to a query I raised). Never invent ids; [] when none. Always choose the single best project and topic yourself (see CATEGORIES › project) — I will not be asked. Set "placementConfidence" (0–1); when it is below 0.7, also give up to 3 "placementOptions" — other places {project, discipline, relatedTaskId, reason} — I can switch to later.
 12. If nothing is needed from me, set actionRequired false and explain in noActionReason. Waiting/FYI items may still be listed if useful.
+14. Task headers: "title" is a short header I can scan on a canvas — what to do, 3–8 words, at most 55 characters, written like a to-do item ("Revise RAS pump calc", "Answer CRS comments on valve spec", "Confirm anchor bolt layout"). Summarise in your own words; no greetings, no full sentences, no "Please", no long document titles (a short doc no. or tag only when it tells tasks apart). Put the detail in "action" (one or two short sentences) and the individual items in "subtasks".
+15. No duplicates: never return two tasks for the same deliverable, and if a TRACKED TASK above is the same obligation (even worded differently, or the same email forwarded again), set "matchesTaskId" to its id instead of creating a new one.
+16. Dates in the conversation: for each task set "askedOn" to the date (YYYY-MM-DD) of the message in this thread where it was asked — from that message's own header or quoted "Sent:"/"Date:" line; the email's sent date when it is the newest message. Also give "thread": the dates of the first and the newest message in the conversation.
+17. My own replies and updates: when the email (or its newest message) was sent BY ME, it usually answers or moves on a TRACKED TASK above — find it (same conversation, the person I am replying to, or the subject of my reply), even when the wording differs. Decide whether my message does what that task asked: "fulfilled" (e.g. the task was to reply to / answer / send / submit / confirm something and my message does it, with the needed content or attachment) → an "updates" entry with change "completed", newStatus "done"; "partial" (it covers some items or only promises to follow up) → change "note", newStatus "in_progress", list the items it covers in "doneItems" (their ref or text exactly as in the task) and say what is still open in "note"; "not_fulfilled" (it is related but does not do what was asked) → change "note" with the reason. Always give "verdict" and a one-line "reason" quoting what my message did. Do not create tasks for me from my own message, except when I promise a new deliverable with a date (then one task for me: what I promised). Anything my message asks of others is "waiting".
 13. Documents: list in "documents" every drawing/document/datasheet/calculation that this email submits, returns with a review status code, approves, rejects or requests (for my document register): its number exactly as written, title, revision, the review code if one is given (1 approved, 2 approved with comments, 3 revise and resubmit, 4 rejected — use the digit), and who issued or returned it. [] when there are none.
 ${input.notes ? '\nUSER RULES AND PREFERENCES (follow these)\n' + input.notes + '\n' : ''}
 ${ENGINEERING_NOTES}
@@ -918,14 +922,15 @@ OUTPUT — exactly this JSON shape:
 "noActionReason":null,
 "project":"project code/name if identifiable, else null",
 "category":"submittal_review|technical_query|rfq_tender|design_coordination|vendor_comments|meeting|approval_request|site_issue|info_only|other",
-"tasks":[{"ref":"N1","title":"imperative, specific, ≤90 chars (include doc no./tag)","action":"exactly what must be done, with specifics from the source","type":"do|reply|review|approve|submit|revise|decide|follow_up|attend","ownership":"mine|waiting|fyi","topic":"short subject name","workType":"one of the workType values","discipline":"one of the discipline values","owner":"me or responsible person/company","requestedBy":"who asked","project":"…","priority":"critical|high|medium|low","deadline":"YYYY-MM-DD or null","deadlineText":"as written, or null","deadlineBasis":"explicit|relative|none|uncertain","nextStep":"one concrete first step","dependsOn":null,"blocked":false,"blockedReason":null,"tags":["pumps"],"subtasks":[{"text":"C-01 — item needing action","ref":"C-01","location":"Sheet CRS, row 5"}],"evidence":[{"source":"A1","location":"Sheet CRS, row 14","quote":"exact words from the source"}],"confidence":0.9,"matchesTaskId":null,"relatedTaskIds":[],"placementConfidence":0.9,"placementOptions":[]}],
-"updates":[{"taskId":"existing id","change":"completed|status|deadline|note","newStatus":"todo|in_progress|waiting|blocked|done|null","newDeadline":"YYYY-MM-DD or null","note":"what changed","evidence":[{"source":"BODY","location":null,"quote":"…"}]}],
+"thread":{"first":"YYYY-MM-DD or null","last":"YYYY-MM-DD or null","messages":3},
+"tasks":[{"ref":"N1","title":"short header, 3–8 words, ≤55 chars","action":"what must be done, one or two short sentences","askedOn":"YYYY-MM-DD or null","type":"do|reply|review|approve|submit|revise|decide|follow_up|attend","ownership":"mine|waiting|fyi","topic":"short subject name","workType":"one of the workType values","discipline":"one of the discipline values","owner":"me or responsible person/company","requestedBy":"who asked","project":"…","priority":"critical|high|medium|low","deadline":"YYYY-MM-DD or null","deadlineText":"as written, or null","deadlineBasis":"explicit|relative|none|uncertain","nextStep":"one concrete first step","dependsOn":null,"blocked":false,"blockedReason":null,"tags":["pumps"],"subtasks":[{"text":"C-01 — item needing action","ref":"C-01","location":"Sheet CRS, row 5"}],"evidence":[{"source":"A1","location":"Sheet CRS, row 14","quote":"exact words from the source"}],"confidence":0.9,"matchesTaskId":null,"relatedTaskIds":[],"placementConfidence":0.9,"placementOptions":[]}],
+"updates":[{"taskId":"existing id","change":"completed|status|deadline|note","newStatus":"todo|in_progress|waiting|blocked|done|null","newDeadline":"YYYY-MM-DD or null","note":"what changed","verdict":"fulfilled|partial|not_fulfilled|null","reason":"one line: what my message did","doneItems":["C-01"],"evidence":[{"source":"BODY","location":null,"quote":"…"}]}],
 "decisions":["decision — by whom"],
 "flags":[{"kind":"missing_attachment|unreadable|truncated|ambiguous|uncertain_deadline|conflict|owner_unclear|revision_mismatch","detail":"…","source":"A2"}],
 "documents":[{"number":"document/drawing number as written","title":"…","revision":"A|B|0|… or null","code":"1|2|3|4 or null","status":"submitted|returned|approved|rejected|requested|for_info","by":"who issued or returned it","date":"YYYY-MM-DD or null","source":"A1"}]}
 
 SOURCES`;
-  const hdr = [`Subject: ${email.subject || '(none)'}`, `From: ${email.from || '(unknown)'}`, `Sent: ${email.date ? email.date.replace('T', ' ').slice(0, 16) + ' UTC' : '(unknown)'}`, `To: ${email.to || '(unknown)'}`, email.cc ? `Cc: ${email.cc}` : '', email.forwardedBy ? `Forwarded to my task inbox by: ${email.forwardedBy}${email.forwardedAt ? ' on ' + email.forwardedAt.slice(0, 10) : ''} (${email.forwardMode === 'attachment' ? 'original attached, headers exact' : 'original quoted inline, header recovered from text'})` : ''].filter(Boolean).join('\n');
+  const hdr = [`Subject: ${email.subject || '(none)'}`, `From: ${email.from || '(unknown)'}${email.fromMe ? '   ← THIS IS ME: my own reply/update (see rule 17)' : ''}`, `Sent: ${email.date ? email.date.replace('T', ' ').slice(0, 16) + ' UTC' : '(unknown)'}`, `To: ${email.to || '(unknown)'}`, email.cc ? `Cc: ${email.cc}` : '', email.forwardedBy ? `Forwarded to my task inbox by: ${email.forwardedBy}${email.forwardedAt ? ' on ' + email.forwardedAt.slice(0, 10) : ''} (${email.forwardMode === 'attachment' ? 'original attached, headers exact' : 'original quoted inline, header recovered from text'})` : ''].filter(Boolean).join('\n');
   const attList = input.attachments.length || input.images.length
     ? input.attachments.map(a => `${a.key} = "${a.name}" (${a.kindLabel}${a.status === 'excluded' ? ', NOT PROVIDED: ' + a.note : (a.note ? '; ' + a.note : '')})`).join('\n')
     : '(no attachments)';
@@ -966,6 +971,30 @@ SOURCES`;
 const PRI = ['critical', 'high', 'medium', 'low'];
 const OWN = ['mine', 'waiting', 'fyi'];
 const STAT = ['todo', 'in_progress', 'waiting', 'blocked', 'done'];
+// a task header stays a header: greetings and politeness dropped, cut at a word boundary
+function shortTitle(t) {
+  let s = String(t).replace(/\s+/g, ' ').replace(/^(please|kindly|pls|could you|can you|you need to|we need to|need to)\s+/i, '').replace(/[.。]+$/, '').trim();
+  s = s.charAt(0).toUpperCase() + s.slice(1);
+  if (s.length <= 70) return s;
+  const cut = s.slice(0, 68); const sp = cut.lastIndexOf(' ');
+  return (sp > 40 ? cut.slice(0, sp) : cut).replace(/[\s,;:–—-]+$/, '') + '…';
+}
+// the same deliverable proposed twice in one answer becomes one task with both sets of items and evidence
+function mergeSameTasks(tasks) {
+  const out = [];
+  for (const t of tasks) {
+    const tt = tokens(t.title + ' ' + t.action);
+    const same = out.find(o => jaccard(tokens(o.title), tokens(t.title)) >= 0.75 || (jaccard(tokens(o.title + ' ' + o.action), tt) >= 0.7 && (o.project || '') === (t.project || '')));
+    if (!same) { out.push(t); continue; }
+    const have = new Set(same.subtasks.map(x => normMatch(x.text)));
+    same.subtasks.push(...t.subtasks.filter(x => !have.has(normMatch(x.text))));
+    same.evidence = [...same.evidence, ...t.evidence].slice(0, 8);
+    if (t.deadline && (!same.deadline || t.deadline < same.deadline)) { same.deadline = t.deadline; same.deadlineBasis = t.deadlineBasis; same.deadlineText = t.deadlineText; }
+    if (PRI.indexOf(t.priority) < PRI.indexOf(same.priority)) same.priority = t.priority;
+    same.matchesTaskId = same.matchesTaskId || t.matchesTaskId;
+  }
+  return out;
+}
 function normalizeAnalysis(raw, ctx) {
   const um = ctx.unmask || (s => s);
   const r = raw && typeof raw === 'object' ? raw : {};
@@ -979,7 +1008,7 @@ function normalizeAnalysis(raw, ctx) {
     const ownership = OWN.includes(t.ownership) ? t.ownership : (/^me$/i.test(t.owner || '') ? 'mine' : 'waiting');
     return {
       pid: uid('p'), ref: S(t.ref) || 'N' + (i + 1),
-      title: clip(S(t.title) || 'Untitled action', 140), action: S(t.action), type: S(t.type) || 'do',
+      title: shortTitle(S(t.title) || 'Untitled action'), action: S(t.action), type: S(t.type) || 'do', askedOn: validISO(t.askedOn) ? t.askedOn : null,
       ownership, owner: ownership === 'mine' ? 'me' : (S(t.owner) || 'unknown'), requestedBy: S(t.requestedBy),
       project: S(t.project) || S(r.project), priority: PRI.includes(t.priority) ? t.priority : 'medium',
       deadline, deadlineText: S(t.deadlineText), deadlineBasis: basis,
@@ -999,11 +1028,14 @@ function normalizeAnalysis(raw, ctx) {
     uid: uid('u'), taskId: S(u.taskId), change: S(u.change) || 'note',
     newStatus: STAT.includes(u.newStatus) ? u.newStatus : (u.change === 'completed' ? 'done' : null),
     newDeadline: validISO(u.newDeadline) ? u.newDeadline : null, note: S(u.note), evidence: ev(u.evidence),
+    verdict: ['fulfilled', 'partial', 'not_fulfilled'].includes(u.verdict) ? u.verdict : null, reason: S(u.reason),
+    doneItems: (Array.isArray(u.doneItems) ? u.doneItems : []).map(S).filter(Boolean).slice(0, 150),
   })).filter(u => u.taskId);
   return {
     summary: S(r.summary), actionRequired: r.actionRequired !== false, noActionReason: S(r.noActionReason),
     project: S(r.project), category: S(r.category) || 'other',
-    tasks, updates,
+    tasks: mergeSameTasks(tasks), updates,
+    thread: r.thread && typeof r.thread === 'object' ? { first: validISO(r.thread.first) ? r.thread.first : null, last: validISO(r.thread.last) ? r.thread.last : null, messages: Math.max(0, Math.min(500, parseInt(r.thread.messages, 10) || 0)) } : null,
     decisions: (Array.isArray(r.decisions) ? r.decisions : []).map(S).filter(Boolean).slice(0, 12),
     documents: (Array.isArray(r.documents) ? r.documents : []).slice(0, 60).map(d => ({ number: S(d && d.number), title: S(d && d.title), revision: S(d && d.revision), code: /^[1-4]$/.test(S(d && d.code)) ? S(d.code) : '', status: ['submitted', 'returned', 'approved', 'rejected', 'requested', 'for_info'].includes(S(d && d.status)) ? S(d.status) : '', by: S(d && d.by), date: validISO(S(d && d.date)) ? S(d.date) : '', source: S(d && d.source).toUpperCase() })).filter(d => d.number || d.title),
     flags: (Array.isArray(r.flags) ? r.flags : []).map(f => ({ kind: S(f && f.kind) || 'ambiguous', detail: S(f && f.detail), source: S(f && f.source) })).filter(f => f.detail).slice(0, 20),
@@ -1076,8 +1108,10 @@ function findDuplicate(prop, tasks, thread) {
 }
 function relatedOpenTasks(tasks, email, thread, limit = 25) {
   const et = tokens(email.subject + ' ' + (email.body || '').slice(0, 3000));
+  const to = String((email.to || '') + ' ' + (email.cc || '')).toLowerCase();
+  const writesTo = t => !!email.fromMe && [t.sourceFrom, t.requestedBy].some(x => { const a = (String(x || '').match(/[\w.+-]+@[\w.-]+/) || [''])[0].toLowerCase(); return a && to.includes(a); });
   return tasks.filter(t => t.status !== 'done' || t.threadKey === thread || Date.now() - new Date(t.updatedAt || 0) < 60 * 864e5)
-    .map(t => ({ t, s: (t.threadKey === thread ? 1 : 0) + jaccard(et, tokens(t.title + ' ' + (t.project || ''))) }))
+    .map(t => ({ t, s: (t.threadKey === thread ? 1 : 0) + (writesTo(t) ? 0.5 : 0) + jaccard(et, tokens(t.title + ' ' + (t.action || '') + ' ' + (t.project || ''))) }))
     .filter(x => x.s >= 0.12).sort((a, b) => b.s - a.s).slice(0, limit).map(x => x.t);
 }
 
@@ -1097,7 +1131,7 @@ return {
   parseEml, readMsgFromCfb, unwrapForward, b64urlToBytes, findHeaderBlock, decompressRTF, rtfToText, parsePasted, htmlToText, tidyText, decodeMimeWords, parseParams,
   normSubject, threadKey, kindOf, KIND_LABEL, extract, need, guessMime, firstEmail,
   WORK_TYPES, DISCIPLINES, buildCategorizePrompt,
-  makeMasker, buildPrompt, normalizeAnalysis, verifyEvidence, normMatch, findDuplicate, relatedOpenTasks, localFlags, tokens, jaccard, splitForwards, parseTnef,
+  makeMasker, buildPrompt, normalizeAnalysis, shortTitle, verifyEvidence, normMatch, findDuplicate, relatedOpenTasks, localFlags, tokens, jaccard, splitForwards, parseTnef,
   RTF_PREBUF,
 };
 })();

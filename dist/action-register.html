@@ -474,7 +474,8 @@ body { background-color: var(--bg); background-image: linear-gradient(var(--grid
   radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--ink-3) 28%, transparent) 1px, transparent 0) 0 0 / 22px 22px, linear-gradient(180deg, var(--surface), var(--bg)); box-shadow: inset 0 2px 10px rgba(0,0,0,.05), var(--elev-2); touch-action: none; cursor: grab; user-select: none; -webkit-user-select: none; }
 .map-viewport:active { cursor: grabbing; }
 @media (max-width: 860px) { .map-viewport { height: 68vh; } }
-.map-world { position: absolute; left: 0; top: 0; transform-origin: 0 0; will-change: transform; }
+.map-world { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+.map-world.moving { will-change: transform; }
 .map-world.anim { transition: transform .35s cubic-bezier(.2,.7,.2,1); }
 .map-edges { position: absolute; inset: 0; overflow: visible; pointer-events: none; }
 .map-edges .edge { fill: none; stroke: hsl(var(--h) 55% 55% / .55); stroke-width: 2.4; }
@@ -1059,26 +1060,26 @@ details.menu > summary.on { background: var(--accent-soft); color: var(--accent)
 
 /* ---------- Plan ---------- */
 .cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; margin-top: 10px; }
-.cal-wd { font-size: 12px; color: var(--muted); text-align: center; padding: 2px; }
+.cal-wd { font-size: 12px; color: var(--ink-3); text-align: center; padding: 2px; }
 .cal-day { display: grid; align-content: start; gap: 2px; min-height: 92px; padding: 4px; border: 1px solid var(--line); border-radius: 8px; background: var(--card, #fff); text-align: start; cursor: pointer; min-width: 0; font: inherit; color: inherit; }
 .cal-day.out { opacity: .45; } .cal-day.wkend { background: var(--soft, rgba(0,0,0,.03)); }
 .cal-day.today { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); } .cal-day.sel { outline: 2px solid var(--accent); }
 .cal-day .n { font-size: 12px; font-weight: 600; }
 .cal-day .ev { font-size: 11px; line-height: 1.3; padding: 1px 4px; border-radius: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-inline-start: 3px solid; background: var(--soft, rgba(0,0,0,.04)); }
-.cal-day .more { font-size: 11px; color: var(--muted); }
+.cal-day .more { font-size: 11px; color: var(--ink-3); }
 .ev.task, .k.task { border-color: var(--accent); } .ev.wait, .k.wait { border-color: #8a7cc2; } .ev.rfi, .k.rfi { border-color: #c26100; } .ev.delivery, .k.delivery { border-color: #2f7a3e; } .ev.theirs, .k.theirs { border-color: #c62828; } .ev.done { opacity: .5; text-decoration: line-through; }
 .k { display: inline-block; width: 10px; height: 10px; border-radius: 3px; border: 3px solid; margin: 0 3px 0 8px; vertical-align: -1px; }
 .cal-item { padding: 4px 0; border-top: 1px solid var(--line); }
 .gantt-wrap { overflow: auto; max-height: 70vh; border: 1px solid var(--line); border-radius: 10px; }
 .gantt .g-grid { stroke: var(--line); } .gantt .g-today { stroke: var(--crit, #c62828); stroke-dasharray: 4 3; }
-.gantt .g-ax { font-size: 11px; fill: var(--muted); } .gantt .g-lab { font-size: 12px; fill: currentColor; } .gantt .g-head { font-size: 12.5px; font-weight: 700; fill: currentColor; } .gantt .g-late { font-size: 11px; fill: var(--crit, #c62828); }
+.gantt .g-ax { font-size: 11px; fill: var(--ink-3); } .gantt .g-lab { font-size: 12px; fill: currentColor; } .gantt .g-head { font-size: 12.5px; font-weight: 700; fill: currentColor; } .gantt .g-late { font-size: 11px; fill: var(--crit, #c62828); }
 .gantt .g-row { cursor: pointer; }
 .load-bars { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 10px; align-items: end; margin-top: 10px; }
 .load-w { display: grid; gap: 4px; justify-items: center; text-align: center; }
 .load-bar { position: relative; width: 100%; max-width: 54px; height: 160px; background: var(--soft, rgba(0,0,0,.04)); border-radius: 8px; overflow: hidden; }
 .load-bar i { position: absolute; bottom: 0; left: 0; right: 0; background: var(--accent); border-radius: 8px 8px 0 0; }
 .load-w.over .load-bar i { background: var(--crit, #c62828); }
-.load-bar b { position: absolute; left: 0; right: 0; border-top: 2px dashed var(--muted); }
+.load-bar b { position: absolute; left: 0; right: 0; border-top: 2px dashed var(--ink-3); }
 .load-w .n { font-weight: 700; }
 .meet-sheet { display: grid; gap: 6px; }
 .vd-rate { width: 64px; height: 30px; }
@@ -1090,7 +1091,7 @@ details.menu > summary.on { background: var(--accent-soft); color: var(--accent)
 .sv-ph img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 8px; background: var(--soft, rgba(0,0,0,.05)); }
 .sv-ph .icon-btn { position: absolute; top: 4px; right: 4px; background: var(--card, #fff); }
 .sv-add { display: grid; place-items: center; gap: 4px; aspect-ratio: 4 / 3; border: 2px dashed var(--line); border-radius: 8px; cursor: pointer; font-size: 28px; }
-.sv-add span { font-size: 13px; color: var(--muted); }
+.sv-add span { font-size: 13px; color: var(--ink-3); }
 .pat-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
 .pat { border: 1px solid var(--line); border-radius: 10px; padding: 10px; }
 .pat ul { margin: 6px 0 0; padding-inline-start: 18px; }
@@ -1103,7 +1104,7 @@ details.menu > summary.on { background: var(--accent-soft); color: var(--accent)
 .mini-view { display: grid; gap: 10px; padding: 14px; }
 .mini-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
 .mini-t { display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: center; padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--card, #fff); }
-.mini-t.done span { text-decoration: line-through; color: var(--muted); }
+.mini-t.done span { text-decoration: line-through; color: var(--ink-3); }
 #tour { position: fixed; inset: 0; z-index: 90; pointer-events: none; }
 .tour-hole { position: fixed; border-radius: 10px; box-shadow: 0 0 0 9999px rgba(0,0,0,.45); transition: all .2s; }
 .tour-card { position: fixed; width: 320px; pointer-events: auto; display: grid; }
@@ -1162,6 +1163,90 @@ body:not(.viewer-mode) .viewer-bar { display: none; }
 @container (min-width: 641px) { .map-tools .btn.mt-mine .lbl { display: inline; } }
 @container (max-width: 900px) { .map-tools .todo-search { flex: 1 1 160px; min-width: 120px; } }
 @container (max-width: 640px) { .map-tools .mt-mine .lbl { display: none; } }
+
+/* NEW for the first 24 hours, the email date on each box */
+.mtags { display: flex; gap: 4px; justify-self: start; margin-bottom: 3px; }
+.mtags .mme { margin-bottom: 0; }
+.mnew { display: inline-flex; align-items: center; padding: 1px 7px; border-radius: 999px; font-size: 10px; font-weight: 800; letter-spacing: .08em; background: #1F7A4D; color: #fff; }
+.mnode.task.is-new { box-shadow: 0 0 0 2px #1F7A4D, 0 8px 22px -10px rgba(31, 122, 77, .6); }
+.mnode.task.is-new.sel { box-shadow: 0 0 0 3px var(--wait), var(--elev-3); }
+.mmail { color: var(--ink-3); white-space: nowrap; }
+.mail-date { margin: -4px 0 2px; }
+.chip.new { background: #1F7A4D; color: #fff; border-color: #1F7A4D; font-weight: 800; letter-spacing: .06em; }
+
+/* duplicate groups */
+.dup-row { display: grid; grid-template-columns: auto auto 1fr; gap: 10px; align-items: start; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; cursor: pointer; }
+.dup-row:has(input:checked) { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 6%, var(--surface)); }
+.dup-t { display: grid; gap: 2px; min-width: 0; } .dup-t small { font-size: 11.5px; }
+/* layout switch: at mid widths only the chosen layout keeps its name */
+.mode-seg button { display: inline-flex; align-items: center; gap: 5px; }
+@container (max-width: 1360px) { .mode-seg button:not([aria-pressed="true"]) .lbl { display: none; } }
+@container (max-width: 520px) { .mode-seg button .lbl { display: none; } }
+.mode-bar .mode-seg .lbl { display: inline; }
+
+/* shared task cards for the timeline and matrix */
+.vcard { position: relative; text-align: start; font: inherit; color: inherit; }
+.vcard.dim { opacity: .3; filter: saturate(.2); }
+.vcard.dim:hover { opacity: .8; }
+.tl-tags { display: flex; gap: 4px; } .tl-tags:empty { display: none; }
+
+/* timeline */
+.tl { --nw: 300px; margin-top: 12px; padding: 0; overflow: hidden; }
+.tl-scroll { overflow: auto; max-height: min(78vh, 900px); overscroll-behavior: contain; }
+.tl-grid { position: relative; }
+.tl-head { position: sticky; top: 0; z-index: 3; display: flex; background: var(--surface); border-bottom: 1px solid var(--line); }
+.tl-name-h { position: sticky; left: 0; z-index: 2; width: var(--nw); flex: none; padding: 10px 14px; font-size: 12px; font-weight: 700; color: var(--ink-3); background: var(--surface); border-right: 1px solid var(--line); }
+.tl-axis { position: relative; height: 44px; flex: none; }
+.tl-tick { position: absolute; top: 0; bottom: 0; width: var(--dw); display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding-bottom: 6px; font-size: 11px; color: var(--ink-3); border-left: 1px solid color-mix(in srgb, var(--line) 50%, transparent); font-variant-numeric: tabular-nums; }
+.tl-tick.we { background: color-mix(in srgb, var(--line) 22%, transparent); }
+.tl-tick.now { color: var(--accent); font-weight: 800; }
+.tl-mon { position: absolute; top: 4px; left: 4px; font-weight: 700; color: var(--ink, var(--text)); white-space: nowrap; }
+.tl-body { position: relative; }
+.tl-today { position: absolute; top: 0; bottom: 0; width: 0; border-left: 2px solid var(--accent); z-index: 2; pointer-events: none; }
+.tl-today span { position: sticky; top: 50px; display: inline-block; margin-left: -1px; padding: 1px 6px; border-radius: 0 6px 6px 0; background: var(--accent); color: var(--surface); font-size: 10px; font-weight: 700; }
+.tl-proj { position: sticky; left: 0; display: flex; align-items: center; gap: 8px; width: var(--nw); padding: 10px 14px 6px; font-weight: 700; font-size: 13px; background: var(--surface); }
+.tl-proj small { color: var(--ink-3); font-weight: 600; }
+.tl-row { display: flex; align-items: stretch; min-height: 54px; border-top: 1px solid color-mix(in srgb, var(--line) 60%, transparent); cursor: pointer; }
+.tl-row:hover { background: color-mix(in srgb, var(--accent) 4%, transparent); }
+.tl-name { position: sticky; left: 0; z-index: 1; width: var(--nw); flex: none; display: grid; gap: 2px; align-content: center; padding: 6px 14px; background: var(--surface); border-right: 1px solid var(--line); border-left: 4px solid var(--med); }
+.tl-row.p-critical .tl-name { border-left-color: var(--crit); } .tl-row.p-high .tl-name { border-left-color: var(--high); } .tl-row.p-low .tl-name { border-left-color: var(--line); }
+.tl-row.me .tl-name { border-left-color: var(--accent); }
+.tl-name b { font-size: 13px; line-height: 1.25; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.tl-name small { font-size: 11px; }
+.tl-lane { position: relative; flex: none; }
+.tl-bar { position: absolute; top: 50%; height: 14px; margin-top: -7px; border-radius: 7px; background: color-mix(in srgb, var(--med) 75%, var(--surface)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--med) 60%, #000 10%); }
+.tl-bar.p-critical { background: var(--crit); } .tl-bar.p-high { background: var(--high); } .tl-bar.p-low { background: color-mix(in srgb, var(--line) 80%, var(--surface)); }
+.tl-row.me .tl-bar:not(.over):not(.nodate) { background: var(--accent); }
+.tl-bar.over { background: repeating-linear-gradient(135deg, var(--crit) 0 6px, color-mix(in srgb, var(--crit) 70%, #fff) 6px 12px); }
+.tl-bar.nodate { width: 14px; height: 14px; margin-top: -7px; border-radius: 50%; background: var(--surface); box-shadow: inset 0 0 0 2.5px var(--ink-3); z-index: 1; }
+.tl-bar.nodate::after { content: 'no date'; position: absolute; left: 20px; top: -1px; font-size: 11px; color: var(--ink-3); white-space: nowrap; }
+.tl-row.is-new .tl-name { box-shadow: inset 3px 0 0 #1F7A4D; }
+
+/* priority matrix */
+.mx { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+.mx-q, .mx-wait { padding: 0; overflow: hidden; display: flex; flex-direction: column; min-height: 220px; }
+.mx-q header, .mx-wait header { display: flex; align-items: baseline; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--line); }
+.mx-q header small { color: var(--ink-3); font-size: 11.5px; }
+.mx-n { margin-left: auto; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--ink-3); }
+.mx-do header { background: color-mix(in srgb, var(--crit) 10%, var(--surface)); } .mx-do header b { color: var(--crit); }
+.mx-plan header { background: color-mix(in srgb, var(--accent) 9%, var(--surface)); } .mx-plan header b { color: var(--accent); }
+.mx-quick header { background: color-mix(in srgb, var(--high) 10%, var(--surface)); }
+.mx-later header { background: color-mix(in srgb, var(--line) 30%, var(--surface)); }
+.mx-list { display: grid; gap: 8px; padding: 12px; align-content: start; overflow: auto; max-height: 52vh; }
+.mx-wait { margin-top: 12px; min-height: 0; }
+.mx-list.row-list { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+.mx .vcard, .mx-wait .vcard { display: grid; gap: 4px; padding: 9px 12px 9px 10px; border-radius: 12px; border: 1px solid var(--line); border-left: 4px solid var(--med); background: var(--surface); box-shadow: var(--elev-1); cursor: pointer; }
+.mx .vcard:hover, .mx-wait .vcard:hover { box-shadow: var(--elev-2); }
+.vcard.p-critical { border-left-color: var(--crit); } .vcard.p-high { border-left-color: var(--high); } .vcard.p-low { border-left-color: var(--line); }
+.vcard.me { border-left-color: var(--accent); }
+.mx .vcard.is-new, .mx-wait .vcard.is-new { box-shadow: 0 0 0 2px #1F7A4D; }
+.vcard b { font-size: 13.5px; line-height: 1.25; }
+.vcard small { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 11px; color: var(--ink-3); }
+@media (max-width: 760px) { .mx { grid-template-columns: 1fr; } .tl { --nw: 170px; } }
+
+/* crisp text and lines everywhere */
+html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; text-rendering: optimizeLegibility; font-kerning: normal; }
+.map-world svg, .map-ink, .map-edges { shape-rendering: geometricPrecision; }
 
 </style>
 <div class="titlestrip" id="titlestrip"><span class="ts-brand"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c3.3 4 6 7.2 6 10.4a6 6 0 0 1-12 0C6 10.2 8.7 7 12 3z"/><path d="m9.3 13.6 1.9 1.9 3.6-4.1"/></svg> Action Register</span><button class="ts-search" data-act="palette" title="Search and commands (Ctrl+K)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg><span>Search or type a command</span><kbd>Ctrl K</kbd></button><span class="ts-space"></span></div>
@@ -3008,6 +3093,10 @@ RULES
 10. Flags: attachment referenced but not provided; content unreadable/truncated that may hold requirements; conflicting instructions; owner unclear; deadline uncertain; revision mismatch (comments refer to a different revision than attached).
 11. Relationships and placement: in "relatedTaskIds" list TRACKED TASK ids that this task follows on from, depends on, answers, or continues (e.g. a resubmission after comments, a reply to a query I raised). Never invent ids; [] when none. Always choose the single best project and topic yourself (see CATEGORIES › project) — I will not be asked. Set "placementConfidence" (0–1); when it is below 0.7, also give up to 3 "placementOptions" — other places {project, discipline, relatedTaskId, reason} — I can switch to later.
 12. If nothing is needed from me, set actionRequired false and explain in noActionReason. Waiting/FYI items may still be listed if useful.
+14. Task headers: "title" is a short header I can scan on a canvas — what to do, 3–8 words, at most 55 characters, written like a to-do item ("Revise RAS pump calc", "Answer CRS comments on valve spec", "Confirm anchor bolt layout"). Summarise in your own words; no greetings, no full sentences, no "Please", no long document titles (a short doc no. or tag only when it tells tasks apart). Put the detail in "action" (one or two short sentences) and the individual items in "subtasks".
+15. No duplicates: never return two tasks for the same deliverable, and if a TRACKED TASK above is the same obligation (even worded differently, or the same email forwarded again), set "matchesTaskId" to its id instead of creating a new one.
+16. Dates in the conversation: for each task set "askedOn" to the date (YYYY-MM-DD) of the message in this thread where it was asked — from that message's own header or quoted "Sent:"/"Date:" line; the email's sent date when it is the newest message. Also give "thread": the dates of the first and the newest message in the conversation.
+17. My own replies and updates: when the email (or its newest message) was sent BY ME, it usually answers or moves on a TRACKED TASK above — find it (same conversation, the person I am replying to, or the subject of my reply), even when the wording differs. Decide whether my message does what that task asked: "fulfilled" (e.g. the task was to reply to / answer / send / submit / confirm something and my message does it, with the needed content or attachment) → an "updates" entry with change "completed", newStatus "done"; "partial" (it covers some items or only promises to follow up) → change "note", newStatus "in_progress", list the items it covers in "doneItems" (their ref or text exactly as in the task) and say what is still open in "note"; "not_fulfilled" (it is related but does not do what was asked) → change "note" with the reason. Always give "verdict" and a one-line "reason" quoting what my message did. Do not create tasks for me from my own message, except when I promise a new deliverable with a date (then one task for me: what I promised). Anything my message asks of others is "waiting".
 13. Documents: list in "documents" every drawing/document/datasheet/calculation that this email submits, returns with a review status code, approves, rejects or requests (for my document register): its number exactly as written, title, revision, the review code if one is given (1 approved, 2 approved with comments, 3 revise and resubmit, 4 rejected — use the digit), and who issued or returned it. [] when there are none.
 ${input.notes ? '\nUSER RULES AND PREFERENCES (follow these)\n' + input.notes + '\n' : ''}
 ${ENGINEERING_NOTES}
@@ -3020,14 +3109,15 @@ OUTPUT — exactly this JSON shape:
 "noActionReason":null,
 "project":"project code/name if identifiable, else null",
 "category":"submittal_review|technical_query|rfq_tender|design_coordination|vendor_comments|meeting|approval_request|site_issue|info_only|other",
-"tasks":[{"ref":"N1","title":"imperative, specific, ≤90 chars (include doc no./tag)","action":"exactly what must be done, with specifics from the source","type":"do|reply|review|approve|submit|revise|decide|follow_up|attend","ownership":"mine|waiting|fyi","topic":"short subject name","workType":"one of the workType values","discipline":"one of the discipline values","owner":"me or responsible person/company","requestedBy":"who asked","project":"…","priority":"critical|high|medium|low","deadline":"YYYY-MM-DD or null","deadlineText":"as written, or null","deadlineBasis":"explicit|relative|none|uncertain","nextStep":"one concrete first step","dependsOn":null,"blocked":false,"blockedReason":null,"tags":["pumps"],"subtasks":[{"text":"C-01 — item needing action","ref":"C-01","location":"Sheet CRS, row 5"}],"evidence":[{"source":"A1","location":"Sheet CRS, row 14","quote":"exact words from the source"}],"confidence":0.9,"matchesTaskId":null,"relatedTaskIds":[],"placementConfidence":0.9,"placementOptions":[]}],
-"updates":[{"taskId":"existing id","change":"completed|status|deadline|note","newStatus":"todo|in_progress|waiting|blocked|done|null","newDeadline":"YYYY-MM-DD or null","note":"what changed","evidence":[{"source":"BODY","location":null,"quote":"…"}]}],
+"thread":{"first":"YYYY-MM-DD or null","last":"YYYY-MM-DD or null","messages":3},
+"tasks":[{"ref":"N1","title":"short header, 3–8 words, ≤55 chars","action":"what must be done, one or two short sentences","askedOn":"YYYY-MM-DD or null","type":"do|reply|review|approve|submit|revise|decide|follow_up|attend","ownership":"mine|waiting|fyi","topic":"short subject name","workType":"one of the workType values","discipline":"one of the discipline values","owner":"me or responsible person/company","requestedBy":"who asked","project":"…","priority":"critical|high|medium|low","deadline":"YYYY-MM-DD or null","deadlineText":"as written, or null","deadlineBasis":"explicit|relative|none|uncertain","nextStep":"one concrete first step","dependsOn":null,"blocked":false,"blockedReason":null,"tags":["pumps"],"subtasks":[{"text":"C-01 — item needing action","ref":"C-01","location":"Sheet CRS, row 5"}],"evidence":[{"source":"A1","location":"Sheet CRS, row 14","quote":"exact words from the source"}],"confidence":0.9,"matchesTaskId":null,"relatedTaskIds":[],"placementConfidence":0.9,"placementOptions":[]}],
+"updates":[{"taskId":"existing id","change":"completed|status|deadline|note","newStatus":"todo|in_progress|waiting|blocked|done|null","newDeadline":"YYYY-MM-DD or null","note":"what changed","verdict":"fulfilled|partial|not_fulfilled|null","reason":"one line: what my message did","doneItems":["C-01"],"evidence":[{"source":"BODY","location":null,"quote":"…"}]}],
 "decisions":["decision — by whom"],
 "flags":[{"kind":"missing_attachment|unreadable|truncated|ambiguous|uncertain_deadline|conflict|owner_unclear|revision_mismatch","detail":"…","source":"A2"}],
 "documents":[{"number":"document/drawing number as written","title":"…","revision":"A|B|0|… or null","code":"1|2|3|4 or null","status":"submitted|returned|approved|rejected|requested|for_info","by":"who issued or returned it","date":"YYYY-MM-DD or null","source":"A1"}]}
 
 SOURCES`;
-  const hdr = [`Subject: ${email.subject || '(none)'}`, `From: ${email.from || '(unknown)'}`, `Sent: ${email.date ? email.date.replace('T', ' ').slice(0, 16) + ' UTC' : '(unknown)'}`, `To: ${email.to || '(unknown)'}`, email.cc ? `Cc: ${email.cc}` : '', email.forwardedBy ? `Forwarded to my task inbox by: ${email.forwardedBy}${email.forwardedAt ? ' on ' + email.forwardedAt.slice(0, 10) : ''} (${email.forwardMode === 'attachment' ? 'original attached, headers exact' : 'original quoted inline, header recovered from text'})` : ''].filter(Boolean).join('\n');
+  const hdr = [`Subject: ${email.subject || '(none)'}`, `From: ${email.from || '(unknown)'}${email.fromMe ? '   ← THIS IS ME: my own reply/update (see rule 17)' : ''}`, `Sent: ${email.date ? email.date.replace('T', ' ').slice(0, 16) + ' UTC' : '(unknown)'}`, `To: ${email.to || '(unknown)'}`, email.cc ? `Cc: ${email.cc}` : '', email.forwardedBy ? `Forwarded to my task inbox by: ${email.forwardedBy}${email.forwardedAt ? ' on ' + email.forwardedAt.slice(0, 10) : ''} (${email.forwardMode === 'attachment' ? 'original attached, headers exact' : 'original quoted inline, header recovered from text'})` : ''].filter(Boolean).join('\n');
   const attList = input.attachments.length || input.images.length
     ? input.attachments.map(a => `${a.key} = "${a.name}" (${a.kindLabel}${a.status === 'excluded' ? ', NOT PROVIDED: ' + a.note : (a.note ? '; ' + a.note : '')})`).join('\n')
     : '(no attachments)';
@@ -3068,6 +3158,30 @@ SOURCES`;
 const PRI = ['critical', 'high', 'medium', 'low'];
 const OWN = ['mine', 'waiting', 'fyi'];
 const STAT = ['todo', 'in_progress', 'waiting', 'blocked', 'done'];
+// a task header stays a header: greetings and politeness dropped, cut at a word boundary
+function shortTitle(t) {
+  let s = String(t).replace(/\s+/g, ' ').replace(/^(please|kindly|pls|could you|can you|you need to|we need to|need to)\s+/i, '').replace(/[.。]+$/, '').trim();
+  s = s.charAt(0).toUpperCase() + s.slice(1);
+  if (s.length <= 70) return s;
+  const cut = s.slice(0, 68); const sp = cut.lastIndexOf(' ');
+  return (sp > 40 ? cut.slice(0, sp) : cut).replace(/[\s,;:–—-]+$/, '') + '…';
+}
+// the same deliverable proposed twice in one answer becomes one task with both sets of items and evidence
+function mergeSameTasks(tasks) {
+  const out = [];
+  for (const t of tasks) {
+    const tt = tokens(t.title + ' ' + t.action);
+    const same = out.find(o => jaccard(tokens(o.title), tokens(t.title)) >= 0.75 || (jaccard(tokens(o.title + ' ' + o.action), tt) >= 0.7 && (o.project || '') === (t.project || '')));
+    if (!same) { out.push(t); continue; }
+    const have = new Set(same.subtasks.map(x => normMatch(x.text)));
+    same.subtasks.push(...t.subtasks.filter(x => !have.has(normMatch(x.text))));
+    same.evidence = [...same.evidence, ...t.evidence].slice(0, 8);
+    if (t.deadline && (!same.deadline || t.deadline < same.deadline)) { same.deadline = t.deadline; same.deadlineBasis = t.deadlineBasis; same.deadlineText = t.deadlineText; }
+    if (PRI.indexOf(t.priority) < PRI.indexOf(same.priority)) same.priority = t.priority;
+    same.matchesTaskId = same.matchesTaskId || t.matchesTaskId;
+  }
+  return out;
+}
 function normalizeAnalysis(raw, ctx) {
   const um = ctx.unmask || (s => s);
   const r = raw && typeof raw === 'object' ? raw : {};
@@ -3081,7 +3195,7 @@ function normalizeAnalysis(raw, ctx) {
     const ownership = OWN.includes(t.ownership) ? t.ownership : (/^me$/i.test(t.owner || '') ? 'mine' : 'waiting');
     return {
       pid: uid('p'), ref: S(t.ref) || 'N' + (i + 1),
-      title: clip(S(t.title) || 'Untitled action', 140), action: S(t.action), type: S(t.type) || 'do',
+      title: shortTitle(S(t.title) || 'Untitled action'), action: S(t.action), type: S(t.type) || 'do', askedOn: validISO(t.askedOn) ? t.askedOn : null,
       ownership, owner: ownership === 'mine' ? 'me' : (S(t.owner) || 'unknown'), requestedBy: S(t.requestedBy),
       project: S(t.project) || S(r.project), priority: PRI.includes(t.priority) ? t.priority : 'medium',
       deadline, deadlineText: S(t.deadlineText), deadlineBasis: basis,
@@ -3101,11 +3215,14 @@ function normalizeAnalysis(raw, ctx) {
     uid: uid('u'), taskId: S(u.taskId), change: S(u.change) || 'note',
     newStatus: STAT.includes(u.newStatus) ? u.newStatus : (u.change === 'completed' ? 'done' : null),
     newDeadline: validISO(u.newDeadline) ? u.newDeadline : null, note: S(u.note), evidence: ev(u.evidence),
+    verdict: ['fulfilled', 'partial', 'not_fulfilled'].includes(u.verdict) ? u.verdict : null, reason: S(u.reason),
+    doneItems: (Array.isArray(u.doneItems) ? u.doneItems : []).map(S).filter(Boolean).slice(0, 150),
   })).filter(u => u.taskId);
   return {
     summary: S(r.summary), actionRequired: r.actionRequired !== false, noActionReason: S(r.noActionReason),
     project: S(r.project), category: S(r.category) || 'other',
-    tasks, updates,
+    tasks: mergeSameTasks(tasks), updates,
+    thread: r.thread && typeof r.thread === 'object' ? { first: validISO(r.thread.first) ? r.thread.first : null, last: validISO(r.thread.last) ? r.thread.last : null, messages: Math.max(0, Math.min(500, parseInt(r.thread.messages, 10) || 0)) } : null,
     decisions: (Array.isArray(r.decisions) ? r.decisions : []).map(S).filter(Boolean).slice(0, 12),
     documents: (Array.isArray(r.documents) ? r.documents : []).slice(0, 60).map(d => ({ number: S(d && d.number), title: S(d && d.title), revision: S(d && d.revision), code: /^[1-4]$/.test(S(d && d.code)) ? S(d.code) : '', status: ['submitted', 'returned', 'approved', 'rejected', 'requested', 'for_info'].includes(S(d && d.status)) ? S(d.status) : '', by: S(d && d.by), date: validISO(S(d && d.date)) ? S(d.date) : '', source: S(d && d.source).toUpperCase() })).filter(d => d.number || d.title),
     flags: (Array.isArray(r.flags) ? r.flags : []).map(f => ({ kind: S(f && f.kind) || 'ambiguous', detail: S(f && f.detail), source: S(f && f.source) })).filter(f => f.detail).slice(0, 20),
@@ -3178,8 +3295,10 @@ function findDuplicate(prop, tasks, thread) {
 }
 function relatedOpenTasks(tasks, email, thread, limit = 25) {
   const et = tokens(email.subject + ' ' + (email.body || '').slice(0, 3000));
+  const to = String((email.to || '') + ' ' + (email.cc || '')).toLowerCase();
+  const writesTo = t => !!email.fromMe && [t.sourceFrom, t.requestedBy].some(x => { const a = (String(x || '').match(/[\w.+-]+@[\w.-]+/) || [''])[0].toLowerCase(); return a && to.includes(a); });
   return tasks.filter(t => t.status !== 'done' || t.threadKey === thread || Date.now() - new Date(t.updatedAt || 0) < 60 * 864e5)
-    .map(t => ({ t, s: (t.threadKey === thread ? 1 : 0) + jaccard(et, tokens(t.title + ' ' + (t.project || ''))) }))
+    .map(t => ({ t, s: (t.threadKey === thread ? 1 : 0) + (writesTo(t) ? 0.5 : 0) + jaccard(et, tokens(t.title + ' ' + (t.action || '') + ' ' + (t.project || ''))) }))
     .filter(x => x.s >= 0.12).sort((a, b) => b.s - a.s).slice(0, limit).map(x => x.t);
 }
 
@@ -3199,7 +3318,7 @@ return {
   parseEml, readMsgFromCfb, unwrapForward, b64urlToBytes, findHeaderBlock, decompressRTF, rtfToText, parsePasted, htmlToText, tidyText, decodeMimeWords, parseParams,
   normSubject, threadKey, kindOf, KIND_LABEL, extract, need, guessMime, firstEmail,
   WORK_TYPES, DISCIPLINES, buildCategorizePrompt,
-  makeMasker, buildPrompt, normalizeAnalysis, verifyEvidence, normMatch, findDuplicate, relatedOpenTasks, localFlags, tokens, jaccard, splitForwards, parseTnef,
+  makeMasker, buildPrompt, normalizeAnalysis, shortTitle, verifyEvidence, normMatch, findDuplicate, relatedOpenTasks, localFlags, tokens, jaccard, splitForwards, parseTnef,
   RTF_PREBUF,
 };
 })();
@@ -3257,7 +3376,7 @@ const CATEGORY = { submittal_review: 'Submittal review', technical_query: 'Techn
 const CHECK = { verified: 'Verified', partial: 'Partly matched', visual: 'Read from image', not_found: 'Not found in source', unknown_source: 'Source unclear', no_quote: 'No quote' };
 const FLAG = { missing_attachment: 'Missing attachment', unreadable: 'Not readable', truncated: 'Partly analysed', ambiguous: 'Ambiguous', uncertain_deadline: 'Deadline uncertain', conflict: 'Conflicting instructions', owner_unclear: 'Owner unclear', revision_mismatch: 'Revision mismatch', excluded: 'Not sent', images: 'Images not sent' };
 /* ---------- state ---------- */
-const DEFAULTS = { me: { name: '', emails: [], aliases: '', role: 'Mechanical design engineer — water & wastewater treatment', org: '', scope: '', manager: '' }, projects: [], tier: 'complex', mask: false, storeText: true, vision: true, drawings: true, titleBlocks: true, maxPageImages: 8, setupDone: false };
+const DEFAULTS = { me: { name: '', emails: [], aliases: '', role: 'Mechanical design engineer — water & wastewater treatment', org: '', scope: '', manager: '' }, projects: [], tier: 'auto', mask: false, storeText: true, vision: true, drawings: true, titleBlocks: true, maxPageImages: 8, setupDone: false };
 const St = { mcp: null, mode: 'starting', uid: null, refs: null, db: null, tasks: new Map(), emails: new Map(), board: new Map(), daily: new Map(), layout: { off: {}, size: {} }, settings: clone(DEFAULTS), ready: false, profileName: '', sample: null, limits: null, downloads: null, capsResolved: false };
 const UI = { view: 'todo', todoQ: '', drawer: null, staging: [], analyzing: false, abort: null, pasteOpen: false, emailQ: '', previews: new Set(), confirm: null };
 
@@ -3552,6 +3671,7 @@ function taskDrawerHTML(t) {
   return `<div class="drawer-h"><span class="mono muted">${esc(t.ref || '')}</span>${chipPrio(t.priority)}<span class="spacer"></span><button class="icon-btn" data-act="close-drawer" aria-label="Close">${I.x}</button></div>
   <div class="drawer-b two"><div class="dcol-main">
     <textarea class="title-edit" id="d-title" rows="1" data-chg="task-field" data-field="title" dir="auto" aria-label="Title">${esc(t.title)}</textarea>
+    ${mailDateLine(t)}
     ${t.placement && t.placement.status !== 'confirmed' && (t.placement.options || []).length ? `<details class="small wrong-place"><summary class="muted">Wrong place? Other places Claude considered</summary><div style="display:grid;gap:6px;margin-top:8px">${(t.placement.options || []).map((o, i) => { const r = o.relatedTaskId && St.tasks.get(o.relatedTaskId); return `<button class="btn sm opt-btn" data-act="use-placement" data-i="${i}">${o.project ? '📁 ' + esc(o.project) : ''}${o.discipline ? ' › ' + esc(E.DISCIPLINES[o.discipline]) : ''}${r ? ' · 🔗 ' + esc(r.ref) : ''}${o.reason ? `<span class="muted small"> — ${esc(o.reason)}</span>` : ''}</button>`; }).join('')}<button class="btn sm ghost" data-act="keep-placement">Keep it here${t.project ? ': ' + esc(t.project) : ''}</button></div></details>` : ''}
     <div class="seg" role="group" aria-label="Status">${Object.entries(STATUS).map(([k, v]) => `<button data-act="set-status" data-id="${esc(t.id)}" data-status="${k}" aria-pressed="${t.status === k}">${v}</button>`).join('')}</div>
     ${taskActionsHTML(t)}
@@ -3778,6 +3898,8 @@ function chipsFor(t, by) {
     by !== 'project' && t.project ? `<span class="chip pchip" style="--h:${hueOf(t.project)}"><i></i>${esc(t.project)}</span>` : '',
     by !== 'discipline' && t.discipline ? `<span class="chip dchip">${discIcon(t.discipline, 14)}${esc(E.DISCIPLINES[t.discipline])}</span>` : '',
     by !== 'topic' && topicOf(t) ? `<span class="chip topic-chip">🧩 ${esc(topicOf(t))}</span>` : '',
+    isNewTask(t) ? '<span class="chip new">NEW</span>' : '',
+    mailDate(t) ? `<span class="chip" title="Date of the email where this was asked">✉ ${esc(fmtDate(mailDate(t)))}</span>` : '',
     !isMine(t) || t.status === 'waiting' ? `<span class="chip wait">⏳ Waiting on ${esc(t.owner || 'others')}</span>` : '',
     t.status === 'blocked' ? '<span class="chip crit">⛔ Blocked</span>' : t.status === 'in_progress' ? '<span class="chip accent">▶ In progress</span>' : '',
   ].join('');
@@ -3898,9 +4020,11 @@ function viewTodo() {
     ${!St.settings.setupDone ? setupCardHTML() : ''}
     ${uncategorised && St.sample ? callout('info', `<div class="row"><span>${CAT.running ? '🧠 Claude is sorting your tasks into projects and categories…' : `🏷️ ${uncategorised} task${uncategorised > 1 ? 's are' : ' is'} not categorised yet.`}</span><span class="spacer"></span>${CAT.running ? '<div class="progress indet" style="width:90px"><i></i></div>' : `<button class="btn sm primary" data-act="ai-categorize">Categorise with Claude</button>`}</div>`) : ''}
     ${CAT.error && !CAT.running ? callout('warn', `<p>${esc(CAT.error)}</p>`) : ''}
-    ${St.tasks.size && UI.todoMode !== 'map' ? `<div class="mode-bar">${modeSegHTML()}</div>` : ''}
+    ${typeof dupCallout === 'function' ? dupCallout() : ''}${typeof headersCallout === 'function' ? headersCallout() : ''}${typeof chaseCallout === 'function' ? chaseCallout() : ''}
+    ${St.tasks.size && TODO_VIEWS[UI.todoMode] ? TODO_VIEWS[UI.todoMode]() : ''}
+    ${St.tasks.size && UI.todoMode !== 'map' && !TODO_VIEWS[UI.todoMode] ? `<div class="mode-bar">${modeSegHTML()}</div>` : ''}
     ${St.tasks.size && UI.todoMode === 'map' ? viewMap() : ''}
-    ${St.tasks.size && UI.todoMode !== 'map' ? `<div class="tiles" role="toolbar" aria-label="Filter">${tiles.map(([k, e, l, cls]) => `<button class="tile ${cls} ${c[k] ? '' : 'zero'}" data-act="todo-filter" data-filter="${k}" aria-pressed="${f === k}"><span class="tile-e">${e}</span><span class="tile-n num">${c[k]}</span><span class="tile-l">${l}</span></button>`).join('')}</div>
+    ${St.tasks.size && UI.todoMode !== 'map' && !TODO_VIEWS[UI.todoMode] ? `<div class="tiles" role="toolbar" aria-label="Filter">${tiles.map(([k, e, l, cls]) => `<button class="tile ${cls} ${c[k] ? '' : 'zero'}" data-act="todo-filter" data-filter="${k}" aria-pressed="${f === k}"><span class="tile-e">${e}</span><span class="tile-n num">${c[k]}</span><span class="tile-l">${l}</span></button>`).join('')}</div>
     <div class="todo-bar">
       <div class="seg" role="group" aria-label="Group by"><span class="seg-label">Group</span>${TODO_GROUPS.map(([k, l]) => `<button data-act="todo-group" data-group="${k}" aria-pressed="${by === k}">${l}</button>`).join('')}</div>
       <label class="search todo-search">${I.search}<span class="sr">Search to-dos</span><input class="input" id="todo-q" type="search" placeholder="Search tasks, items, documents, people…" value="${esc(UI.todoQ)}" data-inp="todoQ"></label>
@@ -3909,7 +4033,7 @@ function viewTodo() {
         <label class="check small"><input type="checkbox" id="todo-done" data-chg="todo-opt" data-key="todoShowDone" ${UI.todoShowDone ? 'checked' : ''}>Show done (7 days)</label>
       </div>
     </div>` : ''}
-    ${UI.todoMode !== 'map' || !St.tasks.size ? `<div id="todo-groups">${todoGroupsHTML()}</div>` : ''}
+    ${(UI.todoMode !== 'map' && !TODO_VIEWS[UI.todoMode]) || !St.tasks.size ? `<div id="todo-groups">${todoGroupsHTML()}</div>` : ''}
   </div>`;
 }
 function toggleSub(id, sid) {
@@ -4073,6 +4197,15 @@ function buildMap() {
   for (const el of boardEls()) grow(elBox(el));
   return { nodes, edges, links, root, projects, byId, byTask, x0: x0 - 40, y0: y0 - 40, w: x1 - x0 + 260, h: y1 - y0 + 80 };
 }
+// when the email that created a task was sent (the message in the thread where it was asked), and whether the
+// task arrived in the last 24 hours (shown as NEW)
+const mailDate = t => t.askedOn || (t.sourceDate || '').slice(0, 10) || '';
+const isNewTask = t => !!t.createdAt && Date.now() - new Date(t.createdAt) < 864e5 && t.status !== 'done';
+function mailDateLine(t) {
+  const d = mailDate(t); if (!d) return '';
+  const th = t.threadFirst && t.threadFirst !== d ? ` · conversation started ${fmtDate(t.threadFirst, { day: 'numeric', month: 'short', year: 'numeric' })}` : '';
+  return `<p class="small muted mail-date">✉ Asked in the email of <b>${esc(fmtDate(d, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }))}</b>${esc(th)}${t.sourceFrom ? ` · from ${esc(E.clip(t.sourceFrom, 60))}` : ''}</p>`;
+}
 // tasks waiting on me: open, mine, not handed to someone else
 const needsMe = t => t.status !== 'done' && t.status !== 'waiting' && isMine(t);
 const myFocus = () => St.mode !== 'viewer' && !!(St.settings.ui || {}).mapMine;
@@ -4108,12 +4241,12 @@ function mapNodeHTML(n, hits, day) {
     const sug = t.placement && t.placement.status === 'suggested';
     const ach = [...St.daily.values()].filter(a => a.kind === 'achievement' && a.taskId === t.id).length;
     const fresh = Date.now() - (FRESH.get(t.id) || 0) < 2500;
-    const cls = ['mnode', 'task', 'p-' + (t.priority || 'medium'), t.status === 'done' ? 'done' : '', UI.mapSel === t.id ? 'sel' : '', hits && hits.has(t.id) ? 'hit' : '', day && day.has(t.id) ? 'dayhit' : '', sug ? 'suggest' : '', fresh ? 'fresh' : '', needsMe(t) ? 'me' : '', needsMe(t) && urgentForMe(t) ? 'me-urgent' : '', myFocus() && !needsMe(t) ? 'dim' : ''].join(' ') + drag + drop;
+    const cls = ['mnode', 'task', 'p-' + (t.priority || 'medium'), t.status === 'done' ? 'done' : '', UI.mapSel === t.id ? 'sel' : '', hits && hits.has(t.id) ? 'hit' : '', day && day.has(t.id) ? 'dayhit' : '', sug ? 'suggest' : '', fresh ? 'fresh' : '', needsMe(t) ? 'me' : '', needsMe(t) && urgentForMe(t) ? 'me-urgent' : '', isNewTask(t) ? 'is-new' : '', myFocus() && !needsMe(t) ? 'dim' : ''].join(' ') + drag + drop;
     return `<div class="${cls}" data-node="${esc(n.id)}" data-type="task" data-tid="${esc(t.id)}" style="${st}">
 <span class="lk" data-link="1" title="Drag to another box to link them" aria-hidden="true"></span>
       <button class="mtick" data-map="tick" aria-label="${t.status === 'done' ? 'Reopen' : 'Mark done'}">${I.check}</button>
-      <div class="mtxt">${needsMe(t) ? `<span class="mme" title="Needs action by you">🙋 Your action</span>` : ''}<b dir="auto">${esc(t.title)}</b>
-        <small><span class="mono">${esc(t.ref || '')}</span>${t.status === 'done' ? `<span class="mdone">✓ ${esc(fmtDate((t.completedAt || t.updatedAt || '').slice(0, 10)))}</span>` : `<span class="duepill ${d.cls}">${dueEmoji(d)}${esc(d.txt)}</span>`}
+      <div class="mtxt">${isNewTask(t) || needsMe(t) ? `<span class="mtags">${isNewTask(t) ? '<span class="mnew" title="Added in the last 24 hours">NEW</span>' : ''}${needsMe(t) ? `<span class="mme" title="Needs action by you">🙋 Your action</span>` : ''}</span>` : ''}<b dir="auto">${esc(t.title)}</b>
+        <small><span class="mono">${esc(t.ref || '')}</span>${mailDate(t) ? `<span class="mmail" title="Date of the email where this was asked">✉ ${esc(fmtDate(mailDate(t)))}</span>` : ''}${t.status === 'done' ? `<span class="mdone">✓ ${esc(fmtDate((t.completedAt || t.updatedAt || '').slice(0, 10)))}</span>` : `<span class="duepill ${d.cls}">${dueEmoji(d)}${esc(d.txt)}</span>`}
         ${t.status === 'in_progress' ? '<span title="In progress">▶</span>' : ''}${subs ? `<button class="mitems" data-map="items" title="Show items">🗂️ ${subsDone(t)}/${subs}</button>` : ''}${links ? `<span title="Linked tasks">🔗 ${links}</span>` : ''}${isFromManager(t) ? '<span title="Assigned by your manager">👔</span>' : ''}${(t.days || []).includes(T()) ? '<span title="On today’s plan">📌</span>' : ''}${ach ? `<span title="Achievements">⭐ ${ach}</span>` : ''}${t.status === 'waiting' || t.ownership === 'waiting' ? '<span>⏳</span>' : ''}${t.status === 'blocked' ? '<span>⛔</span>' : ''}${sug ? '<span class="msug" title="Claude needs your confirmation">❓ Confirm</span>' : ''}${NODE_EXTRA.map(f => { try { return f(t) || ''; } catch { return ''; } }).join('')}</small></div><button class="mfocus mdel" data-map="del" title="Delete this task" aria-label="Delete this task">🗑</button>${rz}</div>`;
   }
   const s = n.s;
@@ -4435,7 +4568,10 @@ function toolsHTML() {
 }
 // Map / Board / List: at the start of the canvas toolbar in Map, above the list in Board and List
 function saveSettingsUi(patch) { const st = clone(St.settings); st.ui = { ...(st.ui || {}), ...patch }; putSettings(st); }
-function modeSegHTML() { return `<div class="seg mode-seg" role="group" aria-label="Layout"><button data-act="todo-mode" data-mode="map" aria-pressed="${UI.todoMode === 'map'}">🧠 Map</button><button data-act="todo-mode" data-mode="board" aria-pressed="${UI.todoMode === 'board'}">▦ Board</button><button data-act="todo-mode" data-mode="list" aria-pressed="${UI.todoMode === 'list'}">☰ List</button></div>`; }
+// more presentations (Timeline, Priority matrix) register here from features/29-views.js
+const TODO_VIEWS = {};
+const TODO_MODES = [['map', '🧠', 'Map', 'Mind map'], ['timeline', '📅', 'Timeline', 'Timeline: from when each task was asked to its deadline'], ['matrix', '⊞', 'Matrix', 'Priority matrix: urgent × important'], ['board', '▦', 'Board', 'Board by status'], ['list', '☰', 'List', 'List']];
+function modeSegHTML() { return `<div class="seg mode-seg" role="group" aria-label="Layout">${TODO_MODES.filter(([k]) => k === 'map' || k === 'board' || k === 'list' || TODO_VIEWS[k]).map(([k, i, l, tt]) => `<button data-act="todo-mode" data-mode="${k}" aria-pressed="${UI.todoMode === k}" title="${esc(tt)}">${i}<span class="lbl">${l}</span></button>`).join('')}</div>`; }
 function viewMap() {
   const M = buildMap(); UI.mapLayout = M;
   const hits = mapHits();
@@ -4527,6 +4663,9 @@ function applyCam(animate) {
   const w = $('#map-world'); if (!w) return;
   w.classList.toggle('anim', !!animate);
   w.style.transform = `translate(${UI.map.x}px,${UI.map.y}px) scale(${UI.map.k})`;
+  // sharp at every zoom: the canvas is a fast moving layer only while you pan or zoom; a moment after you stop,
+  // the browser draws text and lines again at the new size instead of stretching a picture of them
+  w.classList.add('moving'); clearTimeout(UI.camSharp); UI.camSharp = setTimeout(() => { const ww = $('#map-world'); if (ww) ww.classList.remove('moving'); }, 160);
   // semantic zoom: far out, details hide and project labels grow so the map stays readable
   w.style.setProperty('--k', UI.map.k);
   const vp = $('#map-vp'); if (vp) { vp.classList.toggle('z-far', UI.map.k < 0.38); vp.classList.toggle('z-mid', UI.map.k >= 0.38 && UI.map.k < 0.6); }
@@ -4546,7 +4685,7 @@ function mapFit(smart) {
 function mapZoom(f, cx, cy) {
   const vp = $('#map-vp'); if (!vp) return;
   const r = vp.getBoundingClientRect(); cx = cx ?? r.width / 2; cy = cy ?? r.height / 2;
-  const k2 = Math.max(0.2, Math.min(3, UI.map.k * f));
+  const k2 = Math.max(0.15, Math.min(5, UI.map.k * f));
   UI.map.x = cx - (cx - UI.map.x) * (k2 / UI.map.k); UI.map.y = cy - (cy - UI.map.y) * (k2 / UI.map.k); UI.map.k = k2; applyCam(false);
 }
 function centerOnTask(id) {
@@ -5321,9 +5460,10 @@ function updateHTML(e, u) {
   const what = u.newStatus ? `Status ${STATUS[t.status]} → <b>${esc(STATUS[u.newStatus])}</b>` : u.newDeadline ? `Deadline ${esc(t.deadline ? fmtDate(t.deadline) : '—')} → <b>${esc(fmtDate(u.newDeadline))}</b>` : 'Add a note';
   return `<div class="prop ${u.accept ? '' : 'off'}">
     <label class="check" style="padding-top:2px"><input type="checkbox" id="u-acc-${esc(u.uid)}" data-chg="upd" data-eid="${esc(e.id)}" data-uid="${esc(u.uid)}" ${u.accept ? 'checked' : ''}><span class="sr">Apply</span></label>
-    <div class="body"><div><span class="chip wait">Update to existing task</span></div>
+    <div class="body"><div>${u.verdict === 'fulfilled' ? '<span class="chip ok">✓ Your reply completes this task</span>' : u.verdict === 'partial' ? '<span class="chip accent">◐ Your reply does part of this task</span>' : u.verdict === 'not_fulfilled' ? '<span class="chip warn">Your reply does not complete this task yet</span>' : '<span class="chip wait">Update to existing task</span>'}</div>
       <div><span class="mono">${esc(t.ref)}</span> <b dir="auto">${esc(t.title)}</b></div>
       <div class="small">${what}${u.note ? ` — <span dir="auto">${esc(u.note)}</span>` : ''}</div>
+      ${u.reason ? `<div class="small muted" dir="auto">${esc(u.reason)}</div>` : ''}${(u.doneItems || []).length ? `<div class="small">Items done: ${u.doneItems.map(x => `<span class="chip">${esc(E.clip(x, 50))}</span>`).join(' ')}</div>` : ''}
       ${evidenceHTML(u.evidence, false)}
     </div></div>`;
 }
@@ -5351,10 +5491,18 @@ function approveEmail(eid, quiet) {
   const creates = chosen.filter(p => !(p.dupOf && p.merge !== false && St.tasks.has(p.dupOf)));
   const refs = nextRefs(creates.length); let ri = 0, added = 0, updated = 0;
   const label = `email “${E.clip(e.subject || '(no subject)', 70)}”`;
+  const asked = p => p.askedOn || (e.date || '').slice(0, 10) || null;
   for (const p of chosen) {
     const ev = (p.evidence || []).map(x => ({ ...x, emailId: e.id }));
+    // checked again now: a task added a moment ago from another copy of this email (or from the same email added
+    // twice before review) is the same obligation, so it is updated rather than duplicated
+    if (!(p.dupOf && St.tasks.has(p.dupOf)) && p.merge !== false) {
+      const late = E.findDuplicate(p, [...St.tasks.values()], e.threadKey);
+      if (late && late.score >= 0.62) { p.dupOf = late.task.id; p.merge = true; }
+    }
     if (p.dupOf && p.merge !== false && St.tasks.has(p.dupOf)) {
       const t = clone(St.tasks.get(p.dupOf));
+      if (asked(p) && (!t.askedOn || asked(p) < t.askedOn)) t.askedOn = asked(p);
       t.evidence = [...(t.evidence || []), ...ev].slice(-20);
       t.emailIds = [...new Set([...(t.emailIds || []), e.id])];
       const notes = [];
@@ -5375,6 +5523,7 @@ function approveEmail(eid, quiet) {
         requestedBy: p.requestedBy, project: p.project, priority: p.priority, deadline: p.deadline, deadlineText: p.deadlineText, deadlineBasis: p.deadlineBasis,
         status: p.blocked ? 'blocked' : p.ownership === 'waiting' ? 'waiting' : 'todo', nextStep: p.nextStep, dependsOn: p.dependsOn, blockedReason: p.blockedReason,
         relatedIds: (p.relatedTaskIds || []).filter(id => St.tasks.has(id)), placement: placementFrom(p), topic: p.topic || '', tags: p.tags || [], subtasks: (p.subtasks || []).map(x => ({ id: E.uid('s'), text: x.text, ref: x.ref || '', location: x.location || '', done: false })), workType: p.workType || null, discipline: p.discipline || null, catBy: p.workType || p.discipline ? 'ai' : null, notes: '', evidence: ev, emailIds: [e.id], threadKey: e.threadKey, sourceSubject: e.subject, sourceFrom: e.from, sourceDate: e.date,
+        askedOn: asked(p), threadFirst: (a.thread && a.thread.first) || null, threadLast: (a.thread && a.thread.last) || null,
         createdAt: now, updatedAt: now, completedAt: null, confidence: p.confidence, history: [{ at: now, text: `Created from ${label}`, emailId: e.id }],
       };
       putTask(t); added++;
@@ -5386,6 +5535,13 @@ function approveEmail(eid, quiet) {
     if (u.newStatus && u.newStatus !== t.status) { notes.push(`status ${STATUS[t.status]} → ${STATUS[u.newStatus]}`); t.status = u.newStatus; t.completedAt = u.newStatus === 'done' ? now : null; }
     if (u.newDeadline && u.newDeadline !== t.deadline) { notes.push(`deadline → ${fmtDate(u.newDeadline)}`); t.deadline = u.newDeadline; t.deadlineBasis = 'explicit'; }
     if (u.note) notes.push(u.note);
+    // items my reply covered are ticked (matched by their reference or their words)
+    if ((u.doneItems || []).length && subsOf(t).length) {
+      const want = u.doneItems.map(x => E.normMatch(x)); let n = 0;
+      t.subtasks = subsOf(t).map(x => { const r = E.normMatch(x.ref || ''), tx = E.normMatch(x.text); const hit = !x.done && want.some(w => w && ((r && (w === r || w.startsWith(r + ' '))) || tx === w || tx.startsWith(w) || w.startsWith(tx))); if (hit) n++; return hit ? { ...x, done: true, doneAt: now } : x; });
+      if (n) notes.push(`${n} item${n > 1 ? 's' : ''} done`);
+    }
+    if (u.verdict) notes.unshift(u.verdict === 'fulfilled' ? 'completed by my reply' : u.verdict === 'partial' ? 'partly done by my reply' : 'my reply did not complete it');
     t.evidence = [...(t.evidence || []), ...(u.evidence || []).map(x => ({ ...x, emailId: e.id }))].slice(-20);
     t.emailIds = [...new Set([...(t.emailIds || []), e.id])];
     (t.history = t.history || []).push({ at: now, text: `From ${label}: ${notes.join('; ') || 'updated'}`, emailId: e.id });
@@ -5469,13 +5625,13 @@ function stagingHTML() {
   if (!UI.staging.length) return '';
   return `<div style="display:grid;gap:12px">${UI.staging.map(b => {
     const em = b.email;
-    const stateChip = { parsing: '<span class="chip">Reading files…</span>', ready: b.skip ? '<span class="chip">Skipped</span>' : '<span class="chip accent">Ready</span>' + (b.tierOverride === 'quick' ? '<span class="chip ai-quick" title="Read with the quick, cheaper model">Quick model</span>' : ''), analyzing: '<span class="chip accent">Analysing…</span>', done: '<span class="chip ok">Analysed</span>', error: '<span class="chip crit">Failed</span>' }[b.state];
+    const stateChip = { parsing: '<span class="chip">Reading files…</span>', ready: b.skip ? '<span class="chip">Skipped</span>' : '<span class="chip accent">Ready</span>' + (b.tierOverride === 'quick' ? '<span class="chip ai-quick" title="Read with the quick, cheaper model">Quick model</span>' : (St.settings.tier === 'auto' && !b.skip ? (t => `<span class="chip ai-quick" title="Smart model choice: the ${TIER_NAME[t]} is enough for this email">${t === 'quick' ? '⚡ Quick' : t === 'default' ? '◐ Balanced' : '◆ Thorough'}</span>`)(autoTier(b, undefined, 1)) : '')), analyzing: '<span class="chip accent">Analysing…</span>', done: '<span class="chip ok">Analysed</span>', error: '<span class="chip crit">Failed</span>' }[b.state];
     return `<div class="bundle">
       <div class="bundle-h"><div style="min-width:0">
         ${b.source === 'docs' ? `<div class="subj">Documents without an email</div><div class="meta">Analysed together as one item. Use “Move to…” to attach a file to an email instead.</div>` :
         `<div class="subj" dir="auto">${esc(em.subject || '(no subject)')}</div><div class="meta" dir="auto">${esc(em.from || 'Sender unknown')}${em.date ? ' · ' + esc(fmtDateTime(em.date)) : ''}${b.fileName ? ' · ' + esc(b.fileName) : ''}</div>`}
       </div><div class="row" style="align-items:flex-start">${stateChip}${b.state !== 'analyzing' ? `<button class="icon-btn" data-act="remove-bundle" data-id="${esc(b.id)}" aria-label="Remove">${I.x}</button>` : ''}</div></div>
-      ${b.dupEmailId && b.state === 'ready' ? `<div style="padding:10px 14px 0">${callout('info', `<div class="row"><span>Already imported on ${esc(fmtDate(St.emails.get(b.dupEmailId)?.importedAt))}.</span><label class="check small"><input type="checkbox" id="skip-${esc(b.id)}" data-chg="skip" data-bid="${esc(b.id)}" ${b.skip ? '' : 'checked'}>Analyse again</label></div>`)}</div>` : ''}
+      ${(b.dupEmailId || b.dupBundle) && b.state === 'ready' ? `<div style="padding:10px 14px 0">${callout('info', `<div class="row"><span>${b.dupEmailId ? `Already added on ${esc(fmtDate(St.emails.get(b.dupEmailId)?.importedAt))}` : 'The same email is already in this list'} — skipped, so no duplicate tasks.</span><label class="check small"><input type="checkbox" id="skip-${esc(b.id)}" data-chg="skip" data-bid="${esc(b.id)}" ${b.skip ? '' : 'checked'}>Analyse again</label></div>`)}</div>` : ''}
       ${b.state === 'analyzing' ? `<div style="padding:10px 14px;display:grid;gap:6px"><div class="progress indet"><i></i></div><div class="small muted">${esc(b.progress || 'Sending to Claude…')}</div></div>` : ''}
       ${b.state === 'error' ? `<div style="padding:10px 14px">${callout('crit', `<p>${esc(b.error)}</p>${typeof aiErrorActions === 'function' ? aiErrorActions(b) : ''}`)}</div>` : ''}
       ${b.state === 'done' ? `<div style="padding:10px 14px">${callout('ok', `<div class="row"><span>${esc(b.doneText || 'Analysed.')}</span><span class="spacer"></span><button class="btn sm" data-act="nav" data-view="review">Review</button></div>`)}</div>` : ''}
@@ -5512,7 +5668,7 @@ async function intakeFiles(fileList, target) {
       } catch (e) { toast(`${f.name}: ${e.message || 'could not open ZIP'}`, { err: true }); }
     } else loose.push({ name: f.name, bytes, mime: f.type });
   }
-  UI.staging.push(...newBundles);
+  UI.staging.push(...newBundles); newBundles.forEach(checkDuplicateEmail);
   if (loose.length) {
     let host = target || null;
     if (!host && newBundles.length === 1) host = newBundles[0];
@@ -5567,12 +5723,21 @@ async function addAttTo(b, a, prefix, depth) {
   }
   b.atts.push(mkAtt({ ...a, name: prefix + a.name }));
 }
+// the same email added again — re-uploaded, forwarded a second time, or fetched from Gmail twice — is recognised
+// by its Message-ID, by sender + subject + sent time, or by the same subject and opening text, and is not analysed again
+const bodyPrint = t => E.normMatch(String(t || '').replace(/\s+/g, ' ').slice(0, 400)).slice(0, 220);
+function sameEmail(em, e) {
+  const key = E.normSubject(em.subject || '').toLowerCase(), k2 = E.normSubject(e.subject || '').toLowerCase();
+  if (em.messageId && e.messageId && e.messageId === em.messageId) return true;
+  if (key && k2 === key && e.fromEmail && e.fromEmail === em.fromEmail && e.date && em.date && Math.abs(new Date(e.date) - new Date(em.date)) < 120000) return true;
+  const bp = bodyPrint(em.body);
+  return !!(key && k2 === key && bp.length >= 60 && bodyPrint(e.snippet) === bp.slice(0, bodyPrint(e.snippet).length) && bodyPrint(e.snippet).length >= 60);
+}
 function checkDuplicateEmail(b) {
   const em = b.email; if (b.source === 'docs') return;
-  const key = E.normSubject(em.subject).toLowerCase();
-  for (const e of St.emails.values()) {
-    if ((em.messageId && e.messageId === em.messageId) || (key && E.normSubject(e.subject).toLowerCase() === key && e.fromEmail === em.fromEmail && e.date && em.date && Math.abs(new Date(e.date) - new Date(em.date)) < 60000)) { b.dupEmailId = e.id; b.skip = true; return; }
-  }
+  for (const e of St.emails.values()) if (sameEmail(em, e)) { b.dupEmailId = e.id; b.skip = true; return; }
+  // the same email twice in this batch: only the first is analysed
+  for (const o of UI.staging) if (o !== b && o.email && !o.dupEmailId && o.state !== 'error' && sameEmail(em, { ...o.email, snippet: o.email.body || '' })) { b.dupBundle = o.id; b.skip = true; return; }
 }
 function extractOpts() {
   const s = St.settings, lim = St.limits;
@@ -5631,6 +5796,19 @@ function aiErrorText(e) {
     model_not_found: 'The Claude model set in Setup › Connections was not found. Check the model names there.',
   })[c] || ('Analysis failed' + (c ? ' (' + c + ')' : '') + '.');
 }
+/* Smart model choice: a short email with nothing attached to read goes to the quick model, ordinary emails and
+   small attachments to the balanced one, and only drawings, images, long documents or long threads to the most
+   capable one — the same quality where it matters, far fewer tokens on the rest. */
+const TIER_NAME = { quick: 'quick model', default: 'balanced model', complex: 'thorough model' };
+function autoTier(b, nImages, nParts) {
+  const atts = (b.atts || []).filter(a => a.include && a.res);
+  const attText = atts.reduce((n, a) => n + ((a.res.text || '').length), 0);
+  const body = ((b.email && b.email.body) || '').length;
+  if (nImages === undefined) nImages = atts.reduce((n, a) => n + ((a.res.images || []).length), 0);
+  if (nImages || nParts > 1 || attText > 60000 || body > 40000 || atts.some(a => /drawing|cad|dwg/i.test(a.res.kindLabel || ''))) return 'complex';
+  if (!attText && body < 5000 && atts.length === 0) return 'quick';
+  return 'default';
+}
 async function runAnalysis(opts = {}) {
   if (UI.analyzing) return;
   if (!St.sample && DESKTOP) await recheckAI();
@@ -5653,6 +5831,7 @@ async function runAnalysis(opts = {}) {
       const nt = rec.analysis.tasks.length;
       b.doneText = rec.analysis.actionRequired === false && !nt ? 'No action needed from you.' : `${nt} task${nt === 1 ? '' : 's'} proposed${rec.analysis.updates.length ? `, ${rec.analysis.updates.length} update${rec.analysis.updates.length > 1 ? 's' : ''} to existing tasks` : ''}.`;
       if (rec.analysis.readBy && typeof aiName === 'function') b.doneText += ` Read by ${aiName(rec.analysis.readBy)}${rec.analysis.readBy.fallback ? ' (backup AI)' : ''}.`;
+      else if (b.tierUsed) b.doneText += ` Read by the ${TIER_NAME[b.tierUsed]}.`;
     } catch (e) {
       if (e && e.code === 'cancelled') { b.state = 'ready'; break; }
       b.state = 'error'; b.error = (typeof aiErrorFor === 'function' && aiErrorFor(e)) || aiErrorText(e); b.errInfo = e ? { code: e.code, provider: e.provider || '', backup: e.backup || '' } : null;
@@ -5692,11 +5871,13 @@ async function analyzeBundle(b, signal, onProgress) {
     }
   }
   const tk = E.threadKey(em);
-  const related = E.relatedOpenTasks([...St.tasks.values()], em, tk).map(t => ({ id: t.id, ref: t.ref, title: t.title, project: t.project, discipline: t.discipline, owner: t.ownership === 'mine' ? 'me' : t.owner, status: t.status, deadline: t.deadline }));
+  const mine = new Set((s.me.emails || []).map(x => String(x).toLowerCase()));
+  const fromMe = !!(em.fromEmail && mine.has(String(em.fromEmail).toLowerCase()));
+  const related = E.relatedOpenTasks([...St.tasks.values()], { ...em, fromMe }, tk).map(t => ({ id: t.id, ref: t.ref, title: t.title, project: t.project, discipline: t.discipline, owner: t.ownership === 'mine' ? 'me' : t.owner, status: t.status, deadline: t.deadline }));
   const budget = ((St.limits && St.limits.maxPromptBytes) || 262144) - 10000;
   const input = {
     me: s.me, projects: allProjects(), topics: allTopics(), today: E.todayISO(), tz: TZ,
-    email: { subject: masker.mask(em.subject), from: masker.mask(em.from), to: masker.mask(em.to), cc: masker.mask(em.cc), date: em.date, forwardedBy: masker.mask(em.forwardedBy || ''), forwardedAt: em.forwardedAt || '', forwardMode: em.forwardMode || '', body: masker.mask(em.body || (b.source === 'docs' ? '(No email — the user shared these documents directly. Identify what they require from the user, if anything.)' : '')) },
+    email: { fromMe, subject: masker.mask(em.subject), from: masker.mask(em.from), to: masker.mask(em.to), cc: masker.mask(em.cc), date: em.date, forwardedBy: masker.mask(em.forwardedBy || ''), forwardedAt: em.forwardedAt || '', forwardMode: em.forwardMode || '', body: masker.mask(em.body || (b.source === 'docs' ? '(No email — the user shared these documents directly. Identify what they require from the user, if anything.)' : '')) },
     attachments: atts, images: images.map(i => ({ key: i.key, label: i.label })), openTasks: related, budget, notes: promptNotes(em),
   };
   let { prompt, truncations } = E.buildPrompt(input);
@@ -5704,17 +5885,30 @@ async function analyzeBundle(b, signal, onProgress) {
   const parts = truncations.length ? splitLongEmail(input, budget) : [{ prompt, images: true }];
   if (parts.length > 1) truncations = parts.dropped || [];
   // b.tierOverride: 'quick' when you chose the quick model for a simple email (features/12-ai.js)
-  const tier = b.tierOverride === 'quick' ? 'quick' : s.tier; let readBy = null;
+  // Smart (the default): each email gets the smallest model that reads it well — see autoTier
+  let tier = b.tierOverride === 'quick' ? 'quick' : s.tier === 'auto' || !s.tier ? autoTier(b, images.length, parts.length) : s.tier; let readBy = null;
+  b.tierUsed = tier;
   const results = [];
   for (let i = 0; i < parts.length; i++) {
     const pre = parts.length > 1 ? `Long email — part ${i + 1} of ${parts.length}. ` : '';
-    onProgress(pre + 'Waiting for Claude… (consent, queue and thinking can take a minute)');
-    const raw = await St.sample.json(parts[i].prompt, {
-      signal, modelTier: tier === 'quick' ? 'quick' : tier === 'default' ? 'default' : 'complex', cache: b.fresh ? false : undefined, onMeta: m => { readBy = m; },
+    const ask = t => { onProgress(pre + `Waiting for Claude (${TIER_NAME[t]})… consent, queue and thinking can take a minute`); return St.sample.json(parts[i].prompt, {
+      signal, modelTier: t === 'quick' ? 'quick' : t === 'default' ? 'default' : 'complex', cache: b.fresh ? false : undefined, onMeta: m => { readBy = m; },
       ...(images.length && parts[i].images ? { images: images.map(x => x.blob) } : {}),
       onText: ({ text }) => onProgress(`${pre}Receiving results… ${Math.round(text.length / 100) / 10}k characters`),
-    });
-    results.push(E.normalizeAnalysis(raw, { unmask: masker.unmask }));
+    }); };
+    let an;
+    try { an = E.normalizeAnalysis(await ask(tier), { unmask: masker.unmask }); }
+    catch (err) {
+      // a smaller model that could not give a clean answer hands the email to the next one up (once)
+      if (s.tier !== 'auto' || tier === 'complex' || !err || ['cancelled', 'not_granted', 'sampling_disabled', 'rate_limited', 'session_expired', 'auth_failed', 'billing', 'budget'].includes(err.code)) throw err;
+      tier = tier === 'quick' ? 'default' : 'complex'; b.tierUsed = tier;
+      an = E.normalizeAnalysis(await ask(tier), { unmask: masker.unmask });
+    }
+    // an action email that the quick model found nothing in is read again by the balanced one
+    if (s.tier === 'auto' && tier === 'quick' && !an.tasks.length && !an.updates.length && an.actionRequired !== false) {
+      tier = 'default'; b.tierUsed = tier; an = E.normalizeAnalysis(await ask(tier), { unmask: masker.unmask });
+    }
+    results.push(an);
   }
   const an = results.length > 1 ? mergeAnalyses(results) : results[0];
   runHooks('proposals', an, em, b); // email rules and learned corrections adjust the proposals
@@ -6122,7 +6316,7 @@ function viewSetup() {
         <label class="check"><input type="checkbox" id="o-vision" data-chg="opt" data-key="vision" ${s.vision ? 'checked' : ''}><span>Send images of scanned pages and photos<br><span class="small muted">Needed for scans, photos and marked-up prints.</span></span></label>
         <label class="check"><input type="checkbox" id="o-draw" data-chg="opt" data-key="drawings" ${s.drawings ? 'checked' : ''}><span>Send images of drawing sheets (A3 and larger)<br><span class="small muted">Lets Claude see revision clouds and the title block.</span></span></label>
         <label class="check"><input type="checkbox" id="s-mask" data-chg="opt" data-key="mask" ${s.mask ? 'checked' : ''}><span>Hide other people's email addresses and phone numbers<br><span class="small muted">Replaced with placeholders before sending; restored in results.</span></span></label>
-        <label class="field"><span>Analysis depth</span><select class="input" id="o-tier" data-chg="opt" data-key="tier"><option value="complex" ${s.tier === 'complex' ? 'selected' : ''}>Thorough (best for attachments)</option><option value="default" ${s.tier === 'default' ? 'selected' : ''}>Balanced (faster)</option></select></label>
+        <label class="field"><span>Analysis depth</span><select class="input" id="o-tier" data-chg="opt" data-key="tier"><option value="auto" ${s.tier === 'auto' || !s.tier ? 'selected' : ''}>Smart — Claude picks the model for each email (saves tokens)</option><option value="complex" ${s.tier === 'complex' ? 'selected' : ''}>Always thorough (most tokens)</option><option value="default" ${s.tier === 'default' ? 'selected' : ''}>Always balanced</option></select></label>
       </div>
     </section>
     <!--SETUP-EXTRA-->
@@ -7227,6 +7421,9 @@ function projectBands(M) {
 function drawMinimap() {
   const c = $('#minimap'), M = UI.mapLayout, vp = $('#map-vp'); if (!c || !M || !vp) return;
   const ctx = c.getContext && c.getContext('2d'); if (!ctx) return;
+  // drawn at the screen's real pixel density, so it stays sharp on phones, tablets and retina screens
+  const dpr = Math.min(3, window.devicePixelRatio || 1);
+  if (c.width !== Math.round(200 * dpr)) { c.width = Math.round(200 * dpr); c.height = Math.round(130 * dpr); }
   const W = c.width, H = c.height, s = Math.min(W / M.w, H / M.h), ox = (W - M.w * s) / 2, oy = (H - M.h * s) / 2;
   const css = getComputedStyle(document.documentElement), v = k => css.getPropertyValue(k).trim();
   const X = x => ox + (x - M.x0) * s, Y = y => oy + (y - M.y0) * s;
@@ -7239,7 +7436,7 @@ function drawMinimap() {
   for (const el of boardEls()) { const b = elBox(el); if (!b.w) continue; ctx.fillStyle = el.type === 'sticky' ? '#E8C547' : 'rgba(128,128,128,.5)'; ctx.fillRect(X(b.x), Y(b.y), Math.max(1.5, b.w * s), Math.max(1.5, b.h * s)); }
   // the part of the canvas on screen
   const k = UI.map.k, vx = -UI.map.x / k, vy = -UI.map.y / k, vw = vp.clientWidth / k, vh = vp.clientHeight / k;
-  ctx.strokeStyle = v('--accent') || '#0A6B74'; ctx.lineWidth = 2; ctx.strokeRect(X(vx), Y(vy), vw * s, vh * s);
+  ctx.strokeStyle = v('--accent') || '#0A6B74'; ctx.lineWidth = 2 * dpr; ctx.strokeRect(X(vx), Y(vy), vw * s, vh * s);
   c._map = { s, ox, oy };
 }
 function minimapMove(e) {
@@ -7329,7 +7526,8 @@ function mapSVG(M) {
   return { w: W, h: H, svg: `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"><defs><marker id="xa" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#15201E"/></marker></defs>${parts.join('')}</svg>` };
 }
 async function svgToPng(svg, w, h) {
-  const scale = Math.min(2, 8000 / Math.max(w, h));
+  // as sharp as the browser allows: up to 4× (print quality), within the largest canvas a browser will draw
+  const scale = Math.max(1, Math.min(4, 16000 / Math.max(w, h), Math.sqrt(160e6 / Math.max(1, w * h))));
   const img = new Image(); img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
   await img.decode();
   const c = document.createElement('canvas'); c.width = Math.round(w * scale); c.height = Math.round(h * scale);
@@ -8958,7 +9156,7 @@ function aiSimple(b) {
 const aiSimpleList = () => UI.staging.filter(b => aiSimple(b) && !b.tierOverride);
 function aiSimpleHTML(ready) {
   const a = aiSt();
-  if ((a && !a.suggestSimple) || St.settings.tier === 'quick' || !St.sample || UI.analyzing) return '';
+  if ((a && !a.suggestSimple) || St.settings.tier === 'quick' || St.settings.tier === 'auto' || !St.settings.tier || !St.sample || UI.analyzing) return '';
   const list = aiSimpleList(); if (!list.length) return '';
   let saving = '';
   if (a) {
@@ -8980,6 +9178,12 @@ function aiBudgetCheck() {
   toast(level === 100 ? `AI budget reached: about $${a.monthCost.toFixed(2)} of $${a.budget} this month. The app now asks before spending more.` : `80% of this month's AI budget is used (about $${a.monthCost.toFixed(2)} of $${a.budget}).`, { action: 'Setup', fn: () => go('setup'), err: level === 100 });
 }
 if (DESKTOP) { DK.on('sample:usage', () => setTimeout(aiBudgetCheck, 50)); setTimeout(aiBudgetCheck, 3000); }
+
+// Smart model choice became the default: an earlier "Thorough" default moves to Smart once (a choice made later stays)
+HOOKS.ready.push(() => {
+  if (St.mode === 'viewer' || St.settings.tierSmart) return;
+  saveSettings(x => { if (!x.tier || x.tier === 'complex') x.tier = 'auto'; x.tierSmart = true; });
+});
 
 /* ===== features/13-money.js ===== */
 /* ---------- Money: income and expenses, budgets, recurring items, bank statements, receipts, expense claims ---------- */
@@ -12686,6 +12890,342 @@ const ftEnd = e => {
 };
 document.addEventListener('pointerup', ftEnd, true);
 document.addEventListener('pointercancel', ftEnd, true);
+
+/* ===== features/28-tidy.js ===== */
+/* ---------- tidy tasks: duplicates merged into one, long headers shortened ---------- */
+// Duplicates: two tasks are the same work when their headers (and what they ask) share most of their words, more so
+// when they come from the same conversation or email; a different project counts against it. They are shown side by
+// side and merged into the one you keep: items, evidence, emails, links and history all move to it, the earliest
+// deadline and the highest priority win, and canvas lines to the others now point at it. Undo brings them back.
+const DUPC = { key: '', groups: [] };
+function dupGroups() {
+  const ts = [...St.tasks.values()].filter(t => t.status !== 'done' || Date.now() - new Date(t.updatedAt || 0) < 14 * 864e5);
+  const ign = new Set(St.settings.dupIgnore || []);
+  const key = ts.map(t => t.id + (t.updatedAt || '')).join() + '|' + ign.size;
+  if (key === DUPC.key) return DUPC.groups;
+  const tok = ts.map(t => [E.tokens(t.title), E.tokens(t.title + ' ' + (t.action || ''))]);
+  const up = ts.map((_, i) => i), find = i => (up[i] === i ? i : (up[i] = find(up[i])));
+  for (let i = 0; i < ts.length; i++) for (let j = i + 1; j < ts.length; j++) {
+    const a = ts[i], b = ts[j];
+    if (ign.has([a.id, b.id].sort().join('|'))) continue;
+    let sc = Math.max(E.jaccard(tok[i][0], tok[j][0]), 0.95 * E.jaccard(tok[i][1], tok[j][1]));
+    if (sc < 0.4) continue;
+    if (a.threadKey && a.threadKey === b.threadKey) sc += 0.12;
+    if ((a.emailIds || []).some(id => (b.emailIds || []).includes(id))) sc += 0.08;
+    if (a.project && b.project && E.normMatch(a.project) !== E.normMatch(b.project)) sc -= 0.15;
+    if (a.ownership !== b.ownership && (a.ownership === 'mine' || b.ownership === 'mine')) sc -= 0.1;
+    if (sc >= 0.68) up[find(i)] = find(j);
+  }
+  const by = new Map(); ts.forEach((t, i) => { const r = find(i); if (!by.has(r)) by.set(r, []); by.get(r).push(t); });
+  const weight = t => subsOf(t).length * 2 + (t.evidence || []).length + (t.emailIds || []).length + (t.status !== 'done' ? 3 : 0);
+  DUPC.groups = [...by.values()].filter(g => g.length > 1).map(g => g.sort((x, y) => weight(y) - weight(x) || (x.createdAt || '').localeCompare(y.createdAt || '')));
+  DUPC.key = key;
+  return DUPC.groups;
+}
+function mergeTasks(keepId, otherIds) {
+  const keep = clone(St.tasks.get(keepId)); if (!keep) return;
+  const others = otherIds.map(id => St.tasks.get(id)).filter(t => t && t.id !== keepId); if (!others.length) return;
+  const ch = { tasks: {}, els: {} }, now = nowISO(), gone = new Set(others.map(o => o.id));
+  const have = new Set(subsOf(keep).map(x => E.normMatch(x.text)));
+  for (const o of others) {
+    keep.subtasks = [...subsOf(keep), ...subsOf(o).filter(x => !have.has(E.normMatch(x.text)) && have.add(E.normMatch(x.text)))];
+    keep.evidence = [...(keep.evidence || []), ...(o.evidence || [])].slice(-20);
+    keep.emailIds = [...new Set([...(keep.emailIds || []), ...(o.emailIds || [])])];
+    keep.tags = [...new Set([...(keep.tags || []), ...(o.tags || [])])];
+    keep.relatedIds = [...new Set([...relIds(keep), ...relIds(o)])];
+    if (o.deadline && (!keep.deadline || o.deadline < keep.deadline)) { keep.deadline = o.deadline; keep.deadlineBasis = o.deadlineBasis; keep.deadlineText = o.deadlineText; }
+    if (PRIO_RANK[o.priority] < PRIO_RANK[keep.priority]) keep.priority = o.priority;
+    if (o.askedOn && (!keep.askedOn || o.askedOn < keep.askedOn)) keep.askedOn = o.askedOn;
+    if ((o.createdAt || '') < (keep.createdAt || '')) keep.createdAt = o.createdAt;
+    if (keep.status === 'done' && o.status !== 'done') { keep.status = o.status; keep.completedAt = null; }
+    for (const k of ['action', 'nextStep', 'topic', 'project', 'discipline', 'workType', 'sourceSubject', 'sourceFrom', 'sourceDate', 'threadKey']) if (!keep[k] && o[k]) keep[k] = o[k];
+    keep.history = [...(keep.history || []), ...(o.history || [])].sort((x, y) => (x.at || '').localeCompare(y.at || ''));
+    ch.tasks[o.id] = null;
+  }
+  keep.relatedIds = keep.relatedIds.filter(id => id !== keep.id && !gone.has(id));
+  keep.history.push({ at: now, text: `Merged duplicate${others.length > 1 ? 's' : ''} ${others.map(o => o.ref || o.title).join(', ')} into this task` });
+  keep.updatedAt = now; ch.tasks[keep.id] = keep;
+  // links from other tasks and lines on the canvas move to the task that stays
+  for (const t of St.tasks.values()) if (!gone.has(t.id) && t.id !== keep.id && relIds(t).some(id => gone.has(id))) { const c = clone(t); c.relatedIds = [...new Set(relIds(c).map(id => (gone.has(id) ? keep.id : id)))].filter(id => id !== c.id); ch.tasks[c.id] = c; }
+  const nid = id => (gone.has(String(id).replace(/^t:/, '')) ? 't:' + keep.id : id);
+  for (const el of St.board.values()) if (el.type === 'connector' && (nid(el.from.id) !== el.from.id || nid(el.to.id) !== el.to.id)) {
+    const c = clone(el); c.from = { ...c.from, id: nid(c.from.id) }; c.to = { ...c.to, id: nid(c.to.id) }; ch.els[c.id] = c.from.id === c.to.id ? null : c;
+  }
+  cvApply(ch);
+  if (UI.mapSel && gone.has(UI.mapSel)) UI.mapSel = keep.id;
+  return others.length;
+}
+function dupCallout() {
+  if (St.mode === 'viewer' || !St.tasks.size) return '';
+  const g = dupGroups(); if (!g.length) return '';
+  const n = g.reduce((s, x) => s + x.length - 1, 0);
+  return callout('warn', `<div class="row"><span>🔁 <b>${n}</b> duplicate task${n > 1 ? 's' : ''} found (${g.length} group${g.length > 1 ? 's' : ''}) — the same work added more than once.</span><span class="spacer"></span><button class="btn sm" data-act="dup-open">Review</button><button class="btn sm primary" data-act="dup-merge-all">Merge all</button></div>`);
+}
+DRAWER_FN.dups = () => {
+  const g = dupGroups();
+  return `<div class="drawer-h"><b>Duplicate tasks</b><span class="spacer"></span><button class="icon-btn" data-act="close-drawer" aria-label="Close">${I.x}</button></div>
+  <div class="drawer-b" style="display:grid;gap:14px">
+    ${g.length ? `<p class="small muted" style="margin:0">Each group is the same work added more than once. The ticked task stays; the others are merged into it — their items, evidence, emails and links move across. Undo brings them back.</p>
+    <div class="row"><span class="spacer"></span><button class="btn sm primary" data-act="dup-merge-all">Merge all ${g.length} group${g.length > 1 ? 's' : ''}</button></div>` : '<p class="muted">No duplicates left.</p>'}
+    ${g.map((grp, gi) => `<section class="card pad dup-group" style="display:grid;gap:8px">
+      ${grp.map((t, i) => `<label class="dup-row"><input type="radio" name="dupk-${gi}" value="${esc(t.id)}" ${i === 0 ? 'checked' : ''}><span class="mono muted">${esc(t.ref || '')}</span><span class="dup-t" dir="auto"><b>${esc(t.title)}</b><small class="muted">${esc([projKeyLabel(t)[1], topicOf(t), mailDate(t) ? '✉ ' + fmtDate(mailDate(t)) : '', subsOf(t).length ? subsOf(t).length + ' items' : '', STATUS[t.status]].filter(Boolean).join(' · '))}</small></span></label>`).join('')}
+      <div class="row"><button class="btn sm primary" data-act="dup-merge" data-g="${gi}">Merge into the ticked one</button><button class="btn sm ghost" data-act="dup-ignore" data-g="${gi}">Not duplicates</button></div>
+    </section>`).join('')}
+  </div>`;
+};
+Object.assign(ACT, {
+  'dup-open': () => openDrawer('dups', 'all'),
+  'dup-merge': el => {
+    const grp = dupGroups()[+el.dataset.g]; if (!grp) return;
+    const pick = document.querySelector(`input[name="dupk-${el.dataset.g}"]:checked`); const keepId = pick ? pick.value : grp[0].id;
+    const n = mergeTasks(keepId, grp.map(t => t.id).filter(id => id !== keepId));
+    render(); if (UI.drawer && UI.drawer.kind === 'dups') renderDrawer();
+    toast(`${n} duplicate${n > 1 ? 's' : ''} merged into ${St.tasks.get(keepId)?.ref || 'one task'}.`, { action: 'Undo', fn: cvUndo });
+  },
+  'dup-merge-all': () => {
+    let n = 0;
+    for (let guard = 0; guard < 50; guard++) { const grp = dupGroups()[0]; if (!grp) break; n += mergeTasks(grp[0].id, grp.slice(1).map(t => t.id)) || 0; }
+    render(); if (UI.drawer && UI.drawer.kind === 'dups') renderDrawer();
+    toast(`${n} duplicate task${n > 1 ? 's' : ''} merged.`, { action: 'Undo', fn: () => { for (let i = 0; i < n && UI.cvUndo.length; i++) cvUndo(); } });
+  },
+  'dup-ignore': el => {
+    const grp = dupGroups()[+el.dataset.g]; if (!grp) return;
+    const pairs = []; grp.forEach((a, i) => grp.slice(i + 1).forEach(b => pairs.push([a.id, b.id].sort().join('|'))));
+    saveSettings(s => { s.dupIgnore = [...new Set([...(s.dupIgnore || []), ...pairs])].slice(-2000); });
+    render(); renderDrawer();
+  },
+});
+
+// Long headers (from before Claude wrote short ones) are shortened by the quick model in one go; without Claude a
+// careful local trim is used. Each change is kept in the task history and can be undone.
+const LONG_TITLE = 70;
+const longTitled = () => [...St.tasks.values()].filter(t => t.status !== 'done' && (t.title || '').length > LONG_TITLE);
+const TIDY = { running: false };
+function headersCallout() {
+  if (St.mode === 'viewer') return '';
+  const n = longTitled().length; if (!n || (St.settings.ui || {}).tidyHeadersOff) return '';
+  return callout('info', `<div class="row"><span>✂️ ${n} task${n > 1 ? 's have' : ' has'} a long header. ${St.sample ? 'Claude can summarise each one into a short header (the details stay in the task).' : 'They can be shortened to a few words (the details stay in the task).'}</span><span class="spacer"></span>${TIDY.running ? '<div class="progress indet" style="width:90px"><i></i></div>' : `<button class="btn sm primary" data-act="tidy-headers">Shorten headers</button><button class="btn sm ghost" data-act="tidy-headers-off" aria-label="Hide">✕</button>`}</div>`);
+}
+async function tidyHeaders() {
+  const list = longTitled(); if (!list.length || TIDY.running) return;
+  TIDY.running = true; render();
+  const out = {};
+  try {
+    if (St.sample) {
+      for (let i = 0; i < list.length; i += 40) {
+        const chunk = list.slice(i, i + 40);
+        const prompt = `Rewrite each task header below as a short header I can scan on a canvas: what to do, 3–8 words, at most 55 characters, like a to-do item ("Revise RAS pump calc", "Answer CRS comments on valve spec"). Keep the language of the original (Arabic stays Arabic). Keep a short document number or equipment tag only if it tells tasks apart. Never add facts. Reply with JSON only: {"titles":[{"id":"…","title":"…"}]}
+
+TASKS
+${chunk.map(t => JSON.stringify({ id: t.id, title: t.title, action: E.clip(t.action || '', 300), project: t.project || '' })).join('\n')}`;
+        const ans = await St.sample.json(prompt, { modelTier: 'quick' });
+        for (const x of (ans && ans.titles) || []) if (x && x.id && St.tasks.has(x.id) && x.title) out[x.id] = E.shortTitle(String(x.title));
+      }
+    }
+  } catch (e) { toast('Claude could not shorten the headers now; they were trimmed instead.', { err: true }); }
+  const ch = { tasks: {} }, now = nowISO();
+  for (const t of list) {
+    const nt = out[t.id] || E.shortTitle(t.title); if (!nt || nt === t.title) continue;
+    const c = clone(t); c.title = nt; c.updatedAt = now; if (!c.action) c.action = t.title;
+    (c.history = c.history || []).push({ at: now, text: `Header shortened (was “${E.clip(t.title, 140)}”)` });
+    ch.tasks[t.id] = c;
+  }
+  TIDY.running = false;
+  const n = Object.keys(ch.tasks).length;
+  if (n) { cvApply(ch); measureCache.clear(); toast(`${n} header${n > 1 ? 's' : ''} shortened.`, { action: 'Undo', fn: cvUndo }); }
+  render();
+}
+Object.assign(ACT, { 'tidy-headers': () => tidyHeaders(), 'tidy-headers-off': () => { saveSettingsUi({ tidyHeadersOff: true }); render(); } });
+
+/* ===== features/29-views.js ===== */
+/* ---------- two more ways to see the work: Timeline and Priority matrix ---------- */
+// Timeline: one row per task, grouped by project; each bar runs from the day the task was asked (its email date, else
+// when it was added) to its deadline, with today marked. Overdue bars end in red, tasks without a date show as a dot.
+// Priority matrix: my open tasks in four boxes — urgent (overdue or due within 3 days) × important (critical/high
+// priority or from my manager) — so the order of work is obvious. Tasks I'm waiting on sit in a strip below.
+// Both open a task's panel on click and follow My actions (others fade) and the project filter.
+const DAYW = 34; // px per day on the timeline
+const viewTasks = () => [...St.tasks.values()].filter(t => t.status !== 'done' && t.ownership !== 'fyi' && (UI.mapFocus === 'all' || projKeyLabel(t)[0] === UI.mapFocus));
+const cardCls = t => ['vcard', 'p-' + (t.priority || 'medium'), needsMe(t) ? 'me' : '', isNewTask(t) ? 'is-new' : '', myFocus() && !needsMe(t) ? 'dim' : ''].join(' ');
+const cardTags = t => `${isNewTask(t) ? '<span class="mnew">NEW</span>' : ''}${needsMe(t) ? '<span class="mme">🙋 Your action</span>' : ''}`;
+function vHeader(title, sub) {
+  const projs = [...new Map([...St.tasks.values()].map(t => projKeyLabel(t))).entries()].sort((a, b) => a[1].localeCompare(b[1]));
+  const n = [...St.tasks.values()].filter(needsMe).length;
+  return `<div class="map-toolbar"><div class="map-tools" role="toolbar" aria-label="${esc(title)}">${modeSegHTML()}<span class="small muted">${esc(sub)}</span><span class="mt-spacer"></span>
+    <button class="btn sm mt-mine ${myFocus() ? 'on' : ''}" data-act="map-mine" aria-pressed="${myFocus()}" title="Highlight the tasks that need action by you (Shift+M)">🙋<span class="lbl">My actions</span> <b class="mt-count">${n}</b></button></div>
+    <div class="map-projects"><button class="mp-chip ${UI.mapFocus === 'all' ? 'on' : ''}" data-act="map-focus" data-pk="all">🌐 All projects</button>${projs.map(([k, l]) => `<button class="mp-chip ${UI.mapFocus === k ? 'on' : ''}" data-act="map-focus" data-pk="${esc(k)}">${k === 'p:~' ? '🗂️' : projBadge(l, 'xs')}<span dir="auto">${esc(l)}</span></button>`).join('')}</div></div>`;
+}
+function viewTimeline() {
+  const ts = viewTasks(), today = T();
+  const start = t => (mailDate(t) || (t.createdAt || '').slice(0, 10) || today);
+  let d0 = E.addDays(today, -14), d1 = E.addDays(today, 28);
+  for (const t of ts) { const s = start(t); if (s < d0) d0 = s; if (t.deadline && t.deadline > d1) d1 = t.deadline; }
+  if (E.dayDiff(d0, today) > 60) d0 = E.addDays(today, -60); if (E.dayDiff(today, d1) > 120) d1 = E.addDays(today, 120);
+  d0 = E.addDays(d0, -2); d1 = E.addDays(d1, 3);
+  const days = E.dayDiff(d0, d1) + 1, W = days * DAYW, X = d => Math.max(0, Math.min(days, E.dayDiff(d0, d))) * DAYW;
+  const groups = new Map(); for (const t of ts) { const [k, l] = projKeyLabel(t); if (!groups.has(k)) groups.set(k, { l, ts: [] }); groups.get(k).ts.push(t); }
+  const rows = [...groups.values()].sort((a, b) => a.l.localeCompare(b.l)).map(g => ({ ...g, ts: g.ts.sort((a, b) => (a.deadline || '9') .localeCompare(b.deadline || '9') || start(a).localeCompare(start(b))) }));
+  const ticks = []; for (let i = 0; i < days; i++) { const d = E.addDays(d0, i), dt = new Date(d + 'T00:00:00'); ticks.push({ d, x: i * DAYW, wd: dt.getDay(), dom: dt.getDate(), mon: dt.getDate() === 1 || i === 0 }); }
+  const bar = t => {
+    const s = start(t), e = t.deadline, over = e && e < today, x = X(s);
+    if (!e) return `<div class="tl-bar nodate" style="left:${x}px" title="No deadline"></div>`;
+    const x2 = X(e) + DAYW, w = Math.max(DAYW * 0.6, x2 - x);
+    return `<div class="tl-bar ${over ? 'over' : ''} p-${t.priority || 'medium'}" style="left:${Math.min(x, x2 - DAYW * .6)}px;width:${w}px" title="${esc(fmtDate(s))} → ${esc(fmtDate(e))}"></div>`;
+  };
+  return `${vHeader('Timeline', 'From the day each task was asked to its deadline')}
+  <div class="tl card" style="--dw:${DAYW}px">
+    <div class="tl-scroll" id="tl-scroll"><div class="tl-grid" style="width:calc(var(--nw) + ${W}px)">
+      <div class="tl-head"><div class="tl-name-h">Task</div><div class="tl-axis" style="width:${W}px">${ticks.map(k => `<div class="tl-tick ${k.wd === 5 || k.wd === 6 ? 'we' : ''} ${k.d === today ? 'now' : ''}" style="left:${k.x}px">${k.mon ? `<span class="tl-mon">${esc(fmtDate(k.d, { month: 'short' }))}</span>` : ''}<span>${k.dom}</span></div>`).join('')}</div></div>
+      <div class="tl-body"><div class="tl-today" style="left:calc(var(--nw) + ${X(today) + DAYW / 2}px)"><span>Today</span></div>
+        ${rows.map(g => `<div class="tl-proj"><span dir="auto">${esc(g.l)}</span><small>${g.ts.length}</small></div>
+          ${g.ts.map(t => `<div class="tl-row ${cardCls(t)}" data-act="open-task" data-id="${esc(t.id)}" role="button" tabindex="0">
+            <div class="tl-name"><span class="tl-tags">${cardTags(t)}</span><b dir="auto">${esc(t.title)}</b><small class="muted"><span class="mono">${esc(t.ref || '')}</span> ${t.deadline ? '· due ' + esc(fmtDate(t.deadline)) : '· no date'}${mailDate(t) ? ' · ✉ ' + esc(fmtDate(mailDate(t))) : ''}</small></div>
+            <div class="tl-lane" style="width:${W}px">${bar(t)}</div></div>`).join('')}`).join('') || '<p class="muted pad">No open tasks.</p>'}
+      </div></div></div>
+  </div>`;
+}
+function viewMatrix() {
+  const ts = viewTasks(), today = T();
+  const mine = ts.filter(t => isMine(t) && t.status !== 'waiting'), wait = ts.filter(t => !(isMine(t) && t.status !== 'waiting'));
+  const urgent = t => !!t.deadline && E.dayDiff(today, t.deadline) <= 3;
+  const important = t => t.priority === 'critical' || t.priority === 'high' || (typeof isFromManager === 'function' && isFromManager(t));
+  const Q = [['do', 'Do first', 'Urgent and important', t => urgent(t) && important(t)], ['plan', 'Schedule', 'Important, not urgent', t => !urgent(t) && important(t)], ['quick', 'Fit in soon', 'Urgent, less important', t => urgent(t) && !important(t)], ['later', 'Later', 'Neither urgent nor important', t => !urgent(t) && !important(t)]];
+  const order = (a, b) => (a.deadline || '9').localeCompare(b.deadline || '9') || PRIO_RANK[a.priority] - PRIO_RANK[b.priority];
+  const card = t => { const d = dueInfo(t); return `<button class="${cardCls(t)}" data-act="open-task" data-id="${esc(t.id)}"><span class="tl-tags">${cardTags(t)}</span><b dir="auto">${esc(t.title)}</b><small><span class="mono">${esc(t.ref || '')}</span><span class="duepill ${d.cls}">${esc(d.txt)}</span>${subsOf(t).length ? `<span>🗂️ ${subsDone(t)}/${subsOf(t).length}</span>` : ''}</small></button>`; };
+  return `${vHeader('Priority matrix', 'Urgent = overdue or due within 3 days · Important = critical/high priority or from your manager')}
+  <div class="mx">${Q.map(([k, l, sub, f]) => { const list = mine.filter(f).sort(order); return `<section class="mx-q mx-${k} card"><header><b>${l}</b><small>${sub}</small><span class="mx-n">${list.length}</span></header><div class="mx-list">${list.map(card).join('') || '<p class="small muted">Nothing here.</p>'}</div></section>`; }).join('')}</div>
+  ${wait.length ? `<section class="mx-wait card"><header><b>⏳ Waiting on others</b><span class="mx-n">${wait.length}</span></header><div class="mx-list row-list">${wait.sort(order).map(card).join('')}</div></section>` : ''}`;
+}
+Object.assign(TODO_VIEWS, { timeline: viewTimeline, matrix: viewMatrix });
+ACT['open-task'] = el => { if (St.tasks.has(el.dataset.id)) openDrawer('task', el.dataset.id); };
+HOOKS.afterRender.push(() => {
+  // the timeline opens scrolled to show a week before today
+  const sc = document.getElementById('tl-scroll'); if (!sc || sc.dataset.placed) return;
+  const now = sc.querySelector('.tl-tick.now'); if (now) sc.scrollLeft = Math.max(0, now.offsetLeft - 7 * DAYW);
+  sc.dataset.placed = '1';
+});
+
+/* ===== features/30-replies.js ===== */
+/* ---------- Reply & Chase: Claude drafts the email, Gmail opens ready to send ---------- */
+// On a task of mine that came from an email: ✉ Draft reply (to the person who asked, in the language they wrote in).
+// On a task I am waiting on: 🔔 Chase (a short, polite follow-up to the person who owes it, listing what is still
+// open). The draft opens in a panel to edit, change tone, copy, or open in Gmail with To, Subject and the message
+// filled in. Nothing is sent from here. "I sent it" records it on the task (a reply can also complete the task).
+// The canvas also shows who owes you a reply for 5+ days, with one tap to chase each. The desktop app has its own
+// version of this (features/06-work.js), so this one only switches on where that is absent.
+const RC = { d: null };
+const rcOn = () => typeof draftMail !== 'function' && St.mode !== 'viewer';
+const rcSince = t => { const h = (t.history || []).filter(x => /waiting/i.test(x.text)).pop(); return ((h && h.at) || t.askedOn || t.sourceDate || t.createdAt || nowISO()).slice(0, 10); };
+const rcChased = t => { const h = (t.history || []).filter(x => /^Chased/.test(x.text)).pop(); return h ? h.at.slice(0, 10) : ''; };
+const rcWho = t => (t.owner && !/^me$/i.test(t.owner) ? t.owner : t.requestedBy) || '';
+function rcMail(t) { return (t.emailIds || []).map(id => St.emails.get(id)).filter(Boolean).sort((a, b) => (b.date || '').localeCompare(a.date || ''))[0] || null; }
+function rcAddress(name) {
+  const n = E.normMatch(name || ''); if (!n || n === 'me') return '';
+  if (/@/.test(name)) return E.firstEmail(name);
+  for (const e of St.emails.values()) for (const h of [e.from, e.to, e.cc]) for (const part of String(h || '').split(/[,;]/)) {
+    const m = /<?([\w.+-]+@[\w-]+(?:\.[\w-]+)+)>?/.exec(part); if (!m) continue;
+    const label = E.normMatch(part.replace(m[0], '')), local = E.normMatch(m[1].split('@')[0].replace(/[._-]+/g, ' '));
+    if ((label && (label.includes(n) || n.includes(label))) || local === n || (n.split(' ')[0].length > 2 && local.startsWith(n.split(' ')[0]))) return m[1].toLowerCase();
+  }
+  return '';
+}
+// who owes me something: open waiting tasks, 5+ days, not chased in the last 3 days
+function rcOverdue() {
+  return [...St.tasks.values()].filter(t => t.status !== 'done' && (t.ownership === 'waiting' || t.status === 'waiting'))
+    .filter(t => { const d = E.dayDiff(rcSince(t), T()), c = rcChased(t); return (d >= 5 || (t.deadline && t.deadline < T())) && (!c || E.dayDiff(c, T()) >= 3); })
+    .sort((a, b) => rcSince(a).localeCompare(rcSince(b)));
+}
+function rcLocal(kind, t) {
+  const me = (St.settings.me.name || '').split(' ')[0] || '', em = rcMail(t);
+  const items = subsOf(t).filter(x => !x.done).slice(0, 8).map(x => '• ' + x.text).join('\n');
+  const first = s => (s || '').replace(/<.*?>/g, '').trim().split(/\s+/)[0] || 'colleague';
+  const base = ((em && em.subject) || t.title).replace(/^((re|fw|fwd)\s*:\s*)+/i, '');
+  if (kind === 'chase') {
+    const d = E.dayDiff(rcSince(t), T());
+    return { subject: 'Follow-up: ' + base, body: `Dear ${first(rcWho(t))},\n\nI hope you are well. I am following up on “${t.title}”, open for ${d} day${d === 1 ? '' : 's'} now.${items ? `\n\nStill outstanding:\n${items}` : ''}\n\nCould you please let me know when we can expect it${t.deadline ? `, ideally by ${fmtDate(t.deadline, { weekday: 'long', day: 'numeric', month: 'long' })}` : ''}?\n\nBest regards,\n${me}` };
+  }
+  return { subject: 'RE: ' + base, body: `Dear ${first(t.requestedBy || (em && em.from))},\n\nThank you for your email regarding ${t.title}.${items ? `\n\n${items}` : ''}\n\n${t.nextStep ? t.nextStep + '\n\n' : ''}Best regards,\n${me}` };
+}
+async function rcDraft(kind, id, tone) {
+  const t = St.tasks.get(id); if (!t) return;
+  const em = rcMail(t);
+  const to = kind === 'chase' ? rcAddress(rcWho(t)) : ((em && em.fromEmail) || rcAddress(t.requestedBy));
+  const keep = RC.d && RC.d.id === id && RC.d.kind === kind ? RC.d : null;
+  RC.d = { kind, id, tone: tone || (keep && keep.tone) || 'formal', to: keep ? keep.to : to, ...(keep && tone ? { subject: keep.subject, body: keep.body } : rcLocal(kind, t)), busy: !!St.sample, done: kind === 'reply' };
+  rcModal();
+  if (!St.sample) return;
+  const ev = (t.evidence || [])[0];
+  const prompt = `You write short, clear, professional emails for an engineer. Write a ${kind === 'chase' ? 'polite follow-up (chaser) asking for something that is overdue' : 'reply that answers the request below as far as the facts given allow'} from ${St.settings.me.name || 'me'}${St.settings.me.role ? ' (' + St.settings.me.role + ')' : ''}.
+Tone: ${{ formal: 'formal and courteous', friendly: 'warm and friendly but professional', brief: 'very brief — 3 sentences at most' }[RC.d.tone]}.
+TASK: ${t.title}
+WHAT IS NEEDED: ${t.action || ''}
+${kind === 'chase' ? `WAITING ON: ${rcWho(t)} for ${E.dayDiff(rcSince(t), T())} days` : `ASKED BY: ${t.requestedBy || (em && em.from) || ''}`}
+PROJECT: ${t.project || ''} · DEADLINE: ${t.deadline || 'none'}
+OPEN ITEMS:\n${subsOf(t).filter(x => !x.done).map(x => '- ' + x.text).join('\n') || '-'}
+MY NOTES: ${t.notes || '-'}
+ORIGINAL EMAIL SUBJECT: ${(em && em.subject) || '-'}
+ORIGINAL EMAIL SUMMARY: ${(em && em.analysis && em.analysis.summary) || '-'}
+QUOTE FROM IT: ${ev ? ev.quote : '-'}
+Write in the language of the quote (Arabic stays Arabic). Never invent facts, numbers, dates or attachments — where an answer needs information that is not given, leave a clear [placeholder]. Under 150 words. Sign with my first name.
+Reply with JSON only: {"subject":"…","body":"…"}`;
+  try {
+    const r = await St.sample.json(prompt, { modelTier: 'quick' });
+    if (RC.d && RC.d.id === id && r && typeof r.body === 'string' && r.body.trim()) Object.assign(RC.d, { subject: String(r.subject || RC.d.subject), body: r.body });
+  } catch { /* the local draft stays */ }
+  if (RC.d && RC.d.id === id) { RC.d.busy = false; rcModal(); }
+}
+const rcGmailUrl = d => `https://mail.google.com/mail/?view=cm&fs=1${d.to ? '&to=' + encodeURIComponent(d.to) : ''}&su=${encodeURIComponent(d.subject || '')}&body=${encodeURIComponent(d.body || '')}`;
+function rcRead() { const v = id => ($('#' + id) || {}).value; if (!RC.d) return; const to = v('rc-to'), su = v('rc-sub'), bo = v('rc-body'); if (to !== undefined) RC.d.to = to; if (su !== undefined) RC.d.subject = su; if (bo !== undefined) RC.d.body = bo; }
+function rcModal() {
+  const d = RC.d, m = $('#modal'); if (!d || !m) return;
+  const t = St.tasks.get(d.id);
+  m.innerHTML = deco(`<div class="card pad mail-draft rc" role="dialog" aria-label="Email draft">
+    <div class="row"><b>${d.kind === 'chase' ? '🔔 Chase' : '✉ Reply'}</b><span class="small muted" dir="auto">${esc(t ? t.ref + ' · ' + t.title : '')}</span><span class="spacer"></span><button class="icon-btn" data-act="close-modal" aria-label="Close">${I.x}</button></div>
+    <div class="row"><div class="seg" role="group" aria-label="Tone">${[['formal', 'Formal'], ['friendly', 'Friendly'], ['brief', 'Brief']].map(([k, l]) => `<button data-act="rc-tone" data-tone="${k}" aria-pressed="${d.tone === k}" ${d.busy ? 'disabled' : ''}>${l}</button>`).join('')}</div>${d.busy ? '<span class="small muted">✨ Claude is writing it…</span>' : ''}</div>
+    <label class="field"><span>To</span><input class="input" id="rc-to" value="${esc(d.to || '')}" placeholder="name@company.com"></label>
+    <label class="field"><span>Subject</span><input class="input" id="rc-sub" dir="auto" value="${esc(d.subject)}"></label>
+    <label class="field"><span>Message</span><textarea class="input" id="rc-body" dir="auto" rows="11">${esc(d.body)}</textarea></label>
+    ${d.kind === 'reply' ? `<label class="check small"><input type="checkbox" id="rc-done" ${d.done ? 'checked' : ''}>This reply completes the task</label>` : ''}
+    <div class="row end"><span class="small muted mail-note">Nothing is sent from here.</span><button class="btn" data-act="rc-copy">Copy</button><a class="btn" id="rc-gmail" href="${esc(rcGmailUrl(d))}" target="_blank" rel="noopener" data-act="rc-open">Open in Gmail</a><button class="btn primary" data-act="rc-sent">I sent it</button></div></div>`);
+  m.hidden = false;
+}
+document.addEventListener('input', e => { if (!RC.d || !e.target.closest || !e.target.closest('.rc')) return; rcRead(); const a = $('#rc-gmail'); if (a) a.href = rcGmailUrl(RC.d); });
+TASK_ACTIONS.push(t => {
+  if (!rcOn() || t.status === 'done') return '';
+  if (t.ownership === 'waiting' || t.status === 'waiting') return `<button class="btn sm ghost" data-act="rc-draft" data-kind="chase" data-id="${esc(t.id)}">🔔 Chase ${esc(E.clip(rcWho(t).split(' ')[0] || '', 18))}</button>`;
+  return isMine(t) && (t.emailIds || []).length ? `<button class="btn sm ghost" data-act="rc-draft" data-kind="reply" data-id="${esc(t.id)}">✉ Draft reply</button>` : '';
+});
+function chaseCallout() {
+  if (!rcOn()) return '';
+  const list = rcOverdue(); if (!list.length) return '';
+  const who = [...new Set(list.map(t => rcWho(t).split(' ')[0] || 'Someone'))];
+  return callout('info', `<div class="row"><span>🔔 ${who.slice(0, 3).map(esc).join(', ')}${who.length > 3 ? ` +${who.length - 3}` : ''} ${list.length === 1 ? 'owes' : 'owe'} you <b>${list.length}</b> repl${list.length === 1 ? 'y' : 'ies'} for 5+ days.</span><span class="spacer"></span><button class="btn sm primary" data-act="rc-list">Chase</button></div>`);
+}
+DRAWER_FN.chase = () => {
+  const list = rcOverdue();
+  return `<div class="drawer-h"><b>🔔 Who owes you a reply</b><span class="spacer"></span><button class="icon-btn" data-act="close-drawer" aria-label="Close">${I.x}</button></div>
+  <div class="drawer-b" style="display:grid;gap:10px">${list.length ? list.map(t => { const d = E.dayDiff(rcSince(t), T()), c = rcChased(t); return `<div class="card pad" style="display:grid;gap:4px">
+    <div class="row"><b dir="auto">${esc(rcWho(t) || 'Someone')}</b><span class="spacer"></span><span class="chip warn">${d} day${d === 1 ? '' : 's'}</span></div>
+    <button class="dtitle" data-act="open-task" data-id="${esc(t.id)}" dir="auto" style="text-align:start">${esc(t.title)}</button>
+    <span class="small muted"><span class="mono">${esc(t.ref || '')}</span>${t.deadline ? ' · due ' + esc(fmtDate(t.deadline)) : ''}${c ? ' · last chased ' + esc(fmtDate(c)) : ''}</span>
+    <div class="row"><button class="btn sm primary" data-act="rc-draft" data-kind="chase" data-id="${esc(t.id)}">🔔 Draft a chaser</button></div></div>`; }).join('') : '<p class="muted">Nobody is late with a reply. 🎉</p>'}</div>`;
+};
+Object.assign(ACT, {
+  'rc-draft': el => { $('#drawer') && UI.drawer && UI.drawer.kind === 'chase' && closeDrawer(); rcDraft(el.dataset.kind, el.dataset.id); },
+  'rc-tone': el => { rcRead(); rcDraft(RC.d.kind, RC.d.id, el.dataset.tone); },
+  'rc-list': () => openDrawer('chase', 'all'),
+  'rc-copy': async () => { rcRead(); try { await navigator.clipboard.writeText(`${RC.d.subject}\n\n${RC.d.body}`); toast('Copied — paste it into your email.'); } catch { const ta = $('#rc-body'); if (ta) { ta.select(); document.execCommand('copy'); toast('Copied.'); } } },
+  'rc-open': () => { rcRead(); },
+  'rc-sent': () => {
+    rcRead(); const d = RC.d; const t0 = d && St.tasks.get(d.id); if (!t0) return;
+    const t = clone(t0), now = nowISO(), done = d.kind === 'reply' && ($('#rc-done') || {}).checked;
+    (t.history = t.history || []).push({ at: now, text: d.kind === 'chase' ? `Chased ${rcWho(t) || 'them'} by email${d.to ? ' (' + d.to + ')' : ''}` : `Replied by email${d.to ? ' to ' + d.to : ''}${done ? ' — task completed' : ''}` });
+    if (done) { t.status = 'done'; t.completedAt = now; }
+    t.updatedAt = now; cvApply({ tasks: { [t.id]: t } });
+    $('#modal').hidden = true; RC.d = null; render(); if (UI.drawer && UI.drawer.kind === 'task') renderDrawer();
+    toast(d.kind === 'chase' ? '🔔 Chase recorded on the task.' : done ? '✓ Reply recorded and the task is done.' : '✉ Reply recorded on the task.', { action: 'Undo', fn: cvUndo });
+  },
+});
 
 /* ---------- boot ---------- */
 const startView = (location.hash || '').replace('#', '');

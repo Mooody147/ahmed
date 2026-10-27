@@ -48,7 +48,7 @@ const CATEGORY = { submittal_review: 'Submittal review', technical_query: 'Techn
 const CHECK = { verified: 'Verified', partial: 'Partly matched', visual: 'Read from image', not_found: 'Not found in source', unknown_source: 'Source unclear', no_quote: 'No quote' };
 const FLAG = { missing_attachment: 'Missing attachment', unreadable: 'Not readable', truncated: 'Partly analysed', ambiguous: 'Ambiguous', uncertain_deadline: 'Deadline uncertain', conflict: 'Conflicting instructions', owner_unclear: 'Owner unclear', revision_mismatch: 'Revision mismatch', excluded: 'Not sent', images: 'Images not sent' };
 /* ---------- state ---------- */
-const DEFAULTS = { me: { name: '', emails: [], aliases: '', role: 'Mechanical design engineer — water & wastewater treatment', org: '', scope: '', manager: '' }, projects: [], tier: 'complex', mask: false, storeText: true, vision: true, drawings: true, titleBlocks: true, maxPageImages: 8, setupDone: false };
+const DEFAULTS = { me: { name: '', emails: [], aliases: '', role: 'Mechanical design engineer — water & wastewater treatment', org: '', scope: '', manager: '' }, projects: [], tier: 'auto', mask: false, storeText: true, vision: true, drawings: true, titleBlocks: true, maxPageImages: 8, setupDone: false };
 const St = { mcp: null, mode: 'starting', uid: null, refs: null, db: null, tasks: new Map(), emails: new Map(), board: new Map(), daily: new Map(), layout: { off: {}, size: {} }, settings: clone(DEFAULTS), ready: false, profileName: '', sample: null, limits: null, downloads: null, capsResolved: false };
 const UI = { view: 'todo', todoQ: '', drawer: null, staging: [], analyzing: false, abort: null, pasteOpen: false, emailQ: '', previews: new Set(), confirm: null };
 
@@ -343,6 +343,7 @@ function taskDrawerHTML(t) {
   return `<div class="drawer-h"><span class="mono muted">${esc(t.ref || '')}</span>${chipPrio(t.priority)}<span class="spacer"></span><button class="icon-btn" data-act="close-drawer" aria-label="Close">${I.x}</button></div>
   <div class="drawer-b two"><div class="dcol-main">
     <textarea class="title-edit" id="d-title" rows="1" data-chg="task-field" data-field="title" dir="auto" aria-label="Title">${esc(t.title)}</textarea>
+    ${mailDateLine(t)}
     ${t.placement && t.placement.status !== 'confirmed' && (t.placement.options || []).length ? `<details class="small wrong-place"><summary class="muted">Wrong place? Other places Claude considered</summary><div style="display:grid;gap:6px;margin-top:8px">${(t.placement.options || []).map((o, i) => { const r = o.relatedTaskId && St.tasks.get(o.relatedTaskId); return `<button class="btn sm opt-btn" data-act="use-placement" data-i="${i}">${o.project ? '📁 ' + esc(o.project) : ''}${o.discipline ? ' › ' + esc(E.DISCIPLINES[o.discipline]) : ''}${r ? ' · 🔗 ' + esc(r.ref) : ''}${o.reason ? `<span class="muted small"> — ${esc(o.reason)}</span>` : ''}</button>`; }).join('')}<button class="btn sm ghost" data-act="keep-placement">Keep it here${t.project ? ': ' + esc(t.project) : ''}</button></div></details>` : ''}
     <div class="seg" role="group" aria-label="Status">${Object.entries(STATUS).map(([k, v]) => `<button data-act="set-status" data-id="${esc(t.id)}" data-status="${k}" aria-pressed="${t.status === k}">${v}</button>`).join('')}</div>
     ${taskActionsHTML(t)}
@@ -569,6 +570,8 @@ function chipsFor(t, by) {
     by !== 'project' && t.project ? `<span class="chip pchip" style="--h:${hueOf(t.project)}"><i></i>${esc(t.project)}</span>` : '',
     by !== 'discipline' && t.discipline ? `<span class="chip dchip">${discIcon(t.discipline, 14)}${esc(E.DISCIPLINES[t.discipline])}</span>` : '',
     by !== 'topic' && topicOf(t) ? `<span class="chip topic-chip">🧩 ${esc(topicOf(t))}</span>` : '',
+    isNewTask(t) ? '<span class="chip new">NEW</span>' : '',
+    mailDate(t) ? `<span class="chip" title="Date of the email where this was asked">✉ ${esc(fmtDate(mailDate(t)))}</span>` : '',
     !isMine(t) || t.status === 'waiting' ? `<span class="chip wait">⏳ Waiting on ${esc(t.owner || 'others')}</span>` : '',
     t.status === 'blocked' ? '<span class="chip crit">⛔ Blocked</span>' : t.status === 'in_progress' ? '<span class="chip accent">▶ In progress</span>' : '',
   ].join('');
@@ -689,9 +692,11 @@ function viewTodo() {
     ${!St.settings.setupDone ? setupCardHTML() : ''}
     ${uncategorised && St.sample ? callout('info', `<div class="row"><span>${CAT.running ? '🧠 Claude is sorting your tasks into projects and categories…' : `🏷️ ${uncategorised} task${uncategorised > 1 ? 's are' : ' is'} not categorised yet.`}</span><span class="spacer"></span>${CAT.running ? '<div class="progress indet" style="width:90px"><i></i></div>' : `<button class="btn sm primary" data-act="ai-categorize">Categorise with Claude</button>`}</div>`) : ''}
     ${CAT.error && !CAT.running ? callout('warn', `<p>${esc(CAT.error)}</p>`) : ''}
-    ${St.tasks.size && UI.todoMode !== 'map' ? `<div class="mode-bar">${modeSegHTML()}</div>` : ''}
+    ${typeof dupCallout === 'function' ? dupCallout() : ''}${typeof headersCallout === 'function' ? headersCallout() : ''}${typeof chaseCallout === 'function' ? chaseCallout() : ''}
+    ${St.tasks.size && TODO_VIEWS[UI.todoMode] ? TODO_VIEWS[UI.todoMode]() : ''}
+    ${St.tasks.size && UI.todoMode !== 'map' && !TODO_VIEWS[UI.todoMode] ? `<div class="mode-bar">${modeSegHTML()}</div>` : ''}
     ${St.tasks.size && UI.todoMode === 'map' ? viewMap() : ''}
-    ${St.tasks.size && UI.todoMode !== 'map' ? `<div class="tiles" role="toolbar" aria-label="Filter">${tiles.map(([k, e, l, cls]) => `<button class="tile ${cls} ${c[k] ? '' : 'zero'}" data-act="todo-filter" data-filter="${k}" aria-pressed="${f === k}"><span class="tile-e">${e}</span><span class="tile-n num">${c[k]}</span><span class="tile-l">${l}</span></button>`).join('')}</div>
+    ${St.tasks.size && UI.todoMode !== 'map' && !TODO_VIEWS[UI.todoMode] ? `<div class="tiles" role="toolbar" aria-label="Filter">${tiles.map(([k, e, l, cls]) => `<button class="tile ${cls} ${c[k] ? '' : 'zero'}" data-act="todo-filter" data-filter="${k}" aria-pressed="${f === k}"><span class="tile-e">${e}</span><span class="tile-n num">${c[k]}</span><span class="tile-l">${l}</span></button>`).join('')}</div>
     <div class="todo-bar">
       <div class="seg" role="group" aria-label="Group by"><span class="seg-label">Group</span>${TODO_GROUPS.map(([k, l]) => `<button data-act="todo-group" data-group="${k}" aria-pressed="${by === k}">${l}</button>`).join('')}</div>
       <label class="search todo-search">${I.search}<span class="sr">Search to-dos</span><input class="input" id="todo-q" type="search" placeholder="Search tasks, items, documents, people…" value="${esc(UI.todoQ)}" data-inp="todoQ"></label>
@@ -700,7 +705,7 @@ function viewTodo() {
         <label class="check small"><input type="checkbox" id="todo-done" data-chg="todo-opt" data-key="todoShowDone" ${UI.todoShowDone ? 'checked' : ''}>Show done (7 days)</label>
       </div>
     </div>` : ''}
-    ${UI.todoMode !== 'map' || !St.tasks.size ? `<div id="todo-groups">${todoGroupsHTML()}</div>` : ''}
+    ${(UI.todoMode !== 'map' && !TODO_VIEWS[UI.todoMode]) || !St.tasks.size ? `<div id="todo-groups">${todoGroupsHTML()}</div>` : ''}
   </div>`;
 }
 function toggleSub(id, sid) {
@@ -864,6 +869,15 @@ function buildMap() {
   for (const el of boardEls()) grow(elBox(el));
   return { nodes, edges, links, root, projects, byId, byTask, x0: x0 - 40, y0: y0 - 40, w: x1 - x0 + 260, h: y1 - y0 + 80 };
 }
+// when the email that created a task was sent (the message in the thread where it was asked), and whether the
+// task arrived in the last 24 hours (shown as NEW)
+const mailDate = t => t.askedOn || (t.sourceDate || '').slice(0, 10) || '';
+const isNewTask = t => !!t.createdAt && Date.now() - new Date(t.createdAt) < 864e5 && t.status !== 'done';
+function mailDateLine(t) {
+  const d = mailDate(t); if (!d) return '';
+  const th = t.threadFirst && t.threadFirst !== d ? ` · conversation started ${fmtDate(t.threadFirst, { day: 'numeric', month: 'short', year: 'numeric' })}` : '';
+  return `<p class="small muted mail-date">✉ Asked in the email of <b>${esc(fmtDate(d, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }))}</b>${esc(th)}${t.sourceFrom ? ` · from ${esc(E.clip(t.sourceFrom, 60))}` : ''}</p>`;
+}
 // tasks waiting on me: open, mine, not handed to someone else
 const needsMe = t => t.status !== 'done' && t.status !== 'waiting' && isMine(t);
 const myFocus = () => St.mode !== 'viewer' && !!(St.settings.ui || {}).mapMine;
@@ -899,12 +913,12 @@ function mapNodeHTML(n, hits, day) {
     const sug = t.placement && t.placement.status === 'suggested';
     const ach = [...St.daily.values()].filter(a => a.kind === 'achievement' && a.taskId === t.id).length;
     const fresh = Date.now() - (FRESH.get(t.id) || 0) < 2500;
-    const cls = ['mnode', 'task', 'p-' + (t.priority || 'medium'), t.status === 'done' ? 'done' : '', UI.mapSel === t.id ? 'sel' : '', hits && hits.has(t.id) ? 'hit' : '', day && day.has(t.id) ? 'dayhit' : '', sug ? 'suggest' : '', fresh ? 'fresh' : '', needsMe(t) ? 'me' : '', needsMe(t) && urgentForMe(t) ? 'me-urgent' : '', myFocus() && !needsMe(t) ? 'dim' : ''].join(' ') + drag + drop;
+    const cls = ['mnode', 'task', 'p-' + (t.priority || 'medium'), t.status === 'done' ? 'done' : '', UI.mapSel === t.id ? 'sel' : '', hits && hits.has(t.id) ? 'hit' : '', day && day.has(t.id) ? 'dayhit' : '', sug ? 'suggest' : '', fresh ? 'fresh' : '', needsMe(t) ? 'me' : '', needsMe(t) && urgentForMe(t) ? 'me-urgent' : '', isNewTask(t) ? 'is-new' : '', myFocus() && !needsMe(t) ? 'dim' : ''].join(' ') + drag + drop;
     return `<div class="${cls}" data-node="${esc(n.id)}" data-type="task" data-tid="${esc(t.id)}" style="${st}">
 <span class="lk" data-link="1" title="Drag to another box to link them" aria-hidden="true"></span>
       <button class="mtick" data-map="tick" aria-label="${t.status === 'done' ? 'Reopen' : 'Mark done'}">${I.check}</button>
-      <div class="mtxt">${needsMe(t) ? `<span class="mme" title="Needs action by you">🙋 Your action</span>` : ''}<b dir="auto">${esc(t.title)}</b>
-        <small><span class="mono">${esc(t.ref || '')}</span>${t.status === 'done' ? `<span class="mdone">✓ ${esc(fmtDate((t.completedAt || t.updatedAt || '').slice(0, 10)))}</span>` : `<span class="duepill ${d.cls}">${dueEmoji(d)}${esc(d.txt)}</span>`}
+      <div class="mtxt">${isNewTask(t) || needsMe(t) ? `<span class="mtags">${isNewTask(t) ? '<span class="mnew" title="Added in the last 24 hours">NEW</span>' : ''}${needsMe(t) ? `<span class="mme" title="Needs action by you">🙋 Your action</span>` : ''}</span>` : ''}<b dir="auto">${esc(t.title)}</b>
+        <small><span class="mono">${esc(t.ref || '')}</span>${mailDate(t) ? `<span class="mmail" title="Date of the email where this was asked">✉ ${esc(fmtDate(mailDate(t)))}</span>` : ''}${t.status === 'done' ? `<span class="mdone">✓ ${esc(fmtDate((t.completedAt || t.updatedAt || '').slice(0, 10)))}</span>` : `<span class="duepill ${d.cls}">${dueEmoji(d)}${esc(d.txt)}</span>`}
         ${t.status === 'in_progress' ? '<span title="In progress">▶</span>' : ''}${subs ? `<button class="mitems" data-map="items" title="Show items">🗂️ ${subsDone(t)}/${subs}</button>` : ''}${links ? `<span title="Linked tasks">🔗 ${links}</span>` : ''}${isFromManager(t) ? '<span title="Assigned by your manager">👔</span>' : ''}${(t.days || []).includes(T()) ? '<span title="On today’s plan">📌</span>' : ''}${ach ? `<span title="Achievements">⭐ ${ach}</span>` : ''}${t.status === 'waiting' || t.ownership === 'waiting' ? '<span>⏳</span>' : ''}${t.status === 'blocked' ? '<span>⛔</span>' : ''}${sug ? '<span class="msug" title="Claude needs your confirmation">❓ Confirm</span>' : ''}${NODE_EXTRA.map(f => { try { return f(t) || ''; } catch { return ''; } }).join('')}</small></div><button class="mfocus mdel" data-map="del" title="Delete this task" aria-label="Delete this task">🗑</button>${rz}</div>`;
   }
   const s = n.s;
@@ -1226,7 +1240,10 @@ function toolsHTML() {
 }
 // Map / Board / List: at the start of the canvas toolbar in Map, above the list in Board and List
 function saveSettingsUi(patch) { const st = clone(St.settings); st.ui = { ...(st.ui || {}), ...patch }; putSettings(st); }
-function modeSegHTML() { return `<div class="seg mode-seg" role="group" aria-label="Layout"><button data-act="todo-mode" data-mode="map" aria-pressed="${UI.todoMode === 'map'}">🧠 Map</button><button data-act="todo-mode" data-mode="board" aria-pressed="${UI.todoMode === 'board'}">▦ Board</button><button data-act="todo-mode" data-mode="list" aria-pressed="${UI.todoMode === 'list'}">☰ List</button></div>`; }
+// more presentations (Timeline, Priority matrix) register here from features/29-views.js
+const TODO_VIEWS = {};
+const TODO_MODES = [['map', '🧠', 'Map', 'Mind map'], ['timeline', '📅', 'Timeline', 'Timeline: from when each task was asked to its deadline'], ['matrix', '⊞', 'Matrix', 'Priority matrix: urgent × important'], ['board', '▦', 'Board', 'Board by status'], ['list', '☰', 'List', 'List']];
+function modeSegHTML() { return `<div class="seg mode-seg" role="group" aria-label="Layout">${TODO_MODES.filter(([k]) => k === 'map' || k === 'board' || k === 'list' || TODO_VIEWS[k]).map(([k, i, l, tt]) => `<button data-act="todo-mode" data-mode="${k}" aria-pressed="${UI.todoMode === k}" title="${esc(tt)}">${i}<span class="lbl">${l}</span></button>`).join('')}</div>`; }
 function viewMap() {
   const M = buildMap(); UI.mapLayout = M;
   const hits = mapHits();
@@ -1318,6 +1335,9 @@ function applyCam(animate) {
   const w = $('#map-world'); if (!w) return;
   w.classList.toggle('anim', !!animate);
   w.style.transform = `translate(${UI.map.x}px,${UI.map.y}px) scale(${UI.map.k})`;
+  // sharp at every zoom: the canvas is a fast moving layer only while you pan or zoom; a moment after you stop,
+  // the browser draws text and lines again at the new size instead of stretching a picture of them
+  w.classList.add('moving'); clearTimeout(UI.camSharp); UI.camSharp = setTimeout(() => { const ww = $('#map-world'); if (ww) ww.classList.remove('moving'); }, 160);
   // semantic zoom: far out, details hide and project labels grow so the map stays readable
   w.style.setProperty('--k', UI.map.k);
   const vp = $('#map-vp'); if (vp) { vp.classList.toggle('z-far', UI.map.k < 0.38); vp.classList.toggle('z-mid', UI.map.k >= 0.38 && UI.map.k < 0.6); }
@@ -1337,7 +1357,7 @@ function mapFit(smart) {
 function mapZoom(f, cx, cy) {
   const vp = $('#map-vp'); if (!vp) return;
   const r = vp.getBoundingClientRect(); cx = cx ?? r.width / 2; cy = cy ?? r.height / 2;
-  const k2 = Math.max(0.2, Math.min(3, UI.map.k * f));
+  const k2 = Math.max(0.15, Math.min(5, UI.map.k * f));
   UI.map.x = cx - (cx - UI.map.x) * (k2 / UI.map.k); UI.map.y = cy - (cy - UI.map.y) * (k2 / UI.map.k); UI.map.k = k2; applyCam(false);
 }
 function centerOnTask(id) {
@@ -2112,9 +2132,10 @@ function updateHTML(e, u) {
   const what = u.newStatus ? `Status ${STATUS[t.status]} → <b>${esc(STATUS[u.newStatus])}</b>` : u.newDeadline ? `Deadline ${esc(t.deadline ? fmtDate(t.deadline) : '—')} → <b>${esc(fmtDate(u.newDeadline))}</b>` : 'Add a note';
   return `<div class="prop ${u.accept ? '' : 'off'}">
     <label class="check" style="padding-top:2px"><input type="checkbox" id="u-acc-${esc(u.uid)}" data-chg="upd" data-eid="${esc(e.id)}" data-uid="${esc(u.uid)}" ${u.accept ? 'checked' : ''}><span class="sr">Apply</span></label>
-    <div class="body"><div><span class="chip wait">Update to existing task</span></div>
+    <div class="body"><div>${u.verdict === 'fulfilled' ? '<span class="chip ok">✓ Your reply completes this task</span>' : u.verdict === 'partial' ? '<span class="chip accent">◐ Your reply does part of this task</span>' : u.verdict === 'not_fulfilled' ? '<span class="chip warn">Your reply does not complete this task yet</span>' : '<span class="chip wait">Update to existing task</span>'}</div>
       <div><span class="mono">${esc(t.ref)}</span> <b dir="auto">${esc(t.title)}</b></div>
       <div class="small">${what}${u.note ? ` — <span dir="auto">${esc(u.note)}</span>` : ''}</div>
+      ${u.reason ? `<div class="small muted" dir="auto">${esc(u.reason)}</div>` : ''}${(u.doneItems || []).length ? `<div class="small">Items done: ${u.doneItems.map(x => `<span class="chip">${esc(E.clip(x, 50))}</span>`).join(' ')}</div>` : ''}
       ${evidenceHTML(u.evidence, false)}
     </div></div>`;
 }
@@ -2142,10 +2163,18 @@ function approveEmail(eid, quiet) {
   const creates = chosen.filter(p => !(p.dupOf && p.merge !== false && St.tasks.has(p.dupOf)));
   const refs = nextRefs(creates.length); let ri = 0, added = 0, updated = 0;
   const label = `email “${E.clip(e.subject || '(no subject)', 70)}”`;
+  const asked = p => p.askedOn || (e.date || '').slice(0, 10) || null;
   for (const p of chosen) {
     const ev = (p.evidence || []).map(x => ({ ...x, emailId: e.id }));
+    // checked again now: a task added a moment ago from another copy of this email (or from the same email added
+    // twice before review) is the same obligation, so it is updated rather than duplicated
+    if (!(p.dupOf && St.tasks.has(p.dupOf)) && p.merge !== false) {
+      const late = E.findDuplicate(p, [...St.tasks.values()], e.threadKey);
+      if (late && late.score >= 0.62) { p.dupOf = late.task.id; p.merge = true; }
+    }
     if (p.dupOf && p.merge !== false && St.tasks.has(p.dupOf)) {
       const t = clone(St.tasks.get(p.dupOf));
+      if (asked(p) && (!t.askedOn || asked(p) < t.askedOn)) t.askedOn = asked(p);
       t.evidence = [...(t.evidence || []), ...ev].slice(-20);
       t.emailIds = [...new Set([...(t.emailIds || []), e.id])];
       const notes = [];
@@ -2166,6 +2195,7 @@ function approveEmail(eid, quiet) {
         requestedBy: p.requestedBy, project: p.project, priority: p.priority, deadline: p.deadline, deadlineText: p.deadlineText, deadlineBasis: p.deadlineBasis,
         status: p.blocked ? 'blocked' : p.ownership === 'waiting' ? 'waiting' : 'todo', nextStep: p.nextStep, dependsOn: p.dependsOn, blockedReason: p.blockedReason,
         relatedIds: (p.relatedTaskIds || []).filter(id => St.tasks.has(id)), placement: placementFrom(p), topic: p.topic || '', tags: p.tags || [], subtasks: (p.subtasks || []).map(x => ({ id: E.uid('s'), text: x.text, ref: x.ref || '', location: x.location || '', done: false })), workType: p.workType || null, discipline: p.discipline || null, catBy: p.workType || p.discipline ? 'ai' : null, notes: '', evidence: ev, emailIds: [e.id], threadKey: e.threadKey, sourceSubject: e.subject, sourceFrom: e.from, sourceDate: e.date,
+        askedOn: asked(p), threadFirst: (a.thread && a.thread.first) || null, threadLast: (a.thread && a.thread.last) || null,
         createdAt: now, updatedAt: now, completedAt: null, confidence: p.confidence, history: [{ at: now, text: `Created from ${label}`, emailId: e.id }],
       };
       putTask(t); added++;
@@ -2177,6 +2207,13 @@ function approveEmail(eid, quiet) {
     if (u.newStatus && u.newStatus !== t.status) { notes.push(`status ${STATUS[t.status]} → ${STATUS[u.newStatus]}`); t.status = u.newStatus; t.completedAt = u.newStatus === 'done' ? now : null; }
     if (u.newDeadline && u.newDeadline !== t.deadline) { notes.push(`deadline → ${fmtDate(u.newDeadline)}`); t.deadline = u.newDeadline; t.deadlineBasis = 'explicit'; }
     if (u.note) notes.push(u.note);
+    // items my reply covered are ticked (matched by their reference or their words)
+    if ((u.doneItems || []).length && subsOf(t).length) {
+      const want = u.doneItems.map(x => E.normMatch(x)); let n = 0;
+      t.subtasks = subsOf(t).map(x => { const r = E.normMatch(x.ref || ''), tx = E.normMatch(x.text); const hit = !x.done && want.some(w => w && ((r && (w === r || w.startsWith(r + ' '))) || tx === w || tx.startsWith(w) || w.startsWith(tx))); if (hit) n++; return hit ? { ...x, done: true, doneAt: now } : x; });
+      if (n) notes.push(`${n} item${n > 1 ? 's' : ''} done`);
+    }
+    if (u.verdict) notes.unshift(u.verdict === 'fulfilled' ? 'completed by my reply' : u.verdict === 'partial' ? 'partly done by my reply' : 'my reply did not complete it');
     t.evidence = [...(t.evidence || []), ...(u.evidence || []).map(x => ({ ...x, emailId: e.id }))].slice(-20);
     t.emailIds = [...new Set([...(t.emailIds || []), e.id])];
     (t.history = t.history || []).push({ at: now, text: `From ${label}: ${notes.join('; ') || 'updated'}`, emailId: e.id });
@@ -2260,13 +2297,13 @@ function stagingHTML() {
   if (!UI.staging.length) return '';
   return `<div style="display:grid;gap:12px">${UI.staging.map(b => {
     const em = b.email;
-    const stateChip = { parsing: '<span class="chip">Reading files…</span>', ready: b.skip ? '<span class="chip">Skipped</span>' : '<span class="chip accent">Ready</span>' + (b.tierOverride === 'quick' ? '<span class="chip ai-quick" title="Read with the quick, cheaper model">Quick model</span>' : ''), analyzing: '<span class="chip accent">Analysing…</span>', done: '<span class="chip ok">Analysed</span>', error: '<span class="chip crit">Failed</span>' }[b.state];
+    const stateChip = { parsing: '<span class="chip">Reading files…</span>', ready: b.skip ? '<span class="chip">Skipped</span>' : '<span class="chip accent">Ready</span>' + (b.tierOverride === 'quick' ? '<span class="chip ai-quick" title="Read with the quick, cheaper model">Quick model</span>' : (St.settings.tier === 'auto' && !b.skip ? (t => `<span class="chip ai-quick" title="Smart model choice: the ${TIER_NAME[t]} is enough for this email">${t === 'quick' ? '⚡ Quick' : t === 'default' ? '◐ Balanced' : '◆ Thorough'}</span>`)(autoTier(b, undefined, 1)) : '')), analyzing: '<span class="chip accent">Analysing…</span>', done: '<span class="chip ok">Analysed</span>', error: '<span class="chip crit">Failed</span>' }[b.state];
     return `<div class="bundle">
       <div class="bundle-h"><div style="min-width:0">
         ${b.source === 'docs' ? `<div class="subj">Documents without an email</div><div class="meta">Analysed together as one item. Use “Move to…” to attach a file to an email instead.</div>` :
         `<div class="subj" dir="auto">${esc(em.subject || '(no subject)')}</div><div class="meta" dir="auto">${esc(em.from || 'Sender unknown')}${em.date ? ' · ' + esc(fmtDateTime(em.date)) : ''}${b.fileName ? ' · ' + esc(b.fileName) : ''}</div>`}
       </div><div class="row" style="align-items:flex-start">${stateChip}${b.state !== 'analyzing' ? `<button class="icon-btn" data-act="remove-bundle" data-id="${esc(b.id)}" aria-label="Remove">${I.x}</button>` : ''}</div></div>
-      ${b.dupEmailId && b.state === 'ready' ? `<div style="padding:10px 14px 0">${callout('info', `<div class="row"><span>Already imported on ${esc(fmtDate(St.emails.get(b.dupEmailId)?.importedAt))}.</span><label class="check small"><input type="checkbox" id="skip-${esc(b.id)}" data-chg="skip" data-bid="${esc(b.id)}" ${b.skip ? '' : 'checked'}>Analyse again</label></div>`)}</div>` : ''}
+      ${(b.dupEmailId || b.dupBundle) && b.state === 'ready' ? `<div style="padding:10px 14px 0">${callout('info', `<div class="row"><span>${b.dupEmailId ? `Already added on ${esc(fmtDate(St.emails.get(b.dupEmailId)?.importedAt))}` : 'The same email is already in this list'} — skipped, so no duplicate tasks.</span><label class="check small"><input type="checkbox" id="skip-${esc(b.id)}" data-chg="skip" data-bid="${esc(b.id)}" ${b.skip ? '' : 'checked'}>Analyse again</label></div>`)}</div>` : ''}
       ${b.state === 'analyzing' ? `<div style="padding:10px 14px;display:grid;gap:6px"><div class="progress indet"><i></i></div><div class="small muted">${esc(b.progress || 'Sending to Claude…')}</div></div>` : ''}
       ${b.state === 'error' ? `<div style="padding:10px 14px">${callout('crit', `<p>${esc(b.error)}</p>${typeof aiErrorActions === 'function' ? aiErrorActions(b) : ''}`)}</div>` : ''}
       ${b.state === 'done' ? `<div style="padding:10px 14px">${callout('ok', `<div class="row"><span>${esc(b.doneText || 'Analysed.')}</span><span class="spacer"></span><button class="btn sm" data-act="nav" data-view="review">Review</button></div>`)}</div>` : ''}
@@ -2303,7 +2340,7 @@ async function intakeFiles(fileList, target) {
       } catch (e) { toast(`${f.name}: ${e.message || 'could not open ZIP'}`, { err: true }); }
     } else loose.push({ name: f.name, bytes, mime: f.type });
   }
-  UI.staging.push(...newBundles);
+  UI.staging.push(...newBundles); newBundles.forEach(checkDuplicateEmail);
   if (loose.length) {
     let host = target || null;
     if (!host && newBundles.length === 1) host = newBundles[0];
@@ -2358,12 +2395,21 @@ async function addAttTo(b, a, prefix, depth) {
   }
   b.atts.push(mkAtt({ ...a, name: prefix + a.name }));
 }
+// the same email added again — re-uploaded, forwarded a second time, or fetched from Gmail twice — is recognised
+// by its Message-ID, by sender + subject + sent time, or by the same subject and opening text, and is not analysed again
+const bodyPrint = t => E.normMatch(String(t || '').replace(/\s+/g, ' ').slice(0, 400)).slice(0, 220);
+function sameEmail(em, e) {
+  const key = E.normSubject(em.subject || '').toLowerCase(), k2 = E.normSubject(e.subject || '').toLowerCase();
+  if (em.messageId && e.messageId && e.messageId === em.messageId) return true;
+  if (key && k2 === key && e.fromEmail && e.fromEmail === em.fromEmail && e.date && em.date && Math.abs(new Date(e.date) - new Date(em.date)) < 120000) return true;
+  const bp = bodyPrint(em.body);
+  return !!(key && k2 === key && bp.length >= 60 && bodyPrint(e.snippet) === bp.slice(0, bodyPrint(e.snippet).length) && bodyPrint(e.snippet).length >= 60);
+}
 function checkDuplicateEmail(b) {
   const em = b.email; if (b.source === 'docs') return;
-  const key = E.normSubject(em.subject).toLowerCase();
-  for (const e of St.emails.values()) {
-    if ((em.messageId && e.messageId === em.messageId) || (key && E.normSubject(e.subject).toLowerCase() === key && e.fromEmail === em.fromEmail && e.date && em.date && Math.abs(new Date(e.date) - new Date(em.date)) < 60000)) { b.dupEmailId = e.id; b.skip = true; return; }
-  }
+  for (const e of St.emails.values()) if (sameEmail(em, e)) { b.dupEmailId = e.id; b.skip = true; return; }
+  // the same email twice in this batch: only the first is analysed
+  for (const o of UI.staging) if (o !== b && o.email && !o.dupEmailId && o.state !== 'error' && sameEmail(em, { ...o.email, snippet: o.email.body || '' })) { b.dupBundle = o.id; b.skip = true; return; }
 }
 function extractOpts() {
   const s = St.settings, lim = St.limits;
@@ -2422,6 +2468,19 @@ function aiErrorText(e) {
     model_not_found: 'The Claude model set in Setup › Connections was not found. Check the model names there.',
   })[c] || ('Analysis failed' + (c ? ' (' + c + ')' : '') + '.');
 }
+/* Smart model choice: a short email with nothing attached to read goes to the quick model, ordinary emails and
+   small attachments to the balanced one, and only drawings, images, long documents or long threads to the most
+   capable one — the same quality where it matters, far fewer tokens on the rest. */
+const TIER_NAME = { quick: 'quick model', default: 'balanced model', complex: 'thorough model' };
+function autoTier(b, nImages, nParts) {
+  const atts = (b.atts || []).filter(a => a.include && a.res);
+  const attText = atts.reduce((n, a) => n + ((a.res.text || '').length), 0);
+  const body = ((b.email && b.email.body) || '').length;
+  if (nImages === undefined) nImages = atts.reduce((n, a) => n + ((a.res.images || []).length), 0);
+  if (nImages || nParts > 1 || attText > 60000 || body > 40000 || atts.some(a => /drawing|cad|dwg/i.test(a.res.kindLabel || ''))) return 'complex';
+  if (!attText && body < 5000 && atts.length === 0) return 'quick';
+  return 'default';
+}
 async function runAnalysis(opts = {}) {
   if (UI.analyzing) return;
   if (!St.sample && DESKTOP) await recheckAI();
@@ -2444,6 +2503,7 @@ async function runAnalysis(opts = {}) {
       const nt = rec.analysis.tasks.length;
       b.doneText = rec.analysis.actionRequired === false && !nt ? 'No action needed from you.' : `${nt} task${nt === 1 ? '' : 's'} proposed${rec.analysis.updates.length ? `, ${rec.analysis.updates.length} update${rec.analysis.updates.length > 1 ? 's' : ''} to existing tasks` : ''}.`;
       if (rec.analysis.readBy && typeof aiName === 'function') b.doneText += ` Read by ${aiName(rec.analysis.readBy)}${rec.analysis.readBy.fallback ? ' (backup AI)' : ''}.`;
+      else if (b.tierUsed) b.doneText += ` Read by the ${TIER_NAME[b.tierUsed]}.`;
     } catch (e) {
       if (e && e.code === 'cancelled') { b.state = 'ready'; break; }
       b.state = 'error'; b.error = (typeof aiErrorFor === 'function' && aiErrorFor(e)) || aiErrorText(e); b.errInfo = e ? { code: e.code, provider: e.provider || '', backup: e.backup || '' } : null;
@@ -2483,11 +2543,13 @@ async function analyzeBundle(b, signal, onProgress) {
     }
   }
   const tk = E.threadKey(em);
-  const related = E.relatedOpenTasks([...St.tasks.values()], em, tk).map(t => ({ id: t.id, ref: t.ref, title: t.title, project: t.project, discipline: t.discipline, owner: t.ownership === 'mine' ? 'me' : t.owner, status: t.status, deadline: t.deadline }));
+  const mine = new Set((s.me.emails || []).map(x => String(x).toLowerCase()));
+  const fromMe = !!(em.fromEmail && mine.has(String(em.fromEmail).toLowerCase()));
+  const related = E.relatedOpenTasks([...St.tasks.values()], { ...em, fromMe }, tk).map(t => ({ id: t.id, ref: t.ref, title: t.title, project: t.project, discipline: t.discipline, owner: t.ownership === 'mine' ? 'me' : t.owner, status: t.status, deadline: t.deadline }));
   const budget = ((St.limits && St.limits.maxPromptBytes) || 262144) - 10000;
   const input = {
     me: s.me, projects: allProjects(), topics: allTopics(), today: E.todayISO(), tz: TZ,
-    email: { subject: masker.mask(em.subject), from: masker.mask(em.from), to: masker.mask(em.to), cc: masker.mask(em.cc), date: em.date, forwardedBy: masker.mask(em.forwardedBy || ''), forwardedAt: em.forwardedAt || '', forwardMode: em.forwardMode || '', body: masker.mask(em.body || (b.source === 'docs' ? '(No email — the user shared these documents directly. Identify what they require from the user, if anything.)' : '')) },
+    email: { fromMe, subject: masker.mask(em.subject), from: masker.mask(em.from), to: masker.mask(em.to), cc: masker.mask(em.cc), date: em.date, forwardedBy: masker.mask(em.forwardedBy || ''), forwardedAt: em.forwardedAt || '', forwardMode: em.forwardMode || '', body: masker.mask(em.body || (b.source === 'docs' ? '(No email — the user shared these documents directly. Identify what they require from the user, if anything.)' : '')) },
     attachments: atts, images: images.map(i => ({ key: i.key, label: i.label })), openTasks: related, budget, notes: promptNotes(em),
   };
   let { prompt, truncations } = E.buildPrompt(input);
@@ -2495,17 +2557,30 @@ async function analyzeBundle(b, signal, onProgress) {
   const parts = truncations.length ? splitLongEmail(input, budget) : [{ prompt, images: true }];
   if (parts.length > 1) truncations = parts.dropped || [];
   // b.tierOverride: 'quick' when you chose the quick model for a simple email (features/12-ai.js)
-  const tier = b.tierOverride === 'quick' ? 'quick' : s.tier; let readBy = null;
+  // Smart (the default): each email gets the smallest model that reads it well — see autoTier
+  let tier = b.tierOverride === 'quick' ? 'quick' : s.tier === 'auto' || !s.tier ? autoTier(b, images.length, parts.length) : s.tier; let readBy = null;
+  b.tierUsed = tier;
   const results = [];
   for (let i = 0; i < parts.length; i++) {
     const pre = parts.length > 1 ? `Long email — part ${i + 1} of ${parts.length}. ` : '';
-    onProgress(pre + 'Waiting for Claude… (consent, queue and thinking can take a minute)');
-    const raw = await St.sample.json(parts[i].prompt, {
-      signal, modelTier: tier === 'quick' ? 'quick' : tier === 'default' ? 'default' : 'complex', cache: b.fresh ? false : undefined, onMeta: m => { readBy = m; },
+    const ask = t => { onProgress(pre + `Waiting for Claude (${TIER_NAME[t]})… consent, queue and thinking can take a minute`); return St.sample.json(parts[i].prompt, {
+      signal, modelTier: t === 'quick' ? 'quick' : t === 'default' ? 'default' : 'complex', cache: b.fresh ? false : undefined, onMeta: m => { readBy = m; },
       ...(images.length && parts[i].images ? { images: images.map(x => x.blob) } : {}),
       onText: ({ text }) => onProgress(`${pre}Receiving results… ${Math.round(text.length / 100) / 10}k characters`),
-    });
-    results.push(E.normalizeAnalysis(raw, { unmask: masker.unmask }));
+    }); };
+    let an;
+    try { an = E.normalizeAnalysis(await ask(tier), { unmask: masker.unmask }); }
+    catch (err) {
+      // a smaller model that could not give a clean answer hands the email to the next one up (once)
+      if (s.tier !== 'auto' || tier === 'complex' || !err || ['cancelled', 'not_granted', 'sampling_disabled', 'rate_limited', 'session_expired', 'auth_failed', 'billing', 'budget'].includes(err.code)) throw err;
+      tier = tier === 'quick' ? 'default' : 'complex'; b.tierUsed = tier;
+      an = E.normalizeAnalysis(await ask(tier), { unmask: masker.unmask });
+    }
+    // an action email that the quick model found nothing in is read again by the balanced one
+    if (s.tier === 'auto' && tier === 'quick' && !an.tasks.length && !an.updates.length && an.actionRequired !== false) {
+      tier = 'default'; b.tierUsed = tier; an = E.normalizeAnalysis(await ask(tier), { unmask: masker.unmask });
+    }
+    results.push(an);
   }
   const an = results.length > 1 ? mergeAnalyses(results) : results[0];
   runHooks('proposals', an, em, b); // email rules and learned corrections adjust the proposals
@@ -2913,7 +2988,7 @@ function viewSetup() {
         <label class="check"><input type="checkbox" id="o-vision" data-chg="opt" data-key="vision" ${s.vision ? 'checked' : ''}><span>Send images of scanned pages and photos<br><span class="small muted">Needed for scans, photos and marked-up prints.</span></span></label>
         <label class="check"><input type="checkbox" id="o-draw" data-chg="opt" data-key="drawings" ${s.drawings ? 'checked' : ''}><span>Send images of drawing sheets (A3 and larger)<br><span class="small muted">Lets Claude see revision clouds and the title block.</span></span></label>
         <label class="check"><input type="checkbox" id="s-mask" data-chg="opt" data-key="mask" ${s.mask ? 'checked' : ''}><span>Hide other people's email addresses and phone numbers<br><span class="small muted">Replaced with placeholders before sending; restored in results.</span></span></label>
-        <label class="field"><span>Analysis depth</span><select class="input" id="o-tier" data-chg="opt" data-key="tier"><option value="complex" ${s.tier === 'complex' ? 'selected' : ''}>Thorough (best for attachments)</option><option value="default" ${s.tier === 'default' ? 'selected' : ''}>Balanced (faster)</option></select></label>
+        <label class="field"><span>Analysis depth</span><select class="input" id="o-tier" data-chg="opt" data-key="tier"><option value="auto" ${s.tier === 'auto' || !s.tier ? 'selected' : ''}>Smart — Claude picks the model for each email (saves tokens)</option><option value="complex" ${s.tier === 'complex' ? 'selected' : ''}>Always thorough (most tokens)</option><option value="default" ${s.tier === 'default' ? 'selected' : ''}>Always balanced</option></select></label>
       </div>
     </section>
     <!--SETUP-EXTRA-->

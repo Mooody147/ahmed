@@ -71,7 +71,7 @@ function aiSimple(b) {
 const aiSimpleList = () => UI.staging.filter(b => aiSimple(b) && !b.tierOverride);
 function aiSimpleHTML(ready) {
   const a = aiSt();
-  if ((a && !a.suggestSimple) || St.settings.tier === 'quick' || !St.sample || UI.analyzing) return '';
+  if ((a && !a.suggestSimple) || St.settings.tier === 'quick' || St.settings.tier === 'auto' || !St.settings.tier || !St.sample || UI.analyzing) return '';
   const list = aiSimpleList(); if (!list.length) return '';
   let saving = '';
   if (a) {
@@ -93,3 +93,9 @@ function aiBudgetCheck() {
   toast(level === 100 ? `AI budget reached: about $${a.monthCost.toFixed(2)} of $${a.budget} this month. The app now asks before spending more.` : `80% of this month's AI budget is used (about $${a.monthCost.toFixed(2)} of $${a.budget}).`, { action: 'Setup', fn: () => go('setup'), err: level === 100 });
 }
 if (DESKTOP) { DK.on('sample:usage', () => setTimeout(aiBudgetCheck, 50)); setTimeout(aiBudgetCheck, 3000); }
+
+// Smart model choice became the default: an earlier "Thorough" default moves to Smart once (a choice made later stays)
+HOOKS.ready.push(() => {
+  if (St.mode === 'viewer' || St.settings.tierSmart) return;
+  saveSettings(x => { if (!x.tier || x.tier === 'complex') x.tier = 'auto'; x.tierSmart = true; });
+});

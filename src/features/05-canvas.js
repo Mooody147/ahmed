@@ -28,6 +28,9 @@ function projectBands(M) {
 function drawMinimap() {
   const c = $('#minimap'), M = UI.mapLayout, vp = $('#map-vp'); if (!c || !M || !vp) return;
   const ctx = c.getContext && c.getContext('2d'); if (!ctx) return;
+  // drawn at the screen's real pixel density, so it stays sharp on phones, tablets and retina screens
+  const dpr = Math.min(3, window.devicePixelRatio || 1);
+  if (c.width !== Math.round(200 * dpr)) { c.width = Math.round(200 * dpr); c.height = Math.round(130 * dpr); }
   const W = c.width, H = c.height, s = Math.min(W / M.w, H / M.h), ox = (W - M.w * s) / 2, oy = (H - M.h * s) / 2;
   const css = getComputedStyle(document.documentElement), v = k => css.getPropertyValue(k).trim();
   const X = x => ox + (x - M.x0) * s, Y = y => oy + (y - M.y0) * s;
@@ -40,7 +43,7 @@ function drawMinimap() {
   for (const el of boardEls()) { const b = elBox(el); if (!b.w) continue; ctx.fillStyle = el.type === 'sticky' ? '#E8C547' : 'rgba(128,128,128,.5)'; ctx.fillRect(X(b.x), Y(b.y), Math.max(1.5, b.w * s), Math.max(1.5, b.h * s)); }
   // the part of the canvas on screen
   const k = UI.map.k, vx = -UI.map.x / k, vy = -UI.map.y / k, vw = vp.clientWidth / k, vh = vp.clientHeight / k;
-  ctx.strokeStyle = v('--accent') || '#0A6B74'; ctx.lineWidth = 2; ctx.strokeRect(X(vx), Y(vy), vw * s, vh * s);
+  ctx.strokeStyle = v('--accent') || '#0A6B74'; ctx.lineWidth = 2 * dpr; ctx.strokeRect(X(vx), Y(vy), vw * s, vh * s);
   c._map = { s, ox, oy };
 }
 function minimapMove(e) {
@@ -130,7 +133,8 @@ function mapSVG(M) {
   return { w: W, h: H, svg: `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"><defs><marker id="xa" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#15201E"/></marker></defs>${parts.join('')}</svg>` };
 }
 async function svgToPng(svg, w, h) {
-  const scale = Math.min(2, 8000 / Math.max(w, h));
+  // as sharp as the browser allows: up to 4× (print quality), within the largest canvas a browser will draw
+  const scale = Math.max(1, Math.min(4, 16000 / Math.max(w, h), Math.sqrt(160e6 / Math.max(1, w * h))));
   const img = new Image(); img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
   await img.decode();
   const c = document.createElement('canvas'); c.width = Math.round(w * scale); c.height = Math.round(h * scale);
