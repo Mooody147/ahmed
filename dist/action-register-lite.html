@@ -1339,6 +1339,36 @@ html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; 
 .bb-here { margin-left: 6px; color: var(--ink-2); font-weight: 600; }
 .mcomment { font-size: 11px; }
 body.cm-on .mnode.task, body.cm-on .bel { cursor: copy; }
+/* ☀ site mode: readable outdoors */
+.site-btn .site-ic { font-size: 17px !important; line-height: 1; }
+.site-btn[aria-pressed="true"] { background: #FFD43B !important; color: #000 !important; border-color: #000 !important; }
+html.site-mode.site-mode.site-mode {
+  --bg: #FFFFFF; --surface: #FFFFFF; --sunken: #F2F2F2; --ink: #000000; --ink-2: #111111; --ink-3: #2B2B2B; --line: #3A3A3A; --line-2: #6B6B6B;
+  --elev-1: none; --elev-2: 0 0 0 1.5px #000; --elev-3: 0 0 0 2px #000; color-scheme: light;
+  --wine: #7A1F3D; --wine-2: #5C1229; --wine-3: #9E3355; --wine-ink: #FFFFFF; --wine-soft: #F7E7EC; --wine-wash: #FFFFFF; --accent: #7A1F3D;
+}
+html.site-mode body { font-size: 17px; background: #fff; color: #000; }
+html.site-mode *, html.site-mode *::before, html.site-mode *::after { animation: none !important; transition: none !important; }
+html.site-mode .btn { min-height: 46px; font-size: 16px; padding-inline: 16px; border-width: 2px; font-weight: 700; }
+html.site-mode .btn.sm { min-height: 42px; font-size: 15px; padding-inline: 12px; }
+html.site-mode .btn.primary { background: #000; border-color: #000; color: #fff; }
+html.site-mode .icon-btn, html.site-mode .cvt { min-width: 46px; min-height: 46px; }
+html.site-mode .input, html.site-mode input, html.site-mode select, html.site-mode textarea { font-size: 17px; min-height: 46px; border-width: 2px; border-color: #000; }
+html.site-mode .card, html.site-mode .callout { border: 2px solid #000; }
+html.site-mode .chip { font-size: 13.5px; font-weight: 700; border: 1.5px solid #000; }
+html.site-mode .small, html.site-mode small { font-size: 14px; }
+html.site-mode .muted { color: #2B2B2B !important; }
+@media (min-width: 761px) { html.site-mode .rail .nav { font-size: 16px; font-weight: 800; min-height: 48px; } }
+html.site-mode .rail .nav svg { width: 22px; height: 22px; }
+html.site-mode .today-strip { background: #fff !important; }
+html.site-mode .mnode { border: 2px solid #000; }
+html.site-mode .mnode .mtxt b { font-size: 16.5px !important; color: #000; }
+html.site-mode .mnode small { font-size: 13px !important; color: #000; }
+html.site-mode .duepill { font-weight: 800; border: 1.5px solid #000; }
+html.site-mode .edge, html.site-mode .map-edges path { stroke-width: 3px !important; }
+html.site-mode .bb-tab { min-height: 42px; font-size: 15px; border: 2px solid #000; }
+html.site-mode .vcard, html.site-mode .pl-card { border: 2px solid #000 !important; }
+html.site-mode :focus-visible { outline: 4px solid #FFB800 !important; outline-offset: 2px; }
 
 /* ================= Action Register on claude.ai — burgundy & white ================= */
 /* Layout: a burgundy command bar across the top (brand · tabs · status), white working sheets below, the canvas as
@@ -8008,6 +8038,41 @@ HOOKS.ready.push(() => {
 /* ---------- Arabic interface text: English → Arabic. {0}, {1}… stand for numbers in the sentence. ---------- */
 // Generated from the strings shown in the app, translated for Egyptian / Gulf engineering use. Add a line to extend it.
 const AR_DICT = {
+"Site": "الموقع",
+"Tasks": "المهام",
+"☆ Views": "☆ العروض",
+"＋ Save this view": "＋ احفظ هذا العرض",
+"Layers": "الطبقات",
+"Create": "إنشاء",
+"See more": "عرض المزيد",
+"⇢ Process flow from text": "⇢ مخطط عملية من نص",
+"🐟 Fishbone (root cause)": "🐟 مخطط عظم السمكة (السبب الجذري)",
+"▦ Board templates": "▦ قوالب اللوحات",
+"🔍 Read my markups": "🔍 اقرأ ملاحظاتي على الرسم",
+"🪄 Break it down": "🪄 قسّمها إلى خطوات",
+"✍ To tasks": "✍ إلى مهام",
+"✍ To text": "✍ إلى نص",
+"🧩 Group": "🧩 جمّع",
+"✓ Mark done": "✓ تم",
+"🙋 Mine": "🙋 مهمتي",
+"＋ Row": "＋ صف",
+"＋ Col": "＋ عمود",
+"− Row": "− صف",
+"− Col": "− عمود",
+"Header": "عنوان",
+"→ Task": "→ مهمة",
+"🔴 Laser pointer": "🔴 مؤشر ليزر",
+"📄 PDF for printing (A3)": "📄 ملف PDF للطباعة (A3)",
+"🖥 Present this board frame by frame": "🖥 اعرض هذه اللوحة إطارًا إطارًا",
+"Draw it": "ارسمه",
+"Draw": "ارسم",
+"Cancel": "إلغاء",
+"Use site mode on this device": "استخدم وضع الموقع على هذا الجهاز",
+"☀ Site mode": "☀ وضع الموقع",
+"Snap to a grid while moving": "المحاذاة إلى الشبكة أثناء التحريك",
+"People": "الأشخاص",
+"Me": "أنا",
+"Nothing here.": "لا شيء هنا.",
 "My actions": "مهامي المطلوبة",
 "Your action": "مطلوب منك",
 "Needs action by you": "يحتاج إجراءً منك",
@@ -10986,6 +11051,35 @@ ACT['map-export-a3'] = async () => {
     await offerFile(`action-register-${name}-${T()}-A3.pdf`, jpegPDF(jpg, c.width, c.height), 'application/pdf');
   } catch (e) { toast('Could not make the PDF.', { err: true }); }
 };
+
+/* ===== features/38-site.js ===== */
+/* ---------- site mode: readable outdoors on a phone or tablet ---------- */
+// ☀ in the header: big text, black-on-white contrast that holds up in sunlight, thicker lines and borders, large
+// buttons for gloved or hurried fingers, no animation. Remembered on this device only (the office PC stays normal).
+const SITE_LS = 'ar-site-mode';
+const siteOn = () => { try { return localStorage.getItem(SITE_LS) === '1'; } catch { return false; } };
+function siteApply(on) {
+  document.documentElement.classList.toggle('site-mode', on);
+  const b = document.getElementById('site-btn'); if (b) { b.setAttribute('aria-pressed', String(on)); b.title = on ? 'Site mode is on — tap for the normal view' : 'Site mode: big text and strong contrast for outdoors'; }
+  if (typeof measureCache !== 'undefined') measureCache.clear();
+}
+function siteToggle() {
+  const on = !siteOn(); try { localStorage.setItem(SITE_LS, on ? '1' : '0'); } catch {}
+  siteApply(on); UI.map.fitted = false; render(); toast(on ? '☀ Site mode on — big text and strong contrast.' : 'Site mode off.');
+}
+(() => {
+  const rail = document.querySelector('.rail'); if (!rail || document.getElementById('site-btn')) return;
+  const foot = rail.querySelector('.rail-foot');
+  const b = document.createElement('button'); b.id = 'site-btn'; b.className = 'nav site-btn'; b.dataset.act = 'site-toggle'; b.setAttribute('aria-pressed', 'false');
+  b.innerHTML = '<span class="site-ic" aria-hidden="true">☀</span><span class="site-lbl">Site</span>';
+  rail.insertBefore(b, foot || null);
+  siteApply(siteOn());
+})();
+ACT['site-toggle'] = () => siteToggle();
+SETUP_EXTRA.push(() => `<section class="card pad" data-sec="Site mode" style="display:grid;gap:8px"><div class="section-title"><h2>☀ Site mode</h2></div>
+  <p class="small muted" style="margin:0">For site visits: big text, black on white for sunlight, thick lines and large buttons. It applies to this device only.</p>
+  <label class="check"><input type="checkbox" data-chg="site-mode" ${siteOn() ? 'checked' : ''}>Use site mode on this device</label></section>`);
+CHG['site-mode'] = el => { if (!!el.checked !== siteOn()) siteToggle(); };
 
 /* ---------- boot ---------- */
 const startView = (location.hash || '').replace('#', '');

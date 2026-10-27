@@ -52,7 +52,9 @@ async def main():
             await cdp.send('Input.dispatchMouseEvent', {'type': 'mouseReleased', 'x': xe, 'y': ye, 'button': 'left', 'buttons': 0, 'clickCount': 1, 'pointerType': 'pen', 'force': 0})
             await pg.wait_for_timeout(350)
         def seg(a, z, n=10): return [(a[0] + (z[0] - a[0]) * i / n, a[1] + (z[1] - a[1]) * i / n) for i in range(n + 1)]
-        async def box(sel): return await (await pg.query_selector(sel)).bounding_box()
+        async def box(sel):
+            el = await pg.wait_for_selector(sel, timeout=8000); await pg.wait_for_timeout(30)
+            return await (await pg.query_selector(sel)).bounding_box()
         conns = "[...window.__AR.St.board.values()].filter(e => e.type === 'connector').length"
         async def more():
             if not await ev("!!document.querySelector('details[data-menu=\"options\"][open]')"): await pg.click('[data-menu="options"] summary'); await pg.wait_for_timeout(100)
@@ -386,6 +388,23 @@ async def main():
             comp = await p2.evaluate("window.__composed"); print('COMPOSE', comp); assert comp and comp['a'].startswith('task:')
         await p2.context.close()
         print('MEET OK')
+
+        # ---- site mode on a phone in dark mode ----
+        m = await b.new_context(viewport={'width': 390, 'height': 844}, is_mobile=True, has_touch=True, color_scheme='dark'); mp = await m.new_page(); await mp.route('**/*', route)
+        mp.on('pageerror', lambda e: errors.append('PAGEERROR site ' + str(e)))
+        await mp.goto('https://app.test/#todo'); await mp.wait_for_selector('h1'); await mp.wait_for_timeout(1200)
+        bg0 = await mp.evaluate("getComputedStyle(document.body).backgroundColor")
+        assert await mp.evaluate("!!document.getElementById('site-btn') && !!document.getElementById('site-btn').offsetParent"), 'site button in the header'
+        await mp.click('#site-btn'); await mp.wait_for_timeout(400)
+        st = await mp.evaluate("[document.documentElement.classList.contains('site-mode'), getComputedStyle(document.body).backgroundColor, getComputedStyle(document.body).color, getComputedStyle(document.body).fontSize, (document.querySelector('.btn') ? document.querySelector('.btn').getBoundingClientRect().height : 0)]"); print('SITE', bg0, '→', st)
+        assert st[0] and st[1] == 'rgb(255, 255, 255)' and st[2] == 'rgb(0, 0, 0)' and st[3] == '17px' and st[4] >= 40
+        await mp.screenshot(path=SHOTS + '/tools-8-site.png')
+        await mp.reload(); await mp.wait_for_selector('h1'); await mp.wait_for_timeout(800)
+        assert await mp.evaluate("document.documentElement.classList.contains('site-mode')"), 'remembered on this device'
+        assert not await mp.evaluate("document.documentElement.scrollWidth > innerWidth"), 'no sideways scroll'
+        await mp.click('#site-btn'); await mp.wait_for_timeout(200); assert not await mp.evaluate("document.documentElement.classList.contains('site-mode')")
+        await m.close()
+        print('SITE OK')
 
         print('ERRORS', errors); assert not errors
         print('CANVAS TOOLS E2E PASSED')

@@ -1334,3 +1334,33 @@ html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; 
 .bb-here { margin-left: 6px; color: var(--ink-2); font-weight: 600; }
 .mcomment { font-size: 11px; }
 body.cm-on .mnode.task, body.cm-on .bel { cursor: copy; }
+/* ☀ site mode: readable outdoors */
+.site-btn .site-ic { font-size: 17px !important; line-height: 1; }
+.site-btn[aria-pressed="true"] { background: #FFD43B !important; color: #000 !important; border-color: #000 !important; }
+html.site-mode.site-mode.site-mode {
+  --bg: #FFFFFF; --surface: #FFFFFF; --sunken: #F2F2F2; --ink: #000000; --ink-2: #111111; --ink-3: #2B2B2B; --line: #3A3A3A; --line-2: #6B6B6B;
+  --elev-1: none; --elev-2: 0 0 0 1.5px #000; --elev-3: 0 0 0 2px #000; color-scheme: light;
+  --wine: #7A1F3D; --wine-2: #5C1229; --wine-3: #9E3355; --wine-ink: #FFFFFF; --wine-soft: #F7E7EC; --wine-wash: #FFFFFF; --accent: #7A1F3D;
+}
+html.site-mode body { font-size: 17px; background: #fff; color: #000; }
+html.site-mode *, html.site-mode *::before, html.site-mode *::after { animation: none !important; transition: none !important; }
+html.site-mode .btn { min-height: 46px; font-size: 16px; padding-inline: 16px; border-width: 2px; font-weight: 700; }
+html.site-mode .btn.sm { min-height: 42px; font-size: 15px; padding-inline: 12px; }
+html.site-mode .btn.primary { background: #000; border-color: #000; color: #fff; }
+html.site-mode .icon-btn, html.site-mode .cvt { min-width: 46px; min-height: 46px; }
+html.site-mode .input, html.site-mode input, html.site-mode select, html.site-mode textarea { font-size: 17px; min-height: 46px; border-width: 2px; border-color: #000; }
+html.site-mode .card, html.site-mode .callout { border: 2px solid #000; }
+html.site-mode .chip { font-size: 13.5px; font-weight: 700; border: 1.5px solid #000; }
+html.site-mode .small, html.site-mode small { font-size: 14px; }
+html.site-mode .muted { color: #2B2B2B !important; }
+@media (min-width: 761px) { html.site-mode .rail .nav { font-size: 16px; font-weight: 800; min-height: 48px; } }
+html.site-mode .rail .nav svg { width: 22px; height: 22px; }
+html.site-mode .today-strip { background: #fff !important; }
+html.site-mode .mnode { border: 2px solid #000; }
+html.site-mode .mnode .mtxt b { font-size: 16.5px !important; color: #000; }
+html.site-mode .mnode small { font-size: 13px !important; color: #000; }
+html.site-mode .duepill { font-weight: 800; border: 1.5px solid #000; }
+html.site-mode .edge, html.site-mode .map-edges path { stroke-width: 3px !important; }
+html.site-mode .bb-tab { min-height: 42px; font-size: 15px; border: 2px solid #000; }
+html.site-mode .vcard, html.site-mode .pl-card { border: 2px solid #000 !important; }
+html.site-mode :focus-visible { outline: 4px solid #FFB800 !important; outline-offset: 2px; }
