@@ -9,8 +9,10 @@ from harness import *
 SHOTS = os.path.join(HERE, 'shots'); os.makedirs(SHOTS, exist_ok=True)
 ME = 'm.sobeah@contractor.example'
 
-async def setup(b):
-    pg = await (await b.new_context(viewport={'width': 1400, 'height': 1500}, has_touch=True)).new_page()
+async def setup(b, init=None):
+    cx = await b.new_context(viewport={'width': 1400, 'height': 1500}, has_touch=True)
+    if init: await cx.add_init_script(init)
+    pg = await cx.new_page()
     pg.on('pageerror', lambda e: errors.append('PAGEERROR ' + str(e)))
     pg.on('console', lambda m: errors.append(m.text) if m.type == 'error' and 'ERR_FAILED' not in m.text else None)
     await pg.route('**/*', route); await pg.goto('https://app.test/'); await pg.wait_for_selector('h1'); await pg.wait_for_timeout(1200)
@@ -52,6 +54,8 @@ async def main():
         def seg(a, z, n=10): return [(a[0] + (z[0] - a[0]) * i / n, a[1] + (z[1] - a[1]) * i / n) for i in range(n + 1)]
         async def box(sel): return await (await pg.query_selector(sel)).bounding_box()
         conns = "[...window.__AR.St.board.values()].filter(e => e.type === 'connector').length"
+        async def more():
+            if not await ev("!!document.querySelector('details[data-menu=\"options\"][open]')"): await pg.click('[data-menu="options"] summary'); await pg.wait_for_timeout(100)
         # use the pen tool for gestures
         await pg.keyboard.press('Escape'); await ev("document.getElementById('map-vp').focus()"); await pg.keyboard.press('p'); await pg.wait_for_timeout(200)
         assert await ev("window.__AR.UI.tool") == 'pen'
@@ -325,6 +329,63 @@ async def main():
         await pg.screenshot(path=SHOTS + '/tools-6-people.png')
         await pg.click('[data-act="todo-mode"][data-mode="map"]'); await pg.wait_for_timeout(500)
         print('LAYOUTS OK')
+
+        # ---- heat, critical path, laser, frames, A3 PDF ----
+        open_ids = await ev("[...document.querySelectorAll('.mnode.task')].map(n => n.dataset.tid).filter(id => window.__AR.St.tasks.get(id).status !== 'done')")
+        ta, tb2 = open_ids[0], open_ids[1]
+        # an overdue deadline through the task panel
+        await pg.click(f'.mnode.task[data-tid="{ta}"] .mtxt b'); await pg.wait_for_timeout(400)
+        await pg.fill('#d-deadline', '2026-10-01'); await pg.dispatch_event('#d-deadline', 'change'); await pg.wait_for_timeout(300)
+        await pg.click('#drawer [data-act="close-drawer"]'); await pg.wait_for_timeout(300)
+        # link the two tasks with the Link tool
+        await pg.keyboard.press('c'); A = await box(f'.mnode.task[data-tid="{ta}"]'); B = await box(f'.mnode.task[data-tid="{tb2}"]')
+        await pg.mouse.move(A['x'] + 60, A['y'] + A['height'] / 2); await pg.mouse.down(); await pg.mouse.move(B['x'] + 60, B['y'] + B['height'] / 2, steps=10); await pg.mouse.up(); await pg.wait_for_timeout(400)
+        await pg.keyboard.press('Escape'); await pg.keyboard.press('v')
+        print('LINKED', await ev(f"[window.__AR.St.tasks.get('{ta}').relatedIds, window.__AR.St.tasks.get('{tb2}').relatedIds, window.__AR.St.tasks.get('{ta}').deadline]"))
+        await more(); await pg.click('[data-chg="ui-opt"][data-k="mapHeat"]'); await pg.wait_for_timeout(400)
+        heat = await ev("[...document.querySelectorAll('.mnode.task.heat-4')].length"); print('HEAT-4', heat); assert heat >= 1, 'an overdue task glows hottest'
+        await more(); await pg.click('[data-chg="ui-opt"][data-k="mapCrit"]'); await pg.wait_for_timeout(400)
+        crit = await ev("document.querySelectorAll('.mnode.task.crit-path').length"); print('CRIT nodes', crit); assert crit == 2 and await ev("!!document.querySelector('.cv-crit path')")
+        await pg.screenshot(path=SHOTS + '/tools-7-heat-crit.png')
+        await more(); await pg.click('[data-chg="ui-opt"][data-k="mapHeat"]'); await more(); await pg.click('[data-chg="ui-opt"][data-k="mapCrit"]'); await pg.wait_for_timeout(200)
+        # laser
+        await pg.keyboard.press('Escape'); await pg.keyboard.press('Shift+L'); vp = await box('#map-vp')
+        for i in range(8): await pg.mouse.move(vp['x'] + 300 + i * 20, vp['y'] + 400 + i * 5); await pg.wait_for_timeout(16)
+        assert await ev("!!document.querySelector('#map-vp > canvas.cv-laser')"), 'laser layer'
+        await pg.keyboard.press('Shift+L')
+        # present the template board frame by frame
+        tb = await ev("window.__AR.St.layout.pages.find(p => p.name === 'Submittal tracker').id")
+        await pg.click(f'[data-act="board-go"][data-id="{tb}"]'); await pg.wait_for_timeout(500)
+        await more(); await pg.click('[data-act="present-frames"]'); await pg.wait_for_timeout(700)
+        bar = await pg.text_content('.present-bar'); print('PRESENT', ' '.join(bar.split())[:60]); assert '1 / 5' in bar and 'To prepare' in bar
+        await pg.keyboard.press('ArrowRight'); await pg.wait_for_timeout(400); assert '2 / 5' in await pg.text_content('.present-bar')
+        await pg.click('.present-bar [data-act="present-exit"]'); await pg.wait_for_timeout(400)
+        # A3 PDF of this board
+        await more(); await pg.click('[data-act="map-export-a3"]')
+        for i in range(50):
+            if await ev("window.__saves.some(s => /A3\\.pdf$/.test(s.filename))"): break
+            await pg.wait_for_timeout(300)
+        saved = await ev("window.__saves.filter(s => /A3\\.pdf$/.test(s.filename))"); print('PDF', saved); assert saved and saved[-1]['len'] > 20000
+        head = await ev("(async () => { const d = Object.entries(window.__saveData).find(([k]) => /A3\\.pdf$/.test(k))[1]; const b = d instanceof Blob ? new Uint8Array(await d.arrayBuffer()) : d; return String.fromCharCode(...b.slice(0, 8)); })()"); print('PDF head', head); assert head.startswith('%PDF-1.4')
+        await pg.click('[data-act="board-go"][data-id="main"]'); await pg.wait_for_timeout(400)
+        print('SEE OK')
+        # ---- live cursors and comment pins (room and comments available) ----
+        p2 = await setup(b, "window.__room = { peers: [{ peer: 'pk1', by: 'u777', isMe: false, sameTab: false, kind: 'viewer', guest: false, presence: { cur: { x: 300, y: 200, p: 'main' }, c: '#0A6B74' } }] }; window.__comments = true;")
+        await p2.wait_for_timeout(4500)
+        await p2.evaluate("window.__peersHandler && window.__peersHandler({ peers: window.__room.peers, joined: [], left: [], updated: window.__room.peers })"); await p2.wait_for_timeout(500)
+        cur = await p2.evaluate("(document.querySelector('.cv-cursor') || {}).textContent || ''"); print('CURSOR', cur); assert 'Khaled Nabil' in cur, 'a named live cursor'
+        await p2.mouse.move(400, 600); await p2.mouse.move(420, 620); await p2.wait_for_timeout(200)
+        assert await p2.evaluate("!!(window.__presence && window.__presence.cur)"), 'my cursor is shared'
+        assert await p2.evaluate("!!window.__cmCb"), 'comment pins registered'
+        tid2 = await p2.evaluate("(document.querySelector('.mnode.task') || {}).dataset?.tid")
+        if tid2:
+            await p2.evaluate("window.__cmCb.threads([{ id: 'th1', anchor: 'task:' + document.querySelector('.mnode.task').dataset.tid, resolved: false, active: false }])"); await p2.wait_for_timeout(200)
+            placed = await p2.evaluate("window.__placed"); print('PIN placed', placed); assert placed and 'th1' in placed
+            await p2.evaluate("window.__cmCb.mode(true)"); nb = await (await p2.query_selector('.mnode.task')).bounding_box()
+            await p2.mouse.click(nb['x'] + 40, nb['y'] + 20); await p2.wait_for_timeout(200)
+            comp = await p2.evaluate("window.__composed"); print('COMPOSE', comp); assert comp and comp['a'].startswith('task:')
+        await p2.context.close()
+        print('MEET OK')
 
         print('ERRORS', errors); assert not errors
         print('CANVAS TOOLS E2E PASSED')

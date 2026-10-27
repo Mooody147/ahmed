@@ -21,7 +21,7 @@
  window.claude={use:async(name)=>{
    if(name==='db') return {doc:docRef,collection:colRef};
    if(name==='assets') return window.__noAssets?null:{upload:async(blob,o)=>{const t=(o&&o.type)||blob.type; if(!/^(application\/pdf|image\/(png|jpeg|gif|webp)|application\/json|text\/plain)$/.test(t)) throw {code:'unsupported_type',message:t}; if(blob.size>20*1048576) throw {code:'too_large',message:'big'}; const id=Math.random().toString(16).slice(2).padEnd(32,'0').slice(0,32); window.__assets[id]={type:t,size:blob.size}; return {id,url:URL.createObjectURL(blob),sizeBytes:blob.size,contentType:t};},list:async()=>({assets:[],usage:{files:Object.keys(window.__assets).length,bytes:Object.values(window.__assets).reduce((s,a)=>s+a.size,0),maxFiles:5000,maxBytes:1073741824}}),delete:async()=>({deleted:true})};
-   if(name==='user') return {me:async()=>({id:window.__viewer?'u999':'u123',name:window.__viewer?'Manager':'Mahmoud Sobeah',email:null}),id:async()=>window.__viewer?'u999':'u123',isOwner:async()=>!window.__viewer,canEdit:async()=>true,can:async()=>true};
+   if(name==='user') return {me:async()=>({id:window.__viewer?'u999':'u123',name:window.__viewer?'Manager':'Mahmoud Sobeah',email:null}),id:async()=>window.__viewer?'u999':'u123',isOwner:async()=>!window.__viewer,profiles:async ids=>Object.fromEntries(ids.map(i=>[i,{name:i==='u777'?'Khaled Nabil':''}])),canEdit:async()=>true,can:async()=>true};
    if(name==='downloads') return {save:async(r)=>{window.__saves.push({filename:r.filename,len:(r.data.length||r.data.size)}); (window.__saveData=window.__saveData||{})[r.filename]=r.data; return {status:'saved'};}};
    if(name==='sample'){ const f=async(i,o)=>({text:'x',truncated:false});
      f.limits=async()=>({maxPromptBytes:262144,images:{maxCount:20,maxInputBytes:20e6,mediaTypes:['image/jpeg','image/png','image/webp','image/gif']}});
@@ -29,6 +29,8 @@
        await new Promise(r=>setTimeout(r,300)); opts.onText&&opts.onText({text:'{"summary":',delta:''});
        return window.__mockAnswer(prompt); };
      return f; }
+   if(name==='room' && window.__room){ return { presence: async p => { window.__presence = Object.assign({}, window.__presence || {}, p); }, peers: () => window.__room.peers, onPeers: (h) => { window.__peersHandler = h; setTimeout(() => h({ peers: window.__room.peers, joined: window.__room.peers, left: [], updated: window.__room.peers }), 50); return () => {}; }, emit: async () => {}, on: () => () => {} }; }
+   if(name==='comments' && window.__comments){ return { openComposer: async () => ({ opened: true }), anchorFor: async () => ({}), customAnchors: async cb => { window.__cmCb = cb; return { compose: async (a, at, o) => { window.__composed = { a, label: o && o.label }; return { opened: true }; }, placed: m => { window.__placed = m; }, open: async () => {}, domAnchor: () => ['', { x: 0, y: 0 }], exitMode() {}, release() {}, areas: false }; } }; }
    return null; }};
  window.__mockAnswer=function(prompt){
    if(/^You are an experienced site engineer/.test(prompt)) return {captions:['Pump base before grouting'],observations:[{text:'Anchor bolts not plumb at the pump base',sev:'major',action:'Correct the anchor bolts before grouting',photo:1}]};
