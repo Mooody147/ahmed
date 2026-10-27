@@ -483,8 +483,6 @@ body { background-color: var(--bg); background-image: linear-gradient(var(--grid
 .map-edges .link { fill: none; stroke: var(--wait); stroke-width: 2; stroke-dasharray: 6 5; opacity: .75; }
 .map-edges .link.hot { stroke-width: 3.2; opacity: 1; }
 .map-edges .arrowhead { fill: var(--wait); }
-.map-hint { position: absolute; left: 12px; bottom: 10px; font-size: 11.5px; color: var(--ink-3); background: color-mix(in srgb, var(--surface) 85%, transparent); padding: 4px 8px; border-radius: 6px; pointer-events: none; }
-@media (max-width: 560px) { .map-hint { display: none; } }
 
 .mnode { position: absolute; display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 14px; background: linear-gradient(180deg, var(--face-top), transparent 50%), var(--surface); border: 1px solid var(--line); box-shadow: var(--elev-1), 0 3px 0 -1px color-mix(in srgb, var(--line) 80%, transparent); cursor: pointer; transition: box-shadow .15s, transform .15s, opacity .15s; }
 .mnode:hover { box-shadow: var(--elev-2), 0 4px 0 -1px color-mix(in srgb, var(--line) 80%, transparent); transform: translateY(-1px); }
@@ -608,7 +606,6 @@ body.map-full-on { overflow: hidden; }
 .cvt-sep { flex: none; width: 1px; align-self: stretch; background: var(--line); margin: 3px 4px; }
 .cvt-colors { display: flex; gap: 5px; align-items: center; }
 .cv-tools { max-height: calc(100% - 70px); }
-.map-viewport .map-hint { left: auto; right: 12px; max-width: min(60%, 640px); text-align: right; }
 .sw { width: 15px; height: 15px; border-radius: 50%; border: 2px solid var(--surface); box-shadow: 0 0 0 1px var(--line); background: var(--c); cursor: pointer; padding: 0; flex: none; }
 .sw.on, .sw:hover { box-shadow: 0 0 0 2px var(--accent); }
 .cv-ctx { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 6px; padding: 6px 10px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--elev-2); z-index: 4; flex-wrap: wrap; max-width: calc(100% - 120px); cursor: default; }
@@ -807,8 +804,9 @@ details.menu > summary { list-style: none; cursor: pointer; }
 details.menu > summary::-webkit-details-marker { display: none; }
 details.menu > summary::after { content: ""; display: inline-block; width: 6px; height: 6px; margin-inline-start: 6px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; transform: translateY(-2px) rotate(45deg); opacity: .6; }
 details.menu > summary.on { background: var(--accent-soft); color: var(--accent); border-color: transparent; }
-.menu-pop { position: absolute; top: calc(100% + 6px); inset-inline-end: 0; z-index: 30; min-width: 230px; display: flex; flex-direction: column; align-items: stretch; gap: 8px; padding: 10px 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--elev-3, var(--elev-2)); }
+.menu-pop { position: absolute; top: calc(100% + 6px); inset-inline-end: 0; z-index: 30; min-width: 230px; display: flex; flex-direction: column; align-items: stretch; gap: 8px; padding: 10px 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--elev-3, var(--elev-2)); max-height: min(78vh, 720px); overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; touch-action: pan-y; scrollbar-width: thin; }
 .menu-pop .btn { justify-content: flex-start; }
+.menu-pop.up { top: auto; bottom: calc(100% + 6px); }
 .menu-pop .map-date { display: flex; flex-direction: column; gap: 4px; align-items: stretch; }
 
 /* ---------- canvas tool flyouts ---------- */
@@ -839,7 +837,7 @@ details.menu > summary.on { background: var(--accent-soft); color: var(--accent)
 .map-body.with-act .minimap { right: 12px; }
 
 /* ---------- presentation mode ---------- */
-.map-wrap.presenting .map-toolbar, .map-wrap.presenting .map-activity, .map-wrap.presenting .cv-tools, .map-wrap.presenting .cv-sub, .map-wrap.presenting .map-hint, .map-wrap.presenting .minimap, .map-wrap.presenting .callout { display: none !important; }
+.map-wrap.presenting .map-toolbar, .map-wrap.presenting .map-activity, .map-wrap.presenting .cv-tools, .map-wrap.presenting .cv-sub, .map-wrap.presenting .cv-panel, .map-wrap.presenting .minimap, .map-wrap.presenting .callout { display: none !important; }
 .map-wrap.presenting .map-body { grid-template-columns: 1fr !important; }
 .present-bar { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; box-shadow: var(--elev-2); z-index: 6; white-space: nowrap; max-width: calc(100% - 24px); }
 
@@ -1132,7 +1130,7 @@ html[dir="rtl"] .nav[aria-current="page"] { box-shadow: inset -3px 0 0 var(--acc
 body:not(.viewer-mode) .viewer-bar { display: none; }
 .viewer-mode .rail [data-nav]:not([data-nav="todo"]), .viewer-mode .tabbar [data-nav]:not([data-nav="todo"]), .viewer-mode .cv-tools, .viewer-mode .cv-sub, .viewer-mode .cv-ctx,
 .viewer-mode [data-act="map-refresh"], .viewer-mode [data-act="cv-undo"], .viewer-mode [data-act="cv-redo"], .viewer-mode .page-head .btn, .viewer-mode .mtick, .viewer-mode .mdel, .viewer-mode .mren, .viewer-mode .mnode .rz,
-.viewer-mode .map-hint, .viewer-mode [data-act="map-share"], .viewer-mode .ts-actions, .viewer-mode .tstat.rev, .viewer-mode .rail-foot, .viewer-mode [data-act="brief-refresh"], .viewer-mode [data-act="brief-hide"], .viewer-mode .topbar .btn, .viewer-mode [data-act="palette"], .viewer-mode .mode-bar { display: none !important; }
+.viewer-mode .cv-panel, .viewer-mode [data-act="map-share"], .viewer-mode .ts-actions, .viewer-mode .tstat.rev, .viewer-mode .rail-foot, .viewer-mode [data-act="brief-refresh"], .viewer-mode [data-act="brief-hide"], .viewer-mode .topbar .btn, .viewer-mode [data-act="palette"], .viewer-mode .mode-bar { display: none !important; }
 .mnode .mfiles { border: 0; background: none; padding: 0 2px; cursor: pointer; font-size: 12px; }
 
 /* link handle: drag the ● on a box to another box to link them */
@@ -1369,6 +1367,61 @@ html.site-mode .edge, html.site-mode .map-edges path { stroke-width: 3px !import
 html.site-mode .bb-tab { min-height: 42px; font-size: 15px; border: 2px solid #000; }
 html.site-mode .vcard, html.site-mode .pl-card { border: 2px solid #000 !important; }
 html.site-mode :focus-visible { outline: 4px solid #FFB800 !important; outline-offset: 2px; }
+
+/* ---------- canvas: tool panel (pen type, width, colours), zoom lock, Touch & stylus sheet ---------- */
+.cv-panel { position: absolute; left: 62px; top: 56px; z-index: 5; width: 244px; display: grid; gap: 10px; padding: 10px 12px 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--elev-2); cursor: default; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; }
+.cvp-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.cvp-head .btn { min-width: 28px; padding: 2px 6px; }
+.cvp-brushes { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.cvp-brush { display: grid; justify-items: center; gap: 2px; padding: 6px 2px 4px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--ink); cursor: pointer; font: inherit; font-size: 11px; }
+.cvp-brush svg { width: 40px; height: 20px; }
+.cvp-brush.on { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+.cvp-width { display: grid; grid-template-columns: auto 1fr 40px 22px; align-items: center; gap: 8px; }
+.cvp-width input { width: 100%; accent-color: var(--accent); }
+.cvp-dot { justify-self: center; width: var(--d); height: var(--d); min-width: 2px; min-height: 2px; border-radius: 50%; background: var(--c); box-shadow: 0 0 0 1px var(--line); }
+.cvp-wv { text-align: end; color: var(--ink-2); }
+.cvp-colors { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.cvp-colors .sw { width: 22px; height: 22px; }
+.sw-custom { position: relative; overflow: hidden; background: var(--c); }
+.sw-custom input { position: absolute; inset: -6px; width: 36px; height: 36px; opacity: 0; cursor: pointer; border: 0; padding: 0; }
+.zoom-lock { width: auto !important; padding: 0 8px; gap: 4px; display: inline-flex !important; align-items: center; font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.zoom-lock span { min-width: 34px; text-align: start; }
+.pen-hover { position: fixed; z-index: 60; pointer-events: none; border-radius: 50%; border: 1.5px solid var(--c); background: color-mix(in srgb, var(--c) 18%, transparent); }
+.hold-flash { animation: holdflash .45s ease-out; }
+@keyframes holdflash { 0% { box-shadow: 0 0 0 0 var(--accent); filter: brightness(1.08); } 100% { box-shadow: 0 0 0 14px transparent; } }
+body.cv-clean .cv-tools, body.cv-clean .cv-sub, body.cv-clean .cv-panel, body.cv-clean .minimap, body.cv-clean .map-toolbar, body.cv-clean .board-bar { display: none !important; }
+.ts-sheet { position: fixed; top: 10px; right: 10px; bottom: 10px; z-index: 70; width: min(440px, calc(100vw - 20px)); display: flex; flex-direction: column; background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--elev-3, var(--elev-2)); overflow: hidden; }
+.ts-sheet[hidden] { display: none; }
+.ts-head { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--line); font-size: 16px; }
+.ts-body { flex: 1; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; touch-action: pan-y; padding: 6px 18px 28px; }
+.ts-body h2 { font-size: 22px; margin: 18px 0 4px; }
+.ts-body h3 { font-size: 14px; margin: 0 0 4px; }
+.ts-body section { padding: 12px 0; border-bottom: 1px solid color-mix(in srgb, var(--line) 60%, transparent); display: grid; gap: 10px; }
+.ts-body section p { margin: 0; color: var(--ink-2); font-size: 13px; }
+.ts-choices { display: flex; gap: 10px; overflow-x: auto; padding: 4px 2px 6px; scrollbar-width: thin; touch-action: pan-x pan-y; }
+.ts-choice { flex: none; width: 82px; display: grid; justify-items: center; gap: 6px; background: none; border: 0; padding: 0; cursor: pointer; color: var(--ink-2); font: inherit; font-size: 12px; text-align: center; }
+.ts-ic { width: 58px; height: 58px; border-radius: 50%; display: grid; place-items: center; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--elev-1); color: var(--ink); }
+.ts-choice.on { color: var(--ink); font-weight: 700; }
+.ts-choice.on .ts-ic { border: 2.5px solid var(--ink); }
+.ts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 18px; }
+@media (max-width: 420px) { .ts-grid { grid-template-columns: 1fr; } }
+.ts-tog { display: flex; align-items: center; justify-content: space-between; gap: 12px; cursor: pointer; font-size: 14px; font-weight: 600; }
+.ts-tog small { display: block; font-weight: 400; color: var(--ink-3); font-size: 12px; }
+.ts-tog input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.ts-tog i { flex: none; position: relative; width: 42px; height: 24px; border-radius: 12px; background: var(--line); transition: background .15s; }
+.ts-tog i::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: var(--surface); box-shadow: var(--elev-1); transition: transform .15s; }
+.ts-tog input:checked + i { background: var(--accent); }
+.ts-tog input:checked + i::after { transform: translateX(18px); }
+.ts-tog input:focus-visible + i { outline: 2px solid var(--accent); outline-offset: 2px; }
+.ts-field { display: grid; gap: 6px; }
+.ts-field input { width: 100%; accent-color: var(--accent); }
+.ts-row { display: flex; justify-content: space-between; font-size: 14px; }
+.ts-val { color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.ts-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 560px) {
+  .cv-panel { left: 8px; right: 8px; top: auto; bottom: 104px; width: auto; }
+}
+html.site-mode .ts-ic { width: 66px; height: 66px; }
 
 </style>
 <div class="titlestrip" id="titlestrip"><span class="ts-brand"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c3.3 4 6 7.2 6 10.4a6 6 0 0 1-12 0C6 10.2 8.7 7 12 3z"/><path d="m9.3 13.6 1.9 1.9 3.6-4.1"/></svg> Action Register</span><button class="ts-search" data-act="palette" title="Search and commands (Ctrl+K)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg><span>Search or type a command</span><kbd>Ctrl K</kbd></button><span class="ts-space"></span></div>
@@ -4550,7 +4603,7 @@ function belHTML(el, hits) {
 function inkSVG(el, M) {
   el = liveEl(el);
   const sel = UI.cvSel.has(el.id) ? ' sel' : '';
-  if (el.type === 'stroke' && el.pressure) return `<g class="ink${sel}" data-el="${esc(el.id)}"><path d="${pressurePath(el.pts, el.width)}" fill="${colorCss(el.color)}" stroke="none"/><path class="hit" d="${strokePath(el.pts)}" stroke-width="${Math.max(14, el.width + 10)}"/></g>`;
+  if (el.type === 'stroke' && el.pressure) return `<g class="ink${sel}" data-el="${esc(el.id)}"><path d="${pressurePath(el.pts, el.width)}" fill="${colorCss(el.color)}" ${el.alpha ? `fill-opacity="${el.alpha}"` : ''} stroke="none"/><path class="hit" d="${strokePath(el.pts)}" stroke-width="${Math.max(14, el.width + 10)}"/></g>`;
   if (el.type === 'stroke') { const d = strokePath(el.pts); return `<g class="ink${sel}" data-el="${esc(el.id)}"><path d="${d}" stroke="${colorCss(el.color)}" stroke-width="${el.width}" ${el.alpha ? `stroke-opacity="${el.alpha}"` : ''} fill="none" stroke-linecap="round" stroke-linejoin="round"/><path class="hit" d="${d}" stroke-width="${Math.max(14, el.width + 10)}"/></g>`; }
   if (el.type === 'line') { const d = `M${el.x1} ${el.y1} L${el.x2} ${el.y2}`; return `<g class="ink${sel}" data-el="${esc(el.id)}" style="color:${colorCss(el.color)}"><path d="${d}" stroke="currentColor" stroke-width="${el.width || 3}" fill="none" stroke-linecap="round" ${el.arrow ? 'marker-end="url(#cv-arrow)"' : ''}/><path class="hit" d="${d}" stroke-width="16"/></g>`; }
   if (el.type === 'connector') {
@@ -4746,8 +4799,10 @@ function toolsHTML() {
       return `<div class="cvt-group" data-group="${gi}">${btn(cur, ' has-more')}<div class="cvt-fly" role="group">${g.map(k => btn(k)).join('')}</div></div>`;
     }).join('')}
   </div>
+  ${typeof toolPanelHTML === 'function' ? toolPanelHTML() : ''}
   <div class="cv-sub" role="toolbar" aria-label="Colour and history">
-    <div class="cvt-colors">${PALETTE.map(c => `<button class="sw ${UI.cvColor === c ? 'on' : ''}" data-act="cv-color" data-c="${c}" style="--c:${colorCss(c)}" aria-label="Colour ${c}" aria-pressed="${UI.cvColor === c}"></button>`).join('')}</div>
+    <button class="cvt zoom-lock ${zoomLocked() ? 'on' : ''}" data-act="zoom-lock" aria-pressed="${zoomLocked()}" title="${zoomLocked() ? 'Zoom is locked — tap to unlock' : 'Lock the zoom where it is'}">${zoomLocked() ? '🔒' : '🔓'}<span id="zoom-pct">${Math.round(UI.map.k * 100)}%</span></button>
+    <button class="cvt" data-act="touch-open" title="Touch & stylus settings" aria-label="Touch and stylus settings">${svg('<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>', 18)}</button>
     <span class="cvt-sep"></span>
     <button class="cvt" data-act="cv-undo" title="Undo (Ctrl+Z)" aria-label="Undo" ${UI.cvUndo.length ? '' : 'disabled'}>${svg('<path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/>', 18)}</button>
     <button class="cvt" data-act="cv-redo" title="Redo (Ctrl+Shift+Z)" aria-label="Redo" ${UI.cvRedo.length ? '' : 'disabled'}>${svg('<path d="m15 14 5-5-5-5"/><path d="M20 9H9a5 5 0 0 0 0 10h3"/>', 18)}</button>
@@ -4790,11 +4845,7 @@ function viewMap() {
           <div class="mt-sec"><div class="label">Direction</div>
             <div class="seg" role="group" aria-label="Map direction"><button data-act="map-dir" data-dir="h" aria-pressed="${mapDir() === 'h'}">→ Left to right</button><button data-act="map-dir" data-dir="v" aria-pressed="${mapDir() === 'v'}">↓ Top to bottom</button></div></div>
           ${St.mode !== 'viewer' && typeof traceAll === 'function' ? `<div class="mt-sec"><div class="label">Tasks</div><button class="btn sm" data-act="trace-all" ${TRC.running ? 'disabled' : ''}>🔎 ${TRC.running ? 'Tracing…' : 'Trace open tasks in my emails'}</button></div>` : ''}
-          <div class="mt-sec"><div class="label">Stylus</div>
-            <label class="check small"><input type="checkbox" id="stylus-draw" data-chg="stylus-draw" ${(St.settings.ui || {}).stylusDraw !== false ? 'checked' : ''}>The stylus always draws, without choosing the pen (a tap still selects)</label>
-            <label class="check small"><input type="checkbox" id="stylus-only" data-chg="stylus-only" ${penOnly() ? 'checked' : ''}>Only the stylus draws — fingers move and zoom, a resting palm is ignored</label>
-            <label class="check small"><input type="checkbox" id="pen-gestures" data-chg="pen-gestures" ${(St.settings.ui || {}).penGestures !== false ? 'checked' : ''}>Smart pen: ✓ marks done, scribble deletes, a line links two boxes, hold still to snap a clean shape</label>
-            <p class="small muted" style="margin:0">Press harder for a thicker line. The pen's eraser end or side button erases. Two-finger tap: undo · three-finger tap: redo. Your palm is ignored while the pen is on the screen.</p></div>
+          <div class="mt-sec"><div class="label">Stylus & touch</div><button class="btn sm" data-act="touch-open">✍ Touch & stylus settings…</button></div>
           <div class="mt-sec"><div class="label">Show</div>
             <label class="check small"><input type="checkbox" id="map-done" data-chg="map-opt" data-key="mapShowDone" ${UI.mapShowDone ? 'checked' : ''}>Completed tasks (history)</label>
             <label class="check small"><input type="checkbox" id="map-act" data-chg="map-opt" data-key="mapActivity" ${UI.mapActivity ? 'checked' : ''}>Activity panel</label>
@@ -4826,7 +4877,6 @@ function viewMap() {
         <div id="cv-ctx-slot">${ctxHTML()}</div>
         ${UI.mapMini !== false && (M.projects.length || St.board.size) ? '<canvas class="minimap" id="minimap" width="200" height="130" aria-label="Minimap — click to move there"></canvas>' : ''}
         ${UI.present ? presentBarHTML() : ''}
-        <div class="map-hint">${esc(TOOL_HINT[UI.tool] || TOOL_HINT.select)}</div>
       </div>
       ${UI.mapActivity ? `<aside class="map-activity"><div class="label" style="padding:12px 14px 6px">Activity${UI.mapDay ? ' · ' + esc(fmtDate(UI.mapDay)) : ''}</div>${act.length ? `<ol>${act.map(e => `<li><button data-act="map-goto" data-id="${esc(e.t.id)}"><span class="ae">${evEmoji(e.text)}</span><span class="atxt"><b>${esc(e.t.ref || '')}</b> <span dir="auto">${esc(E.clip(e.t.title, 60))}</span><small dir="auto">${esc(e.text)}</small></span><time>${esc(fmtDate(e.at.slice(0, 10)))}</time></button></li>`).join('')}</ol>` : '<p class="small muted" style="padding:0 14px">No activity yet.</p>'}</aside>` : ''}
     </div>
@@ -4859,6 +4909,7 @@ function applyCam(animate) {
   w.classList.add('moving'); clearTimeout(UI.camSharp); UI.camSharp = setTimeout(() => { const ww = $('#map-world'); if (ww) ww.classList.remove('moving'); }, 160);
   // semantic zoom: far out, details hide and project labels grow so the map stays readable
   w.style.setProperty('--k', UI.map.k);
+  const zl = document.getElementById('zoom-pct'); if (zl) zl.textContent = Math.round(UI.map.k * 100) + '%';
   const vp = $('#map-vp'); if (vp) { vp.classList.toggle('z-far', UI.map.k < 0.38); vp.classList.toggle('z-mid', UI.map.k >= 0.38 && UI.map.k < 0.6); }
   drawMinimap();
 }
@@ -4866,15 +4917,22 @@ function mapFit(smart) {
   const vp = $('#map-vp'), M = UI.mapLayout; if (!vp || !M) return;
   const W = vp.clientWidth, H = vp.clientHeight;
   const fitK = Math.min(1, (W - 120) / M.w, (H - 60) / M.h);
-  const k = smart === true ? Math.max(W < 600 ? 0.5 : 0.6, Math.min(1, fitK)) : Math.max(0.2, fitK);
+  const k = zoomLocked() ? UI.map.k : smart === true ? Math.max(W < 600 ? 0.5 : 0.6, Math.min(1, fitK)) : Math.max(0.2, fitK);
   UI.map.k = k;
   UI.map.x = M.w * k <= W - 60 ? (W + 60 - M.w * k) / 2 - M.x0 * k : 70 - M.x0 * k;
   if (M.h * k <= H) UI.map.y = (H - M.h * k) / 2 - M.y0 * k;
   else { const r = M.nodes.find(n => n.type === 'root'); UI.map.y = H / 2 - (r ? r.y + r.h / 2 : 0) * k; }
   UI.map.fitted = true; applyCam(true);
 }
+// two-finger zoom ends on 25 %, 50 %, 100 %… when it stops close to one (Touch & stylus › Zoom snap)
+function zoomSnapEnd() {
+  if (!touchCfg().zoomSnap || zoomLocked()) return;
+  const k = UI.map.k, t = [0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4].find(v => Math.abs(k / v - 1) < 0.1);
+  if (t && t !== k) mapZoom(t / k);
+}
 function mapZoom(f, cx, cy) {
   const vp = $('#map-vp'); if (!vp) return;
+  if (zoomLocked()) { if (f !== 1 && !MP.lockToast) { MP.lockToast = setTimeout(() => { MP.lockToast = null; }, 2500); toast('🔒 Zoom is locked — tap the lock to unlock it.'); } return; }
   const r = vp.getBoundingClientRect(); cx = cx ?? r.width / 2; cy = cy ?? r.height / 2;
   const k2 = Math.max(0.15, Math.min(5, UI.map.k * f));
   UI.map.x = cx - (cx - UI.map.x) * (k2 / UI.map.k); UI.map.y = cy - (cy - UI.map.y) * (k2 / UI.map.k); UI.map.k = k2; applyCam(false);
@@ -4890,7 +4948,7 @@ function centerOnTask(id) {
   render();
   requestAnimationFrame(() => {
     const vp = $('#map-vp'), n = UI.mapLayout && UI.mapLayout.nodes.find(x => x.id === 't:' + id); if (!vp || !n) return;
-    UI.map.k = Math.max(UI.map.k, 0.85);
+    if (!zoomLocked()) UI.map.k = Math.max(UI.map.k, 0.85);
     UI.map.x = vp.clientWidth / 2 - (n.x + n.w / 2) * UI.map.k; UI.map.y = vp.clientHeight / 2 - (n.y + n.h / 2) * UI.map.k; applyCam(true);
     vp.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   });
@@ -4898,7 +4956,12 @@ function centerOnTask(id) {
 function afterMapRender() {
   const vp = $('#map-vp'); if (!vp) return;
   if (!UI.map.fitted) requestAnimationFrame(() => mapFit(true));
-  vp.addEventListener('wheel', e => { e.preventDefault(); const r = vp.getBoundingClientRect(); mapZoom(Math.exp(-e.deltaY * (e.ctrlKey ? 0.01 : 0.0015)), e.clientX - r.left, e.clientY - r.top); }, { passive: false });
+  vp.addEventListener('wheel', e => {
+    e.preventDefault();
+    // with the zoom locked the wheel (or a two-finger trackpad swipe) moves the canvas instead
+    if (zoomLocked()) { if (!e.ctrlKey) { UI.map.x -= e.deltaX; UI.map.y -= e.deltaY; applyCam(false); } return; }
+    const r = vp.getBoundingClientRect(); mapZoom(Math.exp(-e.deltaY * (e.ctrlKey ? 0.01 : 0.0015)), e.clientX - r.left, e.clientY - r.top);
+  }, { passive: false });
 }
 
 /* --- changes with undo / redo --- */
@@ -4934,7 +4997,27 @@ const MP = { ptrs: new Map(), mode: null, pinch: null };
 // contact, is a resting palm and is ignored.
 const PEN_LS = 'ar-pen-seen';
 UI.penSeen = (() => { try { return localStorage.getItem(PEN_LS) === '1'; } catch { return false; } })();
-const penOnly = () => { const v = (St.settings.ui || {}).stylusOnly; return v === undefined ? !!UI.penSeen : !!v; };
+// touch and stylus preferences (⚙ on the canvas, features/39-touch.js); each one has a default here
+const TOUCH_DEF = { finger: '', zoom: true, zoomSnap: false, zoomLock: false, holdAct: 'pick', holdMs: 400, holdFlash: true, shapes: true, shapeMs: 520, tap2: 'undo', tap3: 'redo', tap4: 'lock', pLo: 0, pHi: 1, pressure: true, tilt: true, penHold: true, hover: true, side: 'eraser', eraserEnd: 'eraser' };
+const touchCfg = () => ({ ...TOUCH_DEF, ...((St.settings.ui || {}).touch || {}) });
+// what one finger does once a stylus has been used: select (default), pan, the chosen tool, or nothing
+function fingerMode() { const u = St.settings.ui || {}, f = touchCfg().finger; if (f) return f; if (u.stylusOnly === false) return 'tool'; return UI.penSeen || u.stylusOnly ? 'select' : 'tool'; }
+const penOnly = () => fingerMode() !== 'tool';
+const zoomLocked = () => !!touchCfg().zoomLock;
+// pens: Pen (pressure), Ballpoint (even), Marker (broad, even), Pencil (fine, soft, pressure); a width kept for each
+const BRUSHES = { pen: ['Pen', 3, true, 0], ball: ['Ballpoint', 2, false, 0], marker: ['Marker', 9, false, 0.9], pencil: ['Pencil', 2, true, 0.7] };
+function penCfg() { const p = (St.settings.ui || {}).pen || {}; return { brush: BRUSHES[p.brush] ? p.brush : 'pen', w: { pen: 3, ball: 2, marker: 9, pencil: 2, highlighter: 18, ...(p.w || {}) } }; }
+function strokeStyle(tool) {
+  const c = penCfg();
+  if (tool === 'highlighter') return { brush: 'highlighter', width: c.w.highlighter, alpha: 0.45, pressure: false };
+  const [, , pr, alpha] = BRUSHES[c.brush]; return { brush: c.brush, width: c.w[c.brush], alpha, pressure: pr };
+}
+// stylus pressure (with tilt, like shading with a pencil's side) squeezed into the chosen response range
+function pval(e) {
+  const c = touchCfg(); let p = e.pressure || 0.5;
+  if (c.tilt && (e.tiltX || e.tiltY)) p = Math.min(1, p * (1 + 0.5 * Math.min(1, Math.hypot(e.tiltX || 0, e.tiltY || 0) / 70)));
+  return Math.round((c.pLo + (c.pHi - c.pLo) * p) * 100) / 100;
+}
 const penIsDown = () => [...MP.ptrs.values()].some(p => p.type === 'pen');
 function palmLikely(e) {
   if (e.pointerType !== 'touch') return false;
@@ -4943,8 +5026,8 @@ function palmLikely(e) {
 }
 document.addEventListener('pointermove', e => { if (e.pointerType === 'pen') MP.penNear = Date.now(); }, { passive: true, capture: true });
 // iPad Safari: without this a Pencil stroke can start a page scroll or a text selection and be cancelled mid-line
-document.addEventListener('touchmove', e => { if (e.target.closest && e.target.closest('#map-vp') && !e.target.closest('.cv-tools,.cv-sub,.cv-ctx,.board-bar,.cv-overlay,input,textarea,select,[contenteditable]')) e.preventDefault(); }, { passive: false });
-document.addEventListener('touchstart', e => { if ([...e.touches].some(t => t.touchType === 'stylus') && e.target.closest && e.target.closest('#map-vp') && !e.target.closest('button,a,input,textarea,select,[contenteditable],.cv-tools,.cv-sub,.cv-ctx,.board-bar,.cv-overlay,.minimap')) e.preventDefault(); }, { passive: false });
+document.addEventListener('touchmove', e => { if (e.target.closest && e.target.closest('#map-vp') && !e.target.closest('.cv-tools,.cv-sub,.cv-ctx,.cv-panel,.board-bar,.cv-overlay,input,textarea,select,[contenteditable]')) e.preventDefault(); }, { passive: false });
+document.addEventListener('touchstart', e => { if ([...e.touches].some(t => t.touchType === 'stylus') && e.target.closest && e.target.closest('#map-vp') && !e.target.closest('button,a,input,textarea,select,[contenteditable],.cv-tools,.cv-sub,.cv-ctx,.cv-panel,.board-bar,.cv-overlay,.minimap')) e.preventDefault(); }, { passive: false });
 function toWorld(cx, cy) { const vp = $('#map-vp'); const r = vp.getBoundingClientRect(); return { x: (cx - r.left - UI.map.x) / UI.map.k, y: (cy - r.top - UI.map.y) / UI.map.k }; }
 function refAt(el) {
   const n = el && el.closest && el.closest('.mnode'); if (n && n.dataset.type !== 'item') return { k: 'n', id: n.dataset.node, tid: n.dataset.tid || null };
@@ -4983,7 +5066,7 @@ function eraseAt(e) {
 document.addEventListener('pointerdown', e => {
   const isPen = e.pointerType === 'pen', isTouch = e.pointerType === 'touch';
   const vp = e.target.closest && e.target.closest('#map-vp'); if (!vp || (e.button > 1 && !isPen)) return;
-  if (e.target.closest('.cv-tools,.cv-sub,.cv-ctx,.map-empty,.minimap,.present-bar,.board-bar,.cv-overlay,[contenteditable],input,textarea,select')) return;
+  if (e.target.closest('.cv-tools,.cv-sub,.cv-ctx,.cv-panel,.map-empty,.minimap,.present-bar,.board-bar,.cv-overlay,[contenteditable],input,textarea,select')) return;
   // palm rejection: while the stylus touches the screen every other touch is ignored, and once a stylus has been
   // used a broad touch (the side of a hand) is ignored too
   if (isTouch && palmLikely(e)) return;
@@ -4999,7 +5082,7 @@ document.addEventListener('pointerdown', e => {
   if (UI.cvEditing) commitEdit();
   MP.ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY, type: e.pointerType });
   if (MP.ptrs.size === 1) MP.downAt = Date.now();
-  if (MP.ptrs.size === 2) { const [a, b] = [...MP.ptrs.values()]; MP.pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), k: UI.map.k }; MP.mode = 'pinch'; UI.cvTemp = null; live(''); return; }
+  if (MP.ptrs.size === 2) { const [a, b] = [...MP.ptrs.values()]; MP.pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), k: UI.map.k, cx: (a.x + b.x) / 2, cy: (a.y + b.y) / 2 }; MP.mode = 'pinch'; clearTimeout(MP.holdT); UI.cvTemp = null; live(''); return; }
   let tool = e.button === 1 || UI.spaceDown ? 'hand' : UI.tool;
   let node = e.target.closest('.mnode'), bel = e.target.closest('[data-el]'); const rz = e.target.closest('[data-rz]');
   // locked layers cannot be picked: pressing on them moves the canvas
@@ -5008,18 +5091,31 @@ document.addEventListener('pointerdown', e => {
   // stylus: the eraser end or the side button erases; on empty canvas the pen draws whatever tool is chosen;
   // once a stylus has been used, a finger moves the canvas instead of drawing
   // the stylus draws without choosing the pen: over empty canvas, tasks and notes alike (a tap still selects or opens)
-  let auto = false;
-  if (isPen && (e.button === 5 || (e.buttons & 32) || (e.buttons & 2))) tool = 'eraser';
+  let auto = false; const tc = touchCfg();
+  // the stylus eraser end and side button do what Touch & stylus says (erase by default)
+  const btnAct = isPen ? (e.button === 5 || (e.buttons & 32) ? tc.eraserEnd : (e.buttons & 2) ? tc.side : null) : null;
+  if (btnAct === 'nothing') { MP.ptrs.delete(e.pointerId); return; }
+  if (btnAct) tool = btnAct;
   else if (isPen && ['select', 'hand'].includes(tool) && !rz && (St.settings.ui || {}).stylusDraw !== false) { tool = 'pen'; auto = true; }
-  else if (isTouch && penOnly() && ['pen', 'highlighter'].includes(tool)) tool = 'hand';
+  else if (isTouch && penOnly()) {
+    const fm = fingerMode();
+    if (fm === 'nothing') { MP.mode = 'idle'; return; }
+    if (fm === 'pan') tool = 'hand';
+    // a finger never draws; with the eraser chosen it still erases
+    else if (fm === 'select' && ['pen', 'highlighter', 'lasso'].includes(tool)) tool = 'select';
+  }
   MP.isPen = isPen;
   Object.assign(MP, { auto, tapNode: auto ? node : null, tapBel: auto ? bel : null,  sx: e.clientX, sy: e.clientY, w0: toWorld(e.clientX, e.clientY), mx: UI.map.x, my: UI.map.y, tool, node, bel, target: e.target, shift: e.shiftKey, far: false });
   vp.setPointerCapture && vp.setPointerCapture(e.pointerId);
   if (e.button === 1) e.preventDefault();
   // the ● on a box: drag it to another box to link them, whatever tool is chosen
   if (e.target.closest('[data-link]')) { const ref = refAt(e.target); if (ref) { MP.mode = 'connect'; MP.from = ref; MP.free = true; return; } }
-  if (tool === 'hand') { MP.mode = 'pan'; return; }
-  if (tool === 'pen' || tool === 'highlighter' || tool === 'lasso') { MP.mode = 'draw'; MP.tool = tool; MP.hold = false; MP.pts = [isPen ? [MP.w0.x, MP.w0.y, Math.round((e.pressure || .5) * 100) / 100] : [MP.w0.x, MP.w0.y]]; return; }
+  if (tool === 'hand') { MP.mode = 'pan'; holdStart(e, isPen); return; }
+  if (tool === 'pen' || tool === 'highlighter' || tool === 'lasso') {
+    MP.mode = 'draw'; MP.tool = tool; MP.hold = false; MP.style = strokeStyle(tool); MP.press = isPen && tool !== 'lasso' && MP.style.pressure && tc.pressure;
+    MP.pts = [MP.press ? [MP.w0.x, MP.w0.y, pval(e)] : [MP.w0.x, MP.w0.y]];
+    holdStart(e, isPen); return;
+  }
   if (tool === 'eraser') { MP.mode = 'erase'; MP.erased = new Set(); MP.eraseLast = null; eraseAt(e); return; }
   if (CREATE_TOOLS.includes(tool)) { MP.mode = 'create'; return; }
   if (tool === 'connector') { const ref = refAt(e.target); MP.mode = ref ? 'connect' : 'press-empty'; MP.from = ref; MP.free = false; return; }
@@ -5033,12 +5129,43 @@ document.addEventListener('pointerdown', e => {
   }
   if (node) { MP.mode = 'press-node'; return; }
   MP.mode = e.shiftKey ? 'marquee' : 'press-empty';
+  holdStart(e, isPen);
 });
+// tap & hold without moving: pick up the item under the pen or finger, start a lasso there, or take its colour
+function holdStart(e, isPen) {
+  const c = touchCfg(); clearTimeout(MP.holdT); MP.holdT = null;
+  if (c.holdAct === 'off' || (isPen && !c.penHold) || e.pointerType === 'mouse' || MP.ptrs.size > 1) return;
+  const pid = e.pointerId, cx = e.clientX, cy = e.clientY, target = e.target;
+  MP.holdT = setTimeout(() => {
+    MP.holdT = null; if (!MP.ptrs.has(pid) || MP.far || !['draw', 'pan', 'press-empty'].includes(MP.mode)) return;
+    const node = target.closest && target.closest('.mnode'), bel = target.closest && target.closest('[data-el]');
+    const flash = n => { if (!n || !c.holdFlash) return; n.classList.add('hold-flash'); setTimeout(() => n.classList.remove('hold-flash'), 450); };
+    try { navigator.vibrate && navigator.vibrate(12); } catch {}
+    if (c.holdAct === 'lasso') { MP.mode = 'draw'; MP.tool = 'lasso'; MP.auto = false; MP.press = false; MP.pts = [[MP.w0.x, MP.w0.y]]; live(''); toast('Lasso: draw around what you want to select.'); return; }
+    if (c.holdAct === 'color') {
+      const x = bel && St.board.get(bel.dataset.el); live(''); MP.mode = null;
+      if (x && x.color) { UI.cvColor = x.color; flash(bel); toast('🎨 Colour picked.'); render(); }
+      return;
+    }
+    // item picker: the item is selected and follows the pen or finger
+    if (bel && !node && !elLocked(St.board.get(bel.dataset.el))) { live(''); const id = bel.dataset.el; UI.cvSel = new Set([id]); MP.elId = id; MP.mode = 'press-el'; MP.sx = cx; MP.sy = cy; MP.far = false; renderWorld(); flash(document.querySelector(`[data-el="${CSS.escape(id)}"]`)); }
+    else if (node && !layerSet('tasks').lock) { live(''); MP.node = node; MP.mode = 'press-node'; MP.sx = cx; MP.sy = cy; MP.far = false; flash(node); }
+  }, Math.max(150, c.holdMs));
+}
 document.addEventListener('pointermove', e => {
   if (!MP.ptrs.has(e.pointerId)) return;
   MP.ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY, type: e.pointerType });
   const vp = $('#map-vp'); if (!vp || !MP.mode) return;
-  if (MP.mode === 'pinch') { if (MP.ptrs.size === 2) { const [a, b] = [...MP.ptrs.values()]; const d = Math.hypot(a.x - b.x, a.y - b.y); const r = vp.getBoundingClientRect(); mapZoom((MP.pinch.k * d / MP.pinch.d) / UI.map.k, (a.x + b.x) / 2 - r.left, (a.y + b.y) / 2 - r.top); } return; }
+  if (MP.mode === 'idle') return;
+  if (MP.mode === 'pinch') {
+    if (MP.ptrs.size === 2) {
+      const [a, b] = [...MP.ptrs.values()], d = Math.hypot(a.x - b.x, a.y - b.y), r = vp.getBoundingClientRect(), cx = (a.x + b.x) / 2, cy = (a.y + b.y) / 2;
+      UI.map.x += cx - MP.pinch.cx; UI.map.y += cy - MP.pinch.cy; MP.pinch.cx = cx; MP.pinch.cy = cy;
+      if (touchCfg().zoom && !zoomLocked()) mapZoom((MP.pinch.k * d / MP.pinch.d) / UI.map.k, cx - r.left, cy - r.top); else applyCam(false);
+    }
+    return;
+  }
+  if (MP.holdT && Math.hypot(e.clientX - MP.sx, e.clientY - MP.sy) > 6) { clearTimeout(MP.holdT); MP.holdT = null; }
   const dx = e.clientX - MP.sx, dy = e.clientY - MP.sy, k = UI.map.k;
   if (!MP.far && Math.hypot(dx, dy) > 5) MP.far = true;
   const w = toWorld(e.clientX, e.clientY), w0 = MP.w0;
@@ -5047,11 +5174,11 @@ document.addEventListener('pointermove', e => {
     case 'pan': UI.map.x = MP.mx + dx; UI.map.y = MP.my + dy; applyCam(false); return;
     case 'draw': {
       const l = MP.pts[MP.pts.length - 1]; if (Math.hypot(w.x - l[0], w.y - l[1]) * k < 2) return;
-      MP.pts.push(MP.isPen ? [Math.round(w.x * 10) / 10, Math.round(w.y * 10) / 10, Math.round((e.pressure || .5) * 100) / 100] : [Math.round(w.x * 10) / 10, Math.round(w.y * 10) / 10]);
-      const hl = MP.tool === 'highlighter';
+      MP.pts.push(MP.press ? [Math.round(w.x * 10) / 10, Math.round(w.y * 10) / 10, pval(e)] : [Math.round(w.x * 10) / 10, Math.round(w.y * 10) / 10]);
+      const hl = MP.tool === 'highlighter', st = MP.style || strokeStyle(MP.tool), col = colorCss(hl && UI.cvColor === 'ink' ? '#FFD966' : UI.cvColor);
       if (MP.tool === 'lasso') { live(`<path d="${strokePath(MP.pts)}" stroke="var(--accent)" stroke-width="${2 / k}" stroke-dasharray="${6 / k} ${5 / k}" fill="color-mix(in srgb, var(--accent) 8%, transparent)"/>`); return; }
-      if (MP.isPen && !hl) { live(`<path d="${pressurePath(MP.pts, UI.cvWidth)}" fill="${colorCss(UI.cvColor)}" stroke="none"/>`); return; }
-      live(`<path d="${strokePath(MP.pts)}" stroke="${colorCss(hl && UI.cvColor === 'ink' ? '#FFD966' : UI.cvColor)}" stroke-width="${hl ? 18 : UI.cvWidth}" ${hl ? 'stroke-opacity=".45"' : ''} fill="none" stroke-linecap="round" stroke-linejoin="round"/>`); return;
+      if (MP.press) { live(`<path d="${pressurePath(MP.pts, st.width)}" fill="${col}" ${st.alpha ? `fill-opacity="${st.alpha}"` : ''} stroke="none"/>`); return; }
+      live(`<path d="${strokePath(MP.pts)}" stroke="${col}" stroke-width="${st.width}" ${st.alpha ? `stroke-opacity="${st.alpha}"` : ''} fill="none" stroke-linecap="round" stroke-linejoin="round"/>`); return;
     }
     case 'erase': eraseAt(e); return;
     case 'create': {
@@ -5089,7 +5216,9 @@ function endPointer(e) {
   if (e.pointerType === 'pen') { MP.penDown = false; MP.penUpAt = Date.now(); }
   if (!MP.ptrs.has(e.pointerId)) return;
   MP.ptrs.delete(e.pointerId);
-  if (MP.mode === 'pinch') { if (MP.ptrs.size === 0) MP.mode = null; return; }
+  clearTimeout(MP.holdT); MP.holdT = null;
+  if (MP.mode === 'pinch') { if (MP.ptrs.size === 0) { MP.mode = null; zoomSnapEnd(); } return; }
+  if (MP.mode === 'idle') { if (MP.ptrs.size === 0) MP.mode = null; return; }
   // a stroke the browser cancelled part way (a system gesture, the page trying to scroll) is kept as drawn
   const mode = MP.mode, up = e.type === 'pointerup' || (e.type === 'pointercancel' && mode === 'draw' && MP.tool !== 'lasso' && MP.pts && MP.pts.length > 2); MP.mode = null;
   const tmp = UI.cvTemp, drop = UI.cvDrop; UI.cvTemp = null; UI.cvDrop = null; live('');
@@ -5115,7 +5244,8 @@ function finishPointer(mode, e, w, tmp, drop) {
       for (const h of STROKE_HOOKS) { try { if (h(MP.pts, { tool: MP.tool, isPen: MP.isPen, hold: MP.hold, auto: MP.auto, e })) return true; } catch (err) { console.warn(err); } }
       const hl = MP.tool === 'highlighter';
       const pts = MP.pts.length > 1500 ? MP.pts.filter((_, i) => i % Math.ceil(MP.pts.length / 1500) === 0) : MP.pts;
-      const el = newEl('stroke', { pts, width: hl ? 18 : UI.cvWidth, alpha: hl ? 0.45 : 0, color: hl && UI.cvColor === 'ink' ? '#FFD966' : UI.cvColor, kind: MP.tool, ...(MP.isPen && !hl ? { pressure: true } : {}) });
+      const st = MP.style || strokeStyle(MP.tool);
+      const el = newEl('stroke', { pts, width: st.width, alpha: st.alpha || 0, color: hl && UI.cvColor === 'ink' ? '#FFD966' : UI.cvColor, kind: MP.tool, brush: st.brush, ...(MP.press ? { pressure: true } : {}) });
       cvApply({ els: { [el.id]: el } }); render(); return true;
     }
     case 'erase': {
@@ -6788,7 +6918,7 @@ const ACT = {
     toast(`⊞ ${n} box${n === 1 ? '' : 'es'} rearranged.`, { action: 'Undo', fn: cvUndo });
   },
   'map-reset-layout': () => { cvApply({ layout: { ...newLayout(), [offKey()]: {}, size: {} } }); UI.map.fitted = false; render(); toast('↺ Layout tidied.', { action: 'Undo', fn: cvUndo }); },
-  'cv-tool': el => { UI.tool = el.dataset.tool; if (UI.tool !== 'select') UI.cvSel.clear(); render(); },
+  'cv-tool': el => { const t = el.dataset.tool; UI.toolPanel = UI.tool === t ? !UI.toolPanel : true; UI.tool = t; if (t !== 'select') UI.cvSel.clear(); render(); },
   'cv-color': el => { UI.cvColor = el.dataset.c; render(); },
   'cv-recolor': el => { const ch = { els: {} }; for (const id of UI.cvSel) { const x = St.board.get(id); if (x) ch.els[id] = { ...x, color: el.dataset.c }; } UI.cvColor = el.dataset.c; cvApply(ch); render(); },
   'cv-conn': el => { const id = [...UI.cvSel][0], c = St.board.get(id); if (!c || c.type !== 'connector') return; const k = el.dataset.k; const n = { ...c, [k]: k === 'shape' ? (c.shape === 'straight' ? 'smart' : c.shape === 'curve' ? 'straight' : 'curve') : k === 'arrow' ? c.arrow === false : !c.dash }; cvApply({ els: { [id]: n } }); render(); },
@@ -7850,7 +7980,8 @@ function presentBarHTML() {
 }
 function fitBox(b) {
   const vp = $('#map-vp'); if (!vp || !b) return;
-  const W = vp.clientWidth, H = vp.clientHeight, k = Math.max(0.2, Math.min(1.4, (W - 120) / b.w, (H - 140) / b.h));
+  // with the zoom locked the box is only centred
+  const W = vp.clientWidth, H = vp.clientHeight, k = zoomLocked() ? UI.map.k : Math.max(0.2, Math.min(1.4, (W - 120) / b.w, (H - 140) / b.h));
   UI.map.k = k; UI.map.x = W / 2 - (b.x + b.w / 2) * k; UI.map.y = (H - 40) / 2 - (b.y + b.h / 2) * k; UI.map.fitted = true; applyCam(true);
 }
 function presentGo(i) {
@@ -13188,7 +13319,8 @@ HOOKS.ready.push(() => {
 
 /* ===== features/27-pen.js ===== */
 /* ---------- tablet: finger shortcuts on the canvas ---------- */
-// Two-finger tap undoes, three-finger tap redoes (as in drawing apps). Pinch and two-finger drag still zoom and move;
+// Two-finger tap undoes, three-finger tap redoes, four fingers lock the zoom (as in drawing apps; each can be changed
+// in Touch & stylus). Pinch and two-finger drag still zoom and move;
 // the stylus itself — pressure, eraser end, side button, palm rejection — is handled with the other canvas pointers.
 const FT = { n: 0, max: 0, t0: 0, moved: false, start: new Map() };
 document.addEventListener('pointerdown', e => {
@@ -13203,8 +13335,7 @@ const ftEnd = e => {
   if (!FT.start.has(e.pointerId)) return;
   FT.start.delete(e.pointerId); FT.n = Math.max(0, FT.n - 1);
   if (FT.n || FT.moved || Date.now() - FT.t0 > 350 || FT.max < 2 || e.type === 'pointercancel') return;
-  if (FT.max === 2) { if (UI.cvUndo.length) { cvUndo(); toast('↶ Undone'); } }
-  else if (UI.cvRedo.length) { cvRedo(); toast('↷ Redone'); }
+  fingerTapAct(Math.min(4, FT.max));
 };
 document.addEventListener('pointerup', ftEnd, true);
 document.addEventListener('pointercancel', ftEnd, true);
@@ -13804,7 +13935,7 @@ function cleanShape(pts, bb) {
 }
 // hold the pen still at the end of a stroke: show the clean shape it will become
 document.addEventListener('pointermove', e => {
-  if (MP.mode !== 'draw' || MP.tool !== 'pen' || MP.auto || !penSmart()) return;
+  if (MP.mode !== 'draw' || MP.tool !== 'pen' || !touchCfg().shapes) return;
   const p = [e.clientX, e.clientY];
   if (PEN.last && Math.hypot(p[0] - PEN.last[0], p[1] - PEN.last[1]) < 4) return;
   PEN.last = p; MP.hold = false; clearTimeout(PEN.holdT);
@@ -13817,7 +13948,7 @@ document.addEventListener('pointermove', e => {
       : sh.kind === 'diamond' ? `<path d="M${bb.x + bb.w / 2} ${bb.y}L${bb.x + bb.w} ${bb.y + bb.h / 2}L${bb.x + bb.w / 2} ${bb.y + bb.h}L${bb.x} ${bb.y + bb.h / 2}z" ${st}/>`
         : sh.kind === 'triangle' ? `<path d="M${bb.x + bb.w / 2} ${bb.y}L${bb.x + bb.w} ${bb.y + bb.h}L${bb.x} ${bb.y + bb.h}z" ${st}/>` : `<rect x="${bb.x}" y="${bb.y}" width="${bb.w}" height="${bb.h}" rx="${4 / k}" ${st}/>`;
     const lv = document.getElementById('cv-live'); if (lv) lv.innerHTML += g;
-  }, 520);
+  }, Math.max(200, touchCfg().shapeMs));
 });
 document.addEventListener('pointerup', () => { clearTimeout(PEN.holdT); PEN.last = null; }, true);
 
@@ -13836,45 +13967,48 @@ STROKE_HOOKS.push((pts, info) => {
     UI.tool = 'select'; render(); if (!n) toast('Nothing inside — draw around the boxes to select them.');
     return true;
   }
-  // gestures belong to the pen tool; the stylus drawing on its own (no tool chosen) always leaves plain ink
-  if (info.tool !== 'pen' || info.auto || !penSmart()) return false;
+  if (info.tool !== 'pen') return false;
   const boxes = boxesNow();
-  // ✓ over a task
-  if (isTick(pts, bb, k)) {
-    const b = boxAt(bb.x + bb.w / 2, bb.y + bb.h / 2, boxes) || boxAt(pts[0][0], pts[0][1], boxes);
-    if (b && b.kind === 'n' && b.n.type === 'task') {
-      const t = b.n.t; undoable({ [t.id]: true }, () => ACT['toggle-done']({ dataset: { id: t.id } }));
-      toast(`${t.status === 'done' ? '↺ Reopened' : '✓ Done'}: ${t.ref || ''} ${E.clip(t.title, 50)}`, { action: 'Undo', fn: cvUndo }); return true;
+  // gestures belong to the pen tool; the stylus drawing on its own (no tool chosen) leaves plain ink, and only a
+  // deliberate hold at the end of a stroke changes it (into a clean shape)
+  if (!info.auto && penSmart()) {
+    // ✓ over a task
+    if (isTick(pts, bb, k)) {
+      const b = boxAt(bb.x + bb.w / 2, bb.y + bb.h / 2, boxes) || boxAt(pts[0][0], pts[0][1], boxes);
+      if (b && b.kind === 'n' && b.n.type === 'task') {
+        const t = b.n.t; undoable({ [t.id]: true }, () => ACT['toggle-done']({ dataset: { id: t.id } }));
+        toast(`${t.status === 'done' ? '↺ Reopened' : '✓ Done'}: ${t.ref || ''} ${E.clip(t.title, 50)}`, { action: 'Undo', fn: cvUndo }); return true;
+      }
+      if (b && b.kind === 'n' && b.n.type === 'item') { const t = b.n.t && St.tasks.get(b.n.t.id); if (t && b.n.s) { undoable({ [t.id]: true }, () => toggleSub(t.id, b.n.s.id)); render(); return true; } }
     }
-    if (b && b.kind === 'n' && b.n.type === 'item') { const t = b.n.t && St.tasks.get(b.n.t.id); if (t && b.n.s) { undoable({ [t.id]: true }, () => toggleSub(t.id, b.n.s.id)); render(); return true; } }
-  }
-  // scribble over a box
-  if (isScribble(pts, bb, k)) {
-    const b = boxAt(bb.x + bb.w / 2, bb.y + bb.h / 2, boxes);
-    if (b && b.kind === 'n' && ['task', 'item', 'topic', 'project'].includes(b.n.type)) { const node = document.querySelector(`.mnode[data-node="${CSS.escape(b.id)}"]`); if (node) { deleteNode(node); return true; } }
-    if (b && b.kind === 'e') {
-      const ch = { els: { [b.id]: null } };
-      for (const c of St.board.values()) if (c.type === 'connector' && (c.from.id === b.id || c.to.id === b.id)) ch.els[c.id] = null;
-      cvApply(ch); render(); toast('Deleted.', { action: 'Undo', fn: cvUndo }); return true;
+    // scribble over a box
+    if (isScribble(pts, bb, k)) {
+      const b = boxAt(bb.x + bb.w / 2, bb.y + bb.h / 2, boxes);
+      if (b && b.kind === 'n' && ['task', 'item', 'topic', 'project'].includes(b.n.type)) { const node = document.querySelector(`.mnode[data-node="${CSS.escape(b.id)}"]`); if (node) { deleteNode(node); return true; } }
+      if (b && b.kind === 'e') {
+        const ch = { els: { [b.id]: null } };
+        for (const c of St.board.values()) if (c.type === 'connector' && (c.from.id === b.id || c.to.id === b.id)) ch.els[c.id] = null;
+        cvApply(ch); render(); toast('Deleted.', { action: 'Undo', fn: cvUndo }); return true;
+      }
     }
-  }
-  const closed = isClosed(pts, bb);
-  // a fairly straight line from one box to another (handwriting that wanders across two boxes stays ink)
-  if (!closed && !info.hold && Math.hypot(pts[0][0] - pts[pts.length - 1][0], pts[0][1] - pts[pts.length - 1][1]) > 0.8 * plen(pts)) {
-    const a = boxAt(pts[0][0], pts[0][1], boxes), z = boxAt(pts[pts.length - 1][0], pts[pts.length - 1][1], boxes);
-    if (a && z && a.id !== z.id && !(a.frame && z.frame) && Math.hypot(bb.w, bb.h) * k > 40) {
-      const ref = b => b.kind === 'n' ? { k: 'n', id: b.id } : { k: 'e', id: b.id };
-      const el = newEl('connector', { from: ref(a), to: ref(z), width: 2.5 });
-      cvApply({ els: { [el.id]: el } }); render(); return true;
+    const closed = isClosed(pts, bb);
+    // a fairly straight line from one box to another (handwriting that wanders across two boxes stays ink)
+    if (!closed && !info.hold && Math.hypot(pts[0][0] - pts[pts.length - 1][0], pts[0][1] - pts[pts.length - 1][1]) > 0.8 * plen(pts)) {
+      const a = boxAt(pts[0][0], pts[0][1], boxes), z = boxAt(pts[pts.length - 1][0], pts[pts.length - 1][1], boxes);
+      if (a && z && a.id !== z.id && !(a.frame && z.frame) && Math.hypot(bb.w, bb.h) * k > 40) {
+        const ref = b => b.kind === 'n' ? { k: 'n', id: b.id } : { k: 'e', id: b.id };
+        const el = newEl('connector', { from: ref(a), to: ref(z), width: 2.5 });
+        cvApply({ els: { [el.id]: el } }); render(); return true;
+      }
     }
-  }
-  // a loop around boxes selects them (a loop drawn from inside a box stays ink: you were circling it on purpose)
-  if (closed && !info.hold && !boxAt(pts[0][0], pts[0][1], boxes)) {
-    const inside = boxes.filter(b => !b.frame && inPoly(b.x + b.w / 2, b.y + b.h / 2, pts) && b.w < bb.w && b.h < bb.h);
-    if (inside.length) { selectInside(pts); render(); toast(`${UI.cvSel.size + UI.lassoTasks.size} selected.`); return true; }
+    // a loop around boxes selects them (a loop drawn from inside a box stays ink: you were circling it on purpose)
+    if (closed && !info.hold && !boxAt(pts[0][0], pts[0][1], boxes)) {
+      const inside = boxes.filter(b => !b.frame && inPoly(b.x + b.w / 2, b.y + b.h / 2, pts) && b.w < bb.w && b.h < bb.h);
+      if (inside.length) { selectInside(pts); render(); toast(`${UI.cvSel.size + UI.lassoTasks.size} selected.`); return true; }
+    }
   }
   // held still at the end: the clean shape
-  if (info.hold) {
+  if (info.hold && touchCfg().shapes) {
     const sh = cleanShape(pts, bb); if (!sh) return false;
     const col = UI.cvColor;
     const el = sh.kind === 'line' ? newEl('line', { x1: sh.a[0], y1: sh.a[1], x2: sh.b[0], y2: sh.b[1], width: UI.cvWidth, color: col })
@@ -14880,6 +15014,158 @@ SETUP_EXTRA.push(() => `<section class="card pad" data-sec="Site mode" style="di
   <p class="small muted" style="margin:0">For site visits: big text, black on white for sunlight, thick lines and large buttons. It applies to this device only.</p>
   <label class="check"><input type="checkbox" data-chg="site-mode" ${siteOn() ? 'checked' : ''}>Use site mode on this device</label></section>`);
 CHG['site-mode'] = el => { if (!!el.checked !== siteOn()) siteToggle(); };
+
+/* ===== features/39-touch.js ===== */
+/* ---------- touch & stylus settings, pen panel, zoom lock, menus that scroll ---------- */
+// ⚙ on the canvas opens Touch & stylus: what a finger does once a stylus is used, two-finger zoom and zoom snap,
+// tap & hold (item picker, lasso, colour picker), draw & hold (clean shapes), two/three/four-finger taps, pressure
+// response, tilt, hover preview, and what the side button and the eraser end do. Choosing the pen (or any drawing
+// tool) opens its panel: pen type, width and colours. 🔒 on the canvas locks the zoom where it is.
+function saveTouch(patch) { const u = St.settings.ui || {}; saveSettingsUi({ touch: { ...(u.touch || {}), ...patch } }); }
+function savePen(patch) { const u = St.settings.ui || {}; const p = u.pen || {}; saveSettingsUi({ pen: { ...p, ...patch, w: { ...(p.w || {}), ...(patch.w || {}) } } }); }
+
+/* --- the pen panel: inside the tool --- */
+const PANEL_TOOLS = ['pen', 'highlighter', 'sticky', 'text', 'rect', 'ellipse', 'diamond', 'arrow', 'line', 'connector', 'frame'];
+const BRUSH_PREVIEW = 'M5 17c5-10 10-12 14-6s8 6 12-2 8-6 12 2';
+function toolPanelHTML() {
+  if (!PANEL_TOOLS.includes(UI.tool) || !UI.toolPanel || St.mode === 'viewer') return '';
+  const t = UI.tool, pc = penCfg(), lineish = ['arrow', 'line', 'connector'].includes(t);
+  const title = (TOOLS.find(x => x[0] === t) || [])[2] || t;
+  const wKey = t === 'highlighter' ? 'highlighter' : t === 'pen' ? pc.brush : lineish ? 'line' : '';
+  const wVal = wKey === 'line' ? UI.cvWidth : wKey ? pc.w[wKey] : 0;
+  const custom = /^#[0-9a-f]{6}$/i.test(UI.cvColor) && !PALETTE.includes(UI.cvColor);
+  const brushes = t === 'pen' ? `<div class="cvp-row cvp-brushes" role="group" aria-label="Pen type">${Object.entries(BRUSHES).map(([k, [label, , pr, a]]) => `<button class="cvp-brush ${pc.brush === k ? 'on' : ''}" data-act="pen-brush" data-b="${k}" aria-pressed="${pc.brush === k}" title="${esc(label)}${pr ? ' — pressure changes the width' : ''}"><svg viewBox="0 0 48 24" aria-hidden="true"><path d="${BRUSH_PREVIEW}" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="${k === 'marker' ? 6 : k === 'pen' ? 3 : 1.8}" ${a ? `stroke-opacity="${a}"` : ''} ${k === 'pencil' ? 'stroke-dasharray="1.5 1"' : ''}/></svg><span>${esc(label)}</span></button>`).join('')}</div>` : '';
+  const width = wKey ? `<label class="cvp-row cvp-width"><span class="small">Width</span><input type="range" id="cvp-w" min="1" max="${t === 'highlighter' ? 48 : 40}" step="1" value="${wVal}" data-chg="pen-width" data-k="${wKey}" aria-label="Width"><span class="cvp-dot" style="--d:${Math.min(40, wVal)}px;--c:${colorCss(t === 'highlighter' && UI.cvColor === 'ink' ? '#FFD966' : UI.cvColor)}"></span><b class="small cvp-wv">${wVal}</b></label>` : '';
+  return `<div class="cv-panel" role="dialog" aria-label="${esc(title)} options">
+    <div class="cvp-head"><b>${esc(String(title).split(' — ')[0])}</b><button class="btn sm ghost" data-act="tool-panel-close" aria-label="Close">✕</button></div>
+    ${brushes}${width}
+    <div class="cvp-row cvp-colors" role="group" aria-label="Colour">${PALETTE.map(c => `<button class="sw ${UI.cvColor === c ? 'on' : ''}" data-act="cv-color" data-c="${c}" style="--c:${colorCss(c)}" aria-label="Colour ${c}" aria-pressed="${UI.cvColor === c}"></button>`).join('')}
+      <label class="sw sw-custom ${custom ? 'on' : ''}" title="Any colour" style="--c:${custom ? UI.cvColor : 'conic-gradient(red, yellow, lime, cyan, blue, magenta, red)'}"><input type="color" data-chg="cv-color-custom" value="${custom ? UI.cvColor : '#0a6b74'}" aria-label="Any colour"></label></div>
+  </div>`;
+}
+// the panel opens from the tool button and folds away as soon as you draw or click on the canvas
+document.addEventListener('pointerdown', e => {
+  if (!UI.toolPanel || !e.target.closest || !e.target.closest('#map-vp') || e.target.closest('.cv-panel,.cv-tools,.cv-sub')) return;
+  UI.toolPanel = false; const p = document.querySelector('.cv-panel'); if (p) p.remove();
+}, true);
+Object.assign(ACT, {
+  'pen-brush': el => { savePen({ brush: el.dataset.b }); render(); },
+  'tool-panel-close': () => { UI.toolPanel = false; render(); },
+  'zoom-lock': () => { const on = !zoomLocked(); saveTouch({ zoomLock: on }); toast(on ? `🔒 Zoom locked at ${Math.round(UI.map.k * 100)}%.` : '🔓 Zoom unlocked.'); render(); },
+  'touch-open': () => { UI.touchOpen = true; UI.menuOpen = ''; closeMenus(); tsRender(); },
+  'touch-close': () => { UI.touchOpen = false; tsRender(); },
+  'ts-set': el => { saveTouch({ [el.dataset.k]: el.dataset.v }); tsRender(); render(); },
+  'ts-reset': () => { saveSettingsUi({ touch: {} }); tsRender(); render(); toast('Touch & stylus settings reset.'); },
+});
+Object.assign(CHG, {
+  'pen-width': el => { const v = Math.max(1, Math.min(48, +el.value || 1)), k = el.dataset.k; if (k === 'line') UI.cvWidth = v; else savePen({ w: { [k]: v } }); render(); },
+  'cv-color-custom': el => { UI.cvColor = el.value; render(); },
+  'ts-bool': el => { const k = el.dataset.k; if (k === 'stylusDraw' || k === 'penGestures') saveSettingsUi({ [k]: !!el.checked }); else saveTouch({ [k]: !!el.checked }); tsRender(); render(); },
+  'ts-num': el => { const k = el.dataset.k, v = +el.value; const c = touchCfg(); if (k === 'pLo') saveTouch({ pLo: Math.min(v / 100, c.pHi - 0.05) }); else if (k === 'pHi') saveTouch({ pHi: Math.max(v / 100, c.pLo + 0.05) }); else saveTouch({ [k]: v }); tsRender(); },
+});
+// sliders show their value while they move; the setting is saved when you let go
+document.addEventListener('input', e => {
+  const el = e.target;
+  if (el.id === 'cvp-w') { const p = el.closest('.cv-panel'); p.querySelector('.cvp-dot').style.setProperty('--d', Math.min(40, +el.value) + 'px'); p.querySelector('.cvp-wv').textContent = el.value; }
+  if (el.dataset && el.dataset.chg === 'ts-num') { const o = el.closest('.ts-field') && el.closest('.ts-field').querySelector('.ts-val'); if (o) o.textContent = tsFmt(el.dataset.k, +el.value); }
+});
+
+/* --- the Touch & stylus sheet --- */
+const tsFmt = (k, v) => k === 'pLo' || k === 'pHi' ? v + '%' : (v / 1000).toFixed(2).replace(/0$/, '') + ' s';
+const IC = {
+  x: '<path d="M6 6l12 12M18 6 6 18"/>', tool: '<path d="M4 20c4-1 6-3 9-8l3-5 2 1-3 5c-3 5-6 7-11 7z"/>', pan: '<path d="M12 3v18M3 12h18M12 3l-3 3m3-3 3 3M12 21l-3-3m3 3 3-3M3 12l3-3m-3 3 3 3M21 12l-3-3m3 3-3 3"/>',
+  select: '<path d="M5 3l14 8-6 2-3 6z"/>', pick: '<path d="M12 5v14M5 12h14"/>', lasso: '<path d="M12 5c5 0 8 2 8 4.5S16.4 14 12 14s-8-2-8-4.5S7 5 12 5z" stroke-dasharray="3 2.5"/><path d="M7 13c-1 2-1 4 1 5"/>',
+  color: '<path d="M14 4l6 6-9 9H5v-6z"/><path d="M12 6l6 6"/>', undo: '<path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/>', redo: '<path d="m15 14 5-5-5-5"/><path d="M20 9H9a5 5 0 0 0 0 10h3"/>',
+  lock: '<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>', fit: '<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>', all: '<rect x="4" y="4" width="16" height="16" rx="2" stroke-dasharray="3 2"/><path d="M9 12l2 2 4-4"/>',
+  ui: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/>', eraser: '<path d="M8 20h12M4 15l9-9 6 6-7 7H8z"/>',
+};
+function tsChoice(k, cur, opts) {
+  return `<div class="ts-choices" role="radiogroup">${opts.map(([v, label, ic]) => `<button class="ts-choice ${cur === v ? 'on' : ''}" role="radio" aria-checked="${cur === v}" data-act="ts-set" data-k="${k}" data-v="${v}"><span class="ts-ic">${svg(IC[ic] || IC.x, 22)}</span><span class="ts-lbl">${esc(label)}</span></button>`).join('')}</div>`;
+}
+const tsTog = (k, label, on, sub) => `<label class="ts-tog"><span>${esc(label)}${sub ? `<small>${esc(sub)}</small>` : ''}</span><input type="checkbox" role="switch" data-chg="ts-bool" data-k="${k}" ${on ? 'checked' : ''}><i aria-hidden="true"></i></label>`;
+const tsRange = (k, label, v, min, max, step) => `<div class="ts-field"><div class="ts-row"><b>${esc(label)}</b><span class="ts-val">${tsFmt(k, v)}</span></div><input type="range" data-chg="ts-num" data-k="${k}" min="${min}" max="${max}" step="${step}" value="${v}" aria-label="${esc(label)}"></div>`;
+function tsHTML() {
+  const c = touchCfg(), u = St.settings.ui || {};
+  const taps = [['nothing', 'Do nothing', 'x'], ['undo', 'Undo', 'undo'], ['redo', 'Redo', 'redo']];
+  const pens = [['nothing', 'Do nothing', 'x'], ['select', 'Select', 'select'], ['eraser', 'Eraser', 'eraser'], ['lasso', 'Lasso', 'lasso']];
+  return `<div class="ts-head"><button class="btn sm ghost" data-act="touch-close" aria-label="Close">✕</button><b>Touch & stylus</b><span class="spacer"></span><button class="btn sm ghost" data-act="ts-reset">Reset</button></div>
+  <div class="ts-body">
+    <h2>Touch input</h2>
+    <section><h3>Finger action</h3><p>While your stylus draws, a finger can do something else. ${UI.penSeen ? '' : 'Until a stylus is used on this device, a finger uses the chosen tool.'}</p>
+      ${tsChoice('finger', fingerMode(), [['nothing', 'Do nothing', 'x'], ['tool', 'Use active tool', 'tool'], ['pan', 'Pan canvas', 'pan'], ['select', 'Select', 'select']])}</section>
+    <section><h3>Two fingers</h3><p>Use two fingers to move and zoom the canvas.</p>
+      <div class="ts-grid">${tsTog('zoom', 'Enable canvas zoom', c.zoom)}${tsTog('zoomSnap', 'Enable zoom snap', c.zoomSnap, '25 %, 50 %, 100 %…')}${tsTog('zoomLock', 'Lock the zoom', c.zoomLock, `now ${Math.round(UI.map.k * 100)} %`)}</div></section>
+    <section><h3>Tap & hold</h3><p>Hold still on the canvas for a moment to pick things up.</p>
+      ${tsChoice('holdAct', c.holdAct, [['off', 'Do nothing', 'x'], ['pick', 'Item picker', 'pick'], ['lasso', 'Lasso', 'lasso'], ['color', 'Colour picker', 'color']])}
+      ${tsRange('holdMs', 'Activation time', c.holdMs, 150, 1000, 50)}
+      ${tsTog('holdFlash', 'Highlight selection', c.holdFlash)}</section>
+    <section><h3>Draw & hold</h3><p>At the end of your stroke, stay still: a rough shape snaps clean.</p>
+      ${tsTog('shapes', 'Enable shape recognition', c.shapes)}
+      ${tsRange('shapeMs', 'Activation time', c.shapeMs, 200, 1200, 50)}
+      ${tsTog('penGestures', 'Smart pen gestures (Pen tool)', u.penGestures !== false, '✓ marks done · scribble deletes · a straight line links two boxes · a loop selects')}</section>
+    <section><h3>Two finger tap</h3>${tsChoice('tap2', c.tap2, taps)}</section>
+    <section><h3>Three finger tap</h3>${tsChoice('tap3', c.tap3, taps)}</section>
+    <section><h3>Four finger tap</h3>${tsChoice('tap4', c.tap4, [['lock', 'Toggle zoom lock', 'lock'], ['fit', 'Fit to screen', 'fit'], ['all', 'Select all', 'all'], ['ui', 'Toggle interface', 'ui'], ['nothing', 'Do nothing', 'x']])}</section>
+    <h2>Stylus</h2>
+    <section>${tsTog('stylusDraw', 'The stylus draws without choosing the pen', u.stylusDraw !== false, 'a tap still selects or opens')}</section>
+    <section><h3>Pressure response</h3><p>Narrow the range for a less noticeable effect of pressing harder.</p>
+      <div class="ts-pair">${tsRange('pLo', 'Lightest', Math.round(c.pLo * 100), 0, 95, 5)}${tsRange('pHi', 'Hardest', Math.round(c.pHi * 100), 5, 100, 5)}</div></section>
+    <section><h3>Preferences</h3>
+      ${tsTog('pressure', 'Enable pressure', c.pressure)}${tsTog('tilt', 'Enable tilt', c.tilt, 'a tilted pen draws a little wider')}${tsTog('penHold', 'Enable tap & hold', c.penHold)}${tsTog('hover', 'Enable hover brush previews', c.hover, 'for pens that sense the screen before touching it')}</section>
+    <section><h3>Side button</h3><p>What the stylus does while its side button is held.</p>${tsChoice('side', c.side, pens)}</section>
+    <section><h3>Eraser action</h3><p>What the eraser end of a compatible stylus does.</p>${tsChoice('eraserEnd', c.eraserEnd, pens)}</section>
+  </div>`;
+}
+function tsRender() {
+  let el = document.getElementById('touch-sheet');
+  if (!UI.touchOpen) { if (el) el.hidden = true; return; }
+  if (!el) { el = document.createElement('div'); el.id = 'touch-sheet'; el.className = 'ts-sheet'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Touch and stylus settings'); document.body.appendChild(el); }
+  const b = el.querySelector('.ts-body'), top = b ? b.scrollTop : 0;
+  el.hidden = false; el.innerHTML = deco(tsHTML());
+  const nb = el.querySelector('.ts-body'); if (nb) nb.scrollTop = top;
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && UI.touchOpen) { UI.touchOpen = false; tsRender(); } });
+HOOKS.beforeRender.push(() => { if (UI.view !== 'todo' && UI.touchOpen) { UI.touchOpen = false; tsRender(); } });
+
+/* --- four-finger tap and the hidden interface --- */
+function fingerTapAct(n) {
+  const c = touchCfg(), a = n === 2 ? c.tap2 : n === 3 ? c.tap3 : c.tap4;
+  if (a === 'undo') { if (UI.cvUndo.length) { cvUndo(); toast('↶ Undone'); } }
+  else if (a === 'redo') { if (UI.cvRedo.length) { cvRedo(); toast('↷ Redone'); } }
+  else if (a === 'lock') ACT['zoom-lock']();
+  else if (a === 'fit') mapFit(false);
+  else if (a === 'all') { UI.cvSel = new Set(boardEls().filter(x => x.type !== 'connector').map(x => x.id)); renderWorld(); }
+  else if (a === 'ui') { document.body.classList.toggle('cv-clean'); toast(document.body.classList.contains('cv-clean') ? 'Interface hidden — tap with four fingers to bring it back.' : 'Interface shown.'); }
+}
+
+/* --- hover preview: a ring the size and colour of the pen, while a pen hovers above the screen --- */
+document.addEventListener('pointermove', e => {
+  if (e.pointerType !== 'pen') return;
+  let ring = document.getElementById('pen-hover');
+  const vp = e.target.closest && e.target.closest('#map-vp');
+  const drawTool = ['pen', 'highlighter'].includes(UI.tool) || (['select', 'hand'].includes(UI.tool) && (St.settings.ui || {}).stylusDraw !== false);
+  if (!vp || e.buttons || !touchCfg().hover || !drawTool || e.target.closest('.cv-tools,.cv-sub,.cv-ctx,.cv-panel,.mnode,[data-el]')) { if (ring) ring.hidden = true; return; }
+  if (!ring) { ring = document.createElement('div'); ring.id = 'pen-hover'; ring.className = 'pen-hover'; ring.setAttribute('aria-hidden', 'true'); document.body.appendChild(ring); }
+  const st = strokeStyle(UI.tool === 'highlighter' ? 'highlighter' : 'pen'), d = Math.max(4, st.width * UI.map.k);
+  ring.hidden = false; ring.style.cssText = `left:${e.clientX - d / 2}px;top:${e.clientY - d / 2}px;width:${d}px;height:${d}px;--c:${colorCss(UI.tool === 'highlighter' && UI.cvColor === 'ink' ? '#FFD966' : UI.cvColor)}`;
+  clearTimeout(MP.hoverT); MP.hoverT = setTimeout(() => { ring.hidden = true; }, 600);
+}, { passive: true });
+document.addEventListener('pointerdown', () => { const r = document.getElementById('pen-hover'); if (r) r.hidden = true; }, true);
+
+/* --- menus: a long menu scrolls inside the screen, so its last items can always be reached --- */
+// (a menu near the bottom of the screen opens upwards when there is more room above)
+function fitPops() {
+  const H = window.innerHeight;
+  document.querySelectorAll('details.menu[open] > .menu-pop').forEach(p => {
+    const sm = p.parentElement.querySelector('summary'); if (!sm) return;
+    const s = sm.getBoundingClientRect(), below = H - s.bottom - 18, above = s.top - 18, up = below < 300 && above > below;
+    p.classList.toggle('up', up); p.style.maxHeight = Math.max(140, up ? above : below) + 'px';
+  });
+  document.querySelectorAll('.cv-panel').forEach(p => { const r = p.getBoundingClientRect(); p.style.maxHeight = Math.max(180, H - Math.max(0, r.top) - 12) + 'px'; });
+}
+document.addEventListener('toggle', e => { if (e.target.matches && e.target.matches('details.menu') && e.target.open) requestAnimationFrame(fitPops); }, true);
+HOOKS.afterRender.push(() => requestAnimationFrame(fitPops));
+window.addEventListener('resize', () => requestAnimationFrame(fitPops));
 
 /* ---------- boot ---------- */
 const startView = (location.hash || '').replace('#', '');

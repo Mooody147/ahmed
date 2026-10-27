@@ -1094,7 +1094,7 @@ function belHTML(el, hits) {
 function inkSVG(el, M) {
   el = liveEl(el);
   const sel = UI.cvSel.has(el.id) ? ' sel' : '';
-  if (el.type === 'stroke' && el.pressure) return `<g class="ink${sel}" data-el="${esc(el.id)}"><path d="${pressurePath(el.pts, el.width)}" fill="${colorCss(el.color)}" stroke="none"/><path class="hit" d="${strokePath(el.pts)}" stroke-width="${Math.max(14, el.width + 10)}"/></g>`;
+  if (el.type === 'stroke' && el.pressure) return `<g class="ink${sel}" data-el="${esc(el.id)}"><path d="${pressurePath(el.pts, el.width)}" fill="${colorCss(el.color)}" ${el.alpha ? `fill-opacity="${el.alpha}"` : ''} stroke="none"/><path class="hit" d="${strokePath(el.pts)}" stroke-width="${Math.max(14, el.width + 10)}"/></g>`;
   if (el.type === 'stroke') { const d = strokePath(el.pts); return `<g class="ink${sel}" data-el="${esc(el.id)}"><path d="${d}" stroke="${colorCss(el.color)}" stroke-width="${el.width}" ${el.alpha ? `stroke-opacity="${el.alpha}"` : ''} fill="none" stroke-linecap="round" stroke-linejoin="round"/><path class="hit" d="${d}" stroke-width="${Math.max(14, el.width + 10)}"/></g>`; }
   if (el.type === 'line') { const d = `M${el.x1} ${el.y1} L${el.x2} ${el.y2}`; return `<g class="ink${sel}" data-el="${esc(el.id)}" style="color:${colorCss(el.color)}"><path d="${d}" stroke="currentColor" stroke-width="${el.width || 3}" fill="none" stroke-linecap="round" ${el.arrow ? 'marker-end="url(#cv-arrow)"' : ''}/><path class="hit" d="${d}" stroke-width="16"/></g>`; }
   if (el.type === 'connector') {
@@ -1290,8 +1290,10 @@ function toolsHTML() {
       return `<div class="cvt-group" data-group="${gi}">${btn(cur, ' has-more')}<div class="cvt-fly" role="group">${g.map(k => btn(k)).join('')}</div></div>`;
     }).join('')}
   </div>
+  ${typeof toolPanelHTML === 'function' ? toolPanelHTML() : ''}
   <div class="cv-sub" role="toolbar" aria-label="Colour and history">
-    <div class="cvt-colors">${PALETTE.map(c => `<button class="sw ${UI.cvColor === c ? 'on' : ''}" data-act="cv-color" data-c="${c}" style="--c:${colorCss(c)}" aria-label="Colour ${c}" aria-pressed="${UI.cvColor === c}"></button>`).join('')}</div>
+    <button class="cvt zoom-lock ${zoomLocked() ? 'on' : ''}" data-act="zoom-lock" aria-pressed="${zoomLocked()}" title="${zoomLocked() ? 'Zoom is locked — tap to unlock' : 'Lock the zoom where it is'}">${zoomLocked() ? '🔒' : '🔓'}<span id="zoom-pct">${Math.round(UI.map.k * 100)}%</span></button>
+    <button class="cvt" data-act="touch-open" title="Touch & stylus settings" aria-label="Touch and stylus settings">${svg('<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>', 18)}</button>
     <span class="cvt-sep"></span>
     <button class="cvt" data-act="cv-undo" title="Undo (Ctrl+Z)" aria-label="Undo" ${UI.cvUndo.length ? '' : 'disabled'}>${svg('<path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/>', 18)}</button>
     <button class="cvt" data-act="cv-redo" title="Redo (Ctrl+Shift+Z)" aria-label="Redo" ${UI.cvRedo.length ? '' : 'disabled'}>${svg('<path d="m15 14 5-5-5-5"/><path d="M20 9H9a5 5 0 0 0 0 10h3"/>', 18)}</button>
@@ -1334,11 +1336,7 @@ function viewMap() {
           <div class="mt-sec"><div class="label">Direction</div>
             <div class="seg" role="group" aria-label="Map direction"><button data-act="map-dir" data-dir="h" aria-pressed="${mapDir() === 'h'}">→ Left to right</button><button data-act="map-dir" data-dir="v" aria-pressed="${mapDir() === 'v'}">↓ Top to bottom</button></div></div>
           ${St.mode !== 'viewer' && typeof traceAll === 'function' ? `<div class="mt-sec"><div class="label">Tasks</div><button class="btn sm" data-act="trace-all" ${TRC.running ? 'disabled' : ''}>🔎 ${TRC.running ? 'Tracing…' : 'Trace open tasks in my emails'}</button></div>` : ''}
-          <div class="mt-sec"><div class="label">Stylus</div>
-            <label class="check small"><input type="checkbox" id="stylus-draw" data-chg="stylus-draw" ${(St.settings.ui || {}).stylusDraw !== false ? 'checked' : ''}>The stylus always draws, without choosing the pen (a tap still selects)</label>
-            <label class="check small"><input type="checkbox" id="stylus-only" data-chg="stylus-only" ${penOnly() ? 'checked' : ''}>Only the stylus draws — fingers move and zoom, a resting palm is ignored</label>
-            <label class="check small"><input type="checkbox" id="pen-gestures" data-chg="pen-gestures" ${(St.settings.ui || {}).penGestures !== false ? 'checked' : ''}>Smart pen: ✓ marks done, scribble deletes, a line links two boxes, hold still to snap a clean shape</label>
-            <p class="small muted" style="margin:0">Press harder for a thicker line. The pen's eraser end or side button erases. Two-finger tap: undo · three-finger tap: redo. Your palm is ignored while the pen is on the screen.</p></div>
+          <div class="mt-sec"><div class="label">Stylus & touch</div><button class="btn sm" data-act="touch-open">✍ Touch & stylus settings…</button></div>
           <div class="mt-sec"><div class="label">Show</div>
             <label class="check small"><input type="checkbox" id="map-done" data-chg="map-opt" data-key="mapShowDone" ${UI.mapShowDone ? 'checked' : ''}>Completed tasks (history)</label>
             <label class="check small"><input type="checkbox" id="map-act" data-chg="map-opt" data-key="mapActivity" ${UI.mapActivity ? 'checked' : ''}>Activity panel</label>
@@ -1370,7 +1368,6 @@ function viewMap() {
         <div id="cv-ctx-slot">${ctxHTML()}</div>
         ${UI.mapMini !== false && (M.projects.length || St.board.size) ? '<canvas class="minimap" id="minimap" width="200" height="130" aria-label="Minimap — click to move there"></canvas>' : ''}
         ${UI.present ? presentBarHTML() : ''}
-        <div class="map-hint">${esc(TOOL_HINT[UI.tool] || TOOL_HINT.select)}</div>
       </div>
       ${UI.mapActivity ? `<aside class="map-activity"><div class="label" style="padding:12px 14px 6px">Activity${UI.mapDay ? ' · ' + esc(fmtDate(UI.mapDay)) : ''}</div>${act.length ? `<ol>${act.map(e => `<li><button data-act="map-goto" data-id="${esc(e.t.id)}"><span class="ae">${evEmoji(e.text)}</span><span class="atxt"><b>${esc(e.t.ref || '')}</b> <span dir="auto">${esc(E.clip(e.t.title, 60))}</span><small dir="auto">${esc(e.text)}</small></span><time>${esc(fmtDate(e.at.slice(0, 10)))}</time></button></li>`).join('')}</ol>` : '<p class="small muted" style="padding:0 14px">No activity yet.</p>'}</aside>` : ''}
     </div>
@@ -1403,6 +1400,7 @@ function applyCam(animate) {
   w.classList.add('moving'); clearTimeout(UI.camSharp); UI.camSharp = setTimeout(() => { const ww = $('#map-world'); if (ww) ww.classList.remove('moving'); }, 160);
   // semantic zoom: far out, details hide and project labels grow so the map stays readable
   w.style.setProperty('--k', UI.map.k);
+  const zl = document.getElementById('zoom-pct'); if (zl) zl.textContent = Math.round(UI.map.k * 100) + '%';
   const vp = $('#map-vp'); if (vp) { vp.classList.toggle('z-far', UI.map.k < 0.38); vp.classList.toggle('z-mid', UI.map.k >= 0.38 && UI.map.k < 0.6); }
   drawMinimap();
 }
@@ -1410,15 +1408,22 @@ function mapFit(smart) {
   const vp = $('#map-vp'), M = UI.mapLayout; if (!vp || !M) return;
   const W = vp.clientWidth, H = vp.clientHeight;
   const fitK = Math.min(1, (W - 120) / M.w, (H - 60) / M.h);
-  const k = smart === true ? Math.max(W < 600 ? 0.5 : 0.6, Math.min(1, fitK)) : Math.max(0.2, fitK);
+  const k = zoomLocked() ? UI.map.k : smart === true ? Math.max(W < 600 ? 0.5 : 0.6, Math.min(1, fitK)) : Math.max(0.2, fitK);
   UI.map.k = k;
   UI.map.x = M.w * k <= W - 60 ? (W + 60 - M.w * k) / 2 - M.x0 * k : 70 - M.x0 * k;
   if (M.h * k <= H) UI.map.y = (H - M.h * k) / 2 - M.y0 * k;
   else { const r = M.nodes.find(n => n.type === 'root'); UI.map.y = H / 2 - (r ? r.y + r.h / 2 : 0) * k; }
   UI.map.fitted = true; applyCam(true);
 }
+// two-finger zoom ends on 25 %, 50 %, 100 %… when it stops close to one (Touch & stylus › Zoom snap)
+function zoomSnapEnd() {
+  if (!touchCfg().zoomSnap || zoomLocked()) return;
+  const k = UI.map.k, t = [0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4].find(v => Math.abs(k / v - 1) < 0.1);
+  if (t && t !== k) mapZoom(t / k);
+}
 function mapZoom(f, cx, cy) {
   const vp = $('#map-vp'); if (!vp) return;
+  if (zoomLocked()) { if (f !== 1 && !MP.lockToast) { MP.lockToast = setTimeout(() => { MP.lockToast = null; }, 2500); toast('🔒 Zoom is locked — tap the lock to unlock it.'); } return; }
   const r = vp.getBoundingClientRect(); cx = cx ?? r.width / 2; cy = cy ?? r.height / 2;
   const k2 = Math.max(0.15, Math.min(5, UI.map.k * f));
   UI.map.x = cx - (cx - UI.map.x) * (k2 / UI.map.k); UI.map.y = cy - (cy - UI.map.y) * (k2 / UI.map.k); UI.map.k = k2; applyCam(false);
@@ -1434,7 +1439,7 @@ function centerOnTask(id) {
   render();
   requestAnimationFrame(() => {
     const vp = $('#map-vp'), n = UI.mapLayout && UI.mapLayout.nodes.find(x => x.id === 't:' + id); if (!vp || !n) return;
-    UI.map.k = Math.max(UI.map.k, 0.85);
+    if (!zoomLocked()) UI.map.k = Math.max(UI.map.k, 0.85);
     UI.map.x = vp.clientWidth / 2 - (n.x + n.w / 2) * UI.map.k; UI.map.y = vp.clientHeight / 2 - (n.y + n.h / 2) * UI.map.k; applyCam(true);
     vp.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   });
@@ -1442,7 +1447,12 @@ function centerOnTask(id) {
 function afterMapRender() {
   const vp = $('#map-vp'); if (!vp) return;
   if (!UI.map.fitted) requestAnimationFrame(() => mapFit(true));
-  vp.addEventListener('wheel', e => { e.preventDefault(); const r = vp.getBoundingClientRect(); mapZoom(Math.exp(-e.deltaY * (e.ctrlKey ? 0.01 : 0.0015)), e.clientX - r.left, e.clientY - r.top); }, { passive: false });
+  vp.addEventListener('wheel', e => {
+    e.preventDefault();
+    // with the zoom locked the wheel (or a two-finger trackpad swipe) moves the canvas instead
+    if (zoomLocked()) { if (!e.ctrlKey) { UI.map.x -= e.deltaX; UI.map.y -= e.deltaY; applyCam(false); } return; }
+    const r = vp.getBoundingClientRect(); mapZoom(Math.exp(-e.deltaY * (e.ctrlKey ? 0.01 : 0.0015)), e.clientX - r.left, e.clientY - r.top);
+  }, { passive: false });
 }
 
 /* --- changes with undo / redo --- */
@@ -1478,7 +1488,27 @@ const MP = { ptrs: new Map(), mode: null, pinch: null };
 // contact, is a resting palm and is ignored.
 const PEN_LS = 'ar-pen-seen';
 UI.penSeen = (() => { try { return localStorage.getItem(PEN_LS) === '1'; } catch { return false; } })();
-const penOnly = () => { const v = (St.settings.ui || {}).stylusOnly; return v === undefined ? !!UI.penSeen : !!v; };
+// touch and stylus preferences (⚙ on the canvas, features/39-touch.js); each one has a default here
+const TOUCH_DEF = { finger: '', zoom: true, zoomSnap: false, zoomLock: false, holdAct: 'pick', holdMs: 400, holdFlash: true, shapes: true, shapeMs: 520, tap2: 'undo', tap3: 'redo', tap4: 'lock', pLo: 0, pHi: 1, pressure: true, tilt: true, penHold: true, hover: true, side: 'eraser', eraserEnd: 'eraser' };
+const touchCfg = () => ({ ...TOUCH_DEF, ...((St.settings.ui || {}).touch || {}) });
+// what one finger does once a stylus has been used: select (default), pan, the chosen tool, or nothing
+function fingerMode() { const u = St.settings.ui || {}, f = touchCfg().finger; if (f) return f; if (u.stylusOnly === false) return 'tool'; return UI.penSeen || u.stylusOnly ? 'select' : 'tool'; }
+const penOnly = () => fingerMode() !== 'tool';
+const zoomLocked = () => !!touchCfg().zoomLock;
+// pens: Pen (pressure), Ballpoint (even), Marker (broad, even), Pencil (fine, soft, pressure); a width kept for each
+const BRUSHES = { pen: ['Pen', 3, true, 0], ball: ['Ballpoint', 2, false, 0], marker: ['Marker', 9, false, 0.9], pencil: ['Pencil', 2, true, 0.7] };
+function penCfg() { const p = (St.settings.ui || {}).pen || {}; return { brush: BRUSHES[p.brush] ? p.brush : 'pen', w: { pen: 3, ball: 2, marker: 9, pencil: 2, highlighter: 18, ...(p.w || {}) } }; }
+function strokeStyle(tool) {
+  const c = penCfg();
+  if (tool === 'highlighter') return { brush: 'highlighter', width: c.w.highlighter, alpha: 0.45, pressure: false };
+  const [, , pr, alpha] = BRUSHES[c.brush]; return { brush: c.brush, width: c.w[c.brush], alpha, pressure: pr };
+}
+// stylus pressure (with tilt, like shading with a pencil's side) squeezed into the chosen response range
+function pval(e) {
+  const c = touchCfg(); let p = e.pressure || 0.5;
+  if (c.tilt && (e.tiltX || e.tiltY)) p = Math.min(1, p * (1 + 0.5 * Math.min(1, Math.hypot(e.tiltX || 0, e.tiltY || 0) / 70)));
+  return Math.round((c.pLo + (c.pHi - c.pLo) * p) * 100) / 100;
+}
 const penIsDown = () => [...MP.ptrs.values()].some(p => p.type === 'pen');
 function palmLikely(e) {
   if (e.pointerType !== 'touch') return false;
@@ -1487,8 +1517,8 @@ function palmLikely(e) {
 }
 document.addEventListener('pointermove', e => { if (e.pointerType === 'pen') MP.penNear = Date.now(); }, { passive: true, capture: true });
 // iPad Safari: without this a Pencil stroke can start a page scroll or a text selection and be cancelled mid-line
-document.addEventListener('touchmove', e => { if (e.target.closest && e.target.closest('#map-vp') && !e.target.closest('.cv-tools,.cv-sub,.cv-ctx,.board-bar,.cv-overlay,input,textarea,select,[contenteditable]')) e.preventDefault(); }, { passive: false });
-document.addEventListener('touchstart', e => { if ([...e.touches].some(t => t.touchType === 'stylus') && e.target.closest && e.target.closest('#map-vp') && !e.target.closest('button,a,input,textarea,select,[contenteditable],.cv-tools,.cv-sub,.cv-ctx,.board-bar,.cv-overlay,.minimap')) e.preventDefault(); }, { passive: false });
+document.addEventListener('touchmove', e => { if (e.target.closest && e.target.closest('#map-vp') && !e.target.closest('.cv-tools,.cv-sub,.cv-ctx,.cv-panel,.board-bar,.cv-overlay,input,textarea,select,[contenteditable]')) e.preventDefault(); }, { passive: false });
+document.addEventListener('touchstart', e => { if ([...e.touches].some(t => t.touchType === 'stylus') && e.target.closest && e.target.closest('#map-vp') && !e.target.closest('button,a,input,textarea,select,[contenteditable],.cv-tools,.cv-sub,.cv-ctx,.cv-panel,.board-bar,.cv-overlay,.minimap')) e.preventDefault(); }, { passive: false });
 function toWorld(cx, cy) { const vp = $('#map-vp'); const r = vp.getBoundingClientRect(); return { x: (cx - r.left - UI.map.x) / UI.map.k, y: (cy - r.top - UI.map.y) / UI.map.k }; }
 function refAt(el) {
   const n = el && el.closest && el.closest('.mnode'); if (n && n.dataset.type !== 'item') return { k: 'n', id: n.dataset.node, tid: n.dataset.tid || null };
@@ -1527,7 +1557,7 @@ function eraseAt(e) {
 document.addEventListener('pointerdown', e => {
   const isPen = e.pointerType === 'pen', isTouch = e.pointerType === 'touch';
   const vp = e.target.closest && e.target.closest('#map-vp'); if (!vp || (e.button > 1 && !isPen)) return;
-  if (e.target.closest('.cv-tools,.cv-sub,.cv-ctx,.map-empty,.minimap,.present-bar,.board-bar,.cv-overlay,[contenteditable],input,textarea,select')) return;
+  if (e.target.closest('.cv-tools,.cv-sub,.cv-ctx,.cv-panel,.map-empty,.minimap,.present-bar,.board-bar,.cv-overlay,[contenteditable],input,textarea,select')) return;
   // palm rejection: while the stylus touches the screen every other touch is ignored, and once a stylus has been
   // used a broad touch (the side of a hand) is ignored too
   if (isTouch && palmLikely(e)) return;
@@ -1543,7 +1573,7 @@ document.addEventListener('pointerdown', e => {
   if (UI.cvEditing) commitEdit();
   MP.ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY, type: e.pointerType });
   if (MP.ptrs.size === 1) MP.downAt = Date.now();
-  if (MP.ptrs.size === 2) { const [a, b] = [...MP.ptrs.values()]; MP.pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), k: UI.map.k }; MP.mode = 'pinch'; UI.cvTemp = null; live(''); return; }
+  if (MP.ptrs.size === 2) { const [a, b] = [...MP.ptrs.values()]; MP.pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), k: UI.map.k, cx: (a.x + b.x) / 2, cy: (a.y + b.y) / 2 }; MP.mode = 'pinch'; clearTimeout(MP.holdT); UI.cvTemp = null; live(''); return; }
   let tool = e.button === 1 || UI.spaceDown ? 'hand' : UI.tool;
   let node = e.target.closest('.mnode'), bel = e.target.closest('[data-el]'); const rz = e.target.closest('[data-rz]');
   // locked layers cannot be picked: pressing on them moves the canvas
@@ -1552,18 +1582,31 @@ document.addEventListener('pointerdown', e => {
   // stylus: the eraser end or the side button erases; on empty canvas the pen draws whatever tool is chosen;
   // once a stylus has been used, a finger moves the canvas instead of drawing
   // the stylus draws without choosing the pen: over empty canvas, tasks and notes alike (a tap still selects or opens)
-  let auto = false;
-  if (isPen && (e.button === 5 || (e.buttons & 32) || (e.buttons & 2))) tool = 'eraser';
+  let auto = false; const tc = touchCfg();
+  // the stylus eraser end and side button do what Touch & stylus says (erase by default)
+  const btnAct = isPen ? (e.button === 5 || (e.buttons & 32) ? tc.eraserEnd : (e.buttons & 2) ? tc.side : null) : null;
+  if (btnAct === 'nothing') { MP.ptrs.delete(e.pointerId); return; }
+  if (btnAct) tool = btnAct;
   else if (isPen && ['select', 'hand'].includes(tool) && !rz && (St.settings.ui || {}).stylusDraw !== false) { tool = 'pen'; auto = true; }
-  else if (isTouch && penOnly() && ['pen', 'highlighter'].includes(tool)) tool = 'hand';
+  else if (isTouch && penOnly()) {
+    const fm = fingerMode();
+    if (fm === 'nothing') { MP.mode = 'idle'; return; }
+    if (fm === 'pan') tool = 'hand';
+    // a finger never draws; with the eraser chosen it still erases
+    else if (fm === 'select' && ['pen', 'highlighter', 'lasso'].includes(tool)) tool = 'select';
+  }
   MP.isPen = isPen;
   Object.assign(MP, { auto, tapNode: auto ? node : null, tapBel: auto ? bel : null,  sx: e.clientX, sy: e.clientY, w0: toWorld(e.clientX, e.clientY), mx: UI.map.x, my: UI.map.y, tool, node, bel, target: e.target, shift: e.shiftKey, far: false });
   vp.setPointerCapture && vp.setPointerCapture(e.pointerId);
   if (e.button === 1) e.preventDefault();
   // the ● on a box: drag it to another box to link them, whatever tool is chosen
   if (e.target.closest('[data-link]')) { const ref = refAt(e.target); if (ref) { MP.mode = 'connect'; MP.from = ref; MP.free = true; return; } }
-  if (tool === 'hand') { MP.mode = 'pan'; return; }
-  if (tool === 'pen' || tool === 'highlighter' || tool === 'lasso') { MP.mode = 'draw'; MP.tool = tool; MP.hold = false; MP.pts = [isPen ? [MP.w0.x, MP.w0.y, Math.round((e.pressure || .5) * 100) / 100] : [MP.w0.x, MP.w0.y]]; return; }
+  if (tool === 'hand') { MP.mode = 'pan'; holdStart(e, isPen); return; }
+  if (tool === 'pen' || tool === 'highlighter' || tool === 'lasso') {
+    MP.mode = 'draw'; MP.tool = tool; MP.hold = false; MP.style = strokeStyle(tool); MP.press = isPen && tool !== 'lasso' && MP.style.pressure && tc.pressure;
+    MP.pts = [MP.press ? [MP.w0.x, MP.w0.y, pval(e)] : [MP.w0.x, MP.w0.y]];
+    holdStart(e, isPen); return;
+  }
   if (tool === 'eraser') { MP.mode = 'erase'; MP.erased = new Set(); MP.eraseLast = null; eraseAt(e); return; }
   if (CREATE_TOOLS.includes(tool)) { MP.mode = 'create'; return; }
   if (tool === 'connector') { const ref = refAt(e.target); MP.mode = ref ? 'connect' : 'press-empty'; MP.from = ref; MP.free = false; return; }
@@ -1577,12 +1620,43 @@ document.addEventListener('pointerdown', e => {
   }
   if (node) { MP.mode = 'press-node'; return; }
   MP.mode = e.shiftKey ? 'marquee' : 'press-empty';
+  holdStart(e, isPen);
 });
+// tap & hold without moving: pick up the item under the pen or finger, start a lasso there, or take its colour
+function holdStart(e, isPen) {
+  const c = touchCfg(); clearTimeout(MP.holdT); MP.holdT = null;
+  if (c.holdAct === 'off' || (isPen && !c.penHold) || e.pointerType === 'mouse' || MP.ptrs.size > 1) return;
+  const pid = e.pointerId, cx = e.clientX, cy = e.clientY, target = e.target;
+  MP.holdT = setTimeout(() => {
+    MP.holdT = null; if (!MP.ptrs.has(pid) || MP.far || !['draw', 'pan', 'press-empty'].includes(MP.mode)) return;
+    const node = target.closest && target.closest('.mnode'), bel = target.closest && target.closest('[data-el]');
+    const flash = n => { if (!n || !c.holdFlash) return; n.classList.add('hold-flash'); setTimeout(() => n.classList.remove('hold-flash'), 450); };
+    try { navigator.vibrate && navigator.vibrate(12); } catch {}
+    if (c.holdAct === 'lasso') { MP.mode = 'draw'; MP.tool = 'lasso'; MP.auto = false; MP.press = false; MP.pts = [[MP.w0.x, MP.w0.y]]; live(''); toast('Lasso: draw around what you want to select.'); return; }
+    if (c.holdAct === 'color') {
+      const x = bel && St.board.get(bel.dataset.el); live(''); MP.mode = null;
+      if (x && x.color) { UI.cvColor = x.color; flash(bel); toast('🎨 Colour picked.'); render(); }
+      return;
+    }
+    // item picker: the item is selected and follows the pen or finger
+    if (bel && !node && !elLocked(St.board.get(bel.dataset.el))) { live(''); const id = bel.dataset.el; UI.cvSel = new Set([id]); MP.elId = id; MP.mode = 'press-el'; MP.sx = cx; MP.sy = cy; MP.far = false; renderWorld(); flash(document.querySelector(`[data-el="${CSS.escape(id)}"]`)); }
+    else if (node && !layerSet('tasks').lock) { live(''); MP.node = node; MP.mode = 'press-node'; MP.sx = cx; MP.sy = cy; MP.far = false; flash(node); }
+  }, Math.max(150, c.holdMs));
+}
 document.addEventListener('pointermove', e => {
   if (!MP.ptrs.has(e.pointerId)) return;
   MP.ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY, type: e.pointerType });
   const vp = $('#map-vp'); if (!vp || !MP.mode) return;
-  if (MP.mode === 'pinch') { if (MP.ptrs.size === 2) { const [a, b] = [...MP.ptrs.values()]; const d = Math.hypot(a.x - b.x, a.y - b.y); const r = vp.getBoundingClientRect(); mapZoom((MP.pinch.k * d / MP.pinch.d) / UI.map.k, (a.x + b.x) / 2 - r.left, (a.y + b.y) / 2 - r.top); } return; }
+  if (MP.mode === 'idle') return;
+  if (MP.mode === 'pinch') {
+    if (MP.ptrs.size === 2) {
+      const [a, b] = [...MP.ptrs.values()], d = Math.hypot(a.x - b.x, a.y - b.y), r = vp.getBoundingClientRect(), cx = (a.x + b.x) / 2, cy = (a.y + b.y) / 2;
+      UI.map.x += cx - MP.pinch.cx; UI.map.y += cy - MP.pinch.cy; MP.pinch.cx = cx; MP.pinch.cy = cy;
+      if (touchCfg().zoom && !zoomLocked()) mapZoom((MP.pinch.k * d / MP.pinch.d) / UI.map.k, cx - r.left, cy - r.top); else applyCam(false);
+    }
+    return;
+  }
+  if (MP.holdT && Math.hypot(e.clientX - MP.sx, e.clientY - MP.sy) > 6) { clearTimeout(MP.holdT); MP.holdT = null; }
   const dx = e.clientX - MP.sx, dy = e.clientY - MP.sy, k = UI.map.k;
   if (!MP.far && Math.hypot(dx, dy) > 5) MP.far = true;
   const w = toWorld(e.clientX, e.clientY), w0 = MP.w0;
@@ -1591,11 +1665,11 @@ document.addEventListener('pointermove', e => {
     case 'pan': UI.map.x = MP.mx + dx; UI.map.y = MP.my + dy; applyCam(false); return;
     case 'draw': {
       const l = MP.pts[MP.pts.length - 1]; if (Math.hypot(w.x - l[0], w.y - l[1]) * k < 2) return;
-      MP.pts.push(MP.isPen ? [Math.round(w.x * 10) / 10, Math.round(w.y * 10) / 10, Math.round((e.pressure || .5) * 100) / 100] : [Math.round(w.x * 10) / 10, Math.round(w.y * 10) / 10]);
-      const hl = MP.tool === 'highlighter';
+      MP.pts.push(MP.press ? [Math.round(w.x * 10) / 10, Math.round(w.y * 10) / 10, pval(e)] : [Math.round(w.x * 10) / 10, Math.round(w.y * 10) / 10]);
+      const hl = MP.tool === 'highlighter', st = MP.style || strokeStyle(MP.tool), col = colorCss(hl && UI.cvColor === 'ink' ? '#FFD966' : UI.cvColor);
       if (MP.tool === 'lasso') { live(`<path d="${strokePath(MP.pts)}" stroke="var(--accent)" stroke-width="${2 / k}" stroke-dasharray="${6 / k} ${5 / k}" fill="color-mix(in srgb, var(--accent) 8%, transparent)"/>`); return; }
-      if (MP.isPen && !hl) { live(`<path d="${pressurePath(MP.pts, UI.cvWidth)}" fill="${colorCss(UI.cvColor)}" stroke="none"/>`); return; }
-      live(`<path d="${strokePath(MP.pts)}" stroke="${colorCss(hl && UI.cvColor === 'ink' ? '#FFD966' : UI.cvColor)}" stroke-width="${hl ? 18 : UI.cvWidth}" ${hl ? 'stroke-opacity=".45"' : ''} fill="none" stroke-linecap="round" stroke-linejoin="round"/>`); return;
+      if (MP.press) { live(`<path d="${pressurePath(MP.pts, st.width)}" fill="${col}" ${st.alpha ? `fill-opacity="${st.alpha}"` : ''} stroke="none"/>`); return; }
+      live(`<path d="${strokePath(MP.pts)}" stroke="${col}" stroke-width="${st.width}" ${st.alpha ? `stroke-opacity="${st.alpha}"` : ''} fill="none" stroke-linecap="round" stroke-linejoin="round"/>`); return;
     }
     case 'erase': eraseAt(e); return;
     case 'create': {
@@ -1633,7 +1707,9 @@ function endPointer(e) {
   if (e.pointerType === 'pen') { MP.penDown = false; MP.penUpAt = Date.now(); }
   if (!MP.ptrs.has(e.pointerId)) return;
   MP.ptrs.delete(e.pointerId);
-  if (MP.mode === 'pinch') { if (MP.ptrs.size === 0) MP.mode = null; return; }
+  clearTimeout(MP.holdT); MP.holdT = null;
+  if (MP.mode === 'pinch') { if (MP.ptrs.size === 0) { MP.mode = null; zoomSnapEnd(); } return; }
+  if (MP.mode === 'idle') { if (MP.ptrs.size === 0) MP.mode = null; return; }
   // a stroke the browser cancelled part way (a system gesture, the page trying to scroll) is kept as drawn
   const mode = MP.mode, up = e.type === 'pointerup' || (e.type === 'pointercancel' && mode === 'draw' && MP.tool !== 'lasso' && MP.pts && MP.pts.length > 2); MP.mode = null;
   const tmp = UI.cvTemp, drop = UI.cvDrop; UI.cvTemp = null; UI.cvDrop = null; live('');
@@ -1659,7 +1735,8 @@ function finishPointer(mode, e, w, tmp, drop) {
       for (const h of STROKE_HOOKS) { try { if (h(MP.pts, { tool: MP.tool, isPen: MP.isPen, hold: MP.hold, auto: MP.auto, e })) return true; } catch (err) { console.warn(err); } }
       const hl = MP.tool === 'highlighter';
       const pts = MP.pts.length > 1500 ? MP.pts.filter((_, i) => i % Math.ceil(MP.pts.length / 1500) === 0) : MP.pts;
-      const el = newEl('stroke', { pts, width: hl ? 18 : UI.cvWidth, alpha: hl ? 0.45 : 0, color: hl && UI.cvColor === 'ink' ? '#FFD966' : UI.cvColor, kind: MP.tool, ...(MP.isPen && !hl ? { pressure: true } : {}) });
+      const st = MP.style || strokeStyle(MP.tool);
+      const el = newEl('stroke', { pts, width: st.width, alpha: st.alpha || 0, color: hl && UI.cvColor === 'ink' ? '#FFD966' : UI.cvColor, kind: MP.tool, brush: st.brush, ...(MP.press ? { pressure: true } : {}) });
       cvApply({ els: { [el.id]: el } }); render(); return true;
     }
     case 'erase': {
@@ -3332,7 +3409,7 @@ const ACT = {
     toast(`⊞ ${n} box${n === 1 ? '' : 'es'} rearranged.`, { action: 'Undo', fn: cvUndo });
   },
   'map-reset-layout': () => { cvApply({ layout: { ...newLayout(), [offKey()]: {}, size: {} } }); UI.map.fitted = false; render(); toast('↺ Layout tidied.', { action: 'Undo', fn: cvUndo }); },
-  'cv-tool': el => { UI.tool = el.dataset.tool; if (UI.tool !== 'select') UI.cvSel.clear(); render(); },
+  'cv-tool': el => { const t = el.dataset.tool; UI.toolPanel = UI.tool === t ? !UI.toolPanel : true; UI.tool = t; if (t !== 'select') UI.cvSel.clear(); render(); },
   'cv-color': el => { UI.cvColor = el.dataset.c; render(); },
   'cv-recolor': el => { const ch = { els: {} }; for (const id of UI.cvSel) { const x = St.board.get(id); if (x) ch.els[id] = { ...x, color: el.dataset.c }; } UI.cvColor = el.dataset.c; cvApply(ch); render(); },
   'cv-conn': el => { const id = [...UI.cvSel][0], c = St.board.get(id); if (!c || c.type !== 'connector') return; const k = el.dataset.k; const n = { ...c, [k]: k === 'shape' ? (c.shape === 'straight' ? 'smart' : c.shape === 'curve' ? 'straight' : 'curve') : k === 'arrow' ? c.arrow === false : !c.dash }; cvApply({ els: { [id]: n } }); render(); },

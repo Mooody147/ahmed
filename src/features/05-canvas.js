@@ -176,7 +176,8 @@ function presentBarHTML() {
 }
 function fitBox(b) {
   const vp = $('#map-vp'); if (!vp || !b) return;
-  const W = vp.clientWidth, H = vp.clientHeight, k = Math.max(0.2, Math.min(1.4, (W - 120) / b.w, (H - 140) / b.h));
+  // with the zoom locked the box is only centred
+  const W = vp.clientWidth, H = vp.clientHeight, k = zoomLocked() ? UI.map.k : Math.max(0.2, Math.min(1.4, (W - 120) / b.w, (H - 140) / b.h));
   UI.map.k = k; UI.map.x = W / 2 - (b.x + b.w / 2) * k; UI.map.y = (H - 40) / 2 - (b.y + b.h / 2) * k; UI.map.fitted = true; applyCam(true);
 }
 function presentGo(i) {

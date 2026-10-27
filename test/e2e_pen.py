@@ -164,9 +164,9 @@ async def main():
         assert await ev("[...window.__AR.St.board.values()].filter(e => e.type === 'stroke').length") == s0 + 1 and await ev("window.__AR.UI.map.k") != k0, 'pinch zooms, does not undo'
 
         # 6. setting: pen only draws with the pen tool
-        await pg.click('[data-menu="options"] summary'); await pg.wait_for_timeout(200)
-        await pg.click('#stylus-draw'); await pg.wait_for_timeout(200); assert await ev("window.__AR.St.settings.ui.stylusDraw") is False
-        await pg.keyboard.press('Escape')
+        await pg.click('.cv-sub [data-act="touch-open"]'); await pg.wait_for_timeout(200)
+        await pg.click('.ts-tog:has([data-k="stylusDraw"])'); await pg.wait_for_timeout(200); assert await ev("window.__AR.St.settings.ui.stylusDraw") is False
+        await pg.click('[data-act="touch-close"]'); await pg.wait_for_timeout(150)
         await pen('mouseMoved', x0, y0 + 10, 0, 'none', 0); await pen('mousePressed', x0, y0 + 10, .5)
         for i in range(1, 8): await pen('mouseMoved', x0 + i * 10, y0 + 10, .5)
         await pen('mouseReleased', x0 + 70, y0 + 10, 0, 'left', 0); await pg.wait_for_timeout(300)

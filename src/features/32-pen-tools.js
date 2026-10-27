@@ -69,7 +69,7 @@ function cleanShape(pts, bb) {
 }
 // hold the pen still at the end of a stroke: show the clean shape it will become
 document.addEventListener('pointermove', e => {
-  if (MP.mode !== 'draw' || MP.tool !== 'pen' || MP.auto || !penSmart()) return;
+  if (MP.mode !== 'draw' || MP.tool !== 'pen' || !touchCfg().shapes) return;
   const p = [e.clientX, e.clientY];
   if (PEN.last && Math.hypot(p[0] - PEN.last[0], p[1] - PEN.last[1]) < 4) return;
   PEN.last = p; MP.hold = false; clearTimeout(PEN.holdT);
@@ -82,7 +82,7 @@ document.addEventListener('pointermove', e => {
       : sh.kind === 'diamond' ? `<path d="M${bb.x + bb.w / 2} ${bb.y}L${bb.x + bb.w} ${bb.y + bb.h / 2}L${bb.x + bb.w / 2} ${bb.y + bb.h}L${bb.x} ${bb.y + bb.h / 2}z" ${st}/>`
         : sh.kind === 'triangle' ? `<path d="M${bb.x + bb.w / 2} ${bb.y}L${bb.x + bb.w} ${bb.y + bb.h}L${bb.x} ${bb.y + bb.h}z" ${st}/>` : `<rect x="${bb.x}" y="${bb.y}" width="${bb.w}" height="${bb.h}" rx="${4 / k}" ${st}/>`;
     const lv = document.getElementById('cv-live'); if (lv) lv.innerHTML += g;
-  }, 520);
+  }, Math.max(200, touchCfg().shapeMs));
 });
 document.addEventListener('pointerup', () => { clearTimeout(PEN.holdT); PEN.last = null; }, true);
 
@@ -101,45 +101,48 @@ STROKE_HOOKS.push((pts, info) => {
     UI.tool = 'select'; render(); if (!n) toast('Nothing inside — draw around the boxes to select them.');
     return true;
   }
-  // gestures belong to the pen tool; the stylus drawing on its own (no tool chosen) always leaves plain ink
-  if (info.tool !== 'pen' || info.auto || !penSmart()) return false;
+  if (info.tool !== 'pen') return false;
   const boxes = boxesNow();
-  // ✓ over a task
-  if (isTick(pts, bb, k)) {
-    const b = boxAt(bb.x + bb.w / 2, bb.y + bb.h / 2, boxes) || boxAt(pts[0][0], pts[0][1], boxes);
-    if (b && b.kind === 'n' && b.n.type === 'task') {
-      const t = b.n.t; undoable({ [t.id]: true }, () => ACT['toggle-done']({ dataset: { id: t.id } }));
-      toast(`${t.status === 'done' ? '↺ Reopened' : '✓ Done'}: ${t.ref || ''} ${E.clip(t.title, 50)}`, { action: 'Undo', fn: cvUndo }); return true;
+  // gestures belong to the pen tool; the stylus drawing on its own (no tool chosen) leaves plain ink, and only a
+  // deliberate hold at the end of a stroke changes it (into a clean shape)
+  if (!info.auto && penSmart()) {
+    // ✓ over a task
+    if (isTick(pts, bb, k)) {
+      const b = boxAt(bb.x + bb.w / 2, bb.y + bb.h / 2, boxes) || boxAt(pts[0][0], pts[0][1], boxes);
+      if (b && b.kind === 'n' && b.n.type === 'task') {
+        const t = b.n.t; undoable({ [t.id]: true }, () => ACT['toggle-done']({ dataset: { id: t.id } }));
+        toast(`${t.status === 'done' ? '↺ Reopened' : '✓ Done'}: ${t.ref || ''} ${E.clip(t.title, 50)}`, { action: 'Undo', fn: cvUndo }); return true;
+      }
+      if (b && b.kind === 'n' && b.n.type === 'item') { const t = b.n.t && St.tasks.get(b.n.t.id); if (t && b.n.s) { undoable({ [t.id]: true }, () => toggleSub(t.id, b.n.s.id)); render(); return true; } }
     }
-    if (b && b.kind === 'n' && b.n.type === 'item') { const t = b.n.t && St.tasks.get(b.n.t.id); if (t && b.n.s) { undoable({ [t.id]: true }, () => toggleSub(t.id, b.n.s.id)); render(); return true; } }
-  }
-  // scribble over a box
-  if (isScribble(pts, bb, k)) {
-    const b = boxAt(bb.x + bb.w / 2, bb.y + bb.h / 2, boxes);
-    if (b && b.kind === 'n' && ['task', 'item', 'topic', 'project'].includes(b.n.type)) { const node = document.querySelector(`.mnode[data-node="${CSS.escape(b.id)}"]`); if (node) { deleteNode(node); return true; } }
-    if (b && b.kind === 'e') {
-      const ch = { els: { [b.id]: null } };
-      for (const c of St.board.values()) if (c.type === 'connector' && (c.from.id === b.id || c.to.id === b.id)) ch.els[c.id] = null;
-      cvApply(ch); render(); toast('Deleted.', { action: 'Undo', fn: cvUndo }); return true;
+    // scribble over a box
+    if (isScribble(pts, bb, k)) {
+      const b = boxAt(bb.x + bb.w / 2, bb.y + bb.h / 2, boxes);
+      if (b && b.kind === 'n' && ['task', 'item', 'topic', 'project'].includes(b.n.type)) { const node = document.querySelector(`.mnode[data-node="${CSS.escape(b.id)}"]`); if (node) { deleteNode(node); return true; } }
+      if (b && b.kind === 'e') {
+        const ch = { els: { [b.id]: null } };
+        for (const c of St.board.values()) if (c.type === 'connector' && (c.from.id === b.id || c.to.id === b.id)) ch.els[c.id] = null;
+        cvApply(ch); render(); toast('Deleted.', { action: 'Undo', fn: cvUndo }); return true;
+      }
     }
-  }
-  const closed = isClosed(pts, bb);
-  // a fairly straight line from one box to another (handwriting that wanders across two boxes stays ink)
-  if (!closed && !info.hold && Math.hypot(pts[0][0] - pts[pts.length - 1][0], pts[0][1] - pts[pts.length - 1][1]) > 0.8 * plen(pts)) {
-    const a = boxAt(pts[0][0], pts[0][1], boxes), z = boxAt(pts[pts.length - 1][0], pts[pts.length - 1][1], boxes);
-    if (a && z && a.id !== z.id && !(a.frame && z.frame) && Math.hypot(bb.w, bb.h) * k > 40) {
-      const ref = b => b.kind === 'n' ? { k: 'n', id: b.id } : { k: 'e', id: b.id };
-      const el = newEl('connector', { from: ref(a), to: ref(z), width: 2.5 });
-      cvApply({ els: { [el.id]: el } }); render(); return true;
+    const closed = isClosed(pts, bb);
+    // a fairly straight line from one box to another (handwriting that wanders across two boxes stays ink)
+    if (!closed && !info.hold && Math.hypot(pts[0][0] - pts[pts.length - 1][0], pts[0][1] - pts[pts.length - 1][1]) > 0.8 * plen(pts)) {
+      const a = boxAt(pts[0][0], pts[0][1], boxes), z = boxAt(pts[pts.length - 1][0], pts[pts.length - 1][1], boxes);
+      if (a && z && a.id !== z.id && !(a.frame && z.frame) && Math.hypot(bb.w, bb.h) * k > 40) {
+        const ref = b => b.kind === 'n' ? { k: 'n', id: b.id } : { k: 'e', id: b.id };
+        const el = newEl('connector', { from: ref(a), to: ref(z), width: 2.5 });
+        cvApply({ els: { [el.id]: el } }); render(); return true;
+      }
     }
-  }
-  // a loop around boxes selects them (a loop drawn from inside a box stays ink: you were circling it on purpose)
-  if (closed && !info.hold && !boxAt(pts[0][0], pts[0][1], boxes)) {
-    const inside = boxes.filter(b => !b.frame && inPoly(b.x + b.w / 2, b.y + b.h / 2, pts) && b.w < bb.w && b.h < bb.h);
-    if (inside.length) { selectInside(pts); render(); toast(`${UI.cvSel.size + UI.lassoTasks.size} selected.`); return true; }
+    // a loop around boxes selects them (a loop drawn from inside a box stays ink: you were circling it on purpose)
+    if (closed && !info.hold && !boxAt(pts[0][0], pts[0][1], boxes)) {
+      const inside = boxes.filter(b => !b.frame && inPoly(b.x + b.w / 2, b.y + b.h / 2, pts) && b.w < bb.w && b.h < bb.h);
+      if (inside.length) { selectInside(pts); render(); toast(`${UI.cvSel.size + UI.lassoTasks.size} selected.`); return true; }
+    }
   }
   // held still at the end: the clean shape
-  if (info.hold) {
+  if (info.hold && touchCfg().shapes) {
     const sh = cleanShape(pts, bb); if (!sh) return false;
     const col = UI.cvColor;
     const el = sh.kind === 'line' ? newEl('line', { x1: sh.a[0], y1: sh.a[1], x2: sh.b[0], y2: sh.b[1], width: UI.cvWidth, color: col })
