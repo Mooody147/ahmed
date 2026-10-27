@@ -913,7 +913,7 @@ function mapNodeHTML(n, hits, day) {
     const sug = t.placement && t.placement.status === 'suggested';
     const ach = [...St.daily.values()].filter(a => a.kind === 'achievement' && a.taskId === t.id).length;
     const fresh = Date.now() - (FRESH.get(t.id) || 0) < 2500;
-    const cls = ['mnode', 'task', 'p-' + (t.priority || 'medium'), t.status === 'done' ? 'done' : '', UI.mapSel === t.id ? 'sel' : '', hits && hits.has(t.id) ? 'hit' : '', day && day.has(t.id) ? 'dayhit' : '', sug ? 'suggest' : '', fresh ? 'fresh' : '', needsMe(t) ? 'me' : '', needsMe(t) && urgentForMe(t) ? 'me-urgent' : '', isNewTask(t) ? 'is-new' : '', myFocus() && !needsMe(t) ? 'dim' : ''].join(' ') + drag + drop;
+    const cls = ['mnode', 'task', 'p-' + (t.priority || 'medium'), t.status === 'done' ? 'done' : '', UI.mapSel === t.id ? 'sel' : '', hits && hits.has(t.id) ? 'hit' : '', day && day.has(t.id) ? 'dayhit' : '', sug ? 'suggest' : '', fresh ? 'fresh' : '', needsMe(t) ? 'me' : '', needsMe(t) && urgentForMe(t) ? 'me-urgent' : '', isNewTask(t) ? 'is-new' : '', myFocus() && !needsMe(t) ? 'dim' : '', ...NODE_CLASS.map(f => { try { return f(t) || ''; } catch { return ''; } })].join(' ') + drag + drop;
     return `<div class="${cls}" data-node="${esc(n.id)}" data-type="task" data-tid="${esc(t.id)}" style="${st}">
 <span class="lk" data-link="1" title="Drag to another box to link them" aria-hidden="true"></span>
       <button class="mtick" data-map="tick" aria-label="${t.status === 'done' ? 'Reopen' : 'Mark done'}">${I.check}</button>
@@ -987,10 +987,21 @@ const TOOLS = [
 ];
 const TOOL_KEY = Object.fromEntries(TOOLS.map(t => [t[1].toLowerCase(), t[0]]));
 const CREATE_TOOLS = ['sticky', 'text', 'rect', 'ellipse', 'diamond', 'arrow', 'line', 'frame'];
-const STAY_TOOLS = ['pen', 'highlighter', 'eraser', 'connector', 'hand'];
+const STAY_TOOLS = ['pen', 'highlighter', 'eraser', 'connector', 'hand', 'lasso'];
+// feature files extend the canvas here: box element types (EL_HTML renders one, BOX_TYPES lists them), new elements
+// from a tool (CREATE_EL), buttons for a selection (CTX_EXTRA, CTX_PRE), what a finished pen stroke turns into
+// (STROKE_HOOKS), extra drawing on the world (WORLD_EXTRA), classes on task boxes (NODE_CLASS), snapping while
+// moving (SNAP.fn)
+const EL_HTML = {}, BOX_TYPES = ['sticky', 'text', 'shape'], CREATE_EL = {}, CTX_EXTRA = [], CTX_PRE = [], STROKE_HOOKS = [], WORLD_EXTRA = [], NODE_CLASS = [], SNAP = { fn: null };
+// boards (pages): the task map lives on the main board; other boards hold notes and drawings only
+const curPage = () => UI.page || 'main';
+// layers: ink (pen, highlighter, lines), notes (notes, shapes, frames, tables…), tasks (the map) — each can be hidden or locked
+const layerOf = el => ['stroke', 'line'].includes(el.type) ? 'ink' : 'notes';
+const layerSet = k => (((St.settings.ui || {}).layers || {})[k]) || {};
+const elLocked = el => !!el && !!layerSet(layerOf(el)).lock;
 function boardEls() {
-  const a = UI.mapAsOf;
-  return [...St.board.values()].filter(el => !a || !el.createdAt || dayOf(el.createdAt) <= a)
+  const a = UI.mapAsOf, pg = curPage();
+  return [...St.board.values()].filter(el => (el.page || 'main') === pg && !layerSet(layerOf(el)).hide && (!a || !el.createdAt || dayOf(el.createdAt) <= a))
     .sort((x, y) => (x.z || 0) - (y.z || 0) || (x.createdAt || '').localeCompare(y.createdAt || ''));
 }
 // element with the in-progress move / resize applied
@@ -1022,6 +1033,7 @@ const strokePath = pts => {
 function shapeSVG(kind) {
   if (kind === 'ellipse') return '<ellipse cx="50" cy="50" rx="49" ry="49"/>';
   if (kind === 'diamond') return '<path d="M50 1 99 50 50 99 1 50z"/>';
+  if (kind === 'triangle') return '<path d="M50 2 98 98 2 98z"/>';
   return '<rect x="1" y="1" width="98" height="98" rx="4"/>';
 }
 function belHTML(el, hits) {
@@ -1035,6 +1047,7 @@ function belHTML(el, hits) {
   if (el.type === 'text') return `<div class="bel btext${sel}${hit}" data-el="${esc(el.id)}" style="${st};color:${colorCss(el.color)};font-size:${el.size || 20}px">${txt}${rz}${LK}</div>`;
   if (el.type === 'shape') return `<div class="bel shape${sel}${hit}" data-el="${esc(el.id)}" style="${st};--c:${colorCss(el.color)}"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${shapeSVG(el.kind)}</svg>${txt}${rz}${LK}</div>`;
   if (el.type === 'frame') return `<div class="bel frame${sel}${hit}" data-el="${esc(el.id)}" style="${st};--c:${colorCss(el.color === 'ink' ? '#8EC5FF' : el.color)}"><div class="ftitle btxt" dir="auto">${esc(el.text || 'Frame')}</div>${rz}${LK}</div>`;
+  if (EL_HTML[el.type]) return EL_HTML[el.type](el, { sel: sel + hit + (elLocked(el) ? ' locked' : ''), st, rz, LK });
   return '';
 }
 function inkSVG(el, M) {
@@ -1185,17 +1198,20 @@ function worldHTML(M) {
   const hits = mapHits(); const day = UI.mapDay ? dayTaskIds(UI.mapDay) : null;
   const sel = UI.mapSel;
   const els = boardEls();
-  const frames = els.filter(e => e.type === 'frame'), blocks = els.filter(e => ['sticky', 'text', 'shape'].includes(e.type)), ink = els.filter(e => ['stroke', 'line', 'connector'].includes(e.type));
+  const frames = els.filter(e => e.type === 'frame'), blocks = els.filter(e => BOX_TYPES.includes(e.type)), ink = els.filter(e => ['stroke', 'line', 'connector'].includes(e.type));
+  const showMap = curPage() === 'main' && !layerSet('tasks').hide;
+  if (!showMap) M = { ...M, nodes: [], edges: [], links: [], projects: [] };
   return `${frames.map(e => belHTML(e, hits)).join('')}
     <svg class="map-edges" width="${M.w}" height="${M.h}" aria-hidden="true">
       <defs><marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="arrowhead"/></marker></defs>
-      ${UI.mapBands !== false ? projectBands(M).map(b => `<rect class="band" x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" rx="26" style="--h:${b.hue}"/>`).join('') : ''}
+      ${UI.mapBands !== false && M.projects.length ? projectBands(M).map(b => `<rect class="band" x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" rx="26" style="--h:${b.hue}"/>`).join('') : ''}
       ${M.edges.map(e => `<path class="edge ${e.b.type === 'task' && e.b.t.status === 'done' ? 'done' : ''}" style="--h:${e.hue}" d="${edgePath(e.a, e.b)}"/>`).join('')}
       ${M.links.map(l => `<path class="link ${sel && (l.from.t.id === sel || l.to.t.id === sel) ? 'hot' : ''}" d="${routePath(l.from, l.to, routeObstacles(M, ['n:' + l.from.id, 'n:' + l.to.id])) || linkPath(l.from, l.to)}" marker-end="url(#arrow)"/>`).join('')}
     </svg>
     ${blocks.map(e => belHTML(e, hits)).join('')}
-    ${UI.mapBands !== false ? projectBands(M).map(b => `<div class="band-label" style="left:${b.x + 14}px;top:${b.y + 10}px;--h:${b.hue}" dir="auto">${esc(b.label)}</div>`).join('') : ''}
+    ${UI.mapBands !== false && M.projects.length ? projectBands(M).map(b => `<div class="band-label" style="left:${b.x + 14}px;top:${b.y + 10}px;--h:${b.hue}" dir="auto">${esc(b.label)}</div>`).join('') : ''}
     ${M.nodes.map(n => mapNodeHTML(n, hits, day)).join('')}
+    ${WORLD_EXTRA.map(f => { try { return f(M) || ''; } catch { return ''; } }).join('')}
     <svg class="map-ink" width="${M.w}" height="${M.h}">
       <defs><marker id="cv-arrow" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>
       ${ink.map(e => inkSVG(e, M)).join('')}
@@ -1203,6 +1219,7 @@ function worldHTML(M) {
     </svg>`;
 }
 function ctxHTML() {
+  for (const f of CTX_PRE) { const h = f(); if (h) return h; }
   const ids = [...UI.cvSel].filter(id => St.board.has(id));
   if (!ids.length && UI.mapSel && St.tasks.has(UI.mapSel)) { const t = St.tasks.get(UI.mapSel); return `<div class="cv-ctx" role="toolbar" aria-label="Selected task"><span class="small muted">${esc(t.ref || 'Task')} selected</span><button class="btn sm ghost danger" data-act="cv-del" title="Delete (Del)">${I.trash} Delete</button></div>`; }
   if (!ids.length) return '';
@@ -1214,6 +1231,7 @@ function ctxHTML() {
     ${PALETTE.map(c => `<button class="sw" data-act="cv-recolor" data-c="${c}" style="--c:${colorCss(c)}" aria-label="Colour ${c}"></button>`).join('')}
     ${inked ? `<button class="btn sm ghost" data-act="cv-width" data-d="-1" aria-label="Thinner">−</button><button class="btn sm ghost" data-act="cv-width" data-d="1" aria-label="Thicker">＋</button>` : ''}
     ${canTask ? `<button class="btn sm" data-act="cv-to-task" title="Turn this note into a task in your to-do list">→ Task</button>` : ''}
+    ${CTX_EXTRA.map(f => { try { return f(els, one) || ''; } catch { return ''; } }).join('')}
     ${one && one.type === 'connector' ? `<button class="btn sm ghost" data-act="cv-conn" data-k="shape" title="Line style: smart (goes around boxes), curved or straight">${one.shape === 'straight' ? '╱ Straight' : one.shape === 'curve' ? '∿ Curved' : '⌐ Smart'}</button><button class="btn sm ghost" data-act="cv-conn" data-k="dash" aria-pressed="${!!one.dash}" title="Dashed line">┄</button><button class="btn sm ghost" data-act="cv-conn" data-k="arrow" aria-pressed="${one.arrow !== false}" title="Arrow at the end">➝</button>` : ''}
     <button class="btn sm ghost" data-act="cv-front" title="Bring to front">⬆</button><button class="btn sm ghost" data-act="cv-dup" title="Duplicate (Ctrl+D)">⧉</button>
     <button class="btn sm ghost danger" data-act="cv-del" title="Delete (Del)">${I.trash}</button></div>`;
@@ -1277,6 +1295,7 @@ function viewMap() {
           ${St.mode !== 'viewer' && typeof traceAll === 'function' ? `<div class="mt-sec"><div class="label">Tasks</div><button class="btn sm" data-act="trace-all" ${TRC.running ? 'disabled' : ''}>🔎 ${TRC.running ? 'Tracing…' : 'Trace open tasks in my emails'}</button></div>` : ''}
           <div class="mt-sec"><div class="label">Stylus</div>
             <label class="check small"><input type="checkbox" id="stylus-draw" data-chg="stylus-draw" ${(St.settings.ui || {}).stylusDraw !== false ? 'checked' : ''}>The pen draws on empty canvas; fingers move and zoom</label>
+            <label class="check small"><input type="checkbox" id="pen-gestures" data-chg="pen-gestures" ${(St.settings.ui || {}).penGestures !== false ? 'checked' : ''}>Smart pen: ✓ marks done, scribble deletes, a line links two boxes, hold still to snap a clean shape</label>
             <p class="small muted" style="margin:0">Press harder for a thicker line. The pen's eraser end or side button erases. Two-finger tap: undo · three-finger tap: redo. Your palm is ignored while the pen is on the screen.</p></div>
           <div class="mt-sec"><div class="label">Show</div>
             <label class="check small"><input type="checkbox" id="map-done" data-chg="map-opt" data-key="mapShowDone" ${UI.mapShowDone ? 'checked' : ''}>Completed tasks (history)</label>
@@ -1438,7 +1457,10 @@ document.addEventListener('pointerdown', e => {
   MP.ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY, type: e.pointerType });
   if (MP.ptrs.size === 2) { const [a, b] = [...MP.ptrs.values()]; MP.pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), k: UI.map.k }; MP.mode = 'pinch'; UI.cvTemp = null; live(''); return; }
   let tool = e.button === 1 || UI.spaceDown ? 'hand' : UI.tool;
-  const node = e.target.closest('.mnode'), bel = e.target.closest('[data-el]'), rz = e.target.closest('[data-rz]');
+  let node = e.target.closest('.mnode'), bel = e.target.closest('[data-el]'); const rz = e.target.closest('[data-rz]');
+  // locked layers cannot be picked: pressing on them moves the canvas
+  if (bel && elLocked(St.board.get(bel.dataset.el))) bel = null;
+  if (node && layerSet('tasks').lock) node = null;
   // stylus: the eraser end or the side button erases; on empty canvas the pen draws whatever tool is chosen;
   // once a stylus has been used, a finger moves the canvas instead of drawing
   if (isPen && (e.button === 5 || (e.buttons & 32) || (e.buttons & 2))) tool = 'eraser';
@@ -1451,7 +1473,7 @@ document.addEventListener('pointerdown', e => {
   // the ● on a box: drag it to another box to link them, whatever tool is chosen
   if (e.target.closest('[data-link]')) { const ref = refAt(e.target); if (ref) { MP.mode = 'connect'; MP.from = ref; MP.free = true; return; } }
   if (tool === 'hand') { MP.mode = 'pan'; return; }
-  if (tool === 'pen' || tool === 'highlighter') { MP.mode = 'draw'; MP.tool = tool; MP.pts = [isPen ? [MP.w0.x, MP.w0.y, Math.round((e.pressure || .5) * 100) / 100] : [MP.w0.x, MP.w0.y]]; return; }
+  if (tool === 'pen' || tool === 'highlighter' || tool === 'lasso') { MP.mode = 'draw'; MP.tool = tool; MP.hold = false; MP.pts = [isPen ? [MP.w0.x, MP.w0.y, Math.round((e.pressure || .5) * 100) / 100] : [MP.w0.x, MP.w0.y]]; return; }
   if (tool === 'eraser') { MP.mode = 'erase'; MP.erased = new Set(); eraseAt(e); return; }
   if (CREATE_TOOLS.includes(tool)) { MP.mode = 'create'; return; }
   if (tool === 'connector') { const ref = refAt(e.target); MP.mode = ref ? 'connect' : 'press-empty'; MP.from = ref; MP.free = false; return; }
@@ -1481,6 +1503,7 @@ document.addEventListener('pointermove', e => {
       const l = MP.pts[MP.pts.length - 1]; if (Math.hypot(w.x - l[0], w.y - l[1]) * k < 2) return;
       MP.pts.push(MP.isPen ? [Math.round(w.x * 10) / 10, Math.round(w.y * 10) / 10, Math.round((e.pressure || .5) * 100) / 100] : [Math.round(w.x * 10) / 10, Math.round(w.y * 10) / 10]);
       const hl = MP.tool === 'highlighter';
+      if (MP.tool === 'lasso') { live(`<path d="${strokePath(MP.pts)}" stroke="var(--accent)" stroke-width="${2 / k}" stroke-dasharray="${6 / k} ${5 / k}" fill="color-mix(in srgb, var(--accent) 8%, transparent)"/>`); return; }
       if (MP.isPen && !hl) { live(`<path d="${pressurePath(MP.pts, UI.cvWidth)}" fill="${colorCss(UI.cvColor)}" stroke="none"/>`); return; }
       live(`<path d="${strokePath(MP.pts)}" stroke="${colorCss(hl && UI.cvColor === 'ink' ? '#FFD966' : UI.cvColor)}" stroke-width="${hl ? 18 : UI.cvWidth}" ${hl ? 'stroke-opacity=".45"' : ''} fill="none" stroke-linecap="round" stroke-linejoin="round"/>`); return;
     }
@@ -1503,7 +1526,7 @@ document.addEventListener('pointermove', e => {
       renderWorldSoon(); return;
     }
     case 'press-el': if (!MP.far) return; MP.mode = 'move-els'; // falls through
-    case 'move-els': UI.cvTemp = { kind: 'els', ids: new Set(UI.cvSel), dx: dx / k, dy: dy / k }; renderWorldSoon(); return;
+    case 'move-els': { let ddx = dx / k, ddy = dy / k; if (SNAP.fn) [ddx, ddy] = SNAP.fn(new Set(UI.cvSel), ddx, ddy); UI.cvTemp = { kind: 'els', ids: new Set(UI.cvSel), dx: ddx, dy: ddy }; renderWorldSoon(); return; }
     case 'press-node': {
       if (!MP.far) return;
       const type = MP.node.dataset.type || 'root'; if (type === 'item') { MP.mode = 'pan'; return; }
@@ -1536,6 +1559,7 @@ function finishPointer(mode, e, w, tmp, drop) {
     case 'pan': return true;
     case 'draw': {
       if (MP.pts.length < 2) MP.pts.push([MP.pts[0][0] + 0.5, MP.pts[0][1] + 0.5]);
+      for (const h of STROKE_HOOKS) { try { if (h(MP.pts, { tool: MP.tool, isPen: MP.isPen, hold: MP.hold, e })) return true; } catch (err) { console.warn(err); } }
       const hl = MP.tool === 'highlighter';
       const pts = MP.pts.length > 1500 ? MP.pts.filter((_, i) => i % Math.ceil(MP.pts.length / 1500) === 0) : MP.pts;
       const el = newEl('stroke', { pts, width: hl ? 18 : UI.cvWidth, alpha: hl ? 0.45 : 0, color: hl && UI.cvColor === 'ink' ? '#FFD966' : UI.cvColor, kind: MP.tool, ...(MP.isPen && !hl ? { pressure: true } : {}) });
@@ -1553,7 +1577,8 @@ function finishPointer(mode, e, w, tmp, drop) {
     case 'create': {
       const t = MP.tool, x0 = Math.min(w0.x, w.x), y0 = Math.min(w0.y, w.y), bw = Math.abs(w.x - w0.x), bh = Math.abs(w.y - w0.y), far = MP.far;
       let el;
-      if (t === 'arrow' || t === 'line') el = newEl('line', { x1: w0.x, y1: w0.y, x2: far ? w.x : w0.x + 160, y2: far ? w.y : w0.y, arrow: t === 'arrow', width: UI.cvWidth });
+      if (CREATE_EL[t]) el = CREATE_EL[t]({ w0, w, far, x0, y0, bw, bh });
+      else if (t === 'arrow' || t === 'line') el = newEl('line', { x1: w0.x, y1: w0.y, x2: far ? w.x : w0.x + 160, y2: far ? w.y : w0.y, arrow: t === 'arrow', width: UI.cvWidth });
       else if (t === 'sticky') el = newEl('sticky', { x: w0.x - (far ? 0 : 100), y: w0.y - (far ? 0 : 100), w: far ? Math.max(80, bw) : 200, h: far ? Math.max(80, bh) : 200, text: '', ...(far ? { x: x0, y: y0 } : {}) });
       else if (t === 'text') el = newEl('text', { x: w0.x, y: w0.y - 14, w: far ? Math.max(80, bw) : 260, h: 40, text: '', size: 20 });
       else if (t === 'frame') el = newEl('frame', { x: far ? x0 : w0.x, y: far ? y0 : w0.y, w: far ? Math.max(120, bw) : 640, h: far ? Math.max(90, bh) : 420, text: 'Frame' });
@@ -1561,6 +1586,7 @@ function finishPointer(mode, e, w, tmp, drop) {
       cvApply({ els: { [el.id]: el } });
       UI.cvSel = new Set([el.id]); UI.tool = 'select'; render();
       if (['sticky', 'text', 'shape', 'frame'].includes(el.type)) startEdit(el.id, true);
+      runHooks('elCreated', el);
       return true;
     }
     case 'connect': {
@@ -3145,7 +3171,7 @@ const EMAIL_ACTIONS = [], SETUP_EXTRA = [];
 function emailActionsHTML(e) { return EMAIL_ACTIONS.map(f => { try { return f(e) || ''; } catch { return ''; } }).join(''); }
 function taskActionsHTML(t) { const parts = TASK_ACTIONS.map(f => { try { return f(t) || ''; } catch { return ''; } }).filter(Boolean); return parts.length ? `<div class="row task-actions">${parts.join('')}</div>` : ''; }
 // feature hooks: beforeRender / afterRender (every full render), ready (data loaded), analysed (after a run), taskChanged (old, new)
-const HOOKS = { beforeRender: [], afterRender: [], ready: [], analysed: [], taskChanged: [], deleted: [], proposals: [], approved: [], emailStored: [] };
+const HOOKS = { beforeRender: [], afterRender: [], ready: [], analysed: [], taskChanged: [], deleted: [], proposals: [], approved: [], emailStored: [], elCreated: [] };
 const runHooks = (k, ...a) => { for (const f of HOOKS[k]) { try { f(...a); } catch (e) { console.warn('hook ' + k, e); } } };
 function go(view) { if (!VIEWS.includes(view) || St.mode === 'viewer') view = 'todo'; if (view === 'todo') setTimeout(maybeAutoCategorize, 400); UI.view = view; UI.confirm = null; closeDrawer(); render(); window.scrollTo(0, 0); try { history.replaceState(null, '', '#' + view); } catch {} }
 

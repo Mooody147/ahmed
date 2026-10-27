@@ -24,7 +24,7 @@ for (const [k, v] of Object.entries(ic)) h = h.split('/*' + k + '*/').join(v);
 // artifact you open on any device; data in your Claude account, emails read by your Claude plan, Gmail through
 // the claude.ai Gmail connector)
 if (process.argv[2] === 'lite') {
-  const KEEP = ['00', '01', '02', '03', '04', '05', '12', '22', '23', '24', '25', '26', '27', '28', '29', '30', '31'];
+  const KEEP = ['00', '01', '02', '03', '04', '05', '12', '22', '23', '24', '25', '26', '27', '28', '29', '30', '31', '32', '33', '34', '35', '36', '37', '38'];
   const NAV_OFF = ['daily', 'docs', 'insights', 'plan', 'notebook', 'money', 'tools'];
   const lite = h.split('\n').filter(l => !NAV_OFF.some(v => l.includes(`data-nav="${v}"`))).join('\n');
   const fonts = lite.replace('family=IBM+Plex+Mono', 'family=Archivo:wght@500;600;700;800&family=IBM+Plex+Mono');

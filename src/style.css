@@ -1254,3 +1254,7 @@ html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; 
 .tr-hist .tr-dot { width: 8px; height: 8px; margin: 5px 0 0 5px; }
 .tr-mail > div { display: grid; gap: 3px; }
 .trc-q { margin: 0; padding: 6px 10px; border-left: 3px solid var(--accent); background: color-mix(in srgb, var(--accent) 5%, var(--surface)); border-radius: 0 8px 8px 0; }
+
+/* lasso */
+.mnode.task.lassoed { box-shadow: 0 0 0 3px var(--accent), var(--elev-3) !important; }
+.map-viewport[data-tool="lasso"] { cursor: crosshair; }
