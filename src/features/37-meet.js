@@ -192,7 +192,7 @@ async function cmStart() {
 HOOKS.afterRender.push(() => { if (CM.ctrl) requestAnimationFrame(cmPlace); });
 // in comment mode a press on a task or note opens the comment box there instead of selecting or moving it
 document.addEventListener('pointerdown', e => {
-  if (!CM.on || !CM.ctrl || !e.target.closest) return;
+  if (!CM.on || !CM.ctrl || !e.target.closest || !['select', 'hand'].includes(UI.tool) || (e.buttons & 34)) return;
   const node = e.target.closest('.mnode.task'), bel = e.target.closest('[data-el]'); if (!node && !bel) return;
   e.stopImmediatePropagation(); e.preventDefault();
   if (node) { const t = St.tasks.get(node.dataset.tid); CM.ctrl.compose('task:' + node.dataset.tid, node, { label: t ? `${t.ref || ''} ${E.clip(t.title, 80)}`.trim() : 'Task' }).catch(() => {}); }

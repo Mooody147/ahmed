@@ -3658,22 +3658,62 @@ function mergeSettings(d) {
 /* ---------- persistence ---------- */
 const LS_KEY = 'action-register-v1';
 const LS_TEXT = 'action-register-texts-v1';
-const inflight = new Map(), queued = new Map();
-async function writeDoc(ref, data) {
+// Every save or delete of one record goes through one queue per record: one write at a time (as the store asks),
+// the newest change wins, and a delete is never overtaken by an older save. A few records are written at once, so
+// erasing or undoing many items does not hit the store's limit on concurrent writes. Until the store shows a change,
+// snapshots keep showing it too (PEND), so a late snapshot cannot bring back a deleted note or reverse an undo.
+const inflight = new Map(), queued = new Map(), PEND = new Map(), slotWait = [];
+let slotsBusy = 0;
+const slot = () => slotsBusy < 4 ? (slotsBusy++, Promise.resolve()) : new Promise(r => slotWait.push(r));
+const slotFree = () => { const r = slotWait.shift(); if (r) r(); else slotsBusy--; };
+function writeDoc(ref, data) {
   const k = ref.path;
+  PEND.set(k, { data, at: 0 });
   if (inflight.has(k)) { queued.set(k, { ref, data }); return inflight.get(k); }
   const p = (async () => {
-    try { await ref.set(data); }
-    catch (e) {
-      if (e && e.code === 'unavailable') { await new Promise(r => setTimeout(r, 600 + Math.random() * 900)); try { await ref.set(data); return; } catch (e2) { e = e2; } }
-      dbError(e);
+    await slot(); let ok = false;
+    try {
+      for (let i = 0; ; i++) {
+        try { await (data === null ? ref.delete() : ref.set(data)); ok = true; break; }
+        catch (e) {
+          const c = e && e.code;
+          if ((c === 'unavailable' || c === 'resource_exhausted') && i < 3) { await new Promise(r => setTimeout(r, (c === 'unavailable' ? 600 : 1500) * (i + 1) + Math.random() * 900)); continue; }
+          dbError(e); break;
+        }
+      }
     } finally {
-      inflight.delete(k);
-      const q = queued.get(k); if (q) { queued.delete(k); writeDoc(q.ref, q.data); }
+      slotFree(); inflight.delete(k);
+      const q = queued.get(k);
+      if (q) { queued.delete(k); writeDoc(q.ref, q.data); }
+      else { const pd = PEND.get(k); if (pd && ok) pd.at = Date.now(); else if (pd) PEND.delete(k); }
     }
   })();
   inflight.set(k, p);
   return p;
+}
+const delDoc = ref => writeDoc(ref, null);
+// the store's copy has caught up with a pending change once it shows the same save (or the record is gone)
+const pendAgrees = (srv, data) => data === null ? !srv : !!srv && (data.updatedAt ? srv.updatedAt === data.updatedAt : JSON.stringify(srv) === JSON.stringify(data));
+function pendKeep(k, srv) {
+  const p = PEND.get(k); if (!p) return false;
+  if (p.at && (pendAgrees(srv, p.data) || Date.now() - p.at > 30000)) { PEND.delete(k); return false; }
+  return true;
+}
+// a collection snapshot as a Map, with this page's own changes that the store does not show yet laid on top
+function snapMap(col, s) {
+  const m = new Map(s.docs.map(d => [d.id, { ...clone(d.data()), id: d.id }]));
+  const pre = col.path + '/';
+  for (const [k, p] of [...PEND]) {
+    if (!k.startsWith(pre) || k.indexOf('/', pre.length) >= 0) continue;
+    const id = k.slice(pre.length);
+    if (!pendKeep(k, m.get(id))) continue;
+    if (p.data === null) m.delete(id); else m.set(id, p.data);
+  }
+  return m;
+}
+function snapDoc(ref, d) {
+  const srv = d.exists ? clone(d.data()) : null;
+  return pendKeep(ref.path, srv) ? PEND.get(ref.path).data : srv;
 }
 function dbError(e) {
   const c = e && e.code;
@@ -3701,7 +3741,7 @@ function putTask(t) {
 function delTask(id) {
   if (St.tasks.has(id)) runHooks('deleted', 'task', St.tasks.get(id));
   St.tasks.delete(id);
-  if (St.mode === 'db') St.refs.tasks.doc(id).delete().catch(dbError); else saveLocal();
+  if (St.mode === 'db') delDoc(St.refs.tasks.doc(id)); else saveLocal();
 }
 function putEmail(e) {
   St.emails.set(e.id, e);
@@ -3710,23 +3750,23 @@ function putEmail(e) {
 function delEmail(id) {
   if (St.emails.has(id)) runHooks('deleted', 'email', St.emails.get(id));
   St.emails.delete(id);
-  if (St.mode === 'db') { St.refs.emails.doc(id).delete().catch(dbError); St.refs.texts.doc(id).delete().catch(() => {}); }
+  if (St.mode === 'db') { delDoc(St.refs.emails.doc(id)); delDoc(St.refs.texts.doc(id)); }
   else { saveLocal(); try { const m = JSON.parse(localStorage.getItem(LS_TEXT) || '{}'); delete m[id]; localStorage.setItem(LS_TEXT, JSON.stringify(m)); } catch {} }
 }
 // canvas elements, canvas layout overrides and daily-tracker entries
 const FRESH = new Map();
 function putBoard(el) { el.updatedAt = nowISO(); St.board.set(el.id, el); if (St.mode === 'db') writeDoc(St.refs.board.doc(el.id), el); else saveLocal(); }
-function delBoard(id) { St.board.delete(id); if (St.mode === 'db') St.refs.board.doc(id).delete().catch(dbError); else saveLocal(); }
+function delBoard(id) { St.board.delete(id); if (St.mode === 'db') delDoc(St.refs.board.doc(id)); else saveLocal(); }
 function putLayout(l) { St.layout = l; if (St.mode === 'db') writeDoc(St.refs.layout, l); else saveLocal(); }
 function putDaily(d) { d.updatedAt = nowISO(); St.daily.set(d.id, d); if (St.mode === 'db') writeDoc(St.refs.daily.doc(d.id), d); else saveLocal(); }
-function delDaily(id) { St.daily.delete(id); if (St.mode === 'db') St.refs.daily.doc(id).delete().catch(dbError); else saveLocal(); }
+function delDaily(id) { St.daily.delete(id); if (St.mode === 'db') delDoc(St.refs.daily.doc(id)); else saveLocal(); }
 const mergeLayout = l => ({ off: {}, offv: {}, size: {}, ...(l || {}) });
 // further collections used by feature files: document register, time log, lessons, recycle bin, learned preferences
 const COLS = ['docreg', 'time', 'lessons', 'trash', 'prefs'];
 St.cols = Object.fromEntries(COLS.map(n => [n, new Map()]));
 const colList = n => [...St.cols[n].values()];
 function colPut(n, d) { d.updatedAt = nowISO(); St.cols[n].set(d.id, d); if (St.mode === 'db') writeDoc(St.refs.cols[n].doc(d.id), d); else saveLocal(); }
-function colDel(n, id) { St.cols[n].delete(id); if (St.mode === 'db') St.refs.cols[n].doc(id).delete().catch(dbError); else saveLocal(); }
+function colDel(n, id) { St.cols[n].delete(id); if (St.mode === 'db') delDoc(St.refs.cols[n].doc(id)); else saveLocal(); }
 // feature files register their own collections before the data loads
 function addCols(...names) { for (const n of names) if (!COLS.includes(n)) { COLS.push(n); St.cols[n] = new Map(); } }
 function putSettings(s) {
@@ -3766,14 +3806,14 @@ async function initStore() {
     St.refs = { tasks: base.collection('tasks'), emails: base.collection('emails'), texts: base.collection('texts'), board: base.collection('board'), daily: base.collection('daily'), settings: db.doc('data/users/' + St.uid + '/settings'), layout: db.doc('data/users/' + St.uid + '/canvaslayout'), seen: db.doc('data/users/' + St.uid + '/gmailseen') };
     let got = 0; const done = () => { if (++got >= 3 && !St.ready) { St.ready = true; setTimeout(() => { maybeAutoCheck(); if (UI.view === 'todo') maybeAutoCategorize(); runHooks('ready'); }, 300); } render(); };
     const fail = e => { if (e && e.code === 'revoked') toast('Access to saved data ended for this view. Reload the page.', { err: true }); else toast('Live sync stopped (' + (e && e.code || 'error') + '). Reload to reconnect.', { err: true }); };
-    St.refs.tasks.onSnapshot(s => { St.tasks = new Map(s.docs.map(d => [d.id, { ...clone(d.data()), id: d.id }])); if (!St._t) { St._t = 1; done(); } else scheduleRender(); }, fail);
-    St.refs.emails.onSnapshot(s => { St.emails = new Map(s.docs.map(d => [d.id, { ...clone(d.data()), id: d.id }])); if (!St._e) { St._e = 1; done(); } else scheduleRender(); }, fail);
-    St.refs.settings.onSnapshot(d => { St.settings = mergeSettings(d.exists ? clone(d.data()) : null); if (!St._s) { St._s = 1; done(); } else scheduleRender(); }, fail);
-    St.refs.board.onSnapshot(s => { St.board = new Map(s.docs.map(d => [d.id, { ...clone(d.data()), id: d.id }])); scheduleRender(); }, fail);
-    St.refs.daily.onSnapshot(s => { St.daily = new Map(s.docs.map(d => [d.id, { ...clone(d.data()), id: d.id }])); scheduleRender(); }, fail);
-    St.refs.layout.onSnapshot(d => { St.layout = mergeLayout(d.exists ? clone(d.data()) : null); scheduleRender(); }, fail);
+    St.refs.tasks.onSnapshot(s => { St.tasks = snapMap(St.refs.tasks, s); if (!St._t) { St._t = 1; done(); } else scheduleRender(); }, fail);
+    St.refs.emails.onSnapshot(s => { St.emails = snapMap(St.refs.emails, s); if (!St._e) { St._e = 1; done(); } else scheduleRender(); }, fail);
+    St.refs.settings.onSnapshot(d => { St.settings = mergeSettings(snapDoc(St.refs.settings, d)); if (!St._s) { St._s = 1; done(); } else scheduleRender(); }, fail);
+    St.refs.board.onSnapshot(s => { St.board = snapMap(St.refs.board, s); scheduleRender(); }, fail);
+    St.refs.daily.onSnapshot(s => { St.daily = snapMap(St.refs.daily, s); scheduleRender(); }, fail);
+    St.refs.layout.onSnapshot(d => { St.layout = mergeLayout(snapDoc(St.refs.layout, d)); scheduleRender(); }, fail);
     St.refs.cols = {};
-    for (const n of COLS) { St.refs.cols[n] = base.collection(n); St.refs.cols[n].onSnapshot(s => { St.cols[n] = new Map(s.docs.map(d => [d.id, { ...clone(d.data()), id: d.id }])); scheduleRender(); }, fail); }
+    for (const n of COLS) { St.refs.cols[n] = base.collection(n); St.refs.cols[n].onSnapshot(s => { St.cols[n] = snapMap(St.refs.cols[n], s); scheduleRender(); }, fail); }
   } else {
     St.mode = 'local';
     try {
@@ -4608,7 +4648,7 @@ function liveEl(el) {
   return el;
 }
 function moveEl(el, dx, dy) {
-  if (el.type === 'stroke') return { ...el, pts: el.pts.map(p => [Math.round((p[0] + dx) * 10) / 10, Math.round((p[1] + dy) * 10) / 10]) };
+  if (el.type === 'stroke') return { ...el, pts: el.pts.map(p => [Math.round((p[0] + dx) * 10) / 10, Math.round((p[1] + dy) * 10) / 10, ...p.slice(2)]) };
   if (el.type === 'line') return { ...el, x1: el.x1 + dx, y1: el.y1 + dy, x2: el.x2 + dx, y2: el.y2 + dy };
   if (el.type === 'connector') return el;
   return { ...el, x: el.x + dx, y: el.y + dy };
@@ -4649,7 +4689,7 @@ function belHTML(el, hits) {
 function inkSVG(el, M) {
   el = liveEl(el);
   const sel = UI.cvSel.has(el.id) ? ' sel' : '';
-  if (el.type === 'stroke' && el.pressure) return `<g class="ink${sel}" data-el="${esc(el.id)}"><path d="${pressurePath(el.pts, el.width)}" fill="${colorCss(el.color)}" stroke="none"/></g>`;
+  if (el.type === 'stroke' && el.pressure) return `<g class="ink${sel}" data-el="${esc(el.id)}"><path d="${pressurePath(el.pts, el.width)}" fill="${colorCss(el.color)}" stroke="none"/><path class="hit" d="${strokePath(el.pts)}" stroke-width="${Math.max(14, el.width + 10)}"/></g>`;
   if (el.type === 'stroke') { const d = strokePath(el.pts); return `<g class="ink${sel}" data-el="${esc(el.id)}"><path d="${d}" stroke="${colorCss(el.color)}" stroke-width="${el.width}" ${el.alpha ? `stroke-opacity="${el.alpha}"` : ''} fill="none" stroke-linecap="round" stroke-linejoin="round"/><path class="hit" d="${d}" stroke-width="${Math.max(14, el.width + 10)}"/></g>`; }
   if (el.type === 'line') { const d = `M${el.x1} ${el.y1} L${el.x2} ${el.y2}`; return `<g class="ink${sel}" data-el="${esc(el.id)}" style="color:${colorCss(el.color)}"><path d="${d}" stroke="currentColor" stroke-width="${el.width || 3}" fill="none" stroke-linecap="round" ${el.arrow ? 'marker-end="url(#cv-arrow)"' : ''}/><path class="hit" d="${d}" stroke-width="16"/></g>`; }
   if (el.type === 'connector') {
@@ -5015,11 +5055,12 @@ function cvApplyRaw(ch) {
   for (const id of UI.cvSel) if (!St.board.has(id)) UI.cvSel.delete(id);
 }
 function cvApply(ch) {
-  const inv = cvSnapshot(ch); cvApplyRaw(ch);
+  const inv = cvSnapshot(ch);
   UI.cvUndo.push(inv); if (UI.cvUndo.length > 150) UI.cvUndo.shift(); UI.cvRedo = [];
+  cvApplyRaw(ch);
 }
-function cvUndo() { const op = UI.cvUndo.pop(); if (!op) { toast('Nothing to undo.'); return; } UI.cvRedo.push(cvSnapshot(op)); cvApplyRaw(op); render(); }
-function cvRedo() { const op = UI.cvRedo.pop(); if (!op) return; UI.cvUndo.push(cvSnapshot(op)); cvApplyRaw(op); render(); }
+function cvUndo() { const op = UI.cvUndo.pop(); if (!op) { toast('Nothing to undo.'); return; } UI.cvRedo.push(cvSnapshot(op)); try { cvApplyRaw(op); } finally { render(); } }
+function cvRedo() { const op = UI.cvRedo.pop(); if (!op) { toast('Nothing to redo.'); return; } UI.cvUndo.push(cvSnapshot(op)); try { cvApplyRaw(op); } finally { render(); } }
 // a copy of the layout to change: box positions and sizes, plus anything feature files keep there (boards, saved views)
 const newLayout = () => ({ ...clone(St.layout || {}), off: { ...(St.layout.off || {}) }, offv: { ...(St.layout.offv || {}) }, size: { ...(St.layout.size || {}) } });
 function newEl(type, props) { return { id: E.uid('b'), type, color: UI.cvColor, createdAt: nowISO(), ...(curPage() !== 'main' ? { page: curPage() } : {}), ...props }; }
@@ -5039,9 +5080,27 @@ function dropTargetAt(e) {
   return n;
 }
 function live(html) { const g = $('#cv-live'); if (g) g.innerHTML = html; }
+// the eraser takes whatever it touches: the item under the pointer, plus any line or stroke within its radius along
+// the path since the last move (a quick swipe does not skip thin lines, and ink under a note is reached too)
+const segDist = (px, py, ax, ay, bx, by) => { const dx = bx - ax, dy = by - ay, l = dx * dx + dy * dy; const t = l ? Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / l)) : 0; return Math.hypot(px - ax - t * dx, py - ay - t * dy); };
+function eraseMark(id) {
+  if (MP.erased.has(id)) return; const x = St.board.get(id); if (!x || elLocked(x)) return;
+  MP.erased.add(id); const n = document.querySelector(`[data-el="${CSS.escape(id)}"]`); if (n) n.style.opacity = '.15';
+}
 function eraseAt(e) {
   const el = underPointer(e); const b = el && el.closest && el.closest('[data-el]');
-  if (b && !MP.erased.has(b.dataset.el)) { MP.erased.add(b.dataset.el); b.style.opacity = '.15'; }
+  if (b) eraseMark(b.dataset.el);
+  const w = toWorld(e.clientX, e.clientY), a = MP.eraseLast || w, r = Math.max(8, 12 / UI.map.k); MP.eraseLast = w;
+  const steps = Math.max(1, Math.ceil(Math.hypot(w.x - a.x, w.y - a.y) / r)), probe = [];
+  for (let i = 0; i <= steps; i++) probe.push([a.x + (w.x - a.x) * i / steps, a.y + (w.y - a.y) * i / steps]);
+  const bx0 = Math.min(a.x, w.x) - r, by0 = Math.min(a.y, w.y) - r, bx1 = Math.max(a.x, w.x) + r, by1 = Math.max(a.y, w.y) + r;
+  for (const x of boardEls()) {
+    if (MP.erased.has(x.id) || !['stroke', 'line'].includes(x.type)) continue;
+    const bb = elBox(x), pad = (x.width || 3) / 2;
+    if (bb.x - pad > bx1 || bb.y - pad > by1 || bb.x + bb.w + pad < bx0 || bb.y + bb.h + pad < by0) continue;
+    const segs = x.type === 'line' ? [[x.x1, x.y1, x.x2, x.y2]] : x.pts.length < 2 ? [[x.pts[0][0], x.pts[0][1], x.pts[0][0], x.pts[0][1]]] : x.pts.slice(1).map((q, i) => [x.pts[i][0], x.pts[i][1], q[0], q[1]]);
+    if (probe.some(([px, py]) => segs.some(sg => segDist(px, py, ...sg) <= r + pad))) eraseMark(x.id);
+  }
 }
 document.addEventListener('pointerdown', e => {
   const isPen = e.pointerType === 'pen', isTouch = e.pointerType === 'touch';
@@ -5063,7 +5122,7 @@ document.addEventListener('pointerdown', e => {
   // once a stylus has been used, a finger moves the canvas instead of drawing
   if (isPen && (e.button === 5 || (e.buttons & 32) || (e.buttons & 2))) tool = 'eraser';
   else if (isPen && ['select', 'hand'].includes(tool) && !node && !bel && (St.settings.ui || {}).stylusDraw !== false) tool = 'pen';
-  else if (isTouch && UI.penSeen && ['pen', 'highlighter', 'eraser'].includes(tool)) tool = 'hand';
+  else if (isTouch && UI.penSeen && ['pen', 'highlighter'].includes(tool)) tool = 'hand';
   MP.isPen = isPen;
   Object.assign(MP, { sx: e.clientX, sy: e.clientY, w0: toWorld(e.clientX, e.clientY), mx: UI.map.x, my: UI.map.y, tool, node, bel, target: e.target, shift: e.shiftKey, far: false });
   vp.setPointerCapture && vp.setPointerCapture(e.pointerId);
@@ -5072,7 +5131,7 @@ document.addEventListener('pointerdown', e => {
   if (e.target.closest('[data-link]')) { const ref = refAt(e.target); if (ref) { MP.mode = 'connect'; MP.from = ref; MP.free = true; return; } }
   if (tool === 'hand') { MP.mode = 'pan'; return; }
   if (tool === 'pen' || tool === 'highlighter' || tool === 'lasso') { MP.mode = 'draw'; MP.tool = tool; MP.hold = false; MP.pts = [isPen ? [MP.w0.x, MP.w0.y, Math.round((e.pressure || .5) * 100) / 100] : [MP.w0.x, MP.w0.y]]; return; }
-  if (tool === 'eraser') { MP.mode = 'erase'; MP.erased = new Set(); eraseAt(e); return; }
+  if (tool === 'eraser') { MP.mode = 'erase'; MP.erased = new Set(); MP.eraseLast = null; eraseAt(e); return; }
   if (CREATE_TOOLS.includes(tool)) { MP.mode = 'create'; return; }
   if (tool === 'connector') { const ref = refAt(e.target); MP.mode = ref ? 'connect' : 'press-empty'; MP.from = ref; MP.free = false; return; }
   if (tool === 'task') { MP.mode = 'task'; return; }
@@ -11002,7 +11061,7 @@ async function cmStart() {
 HOOKS.afterRender.push(() => { if (CM.ctrl) requestAnimationFrame(cmPlace); });
 // in comment mode a press on a task or note opens the comment box there instead of selecting or moving it
 document.addEventListener('pointerdown', e => {
-  if (!CM.on || !CM.ctrl || !e.target.closest) return;
+  if (!CM.on || !CM.ctrl || !e.target.closest || !['select', 'hand'].includes(UI.tool) || (e.buttons & 34)) return;
   const node = e.target.closest('.mnode.task'), bel = e.target.closest('[data-el]'); if (!node && !bel) return;
   e.stopImmediatePropagation(); e.preventDefault();
   if (node) { const t = St.tasks.get(node.dataset.tid); CM.ctrl.compose('task:' + node.dataset.tid, node, { label: t ? `${t.ref || ''} ${E.clip(t.title, 80)}`.trim() : 'Task' }).catch(() => {}); }
