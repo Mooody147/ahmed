@@ -227,6 +227,78 @@ async def main():
         assert len(await ev(f"window.__AR.St.board.get('{t2['id']}').rows")) == 4
         print('DRAWINGS OK')
 
+        # ---- Claude on the canvas ----
+        await ev("""window.__mockBaseAI = window.__mockBaseAI || window.__mockAnswer; window.__mockAnswer = p => {
+          if (/handwriting by/.test(p)) return /turn it into to-do tasks/.test(p) ? { text: 'Call Omar re channel width tomorrow\\nSend Hany disc filter comments Thu', tasks: [{ title: 'Call Omar about channel width', owner: 'me', deadline: '2026-10-28', project: null, priority: 'medium' }, { title: 'Send Hany disc filter comments', owner: 'me', deadline: '2026-10-29', project: null, priority: 'high' }] } : { text: 'Check NPSH margin' };
+          if (/^Break this engineering task/.test(p)) return { steps: ['Collect vendor pump curves', 'Recalculate NPSHa at minimum level', 'Update calc and issue Rev B'] };
+          if (/^Group these notes/.test(p)) { const ids = [...p.matchAll(/"id":"(b[a-z0-9]+)"/g)].map(m => m[1]); return { themes: [{ name: 'Pumps', ids: ids.slice(0, 2) }, { name: 'Civil', ids: ids.slice(2) }] }; }
+          if (/^Turn this description into a process flow/.test(p)) return { title: 'Sludge line', nodes: [{ id: 'a', label: 'Clarifier', kind: 'start' }, { id: 'b', label: 'Thickener', kind: 'process' }, { id: 'c', label: 'Dewatered?', kind: 'decision' }, { id: 'd', label: 'Disposal', kind: 'end' }], links: [{ from: 'a', to: 'b' }, { from: 'b', to: 'c' }, { from: 'c', to: 'd', label: 'yes' }] };
+          return window.__mockBaseAI(p); }; 0""")
+        await pg.click('[data-act="board-add"]'); await pg.wait_for_timeout(300); await pg.keyboard.press('Enter'); await pg.wait_for_timeout(200)
+        vp = await box('#map-vp'); ox, oy = vp['x'] + 200, vp['y'] + 260
+        # handwriting: a few strokes written with the pen
+        await pg.keyboard.press('Escape'); await pg.keyboard.press('p')
+        for i in range(4): await pen(seg((ox + i * 40, oy), (ox + i * 40 + 18, oy + 50), 8))
+        await pg.keyboard.press('q')
+        L0, T0, L1, T1 = ox - 30, oy - 30, ox + 220, oy + 90
+        await pg.mouse.move(L0, T0); await pg.mouse.down()
+        for (x, y) in seg((L0, T0), (L1, T0)) + seg((L1, T0), (L1, T1)) + seg((L1, T1), (L0, T1)) + seg((L0, T1), (L0, T0)): await pg.mouse.move(x, y)
+        await pg.mouse.up(); await pg.wait_for_timeout(300)
+        assert len(await ev("[...window.__AR.UI.cvSel]")) == 4
+        n0 = await ev("window.__AR.St.tasks.size")
+        await pg.click('[data-act="cai-hw"][data-m="tasks"]'); await pg.wait_for_timeout(900)
+        assert 'Tasks from your handwriting' in await pg.text_content('#drawer')
+        assert await ev("window.__prompts.filter(p => /handwriting by/.test(p.prompt)).slice(-1)[0].images") == 1
+        await pg.click('[data-act="hw-add"]'); await pg.wait_for_timeout(400)
+        assert await ev("window.__AR.St.tasks.size") == n0 + 2, 'two tasks from handwriting'
+        assert await ev("[...window.__AR.St.tasks.values()].some(t => t.title === 'Call Omar about channel width' && t.deadline === '2026-10-28')")
+        assert await ev("[...window.__AR.St.board.values()].filter(e => e.type === 'stroke' && e.page === window.__AR.UI.page).length") == 0, 'handwriting removed'
+        # to text
+        await pg.keyboard.press('p')
+        for i in range(3): await pen(seg((ox + i * 40, oy), (ox + i * 40 + 18, oy + 50), 8))
+        await pg.keyboard.press('q'); await pg.mouse.move(L0, T0); await pg.mouse.down()
+        for (x, y) in seg((L0, T0), (L1, T0)) + seg((L1, T0), (L1, T1)) + seg((L1, T1), (L0, T1)) + seg((L0, T1), (L0, T0)): await pg.mouse.move(x, y)
+        await pg.mouse.up(); await pg.wait_for_timeout(300)
+        await pg.click('[data-act="cai-hw"][data-m="text"]'); await pg.wait_for_timeout(900)
+        for i in range(20):
+            if await ev("[...window.__AR.St.board.values()].some(e => e.type === 'text' && e.text === 'Check NPSH margin')"): break
+            await pg.wait_for_timeout(200)
+        print('TEXT DBG', await ev("[...window.__AR.St.board.values()].filter(e => e.type === 'text').map(e => e.text)"), await ev("window.__prompts.filter(p => /handwriting by/.test(p.prompt)).length"))
+        assert await ev("[...window.__AR.St.board.values()].some(e => e.type === 'text' && e.text === 'Check NPSH margin')"), 'typed text'
+        # group notes into themes
+        for i in range(4):
+            await pg.keyboard.press('n'); await pg.mouse.click(vp['x'] + 120 + i * 240, vp['y'] + 560); await pg.wait_for_timeout(150); await pg.keyboard.type(['Pump curve', 'NPSH', 'Channel width', 'Anchor bolts'][i]); await pg.keyboard.press('Escape'); await pg.wait_for_timeout(120)
+        sticky = await ev("[...window.__AR.St.board.values()].filter(e => e.type === 'sticky' && e.page === window.__AR.UI.page).map(e => e.id)"); assert len(sticky) == 4
+        bs = [await box(f'[data-el="{x}"]') for x in sticky]
+        L0, T0 = min(q['x'] for q in bs) - 20, min(q['y'] for q in bs) - 20; L1, T1 = max(q['x'] + q['width'] for q in bs) + 20, max(q['y'] + q['height'] for q in bs) + 20
+        await pg.keyboard.press('q'); await pg.mouse.move(L0, T0); await pg.mouse.down()
+        for (x, y) in seg((L0, T0), (L1, T0)) + seg((L1, T0), (L1, T1)) + seg((L1, T1), (L0, T1)) + seg((L0, T1), (L0, T0)): await pg.mouse.move(x, y)
+        await pg.mouse.up(); await pg.wait_for_timeout(300)
+        print('GROUP SEL', len(await ev("[...window.__AR.UI.cvSel]"))); assert len([x for x in await ev("[...window.__AR.UI.cvSel]") if x in sticky]) == 4
+        await pg.click('[data-act="cai-group"]'); await pg.wait_for_timeout(900)
+        frames = await ev("[...window.__AR.St.board.values()].filter(e => e.type === 'frame' && e.page === window.__AR.UI.page).map(e => e.text)"); print('THEMES', frames)
+        assert sorted(frames) == ['Civil', 'Pumps']
+        # process flow from typed arrows, then from words (Claude)
+        await pg.click('[data-menu="options"] summary'); await pg.click('[data-act="flow-open"]'); await pg.wait_for_timeout(200)
+        await pg.fill('#flow-text', 'Inlet → Fine screens → Grit removal → Aeration → Clarifier → Disc filter'); await pg.click('[data-act="flow-draw"]'); await pg.wait_for_timeout(500)
+        sh = await ev("[...window.__AR.St.board.values()].filter(e => e.type === 'shape' && e.page === window.__AR.UI.page).map(e => e.text)"); print('FLOW', sh)
+        assert sh[:6] == ['Inlet', 'Fine screens', 'Grit removal', 'Aeration', 'Clarifier', 'Disc filter']
+        assert await ev("[...window.__AR.St.board.values()].filter(e => e.type === 'connector' && e.page === window.__AR.UI.page).length") == 5
+        await pg.click('[data-menu="options"] summary'); await pg.click('[data-act="flow-open"]'); await pg.fill('#flow-text', 'Sludge from the clarifiers goes to the thickener, then if it is dewatered it is disposed'); await pg.click('[data-act="flow-draw"]'); await pg.wait_for_timeout(700)
+        kinds = await ev("[...window.__AR.St.board.values()].filter(e => e.type === 'shape' && e.page === window.__AR.UI.page).slice(-4).map(e => e.kind + ':' + e.text)"); print('FLOW 2', kinds)
+        assert kinds == ['ellipse:Clarifier', 'rect:Thickener', 'diamond:Dewatered?', 'ellipse:Disposal']
+        await pg.screenshot(path=SHOTS + '/tools-4-ai.png')
+        # break a task down (Tasks board)
+        await pg.click('[data-act="board-go"][data-id="main"]'); await pg.wait_for_timeout(600)
+        tid = await ev("[...window.__AR.St.tasks.values()].find(t => /RAS pump/.test(t.title) && t.status !== 'done').id")
+        k0 = len(await ev(f"window.__AR.St.tasks.get('{tid}').subtasks"))
+        await pg.click(f'.mnode.task[data-tid="{tid}"] .mtxt b'); await pg.wait_for_timeout(500)
+        assert await ev("!!document.querySelector('#drawer [data-act=\"cai-break\"]')"), 'Break it down in the task panel'
+        await pg.click('#drawer [data-act="cai-break"]'); await pg.wait_for_timeout(900)
+        subs = await ev(f"window.__AR.St.tasks.get('{tid}').subtasks.map(x => x.text)"); print('STEPS', subs[-3:])
+        assert len(subs) == k0 + 3 and 'Recalculate NPSHa' in subs[-2]
+        print('CANVAS AI OK')
+
         print('ERRORS', errors); assert not errors
         print('CANVAS TOOLS E2E PASSED')
         await b.close()
