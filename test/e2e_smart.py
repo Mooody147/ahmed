@@ -89,12 +89,10 @@ async def main():
         await pg.fill('#paste-text', 'From: Mahmoud Sobeah <%s>\nSent: Monday, October 27, 2026 10:00 AM\nTo: Rania Hassan <rania@consultant.example>\nSubject: RE: ELM pumps – please confirm NPSH margin\n\nDear Rania, the NPSH margin at minimum wet well level is 1.8 m. The updated pump curve is attached.\n\nBest regards, Mahmoud' % ME)
         await pg.click('[data-act="add-paste"]'); await pg.wait_for_timeout(500); await pg.click('[data-act="analyze"]'); await idle(pg); await pg.wait_for_timeout(300)
         assert await ev("window.__replySawTask") is True, 'the earlier task was offered to Claude as the one my reply answers'
-        await pg.click('.rail [data-nav="review"]'); await pg.wait_for_timeout(400)
-        rv = await pg.text_content('#main'); assert 'Your reply completes this task' in rv, rv[:400]
-        await pg.screenshot(path=SHOTS + '/smart-1-reply-review.png')
-        await approve(pg); await pg.wait_for_timeout(400)
+        # a clear outcome is applied at once; Review shows it as applied
+        await pg.click('.rail [data-nav="emails"]'); await pg.wait_for_timeout(200)
         t = await ev(f"window.__AR.St.tasks.get('{nid}')"); print('AFTER MY REPLY', t['status'], [x['done'] for x in t['subtasks']], t['history'][-1]['text'])
-        assert t['status'] == 'done' and all(x['done'] for x in t['subtasks']) and 'completed by my reply' in t['history'][-1]['text']
+        assert t['status'] == 'done' and all(x['done'] for x in t['subtasks']) and 'completed by my email' in t['history'][-1]['text']
         assert await ev("window.__AR.St.tasks.size") == n1, 'my reply did not add a task'
 
         # duplicates already on the canvas: found and merged (Undo brings them back)

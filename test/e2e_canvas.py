@@ -178,6 +178,7 @@ async def main():
         await pg.fill('#map-asof', y); await pg.dispatch_event('#map-asof', 'change'); await pg.wait_for_timeout(600)
         print('AS OF yesterday task nodes', await ev("document.querySelectorAll('.mnode.task').length")); assert await ev("document.querySelectorAll('.mnode.task').length") == 0
         assert await ev("!!document.querySelector('details[data-menu=\"options\"][open]')"), 'History menu stays open after a change'
+        await ev("document.querySelectorAll('details.menu[open]').forEach(d => { d.open = false; })"); await pg.wait_for_timeout(100)  # closing the menu shortens the page
         await pg.click('[data-act="map-now"]'); await pg.wait_for_timeout(400)
         assert await ev("document.querySelectorAll('.mnode.task').length") > 0
 

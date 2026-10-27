@@ -692,7 +692,7 @@ function viewTodo() {
     ${!St.settings.setupDone ? setupCardHTML() : ''}
     ${uncategorised && St.sample ? callout('info', `<div class="row"><span>${CAT.running ? '🧠 Claude is sorting your tasks into projects and categories…' : `🏷️ ${uncategorised} task${uncategorised > 1 ? 's are' : ' is'} not categorised yet.`}</span><span class="spacer"></span>${CAT.running ? '<div class="progress indet" style="width:90px"><i></i></div>' : `<button class="btn sm primary" data-act="ai-categorize">Categorise with Claude</button>`}</div>`) : ''}
     ${CAT.error && !CAT.running ? callout('warn', `<p>${esc(CAT.error)}</p>`) : ''}
-    ${typeof dupCallout === 'function' ? dupCallout() : ''}${typeof headersCallout === 'function' ? headersCallout() : ''}${typeof chaseCallout === 'function' ? chaseCallout() : ''}
+    ${typeof dupCallout === 'function' ? dupCallout() : ''}${typeof headersCallout === 'function' ? headersCallout() : ''}${typeof traceCallout === 'function' ? traceCallout() : ''}${typeof chaseCallout === 'function' ? chaseCallout() : ''}
     ${St.tasks.size && TODO_VIEWS[UI.todoMode] ? TODO_VIEWS[UI.todoMode]() : ''}
     ${St.tasks.size && UI.todoMode !== 'map' && !TODO_VIEWS[UI.todoMode] ? `<div class="mode-bar">${modeSegHTML()}</div>` : ''}
     ${St.tasks.size && UI.todoMode === 'map' ? viewMap() : ''}
@@ -1274,6 +1274,7 @@ function viewMap() {
         <details class="menu mt-more" ${UI.menuOpen === 'options' ? 'open' : ''} data-menu="options"><summary class="btn sm ${UI.mapDay || UI.mapAsOf ? 'on' : ''}" title="Show, history and export">⋯<span class="lbl">More</span>${UI.mapDay || UI.mapAsOf ? ' ·' : ''}</summary><div class="menu-pop mt-pop">
           <div class="mt-sec"><div class="label">Direction</div>
             <div class="seg" role="group" aria-label="Map direction"><button data-act="map-dir" data-dir="h" aria-pressed="${mapDir() === 'h'}">→ Left to right</button><button data-act="map-dir" data-dir="v" aria-pressed="${mapDir() === 'v'}">↓ Top to bottom</button></div></div>
+          ${St.mode !== 'viewer' && typeof traceAll === 'function' ? `<div class="mt-sec"><div class="label">Tasks</div><button class="btn sm" data-act="trace-all" ${TRC.running ? 'disabled' : ''}>🔎 ${TRC.running ? 'Tracing…' : 'Trace open tasks in my emails'}</button></div>` : ''}
           <div class="mt-sec"><div class="label">Stylus</div>
             <label class="check small"><input type="checkbox" id="stylus-draw" data-chg="stylus-draw" ${(St.settings.ui || {}).stylusDraw !== false ? 'checked' : ''}>The pen draws on empty canvas; fingers move and zoom</label>
             <p class="small muted" style="margin:0">Press harder for a thicker line. The pen's eraser end or side button erases. Two-finger tap: undo · three-finger tap: redo. Your palm is ignored while the pen is on the screen.</p></div>
@@ -2131,7 +2132,7 @@ function updateHTML(e, u) {
   const t = St.tasks.get(u.taskId); if (!t) return '';
   const what = u.newStatus ? `Status ${STATUS[t.status]} → <b>${esc(STATUS[u.newStatus])}</b>` : u.newDeadline ? `Deadline ${esc(t.deadline ? fmtDate(t.deadline) : '—')} → <b>${esc(fmtDate(u.newDeadline))}</b>` : 'Add a note';
   return `<div class="prop ${u.accept ? '' : 'off'}">
-    <label class="check" style="padding-top:2px"><input type="checkbox" id="u-acc-${esc(u.uid)}" data-chg="upd" data-eid="${esc(e.id)}" data-uid="${esc(u.uid)}" ${u.accept ? 'checked' : ''}><span class="sr">Apply</span></label>
+    ${u.applied ? '<span class="chip ok" style="align-self:start">Applied</span>' : `<label class="check" style="padding-top:2px"><input type="checkbox" id="u-acc-${esc(u.uid)}" data-chg="upd" data-eid="${esc(e.id)}" data-uid="${esc(u.uid)}" ${u.accept ? 'checked' : ''}><span class="sr">Apply</span></label>`}
     <div class="body"><div>${u.verdict === 'fulfilled' ? '<span class="chip ok">✓ Your reply completes this task</span>' : u.verdict === 'partial' ? '<span class="chip accent">◐ Your reply does part of this task</span>' : u.verdict === 'not_fulfilled' ? '<span class="chip warn">Your reply does not complete this task yet</span>' : '<span class="chip wait">Update to existing task</span>'}</div>
       <div><span class="mono">${esc(t.ref)}</span> <b dir="auto">${esc(t.title)}</b></div>
       <div class="small">${what}${u.note ? ` — <span dir="auto">${esc(u.note)}</span>` : ''}</div>
@@ -2155,6 +2156,33 @@ function placementFrom(p) {
   // never held back: the task goes where Claude put it; when it was not sure, its other options are kept so you
   // can switch with one tap in the task panel ("Wrong place?")
   return (c !== null && c !== undefined && c < 0.7 && opts.length) ? { status: 'auto', confidence: c, options: opts } : { status: 'auto', confidence: c ?? null };
+}
+// what an email changes on a task it moves on: status, deadline, items done, evidence, the email linked, a history line
+function applyTaskUpdate(t0, u, e, now, label) {
+  const t = clone(t0); const notes = [];
+  if (u.newStatus && u.newStatus !== t.status) { notes.push(`status ${STATUS[t.status]} → ${STATUS[u.newStatus]}`); t.status = u.newStatus; t.completedAt = u.newStatus === 'done' ? now : null; }
+  if (u.newDeadline && u.newDeadline !== t.deadline) { notes.push(`deadline → ${fmtDate(u.newDeadline)}`); t.deadline = u.newDeadline; t.deadlineBasis = 'explicit'; }
+  if (u.note) notes.push(u.note);
+  // items my reply covered are ticked (matched by their reference or their words)
+  if ((u.doneItems || []).length && subsOf(t).length) {
+    const want = u.doneItems.map(x => E.normMatch(x)); let n = 0;
+    t.subtasks = subsOf(t).map(x => { const r = E.normMatch(x.ref || ''), tx = E.normMatch(x.text); const hit = !x.done && want.some(w => w && ((r && (w === r || w.startsWith(r + ' '))) || tx === w || tx.startsWith(w) || w.startsWith(tx))); if (hit) n++; return hit ? { ...x, done: true, doneAt: now } : x; });
+    if (n) notes.push(`${n} item${n > 1 ? 's' : ''} done`);
+  }
+  if (u.verdict) notes.unshift(u.verdict === 'fulfilled' ? (e.fromMe ? 'completed by my email' : 'completed') : u.verdict === 'partial' ? (e.fromMe ? 'partly done by my email' : 'partly done') : (e.fromMe ? 'my email did not complete it' : 'not completed yet'));
+  t.evidence = [...(t.evidence || []), ...(u.evidence || []).map(x => ({ ...x, emailId: e.id }))].slice(-20);
+  t.emailIds = [...new Set([...(t.emailIds || []), e.id].filter(Boolean))];
+  (t.history = t.history || []).push({ at: now, text: `From ${label || `email “${E.clip(e.subject || '(no subject)', 70)}”`}: ${notes.join('; ') || 'updated'}${u.reason ? ' — ' + u.reason : ''}`, emailId: e.id });
+  t.updatedAt = now;
+  return t;
+}
+// an email I sent: from one of my addresses or aliases, or under my own name
+function isMeSender(em) {
+  const me = St.settings.me || {}, fe = String(em.fromEmail || E.firstEmail(em.from || '') || '').toLowerCase();
+  const addrs = [...(me.emails || []), ...String(me.aliases || '').split(/[,;\s]+/)].map(x => String(x).trim().toLowerCase()).filter(x => x.includes('@'));
+  if (fe && addrs.includes(fe)) return true;
+  const name = E.normMatch(String(em.from || '').replace(/<[^>]*>/g, '')), mine = E.normMatch(me.name || '');
+  return !!(mine && mine.split(' ').length >= 2 && name && (name === mine || name.includes(mine)));
 }
 function approveEmail(eid, quiet) {
   const e = clone(St.emails.get(eid)); if (!e) return;
@@ -2201,23 +2229,9 @@ function approveEmail(eid, quiet) {
       putTask(t); added++;
     }
   }
-  for (const u of (a.updates || []).filter(u => u.accept)) {
+  for (const u of (a.updates || []).filter(u => u.accept && !u.applied)) {
     const t0 = St.tasks.get(u.taskId); if (!t0) continue;
-    const t = clone(t0); const notes = [];
-    if (u.newStatus && u.newStatus !== t.status) { notes.push(`status ${STATUS[t.status]} → ${STATUS[u.newStatus]}`); t.status = u.newStatus; t.completedAt = u.newStatus === 'done' ? now : null; }
-    if (u.newDeadline && u.newDeadline !== t.deadline) { notes.push(`deadline → ${fmtDate(u.newDeadline)}`); t.deadline = u.newDeadline; t.deadlineBasis = 'explicit'; }
-    if (u.note) notes.push(u.note);
-    // items my reply covered are ticked (matched by their reference or their words)
-    if ((u.doneItems || []).length && subsOf(t).length) {
-      const want = u.doneItems.map(x => E.normMatch(x)); let n = 0;
-      t.subtasks = subsOf(t).map(x => { const r = E.normMatch(x.ref || ''), tx = E.normMatch(x.text); const hit = !x.done && want.some(w => w && ((r && (w === r || w.startsWith(r + ' '))) || tx === w || tx.startsWith(w) || w.startsWith(tx))); if (hit) n++; return hit ? { ...x, done: true, doneAt: now } : x; });
-      if (n) notes.push(`${n} item${n > 1 ? 's' : ''} done`);
-    }
-    if (u.verdict) notes.unshift(u.verdict === 'fulfilled' ? 'completed by my reply' : u.verdict === 'partial' ? 'partly done by my reply' : 'my reply did not complete it');
-    t.evidence = [...(t.evidence || []), ...(u.evidence || []).map(x => ({ ...x, emailId: e.id }))].slice(-20);
-    t.emailIds = [...new Set([...(t.emailIds || []), e.id])];
-    (t.history = t.history || []).push({ at: now, text: `From ${label}: ${notes.join('; ') || 'updated'}`, emailId: e.id });
-    putTask(t); updated++;
+    putTask(applyTaskUpdate(t0, u, e, now, label)); updated++;
   }
   e.reviewState = 'reviewed'; e.reviewedAt = now; putEmail(e);
   runHooks('approved', e);
@@ -2543,8 +2557,7 @@ async function analyzeBundle(b, signal, onProgress) {
     }
   }
   const tk = E.threadKey(em);
-  const mine = new Set((s.me.emails || []).map(x => String(x).toLowerCase()));
-  const fromMe = !!(em.fromEmail && mine.has(String(em.fromEmail).toLowerCase()));
+  const fromMe = isMeSender(em);
   const related = E.relatedOpenTasks([...St.tasks.values()], { ...em, fromMe }, tk).map(t => ({ id: t.id, ref: t.ref, title: t.title, project: t.project, discipline: t.discipline, owner: t.ownership === 'mine' ? 'me' : t.owner, status: t.status, deadline: t.deadline }));
   const budget = ((St.limits && St.limits.maxPromptBytes) || 262144) - 10000;
   const input = {
@@ -2618,10 +2631,21 @@ async function analyzeBundle(b, signal, onProgress) {
     messageId: em.messageId || '', convIndex: em.convIndex || '', source: b.source, fileName: b.fileName || '', importedAt: b.importedAt || nowISO(),
     snippet: E.clip((em.body || '').replace(/\s+/g, ' '), 280),
     attachments: b.atts.map(a => ({ name: a.name, kindLabel: (a.res && a.res.kindLabel) || 'File', size: a.size || 0, status: a.include ? ((a.res && a.res.status) || 'unknown') : 'excluded', note: (a.res && a.res.note) || '', pages: (a.res && a.res.pages) || null, images: (a.res && a.res.images && a.include) ? a.res.images.length : 0, textLen: (a.res && a.res.text || '').length })),
-    analysis: an, reviewState: 'pending', hasText: !!s.storeText,
+    analysis: an, reviewState: 'pending', hasText: !!s.storeText, fromMe,
     gmailId: b.gmailId || '', gmailUrl: b.gmailUrl || '', forwardedBy: em.forwardedBy || '', forwardMode: em.forwardMode || '',
   };
   if (s.storeText) await saveTexts(id, em.body || '', b.atts.map(a => ({ name: a.name, include: a.include, status: a.res && a.res.status, kindLabel: a.res && a.res.kindLabel, note: a.res && a.res.note, text: (a.res && a.res.text) || '' })));
+  // a clear outcome is applied at once (Undo in the message): my own email that completes or partly does a task, or any
+  // email that Claude is sure closes one; everything else waits in Review
+  const sure = an.updates.filter(u => u.accept && St.tasks.has(u.taskId) && (s.autoClose !== false) && ((fromMe && ['fulfilled', 'partial'].includes(u.verdict)) || (u.verdict === 'fulfilled' && (u.confidence || 0) >= 0.85 && u.evidence.some(x => ['verified', 'partial'].includes(x.check)))));
+  if (sure.length) {
+    const ch = { tasks: {} }, now = nowISO();
+    for (const u of sure) { ch.tasks[u.taskId] = applyTaskUpdate(ch.tasks[u.taskId] || St.tasks.get(u.taskId), u, rec, now); u.applied = true; }
+    cvApply(ch);
+    const refs = sure.map(u => St.tasks.get(u.taskId)).filter(Boolean).map(t => t.ref).join(', ');
+    toast(`${fromMe ? 'Your email' : 'This email'} ${sure.every(u => u.verdict === 'fulfilled') ? 'completes' : 'moves on'} ${refs} — updated.`, { action: 'Undo', fn: () => { cvUndo(); const r = clone(St.emails.get(id) || rec); (r.analysis.updates || []).forEach(x => { if (sure.some(y => y.uid === x.uid)) x.applied = false; }); r.reviewState = 'pending'; putEmail(r); render(); } });
+    if (!an.tasks.some(p => p.accept) && an.updates.every(u => u.applied || !u.accept)) { rec.reviewState = 'reviewed'; rec.reviewedAt = now; }
+  }
   putEmail(rec);
   runHooks('emailStored', rec, b); // feature files keep the original email and its attachments
   // several emails forwarded in one message share its Gmail id ("id:n" for the extra ones)
@@ -3249,7 +3273,7 @@ const CHG = {
   'sub-text': el => { const t = clone(St.tasks.get(UI.drawer && UI.drawer.id)); if (!t) return; const x = subsOf(t).find(y => y.id === el.dataset.sid); if (!x || x.text === el.value.trim()) return; if (!el.value.trim()) { t.subtasks = subsOf(t).filter(y => y.id !== x.id); } else x.text = el.value.trim(); putTask(t); render(); },
   'map-opt': el => { UI[el.dataset.key] = el.checked; UI.map.fitted = false; render(); },
   'map-day': el => { UI.mapDay = el.value || ''; render(); },
-  'map-asof': el => { UI.mapAsOf = el.value && el.value < T() ? el.value : ''; UI.map.fitted = false; render(); },
+  'map-asof': el => { const v = el.value && el.value < T() ? el.value : ''; if (v === UI.mapAsOf) return; UI.mapAsOf = v; UI.map.fitted = false; render(); },
   'day-date': el => { if (el.value) { UI.dayDate = el.value; UI.daySuggest = null; render(); } },
   'todo-opt': el => { UI[el.dataset.key] = el.checked; saveTodoPrefs(); render(); },
   'task-field': el => { if (UI.drawer && UI.drawer.kind === 'task') setTaskField(UI.drawer.id, el.dataset.field, el.value); },

@@ -1242,3 +1242,15 @@ body:not(.viewer-mode) .viewer-bar { display: none; }
 /* crisp text and lines everywhere */
 html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; text-rendering: optimizeLegibility; font-kerning: normal; }
 .map-world svg, .map-ink, .map-edges { shape-rendering: geometricPrecision; }
+
+/* trace: a task's email trail */
+.trail { list-style: none; margin: 0; padding: 0 0 0 4px; display: grid; gap: 0; }
+.trail li { position: relative; display: grid; grid-template-columns: 18px 1fr; gap: 8px; padding: 0 0 14px; }
+.trail li::before { content: ""; position: absolute; left: 8px; top: 14px; bottom: 0; width: 2px; background: var(--line); }
+.trail li:last-child::before { display: none; }
+.tr-dot { width: 12px; height: 12px; margin: 3px 0 0 3px; border-radius: 50%; background: var(--surface); box-shadow: inset 0 0 0 2.5px var(--ink-3); z-index: 1; }
+.tr-mail .tr-dot { box-shadow: inset 0 0 0 3px var(--accent); }
+.tr-mail.me .tr-dot { background: var(--accent); }
+.tr-hist .tr-dot { width: 8px; height: 8px; margin: 5px 0 0 5px; }
+.tr-mail > div { display: grid; gap: 3px; }
+.trc-q { margin: 0; padding: 6px 10px; border-left: 3px solid var(--accent); background: color-mix(in srgb, var(--accent) 5%, var(--surface)); border-radius: 0 8px 8px 0; }
