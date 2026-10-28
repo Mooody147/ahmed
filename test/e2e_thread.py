@@ -67,6 +67,27 @@ async def main():
         assert 'IP68 confirmation' in await pg.text_content('#drawer h2')
         await pg.click('[data-act="close-drawer"] >> nth=0'); await pg.wait_for_timeout(200)
         await pg.screenshot(path=os.path.join(HERE, 'shots', 'thread-canvas.png'))
+
+        # tasks of the conversation sit inside its cards, not as separate boxes beside them
+        inside = await ev("""[...document.querySelectorAll('.mnode.task')].map(t => { const r = t.getBoundingClientRect(); return [...document.querySelectorAll('.mnode.thread.holds')].some(c => { const q = c.getBoundingClientRect(); return r.left >= q.left && r.right <= q.right && r.top >= q.top && r.bottom <= q.bottom; }); })""")
+        print('TASKS INSIDE CARDS', inside); assert inside and all(inside)
+        # task → thread: ticking a task inside the card updates the card at once
+        crs = await ev("[...window.__AR.St.tasks.values()].find(t => /CRS/.test(t.title)).id")
+        await pg.click(f'.mnode.task[data-tid="{crs}"] .mtick'); await pg.wait_for_timeout(500)
+        hdr = await ev(f"(n => n.closest('.mnode.thread').querySelector('.thn-ht small').textContent)(document.querySelector('.mnode.task[data-tid=\"{crs}\"]').parentElement.querySelector('.mnode.thread:not(.compact)'))")
+        print('CARD AFTER TICK', hdr); assert '2 open' in hdr
+        # a chip on a message picks its task
+        await pg.click(f'.mnode.thread:not(.compact)[data-node$=":{eid}"] .thn-chip[data-tid="{crs}"]'); await pg.wait_for_timeout(300)
+        assert await ev("window.__AR.UI.mapSel") == crs and await ev(f"!!document.querySelector('.mnode.thread:not(.compact)[data-node$=\":{eid}\"] li.sel-src')"), 'message behind the selected task lit'
+        # thread → task: a new reply that completes a task shows on that task and as ✓ on the reply's row
+        t3 = await ev("[...window.__AR.St.tasks.values()].find(t => /anchor bolt/.test(t.title)).id")
+        await ev("""async (tid) => { const db = await claude.use('db'); const St = window.__AR.St; const t = JSON.parse(JSON.stringify(St.tasks.get(tid)));
+          t.status = 'done'; t.completedAt = new Date().toISOString(); t.emailIds = [...t.emailIds, 'eLATER']; t.history = [...(t.history || []), { at: t.completedAt, text: 'From email: completed by my email', emailId: 'eLATER' }];
+          await db.doc('data/users/' + St.uid + '/register/tasks/' + tid).set(t); }""", t3)
+        await pg.wait_for_timeout(800)
+        chip = await ev(f"[...document.querySelectorAll('.mnode.thread:not(.compact)[data-node$=\":{eid}\"] li.last .thn-chip')].map(c => c.className + ' ' + c.textContent.trim())")
+        print('REPLY CHIPS', chip); assert any('fx-done' in c and 'T-0003' in c for c in chip), chip
+        assert await ev(f"document.querySelector('.mnode.task[data-tid=\"{t3}\"]').classList.contains('done')"), 'the task shows done'
         bad = [e for e in errors if 'PAGEERROR' in e]; assert not bad, bad
         print('THREAD E2E PASSED'); await b.close()
 

@@ -137,18 +137,24 @@ function threadNodeHTML(n, st) {
   const steps = threadSteps({ conv: n.conv }), opened = UI.thOpen.has(n.id), all = opened || (!n.compact && steps.length <= 6);
   const shown = all ? steps : n.compact ? [...(steps.length > 1 ? [{ gap: steps.length - 1 }] : []), steps[steps.length - 1]] : [steps[0], { gap: steps.length - 4 }, ...steps.slice(-3)];
   const first = steps.find(x => x.date), last = [...steps].reverse().find(x => x.date);
-  const open = [...St.tasks.values()].filter(t => t.status !== 'done' && (t.emailIds || []).some(id => ems.some(e => e.id === id))).length;
+  const eids = new Set(ems.map(e => e.id)), ttasks = [...St.tasks.values()].filter(t => (t.emailIds || []).some(id => eids.has(id)));
+  const open = ttasks.filter(t => t.status !== 'done').length, selT = UI.mapSel && St.tasks.get(UI.mapSel), selE = new Set(selT ? selT.emailIds || [] : []);
+  // what each message did to the tasks: created (＋), completed (✓) or moved on (↻) — tap to pick the task
+  const effects = eid => ttasks.map(t => (t.emailIds || [])[0] === eid ? ['＋', t, 'created here'] : (t.history || []).some(h => h.emailId === eid) ? ((t.history || []).some(h => h.emailId === eid && /complet|done/i.test(h.text)) ? ['✓', t, 'completed by this message'] : ['↻', t, 'updated by this message']) : null).filter(Boolean);
   const drag = UI.cvTemp && UI.cvTemp.kind === 'node' && UI.cvTemp.id === n.id ? ' dragging' : '';
   const row = (x, i) => x.gap ? `<li class="thn-gap"><button data-map="th-all">⋯ ${x.gap} more message${x.gap > 1 ? 's' : ''}</button></li>`
-    : `<li class="${x.me ? 'me' : ''}${x === steps[steps.length - 1] ? ' last' : ''}"><button class="thn-row" data-map="th-email" ${x.emailId ? `data-eid="${esc(x.emailId)}"` : ''} title="${esc(x.says || '')}"><span class="thn-i" aria-hidden="true">${x === steps[steps.length - 1] ? '📍' : TH_KIND[x.kind] || TH_KIND.info}</span><span class="thn-d">${x.date ? esc(fmtDate(x.date, { day: 'numeric', month: 'short' })) : '—'}</span><span class="thn-t" dir="auto"><b>${esc(x.me ? 'Me' : E.clip(x.from || 'Someone', 26))}</b> ${esc(E.clip(x.says || '', 90))}</span></button></li>`;
-  return `<div class="mnode thread${n.compact && !opened ? ' compact' : ''}${drag}" data-node="${esc(n.id)}" data-type="thread" style="${st}">
+    : `<li class="${x.me ? 'me' : ''}${x === steps[steps.length - 1] ? ' last' : ''}${x.emailId && selE.has(x.emailId) ? ' sel-src' : ''}"><button class="thn-row" data-map="th-email" ${x.emailId ? `data-eid="${esc(x.emailId)}"` : ''} title="${esc(x.says || '')}"><span class="thn-i" aria-hidden="true">${x === steps[steps.length - 1] ? '📍' : TH_KIND[x.kind] || TH_KIND.info}</span><span class="thn-d">${x.date ? esc(fmtDate(x.date, { day: 'numeric', month: 'short' })) : '—'}</span><span class="thn-t" dir="auto"><b>${esc(x.me ? 'Me' : E.clip(x.from || 'Someone', 26))}</b> ${esc(E.clip(x.says || '', 90))}</span></button>${x.emailId && effects(x.emailId).length ? `<span class="thn-fx">${effects(x.emailId).map(([g, t, why]) => `<button class="thn-chip fx-${g === '＋' ? 'new' : g === '✓' ? 'done' : 'upd'}${t.status === 'done' ? ' done' : ''}" data-map="th-task" data-tid="${esc(t.id)}" title="${esc(`${t.ref} ${why}: ${t.title}`)}">${g} ${esc(t.ref || '')}</button>`).join('')}</span>` : ''}</li>`;
+  const inside = (n.children || []).length;
+  return `<div class="mnode thread${n.compact && !opened ? ' compact' : ''}${inside ? ' holds' : ''}${selT && selE.size && ems.some(e => selE.has(e.id)) ? ' has-sel' : ''}${drag}" data-node="${esc(n.id)}" data-type="thread" style="${st}">
     <div class="thn-h"><span class="thn-ic" aria-hidden="true">🧵</span><div class="thn-ht"><b dir="auto">${esc(E.clip(E.normSubject(ems[0].subject || '') || 'Email thread', 70))}</b><small>${steps.length} message${steps.length > 1 ? 's' : ''} · ${ems.length} added${first ? ` · ${esc(fmtDate(first.date, { day: 'numeric', month: 'short' }))}${last && last.date !== first.date ? ' → ' + esc(fmtDate(last.date, { day: 'numeric', month: 'short' })) : ''}` : ''}${open ? ` · ${open} open` : ''}</small></div>${steps.length > 6 || (n.compact && steps.length > 1) ? `<button class="mfocus" data-map="th-all" title="${all ? 'Show less' : 'Show the whole conversation'}">${all ? '▴' : '▾'}</button>` : ''}</div>
     <ol class="thn-list">${shown.map(row).join('')}</ol>
+    ${inside ? `<div class="thn-tl"><span>Tasks from this thread</span><b>${inside} here${ttasks.length > inside ? ` · ${ttasks.length} in the thread` : ''} · ${open} open</b></div>` : ''}
     <span class="rz" data-rz="${esc(n.id)}" data-kind="node" title="Drag to resize" aria-hidden="true"></span></div>`;
 }
 function threadNodeClick(node, btn) {
   const id = node.dataset.node;
   if (btn && btn.dataset.map === 'th-all') { UI.thOpen.has(id) ? UI.thOpen.delete(id) : UI.thOpen.add(id); render(); return; }
+  if (btn && btn.dataset.map === 'th-task' && St.tasks.has(btn.dataset.tid)) { UI.mapSel = btn.dataset.tid; UI.cvSel.clear(); render(); return; }
   const eid = btn && btn.dataset.eid; const cid = id.split(':').pop(), ems = convEmails(cid);
   const target = eid && St.emails.has(eid) ? eid : (ems[ems.length - 1] || {}).id;
   if (target) { UI.previews.clear(); openDrawer('email', target); }
@@ -166,3 +172,17 @@ HOOKS.ready.push(() => setTimeout(async () => {
   }
   if (todo.length) scheduleRender();
 }, 1500));
+
+// pointing at a message lights up the tasks it created or changed (and pointing at a task, the messages behind it)
+document.addEventListener('mouseover', e => {
+  const r = e.target.closest && e.target.closest('.mnode.thread .thn-row[data-eid], .mnode.task');
+  document.querySelectorAll('.th-glow').forEach(x => x.classList.remove('th-glow'));
+  if (!r) return;
+  if (r.classList.contains('mnode')) {
+    const t = St.tasks.get(r.dataset.tid); if (!t) return;
+    for (const id of t.emailIds || []) document.querySelectorAll(`.mnode.thread .thn-row[data-eid="${CSS.escape(id)}"]`).forEach(x => x.closest('li').classList.add('th-glow'));
+    return;
+  }
+  const eid = r.dataset.eid;
+  for (const t of St.tasks.values()) if ((t.emailIds || []).includes(eid)) { const n = document.querySelector(`.mnode.task[data-tid="${CSS.escape(t.id)}"]`); if (n) n.classList.add('th-glow'); }
+}, { passive: true });

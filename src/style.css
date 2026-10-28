@@ -1464,3 +1464,13 @@ html.site-mode .ts-ic { width: 66px; height: 66px; }
 .thn-list li.me .thn-t b { color: var(--accent); }
 .thn-list li.last .thn-row { background: color-mix(in srgb, var(--accent) 8%, transparent); }
 .thn-gap button { background: none; border: 0; color: var(--ink-3); font: inherit; font-size: 11px; padding: 2px 4px 2px 28px; cursor: pointer; }
+.mnode.thread.holds { padding-bottom: 12px; }
+.thn-tl { display: flex; justify-content: space-between; gap: 8px; margin-top: 4px; padding-top: 6px; border-top: 1px dashed color-mix(in srgb, var(--wait) 40%, var(--line)); font-size: 11px; color: var(--ink-3); text-transform: uppercase; letter-spacing: .04em; }
+.thn-tl b { text-transform: none; letter-spacing: 0; color: var(--ink-2); font-weight: 600; }
+.thn-list li { display: grid; }
+.thn-fx { display: flex; flex-wrap: wrap; gap: 4px; padding: 0 4px 3px 72px; }
+.thn-chip { border: 1px solid color-mix(in srgb, var(--wait) 45%, var(--line)); background: var(--surface); color: var(--ink-2); border-radius: 999px; padding: 0 7px; font: inherit; font-size: 10.5px; line-height: 17px; cursor: pointer; }
+.thn-chip.done { color: var(--ok, #2F7A3E); }
+.thn-list li.sel-src .thn-row, .thn-list li.th-glow .thn-row { background: color-mix(in srgb, var(--accent) 14%, transparent); box-shadow: inset 3px 0 0 var(--accent); }
+.mnode.thread.has-sel { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft), var(--elev-1); }
+.mnode.task.th-glow { box-shadow: 0 0 0 3px var(--accent-soft), var(--elev-2); }

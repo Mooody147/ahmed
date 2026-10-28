@@ -1469,6 +1469,16 @@ html.site-mode .ts-ic { width: 66px; height: 66px; }
 .thn-list li.me .thn-t b { color: var(--accent); }
 .thn-list li.last .thn-row { background: color-mix(in srgb, var(--accent) 8%, transparent); }
 .thn-gap button { background: none; border: 0; color: var(--ink-3); font: inherit; font-size: 11px; padding: 2px 4px 2px 28px; cursor: pointer; }
+.mnode.thread.holds { padding-bottom: 12px; }
+.thn-tl { display: flex; justify-content: space-between; gap: 8px; margin-top: 4px; padding-top: 6px; border-top: 1px dashed color-mix(in srgb, var(--wait) 40%, var(--line)); font-size: 11px; color: var(--ink-3); text-transform: uppercase; letter-spacing: .04em; }
+.thn-tl b { text-transform: none; letter-spacing: 0; color: var(--ink-2); font-weight: 600; }
+.thn-list li { display: grid; }
+.thn-fx { display: flex; flex-wrap: wrap; gap: 4px; padding: 0 4px 3px 72px; }
+.thn-chip { border: 1px solid color-mix(in srgb, var(--wait) 45%, var(--line)); background: var(--surface); color: var(--ink-2); border-radius: 999px; padding: 0 7px; font: inherit; font-size: 10.5px; line-height: 17px; cursor: pointer; }
+.thn-chip.done { color: var(--ok, #2F7A3E); }
+.thn-list li.sel-src .thn-row, .thn-list li.th-glow .thn-row { background: color-mix(in srgb, var(--accent) 14%, transparent); box-shadow: inset 3px 0 0 var(--accent); }
+.mnode.thread.has-sel { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft), var(--elev-1); }
+.mnode.task.th-glow { box-shadow: 0 0 0 3px var(--accent-soft), var(--elev-2); }
 
 </style>
 <div class="titlestrip" id="titlestrip"><span class="ts-brand"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c3.3 4 6 7.2 6 10.4a6 6 0 0 1-12 0C6 10.2 8.7 7 12 3z"/><path d="m9.3 13.6 1.9 1.9 3.6-4.1"/></svg> Action Register</span><button class="ts-search" data-act="palette" title="Search and commands (Ctrl+K)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg><span>Search or type a command</span><kbd>Ctrl K</kbd></button><span class="ts-space"></span></div>
@@ -4397,7 +4407,9 @@ function dayTaskIds(day) {
 function nodeW(n) {
   const tmp = UI.cvTemp;
   if (tmp && tmp.kind === 'size' && tmp.id === n.id) return tmp.w;
-  const o = (St.layout.size || {})[n.id]; return o && o.w ? o.w : MW[n.type];
+  const o = (St.layout.size || {})[n.id], w = o && o.w ? o.w : MW[n.type];
+  // a thread card is wide enough for the tasks inside it
+  return n.type === 'thread' && (n.children || []).length ? Math.max(w, ...n.children.map(k => nodeW(k) + 24)) : w;
 }
 function buildMap() {
   const tasks = mapTasks();
@@ -4424,10 +4436,14 @@ function buildMap() {
       // the topic's email conversations come first, each as one card from the first email to the latest reply
       const convs = UI.mapThreads === false || typeof taskConvs !== 'function' ? [] : [...new Set(C.tasks.flatMap(taskConvs))]
         .map(cid => ({ cid, first: (convEmails(cid)[0] || {}).date || '' })).sort((a, b) => a.first.localeCompare(b.first));
-      C.children = [...convs.map(({ cid }) => ({ id: 'th:' + C.id + ':' + cid, type: 'thread', conv: cid, compact: convHome.get(cid) !== C.id, hue: P.hue, children: [] })), ...C.tasks.sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || '')).map(t => ({
+      const tnodes = C.tasks.sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || '')).map(t => ({
         id: 't:' + t.id, type: 'task', t, hue: P.hue,
         children: UI.mapItems.has(t.id) ? subsOf(t).map(s2 => ({ id: 's:' + t.id + ':' + s2.id, type: 'item', s: s2, t, hue: P.hue, children: [] })) : [],
-      }))];
+      }));
+      // a task that came from an email conversation sits inside that conversation's card, not beside it
+      const inCard = UI.mapThreadTasks !== false && convs.length ? new Map(tnodes.map(k => [k, taskConvs(k.t)[0]])) : new Map();
+      C.children = [...convs.map(({ cid }) => ({ id: 'th:' + C.id + ':' + cid, type: 'thread', conv: cid, compact: convHome.get(cid) !== C.id, hue: P.hue, children: tnodes.filter(k => inCard.get(k) === cid) })),
+        ...tnodes.filter(k => !inCard.get(k) || !convs.some(c => c.cid === inCard.get(k)))];
       return C;
     });
     root.children.push(P);
@@ -4435,6 +4451,14 @@ function buildMap() {
   // layout: tidy horizontal tree
   const nodes = [], edges = []; let cursor = 0;
   const place = (n) => {
+    // a thread card holds its tasks: the messages on top, then the tasks one under another inside the card
+    if (n.type === 'thread' && n.children.length) {
+      n.kids = n.children; n.hiddenKids = 0; n.x = MX.thread; n.w = nodeW(n); n.headH = n.h = Math.max(MH.thread, measureNode(n));
+      n.y = cursor; nodes.push(n); cursor = n.y + n.headH;
+      n.kids.forEach(k => { place(k); k.x = n.x + 12; (k.kids || []).forEach(it => { it.x = Math.max(it.x, n.x + n.w + 16); }); });
+      n.h = Math.max(n.headH, cursor - MGAP.task - n.y + 12); cursor = n.y + n.h + MGAP.thread;
+      return;
+    }
     const hidden = UI.mapCollapsed.has(n.id);
     n.hiddenKids = hidden ? n.children.length : 0;
     const kids = hidden ? [] : n.children; n.kids = kids;
@@ -4454,7 +4478,7 @@ function buildMap() {
     const all = [];
     const measure = n => {
       const hidden = UI.mapCollapsed.has(n.id); n.hiddenKids = hidden ? n.children.length : 0;
-      n.kids = hidden ? [] : n.children; n.w = nodeW(n); n.h = Math.max(MH[n.type], measureNode(n)); all.push(n); n.kids.forEach(measure);
+      n.kids = hidden ? [] : n.children; n.w = nodeW(n); n.h = Math.max(MH[n.type], measureNode(n)); n.headH = n.h; all.push(n); n.kids.forEach(measure);
     };
     measure(root);
     const maxH = {}; for (const n of all) if (n.type !== 'item') maxH[n.type] = Math.max(maxH[n.type] || 0, n.h);
@@ -4464,6 +4488,14 @@ function buildMap() {
     let cx = 0;
     const put = n => {
       n.y = rowY[n.type] ?? 0;
+      if (n.type === 'thread' && n.kids.length) {
+        n.x = cx; nodes.push(n); let iy = n.y + n.headH;
+        for (const k of n.kids) {
+          k.x = n.x + 12; k.y = iy; iy += k.h + 8; nodes.push(k);
+          for (const it of k.kids) { it.x = k.x + 22; it.y = iy; iy += it.h + 6; nodes.push(it); edges.push({ a: k, b: it, hue: it.hue ?? k.hue ?? 186 }); }
+        }
+        n.h = iy - n.y + 4; cx += n.w + (HGAP.task || 16); return;
+      }
       if (n.type === 'task' || n.type === 'thread' || !n.kids.length) {
         const items = n.type === 'task' ? n.kids : [];
         const w = Math.max(n.w, ...items.map(k => k.w + 22));
@@ -4818,7 +4850,9 @@ function laneLinks(M) {
       break;
     }
     // the short runs from each box out to the lane must be clear too
-    if (hits(ax + 1, x, ya - 2, ya + 2) || hits(bx + 1, x, yb - 2, yb + 2)) continue;
+    const holds = (o, q) => o.x <= q.x && o.y <= q.y && o.x + o.w >= q.x + q.w && o.y + o.h >= q.y + q.h;
+    const stub = (q, x0, y) => obs.some(o => !holds(o, q) && o.x < x && o.x + o.w > x0 && o.y < y + 2 && o.y + o.h > y - 2);
+    if (stub(a, ax + 1, ya) || stub(b, bx + 1, yb)) continue;
     used.push({ x, lo, hi });
     out.set(it.l, roundedPath(back([[ax, ya], [x, ya], [x, yb], [bx + 3, yb]])));
   }
@@ -4976,6 +5010,7 @@ function viewMap() {
             <label class="check small"><input type="checkbox" id="map-bands" data-chg="map-opt" data-key="mapBands" ${UI.mapBands !== false ? 'checked' : ''}>Project colour bands</label>
             <label class="check small"><input type="checkbox" id="map-mini" data-chg="map-opt" data-key="mapMini" ${UI.mapMini !== false ? 'checked' : ''}>Minimap</label>
             <label class="check small"><input type="checkbox" id="map-threads" data-chg="map-opt" data-key="mapThreads" ${UI.mapThreads !== false ? 'checked' : ''}>Email threads under each topic</label>
+            <label class="check small"><input type="checkbox" id="map-thread-tasks" data-chg="map-opt" data-key="mapThreadTasks" ${UI.mapThreadTasks !== false ? 'checked' : ''}>Tasks inside their email thread</label>
             ${offN || Object.keys(St.layout.size || {}).length ? `<button class="btn sm ghost" data-act="map-reset-layout" title="Put every box back in its place and its normal size">↺ Reset positions and sizes</button>` : ''}</div>
           <div class="mt-sec"><div class="label">History</div>
             <label class="small map-date" title="Highlight the tasks worked on that day">📌 Highlight day <input class="input" type="date" id="map-day" data-chg="map-day" value="${esc(UI.mapDay)}" max="${T()}"></label>
@@ -14037,7 +14072,8 @@ function boxesNow() {
   for (const el of boardEls()) if (!['stroke', 'line', 'connector'].includes(el.type) && !elLocked(el)) out.push({ kind: 'e', id: el.id, el, frame: el.type === 'frame', ...elBox(el) });
   return out.sort((a, b) => (a.frame ? 1 : 0) - (b.frame ? 1 : 0));
 }
-const boxAt = (x, y, list) => (list || boxesNow()).find(b => x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) || null;
+// the innermost box under a point (a task inside its email thread card, a note inside a frame)
+const boxAt = (x, y, list) => (list || boxesNow()).filter(b => x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h).sort((a, b) => a.w * a.h - b.w * b.h)[0] || null;
 
 // --- recognisers (world coordinates; sizes judged on screen so they work at any zoom) ---
 function isTick(pts, bb, k) {
@@ -15445,18 +15481,24 @@ function threadNodeHTML(n, st) {
   const steps = threadSteps({ conv: n.conv }), opened = UI.thOpen.has(n.id), all = opened || (!n.compact && steps.length <= 6);
   const shown = all ? steps : n.compact ? [...(steps.length > 1 ? [{ gap: steps.length - 1 }] : []), steps[steps.length - 1]] : [steps[0], { gap: steps.length - 4 }, ...steps.slice(-3)];
   const first = steps.find(x => x.date), last = [...steps].reverse().find(x => x.date);
-  const open = [...St.tasks.values()].filter(t => t.status !== 'done' && (t.emailIds || []).some(id => ems.some(e => e.id === id))).length;
+  const eids = new Set(ems.map(e => e.id)), ttasks = [...St.tasks.values()].filter(t => (t.emailIds || []).some(id => eids.has(id)));
+  const open = ttasks.filter(t => t.status !== 'done').length, selT = UI.mapSel && St.tasks.get(UI.mapSel), selE = new Set(selT ? selT.emailIds || [] : []);
+  // what each message did to the tasks: created (＋), completed (✓) or moved on (↻) — tap to pick the task
+  const effects = eid => ttasks.map(t => (t.emailIds || [])[0] === eid ? ['＋', t, 'created here'] : (t.history || []).some(h => h.emailId === eid) ? ((t.history || []).some(h => h.emailId === eid && /complet|done/i.test(h.text)) ? ['✓', t, 'completed by this message'] : ['↻', t, 'updated by this message']) : null).filter(Boolean);
   const drag = UI.cvTemp && UI.cvTemp.kind === 'node' && UI.cvTemp.id === n.id ? ' dragging' : '';
   const row = (x, i) => x.gap ? `<li class="thn-gap"><button data-map="th-all">⋯ ${x.gap} more message${x.gap > 1 ? 's' : ''}</button></li>`
-    : `<li class="${x.me ? 'me' : ''}${x === steps[steps.length - 1] ? ' last' : ''}"><button class="thn-row" data-map="th-email" ${x.emailId ? `data-eid="${esc(x.emailId)}"` : ''} title="${esc(x.says || '')}"><span class="thn-i" aria-hidden="true">${x === steps[steps.length - 1] ? '📍' : TH_KIND[x.kind] || TH_KIND.info}</span><span class="thn-d">${x.date ? esc(fmtDate(x.date, { day: 'numeric', month: 'short' })) : '—'}</span><span class="thn-t" dir="auto"><b>${esc(x.me ? 'Me' : E.clip(x.from || 'Someone', 26))}</b> ${esc(E.clip(x.says || '', 90))}</span></button></li>`;
-  return `<div class="mnode thread${n.compact && !opened ? ' compact' : ''}${drag}" data-node="${esc(n.id)}" data-type="thread" style="${st}">
+    : `<li class="${x.me ? 'me' : ''}${x === steps[steps.length - 1] ? ' last' : ''}${x.emailId && selE.has(x.emailId) ? ' sel-src' : ''}"><button class="thn-row" data-map="th-email" ${x.emailId ? `data-eid="${esc(x.emailId)}"` : ''} title="${esc(x.says || '')}"><span class="thn-i" aria-hidden="true">${x === steps[steps.length - 1] ? '📍' : TH_KIND[x.kind] || TH_KIND.info}</span><span class="thn-d">${x.date ? esc(fmtDate(x.date, { day: 'numeric', month: 'short' })) : '—'}</span><span class="thn-t" dir="auto"><b>${esc(x.me ? 'Me' : E.clip(x.from || 'Someone', 26))}</b> ${esc(E.clip(x.says || '', 90))}</span></button>${x.emailId && effects(x.emailId).length ? `<span class="thn-fx">${effects(x.emailId).map(([g, t, why]) => `<button class="thn-chip fx-${g === '＋' ? 'new' : g === '✓' ? 'done' : 'upd'}${t.status === 'done' ? ' done' : ''}" data-map="th-task" data-tid="${esc(t.id)}" title="${esc(`${t.ref} ${why}: ${t.title}`)}">${g} ${esc(t.ref || '')}</button>`).join('')}</span>` : ''}</li>`;
+  const inside = (n.children || []).length;
+  return `<div class="mnode thread${n.compact && !opened ? ' compact' : ''}${inside ? ' holds' : ''}${selT && selE.size && ems.some(e => selE.has(e.id)) ? ' has-sel' : ''}${drag}" data-node="${esc(n.id)}" data-type="thread" style="${st}">
     <div class="thn-h"><span class="thn-ic" aria-hidden="true">🧵</span><div class="thn-ht"><b dir="auto">${esc(E.clip(E.normSubject(ems[0].subject || '') || 'Email thread', 70))}</b><small>${steps.length} message${steps.length > 1 ? 's' : ''} · ${ems.length} added${first ? ` · ${esc(fmtDate(first.date, { day: 'numeric', month: 'short' }))}${last && last.date !== first.date ? ' → ' + esc(fmtDate(last.date, { day: 'numeric', month: 'short' })) : ''}` : ''}${open ? ` · ${open} open` : ''}</small></div>${steps.length > 6 || (n.compact && steps.length > 1) ? `<button class="mfocus" data-map="th-all" title="${all ? 'Show less' : 'Show the whole conversation'}">${all ? '▴' : '▾'}</button>` : ''}</div>
     <ol class="thn-list">${shown.map(row).join('')}</ol>
+    ${inside ? `<div class="thn-tl"><span>Tasks from this thread</span><b>${inside} here${ttasks.length > inside ? ` · ${ttasks.length} in the thread` : ''} · ${open} open</b></div>` : ''}
     <span class="rz" data-rz="${esc(n.id)}" data-kind="node" title="Drag to resize" aria-hidden="true"></span></div>`;
 }
 function threadNodeClick(node, btn) {
   const id = node.dataset.node;
   if (btn && btn.dataset.map === 'th-all') { UI.thOpen.has(id) ? UI.thOpen.delete(id) : UI.thOpen.add(id); render(); return; }
+  if (btn && btn.dataset.map === 'th-task' && St.tasks.has(btn.dataset.tid)) { UI.mapSel = btn.dataset.tid; UI.cvSel.clear(); render(); return; }
   const eid = btn && btn.dataset.eid; const cid = id.split(':').pop(), ems = convEmails(cid);
   const target = eid && St.emails.has(eid) ? eid : (ems[ems.length - 1] || {}).id;
   if (target) { UI.previews.clear(); openDrawer('email', target); }
@@ -15474,6 +15516,20 @@ HOOKS.ready.push(() => setTimeout(async () => {
   }
   if (todo.length) scheduleRender();
 }, 1500));
+
+// pointing at a message lights up the tasks it created or changed (and pointing at a task, the messages behind it)
+document.addEventListener('mouseover', e => {
+  const r = e.target.closest && e.target.closest('.mnode.thread .thn-row[data-eid], .mnode.task');
+  document.querySelectorAll('.th-glow').forEach(x => x.classList.remove('th-glow'));
+  if (!r) return;
+  if (r.classList.contains('mnode')) {
+    const t = St.tasks.get(r.dataset.tid); if (!t) return;
+    for (const id of t.emailIds || []) document.querySelectorAll(`.mnode.thread .thn-row[data-eid="${CSS.escape(id)}"]`).forEach(x => x.closest('li').classList.add('th-glow'));
+    return;
+  }
+  const eid = r.dataset.eid;
+  for (const t of St.tasks.values()) if ((t.emailIds || []).includes(eid)) { const n = document.querySelector(`.mnode.task[data-tid="${CSS.escape(t.id)}"]`); if (n) n.classList.add('th-glow'); }
+}, { passive: true });
 
 /* ---------- boot ---------- */
 const startView = (location.hash || '').replace('#', '');

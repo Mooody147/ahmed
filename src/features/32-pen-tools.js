@@ -33,7 +33,8 @@ function boxesNow() {
   for (const el of boardEls()) if (!['stroke', 'line', 'connector'].includes(el.type) && !elLocked(el)) out.push({ kind: 'e', id: el.id, el, frame: el.type === 'frame', ...elBox(el) });
   return out.sort((a, b) => (a.frame ? 1 : 0) - (b.frame ? 1 : 0));
 }
-const boxAt = (x, y, list) => (list || boxesNow()).find(b => x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) || null;
+// the innermost box under a point (a task inside its email thread card, a note inside a frame)
+const boxAt = (x, y, list) => (list || boxesNow()).filter(b => x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h).sort((a, b) => a.w * a.h - b.w * b.h)[0] || null;
 
 // --- recognisers (world coordinates; sizes judged on screen so they work at any zoom) ---
 function isTick(pts, bb, k) {

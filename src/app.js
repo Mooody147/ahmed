@@ -814,7 +814,9 @@ function dayTaskIds(day) {
 function nodeW(n) {
   const tmp = UI.cvTemp;
   if (tmp && tmp.kind === 'size' && tmp.id === n.id) return tmp.w;
-  const o = (St.layout.size || {})[n.id]; return o && o.w ? o.w : MW[n.type];
+  const o = (St.layout.size || {})[n.id], w = o && o.w ? o.w : MW[n.type];
+  // a thread card is wide enough for the tasks inside it
+  return n.type === 'thread' && (n.children || []).length ? Math.max(w, ...n.children.map(k => nodeW(k) + 24)) : w;
 }
 function buildMap() {
   const tasks = mapTasks();
@@ -841,10 +843,14 @@ function buildMap() {
       // the topic's email conversations come first, each as one card from the first email to the latest reply
       const convs = UI.mapThreads === false || typeof taskConvs !== 'function' ? [] : [...new Set(C.tasks.flatMap(taskConvs))]
         .map(cid => ({ cid, first: (convEmails(cid)[0] || {}).date || '' })).sort((a, b) => a.first.localeCompare(b.first));
-      C.children = [...convs.map(({ cid }) => ({ id: 'th:' + C.id + ':' + cid, type: 'thread', conv: cid, compact: convHome.get(cid) !== C.id, hue: P.hue, children: [] })), ...C.tasks.sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || '')).map(t => ({
+      const tnodes = C.tasks.sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || '')).map(t => ({
         id: 't:' + t.id, type: 'task', t, hue: P.hue,
         children: UI.mapItems.has(t.id) ? subsOf(t).map(s2 => ({ id: 's:' + t.id + ':' + s2.id, type: 'item', s: s2, t, hue: P.hue, children: [] })) : [],
-      }))];
+      }));
+      // a task that came from an email conversation sits inside that conversation's card, not beside it
+      const inCard = UI.mapThreadTasks !== false && convs.length ? new Map(tnodes.map(k => [k, taskConvs(k.t)[0]])) : new Map();
+      C.children = [...convs.map(({ cid }) => ({ id: 'th:' + C.id + ':' + cid, type: 'thread', conv: cid, compact: convHome.get(cid) !== C.id, hue: P.hue, children: tnodes.filter(k => inCard.get(k) === cid) })),
+        ...tnodes.filter(k => !inCard.get(k) || !convs.some(c => c.cid === inCard.get(k)))];
       return C;
     });
     root.children.push(P);
@@ -852,6 +858,14 @@ function buildMap() {
   // layout: tidy horizontal tree
   const nodes = [], edges = []; let cursor = 0;
   const place = (n) => {
+    // a thread card holds its tasks: the messages on top, then the tasks one under another inside the card
+    if (n.type === 'thread' && n.children.length) {
+      n.kids = n.children; n.hiddenKids = 0; n.x = MX.thread; n.w = nodeW(n); n.headH = n.h = Math.max(MH.thread, measureNode(n));
+      n.y = cursor; nodes.push(n); cursor = n.y + n.headH;
+      n.kids.forEach(k => { place(k); k.x = n.x + 12; (k.kids || []).forEach(it => { it.x = Math.max(it.x, n.x + n.w + 16); }); });
+      n.h = Math.max(n.headH, cursor - MGAP.task - n.y + 12); cursor = n.y + n.h + MGAP.thread;
+      return;
+    }
     const hidden = UI.mapCollapsed.has(n.id);
     n.hiddenKids = hidden ? n.children.length : 0;
     const kids = hidden ? [] : n.children; n.kids = kids;
@@ -871,7 +885,7 @@ function buildMap() {
     const all = [];
     const measure = n => {
       const hidden = UI.mapCollapsed.has(n.id); n.hiddenKids = hidden ? n.children.length : 0;
-      n.kids = hidden ? [] : n.children; n.w = nodeW(n); n.h = Math.max(MH[n.type], measureNode(n)); all.push(n); n.kids.forEach(measure);
+      n.kids = hidden ? [] : n.children; n.w = nodeW(n); n.h = Math.max(MH[n.type], measureNode(n)); n.headH = n.h; all.push(n); n.kids.forEach(measure);
     };
     measure(root);
     const maxH = {}; for (const n of all) if (n.type !== 'item') maxH[n.type] = Math.max(maxH[n.type] || 0, n.h);
@@ -881,6 +895,14 @@ function buildMap() {
     let cx = 0;
     const put = n => {
       n.y = rowY[n.type] ?? 0;
+      if (n.type === 'thread' && n.kids.length) {
+        n.x = cx; nodes.push(n); let iy = n.y + n.headH;
+        for (const k of n.kids) {
+          k.x = n.x + 12; k.y = iy; iy += k.h + 8; nodes.push(k);
+          for (const it of k.kids) { it.x = k.x + 22; it.y = iy; iy += it.h + 6; nodes.push(it); edges.push({ a: k, b: it, hue: it.hue ?? k.hue ?? 186 }); }
+        }
+        n.h = iy - n.y + 4; cx += n.w + (HGAP.task || 16); return;
+      }
       if (n.type === 'task' || n.type === 'thread' || !n.kids.length) {
         const items = n.type === 'task' ? n.kids : [];
         const w = Math.max(n.w, ...items.map(k => k.w + 22));
@@ -1235,7 +1257,9 @@ function laneLinks(M) {
       break;
     }
     // the short runs from each box out to the lane must be clear too
-    if (hits(ax + 1, x, ya - 2, ya + 2) || hits(bx + 1, x, yb - 2, yb + 2)) continue;
+    const holds = (o, q) => o.x <= q.x && o.y <= q.y && o.x + o.w >= q.x + q.w && o.y + o.h >= q.y + q.h;
+    const stub = (q, x0, y) => obs.some(o => !holds(o, q) && o.x < x && o.x + o.w > x0 && o.y < y + 2 && o.y + o.h > y - 2);
+    if (stub(a, ax + 1, ya) || stub(b, bx + 1, yb)) continue;
     used.push({ x, lo, hi });
     out.set(it.l, roundedPath(back([[ax, ya], [x, ya], [x, yb], [bx + 3, yb]])));
   }
@@ -1393,6 +1417,7 @@ function viewMap() {
             <label class="check small"><input type="checkbox" id="map-bands" data-chg="map-opt" data-key="mapBands" ${UI.mapBands !== false ? 'checked' : ''}>Project colour bands</label>
             <label class="check small"><input type="checkbox" id="map-mini" data-chg="map-opt" data-key="mapMini" ${UI.mapMini !== false ? 'checked' : ''}>Minimap</label>
             <label class="check small"><input type="checkbox" id="map-threads" data-chg="map-opt" data-key="mapThreads" ${UI.mapThreads !== false ? 'checked' : ''}>Email threads under each topic</label>
+            <label class="check small"><input type="checkbox" id="map-thread-tasks" data-chg="map-opt" data-key="mapThreadTasks" ${UI.mapThreadTasks !== false ? 'checked' : ''}>Tasks inside their email thread</label>
             ${offN || Object.keys(St.layout.size || {}).length ? `<button class="btn sm ghost" data-act="map-reset-layout" title="Put every box back in its place and its normal size">↺ Reset positions and sizes</button>` : ''}</div>
           <div class="mt-sec"><div class="label">History</div>
             <label class="small map-date" title="Highlight the tasks worked on that day">📌 Highlight day <input class="input" type="date" id="map-day" data-chg="map-day" value="${esc(UI.mapDay)}" max="${T()}"></label>
