@@ -17,7 +17,10 @@ async def main():
         assert await ev("document.documentElement.classList.contains('phone-mode')") and await ev("window.__AR.UI.view") == 'phone', 'phone mode on a phone screen'
         assert await ev("!!document.querySelector('#ph-nav .ph-add')")
         cards = await ev("[...document.querySelectorAll('.ph-card')].map(c => c.dataset.tid)"); print('CARDS', len(cards)); assert len(cards) >= 2
-        assert await ev("!!document.querySelector('.ph-card .ph-thread')"), 'cards show the latest thread message'
+        assert await ev("!!document.querySelector('.ph-card .ph-n')"), 'cards show their email thread'
+        assert await ev("document.querySelectorAll('.ph-card .ph-meta').length") == len(cards), 'one meta line per card'
+        assert await ev("!document.querySelector('#ph-q')"), 'search waits behind its button'
+        await pg.click('[data-act="ph-search"]'); await pg.wait_for_selector('#ph-q'); await pg.click('[data-act="ph-search"]'); await pg.wait_for_timeout(200)
         async def swipe(tid, dx):
             r = await (await pg.query_selector(f'.ph-card[data-tid="{tid}"] .ph-body')).bounding_box(); x, y = r['x'] + r['width'] / 2, r['y'] + 20
             await cdp.send('Input.dispatchTouchEvent', {'type': 'touchStart', 'touchPoints': [{'x': x, 'y': y, 'id': 1}]})
@@ -32,7 +35,7 @@ async def main():
         await swipe(z, -160)
         print('TOMORROW', await ev(f"window.__AR.St.tasks.get('{z}').deadline"), tomorrow); assert await ev(f"window.__AR.St.tasks.get('{z}').deadline") == tomorrow
         # the tick reopens a done task (from Done today)
-        await pg.click(f'.ph-sec.donel > summary'); await pg.click(f'.ph-card[data-tid="{a}"] .ph-tick'); await pg.wait_for_timeout(300)
+        await pg.click('.ph-done > summary'); await pg.click(f'.ph-card[data-tid="{a}"] .ph-tick'); await pg.wait_for_timeout(300)
         assert await ev(f"window.__AR.St.tasks.get('{a}').status") != 'done'
         # a tap opens the task full width
         await pg.click(f'.ph-card[data-tid="{a}"] .ph-body'); await pg.wait_for_selector('#drawer:not([hidden])')
@@ -46,9 +49,11 @@ async def main():
         assert t and t['deadline'] == tomorrow and await ev("window.__AR.St.tasks.size") == n0 + 1, t
         assert await ev("document.getElementById('ph-sheet').hidden")
         # filters
-        await pg.click('.ph-chip[data-f="wait"]'); await pg.wait_for_timeout(200)
-        assert await ev("[...document.querySelectorAll('.ph-sec')].every(s => s.classList.contains('wait') || s.classList.contains('donel'))")
-        await pg.click('.ph-chip[data-f="wait"]'); await pg.wait_for_timeout(200)
+        await pg.click('.ph-seg2 [data-f="wait"]'); await pg.wait_for_timeout(200)
+        heads = await ev("[...document.querySelectorAll('.ph-group > h2')].map(h => h.textContent)"); assert heads == ['Waiting on others'], heads
+        await pg.click('.ph-seg2 [data-f="mine"]'); await pg.wait_for_timeout(200)
+        # one message at a time
+        assert await ev("[...document.querySelectorAll('.toasts > *')].filter(t => getComputedStyle(t).display !== 'none').length") <= 1
         # threads
         await pg.click('.ph-tab[data-k="threads"]'); await pg.wait_for_timeout(300)
         n = await ev("document.querySelectorAll('.ph-th').length"); print('THREADS', n); assert n >= 1

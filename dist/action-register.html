@@ -1480,93 +1480,122 @@ html.site-mode .ts-ic { width: 66px; height: 66px; }
 .mnode.thread.has-sel { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft), var(--elev-1); }
 .mnode.task.th-glow { box-shadow: 0 0 0 3px var(--accent-soft), var(--elev-2); }
 
-/* ---------- phone mode ---------- */
-html.phone-mode .rail .nav:not(.site-btn):not(.phone-btn), html.phone-mode .rail .rail-foot { display: none !important; }
-html.phone-mode .rail { justify-content: flex-start; }
-html.phone-mode .rail .brand { border-right: 0; margin-right: auto; }
+/* ---------- phone mode: calm, one column, thumb-first ---------- */
+/* header: just the brand; site and phone switches live in More */
+html.phone-mode .rail .nav, html.phone-mode .rail .rail-foot { display: none !important; }
+html.phone-mode .rail { padding-block: 10px !important; min-height: 52px; justify-content: flex-start; }
+html.phone-mode .rail .brand { border-right: 0; margin: 0; padding: 0; gap: 10px; }
 html.phone-mode .rail .brand-name { display: block !important; font-size: 16px !important; }
-html.phone-mode .rail .site-btn, html.phone-mode .rail .phone-btn { font-size: 0; padding: 8px; min-width: 40px; min-height: 40px; justify-content: center; }
-html.phone-mode .rail .site-btn .site-ic, html.phone-mode .rail .phone-btn .site-ic { font-size: 18px; }
-.phone-btn[aria-pressed="true"] { background: rgba(255,255,255,.16); }
-html.phone-mode main { padding-top: 12px !important; padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)) !important; }
-html.phone-mode .toasts { bottom: calc(86px + env(safe-area-inset-bottom, 0px)) !important; }
-html.phone-mode .map-viewport { height: calc(100dvh - 200px - env(safe-area-inset-bottom, 0px)); min-height: 360px; }
+html.phone-mode main { padding-top: 0 !important; padding-bottom: calc(92px + env(safe-area-inset-bottom, 0px)) !important; }
+/* one message at a time, just above the bottom bar */
+html.phone-mode .toasts { left: 12px !important; right: 12px !important; bottom: calc(84px + env(safe-area-inset-bottom, 0px)) !important; }
+html.phone-mode .toasts > :not(:last-child) { display: none !important; }
 html.phone-mode .drawer { width: 100%; border-left: 0; padding-bottom: env(safe-area-inset-bottom, 0px); }
 html.phone-mode .drawer .btn, html.phone-mode .drawer .input { min-height: 44px; }
-.ph-nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 35; display: grid; grid-template-columns: repeat(2, 1fr) 76px repeat(2, 1fr); align-items: end; background: var(--surface); border-top: 1px solid var(--line); box-shadow: 0 -8px 24px -16px rgba(0,0,0,.35); padding: 6px max(8px, env(safe-area-inset-right, 0px)) calc(6px + env(safe-area-inset-bottom, 0px)) max(8px, env(safe-area-inset-left, 0px)); }
+
+.ph-nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 35; display: grid; grid-template-columns: 1fr 1fr 72px 1fr 1fr; align-items: center; background: color-mix(in srgb, var(--surface) 94%, transparent); backdrop-filter: saturate(1.4) blur(14px); -webkit-backdrop-filter: saturate(1.4) blur(14px); border-top: 1px solid var(--line); padding: 4px max(6px, env(safe-area-inset-right, 0px)) calc(4px + env(safe-area-inset-bottom, 0px)) max(6px, env(safe-area-inset-left, 0px)); }
 .ph-nav[hidden] { display: none; }
-.ph-tab { position: relative; display: grid; justify-items: center; gap: 2px; padding: 6px 2px; border: 0; background: none; color: var(--ink-3); font: inherit; font-size: 11px; font-weight: 600; cursor: pointer; min-height: 52px; border-radius: 12px; }
-.ph-tab svg, .ph-tab img { width: 22px; height: 22px; }
-.ph-tab.on { color: var(--accent); background: var(--accent-soft); }
-.ph-add { justify-self: center; width: 60px; height: 60px; margin-top: -26px; border-radius: 50%; border: 4px solid var(--surface); background: var(--accent); color: var(--accent-ink, #fff); font-size: 30px; line-height: 1; box-shadow: var(--elev-2); cursor: pointer; }
-.ph-badge { position: absolute; top: 2px; right: calc(50% - 22px); min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--crit); color: #fff; font-style: normal; font-size: 11px; line-height: 18px; }
-.ph-row .ph-badge { position: static; margin-inline-start: auto; }
-.wrap.ph { max-width: 640px; gap: 14px; padding-inline: max(14px, env(safe-area-inset-left, 0px)) max(14px, env(safe-area-inset-right, 0px)); }
-.ph-hello small { color: var(--ink-3); font-size: 13px; text-transform: uppercase; letter-spacing: .06em; font-weight: 600; }
-.ph-hello h1 { font-size: 26px; margin: 2px 0 0; }
-.ph-chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
-.ph-chip { flex: none; display: grid; justify-items: start; gap: 0; min-width: 86px; padding: 8px 12px; border-radius: 14px; border: 1px solid var(--line); background: var(--surface); color: var(--ink-2); font: inherit; font-size: 12px; cursor: pointer; text-align: start; }
-.ph-chip b { font-size: 22px; line-height: 1.1; color: var(--ink); font-family: var(--f-display, inherit); }
-.ph-chip.over b { color: var(--crit); } .ph-chip.today b { color: var(--high); } .ph-chip.wait b { color: var(--wait); } .ph-chip.review b { color: var(--accent); }
-.ph-chip.on { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
-.ph-search .input { height: 46px; font-size: 16px; border-radius: 14px; }
-.ph-sec { display: grid; gap: 8px; }
-.ph-sec > summary { display: flex; align-items: center; justify-content: space-between; list-style: none; cursor: pointer; padding: 6px 2px; font-weight: 700; font-size: 15px; }
-.ph-sec > summary::-webkit-details-marker { display: none; }
-.ph-sec > summary b { font-size: 12px; min-width: 24px; height: 22px; line-height: 22px; text-align: center; border-radius: 11px; background: var(--sunken); color: var(--ink-2); padding: 0 7px; }
-.ph-sec.over > summary { color: var(--crit); }
-.ph-card { position: relative; display: grid; grid-template-columns: 52px 1fr; align-items: stretch; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--elev-1); overflow: hidden; touch-action: pan-y; transition: transform .18s ease, background .15s; margin-bottom: 8px; }
-.ph-card::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--med); }
-.ph-card.p-critical::before { background: var(--crit); } .ph-card.p-high::before { background: var(--high); } .ph-card.p-low::before { background: var(--low); }
+.ph-tab { position: relative; display: grid; justify-items: center; gap: 3px; padding: 7px 2px 5px; border: 0; background: none; color: var(--ink-3); font: inherit; font-size: 10.5px; font-weight: 600; letter-spacing: .01em; cursor: pointer; min-height: 52px; }
+.ph-tab.on { color: var(--accent); }
+.ph-add { justify-self: center; width: 52px; height: 52px; border-radius: 16px; border: 0; background: var(--accent); color: var(--accent-ink, #fff); display: grid; place-items: center; box-shadow: 0 8px 18px -8px color-mix(in srgb, var(--accent) 70%, transparent); cursor: pointer; }
+.ph-dot { position: absolute; top: 6px; right: calc(50% - 15px); width: 8px; height: 8px; border-radius: 50%; background: var(--crit); box-shadow: 0 0 0 2px var(--surface); }
+
+.wrap.ph { max-width: 620px; gap: 0; padding: 0 max(16px, env(safe-area-inset-left, 0px)) 0 max(16px, env(safe-area-inset-right, 0px)); }
+.ph-top { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; padding: 18px 0 4px; }
+.ph-top small { display: block; color: var(--ink-3); font-size: 12.5px; font-weight: 500; }
+.ph-top h1 { font-size: 30px; line-height: 1.1; margin: 2px 0 0; letter-spacing: -.02em; }
+.ph-icon { width: 42px; height: 42px; border-radius: 12px; border: 0; background: var(--sunken); color: var(--ink-2); display: grid; place-items: center; cursor: pointer; flex: none; }
+.ph-icon.on { background: var(--accent-soft); color: var(--accent); }
+.ph-search { display: block; padding: 8px 0 0; }
+.ph-search .input { width: 100%; height: 44px; font-size: 16px; border-radius: 12px; padding: 0 14px; }
+.ph-sum { margin: 2px 0 14px; color: var(--ink-2); font-size: 14.5px; }
+.ph-over { color: var(--crit); font-weight: 600; }
+.ph-seg2 { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; padding: 3px; border-radius: 12px; background: var(--sunken); margin-bottom: 14px; }
+.ph-seg2 button { border: 0; background: none; border-radius: 10px; padding: 9px 0; font: inherit; font-size: 14px; font-weight: 600; color: var(--ink-2); cursor: pointer; }
+.ph-seg2 button span { color: var(--ink-3); font-weight: 500; margin-inline-start: 4px; }
+.ph-seg2 button[aria-selected="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+.ph-note { display: flex; align-items: center; justify-content: space-between; width: 100%; margin: 0 0 14px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--ink); font: inherit; font-size: 14.5px; font-weight: 600; cursor: pointer; }
+.ph-note svg { color: var(--ink-3); }
+.ph-group { margin: 0 0 18px; }
+.ph-group > h2 { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .07em; color: var(--ink-3); margin: 0 0 8px; font-family: inherit; }
+.ph-group.now > h2 { color: var(--accent); }
+.ph-list { display: grid; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+.ph-card { position: relative; display: grid; grid-template-columns: 50px 1fr; align-items: center; background: var(--surface); touch-action: pan-y; transition: transform .18s ease, background .15s; }
+.ph-card + .ph-card { border-top: 1px solid var(--line-2, var(--line)); }
+.ph-card.p-critical .ph-tick span, .ph-card.p-high .ph-tick span { border-color: var(--high); }
+.ph-card.p-critical .ph-tick span { border-color: var(--crit); }
 .ph-card.sw-done { background: var(--ok-soft); } .ph-card.sw-later { background: var(--warn-soft); }
-.ph-tick { display: grid; place-items: center; border: 0; background: none; cursor: pointer; color: var(--ink-3); }
-.ph-tick svg { width: 26px; height: 26px; padding: 4px; border-radius: 50%; border: 2px solid currentColor; box-sizing: content-box; }
-.ph-card.done .ph-tick { color: var(--ok); }
-.ph-card.done b { text-decoration: line-through; color: var(--ink-3); }
-.ph-body { display: grid; gap: 4px; padding: 12px 14px 12px 2px; border: 0; background: none; text-align: start; font: inherit; color: var(--ink); cursor: pointer; min-width: 0; }
-.ph-body > b { font-size: 15.5px; line-height: 1.3; overflow-wrap: anywhere; }
-.ph-meta { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 12px; color: var(--ink-3); align-items: center; }
-.ph-due { font-weight: 700; color: var(--ink-2); }
-.ph-due.over { color: var(--crit); } .ph-due.today { color: var(--high); } .ph-due.soon { color: var(--med); }
-.ph-thread { font-size: 12.5px; color: var(--ink-2); line-height: 1.35; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
-.ph-thread i { color: var(--ink-3); font-style: normal; }
-.ph-tip { text-align: center; margin: 4px 0 0; }
-.ph-th { display: grid; gap: 4px; width: 100%; text-align: start; padding: 14px 16px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); box-shadow: var(--elev-1); font: inherit; color: var(--ink); cursor: pointer; margin-bottom: 8px; }
-.ph-th-h { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
-.ph-th-h b { font-size: 15px; line-height: 1.3; }
+.ph-tick { align-self: stretch; display: grid; place-items: center; border: 0; background: none; cursor: pointer; padding: 0; }
+.ph-tick span { width: 22px; height: 22px; border-radius: 50%; border: 2px solid color-mix(in srgb, var(--ink-3) 70%, transparent); transition: background .15s, border-color .15s; }
+.ph-card.done .ph-tick span { background: var(--ok); border-color: var(--ok); box-shadow: inset 0 0 0 3px var(--surface); }
+.ph-card.done .ph-body b { text-decoration: line-through; color: var(--ink-3); font-weight: 500; }
+.ph-body { display: grid; gap: 3px; padding: 13px 14px 13px 0; border: 0; background: none; text-align: start; font: inherit; color: var(--ink); cursor: pointer; min-width: 0; }
+.ph-body > b { font-size: 15px; font-weight: 600; line-height: 1.32; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+.ph-meta { display: flex; align-items: center; gap: 6px; min-width: 0; font-size: 12.5px; color: var(--ink-3); white-space: nowrap; }
+.ph-meta > i { font-style: normal; opacity: .6; }
+.ph-proj { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.ph-due { font-weight: 600; color: var(--ink-2); }
+.ph-due.over { color: var(--crit); } .ph-due.today { color: var(--high); }
+.ph-n { display: inline-flex; align-items: center; gap: 3px; margin-inline-start: auto; color: var(--ink-3); flex: none; }
+.ph-done { margin: 0 0 16px; }
+.ph-done > summary { list-style: none; cursor: pointer; color: var(--ink-3); font-size: 13.5px; font-weight: 600; padding: 4px 0 8px; }
+.ph-done > summary::-webkit-details-marker { display: none; }
+.ph-tip { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 4px 0 0; color: var(--ink-3); font-size: 12.5px; }
+.ph-x { border: 0; background: none; color: var(--ink-3); padding: 4px; cursor: pointer; display: grid; }
+.ph-x svg { width: 14px; height: 14px; }
+.ph-empty { text-align: center; padding: 48px 16px 24px; color: var(--ink-2); }
+.ph-empty-ic { width: 56px; height: 56px; margin: 0 auto 10px; border-radius: 18px; display: grid; place-items: center; background: var(--sunken); color: var(--ink-3); }
+.ph-empty h3 { margin: 0 0 4px; font-size: 17px; color: var(--ink); }
+.ph-empty p { margin: 0; font-size: 14px; }
+.ph-threads { margin-top: 10px; }
+.ph-th { display: grid; gap: 3px; width: 100%; text-align: start; padding: 13px 16px; border: 0; background: var(--surface); font: inherit; color: var(--ink); cursor: pointer; }
+.ph-th + .ph-th { border-top: 1px solid var(--line-2, var(--line)); }
+.ph-th-h { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; min-width: 0; }
+.ph-th-h b { font-size: 15px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 .ph-th-h time { flex: none; font-size: 12px; color: var(--ink-3); }
-.ph-th-l { font-size: 13px; color: var(--ink-2); line-height: 1.4; }
-.ph-empty { padding: 40px 10px; }
+.ph-th-l { display: flex; align-items: center; gap: 10px; font-size: 13.5px; color: var(--ink-3); min-width: 0; }
+.ph-th-l > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 1; }
+.ph-pill-n { flex: none; min-width: 22px; height: 22px; padding: 0 7px; border-radius: 11px; background: var(--accent); color: var(--accent-ink, #fff); font-style: normal; font-size: 12px; font-weight: 700; line-height: 22px; text-align: center; }
+.ph-drawer { gap: 16px; }
+.ph-dr-title { font-size: 20px; line-height: 1.3; margin: 0; }
+.ph-drawer .th-hist { border-radius: 14px; }
+
 .ph-sheet { position: fixed; inset: 0; z-index: 60; }
 .ph-sheet[hidden] { display: none; }
-.ph-sheet-bg { position: absolute; inset: 0; background: rgba(20, 6, 12, .45); }
-.ph-sheet-card { position: absolute; left: 0; right: 0; bottom: 0; max-height: 88dvh; overflow-y: auto; overscroll-behavior: contain; display: grid; gap: 10px; padding: 10px 18px calc(18px + env(safe-area-inset-bottom, 0px)); background: var(--surface); border-radius: 22px 22px 0 0; box-shadow: var(--shadow); }
-@media (prefers-reduced-motion: no-preference) { .ph-sheet-card { animation: phup .2s ease-out; } @keyframes phup { from { transform: translateY(30px); opacity: .6; } } }
-.ph-grab { justify-self: center; width: 40px; height: 5px; border-radius: 3px; background: var(--line); }
-.ph-sheet-card h3 { margin: 2px 0; font-size: 18px; }
-.ph-new { height: 52px; font-size: 17px; border-radius: 14px; }
+.ph-sheet-bg { position: absolute; inset: 0; background: rgba(15, 6, 10, .42); }
+.ph-sheet-card { position: absolute; left: 0; right: 0; bottom: 0; max-height: 88dvh; overflow-y: auto; overscroll-behavior: contain; display: grid; gap: 12px; padding: 8px 18px calc(20px + env(safe-area-inset-bottom, 0px)); background: var(--surface); border-radius: 20px 20px 0 0; box-shadow: var(--shadow); }
+@media (prefers-reduced-motion: no-preference) { .ph-sheet-card { animation: phup .22s cubic-bezier(.2,.8,.2,1); } @keyframes phup { from { transform: translateY(40px); opacity: .5; } } }
+.ph-grab { justify-self: center; width: 36px; height: 4px; border-radius: 2px; background: var(--line); margin-bottom: 4px; }
+.ph-sheet-card h3 { margin: 0; font-size: 18px; }
+.ph-new { height: 50px; font-size: 17px; border-radius: 12px; }
 .ph-pills { display: flex; gap: 8px; flex-wrap: wrap; }
-.ph-pill { padding: 9px 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); font: inherit; font-weight: 600; color: var(--ink-2); cursor: pointer; min-height: 40px; }
-.ph-pill.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink, #fff); }
-.ph-sheet-card select.input { height: 46px; font-size: 16px; }
-.ph-big { height: 50px !important; font-size: 16px; justify-content: center; border-radius: 14px !important; }
-.ph-or { display: flex; align-items: center; gap: 10px; color: var(--ink-3); font-size: 12px; }
-.ph-or::before, .ph-or::after { content: ""; flex: 1; height: 1px; background: var(--line); }
-.ph-row { display: flex; align-items: center; gap: 14px; width: 100%; padding: 14px 6px; border: 0; border-bottom: 1px solid var(--line-2, var(--line)); background: none; font: inherit; font-size: 16px; color: var(--ink); cursor: pointer; text-align: start; min-height: 52px; }
-.ph-row > span { width: 26px; text-align: center; font-size: 18px; }
-.ph-row small { margin-inline-start: auto; color: var(--ink-3); }
-.ph-seg { display: grid; gap: 8px; padding: 12px 6px 4px; }
-.ph-seg .seg button { min-height: 40px; flex: 1; }
-.ph-drawer { gap: 14px; }
+.ph-pill { padding: 8px 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); font: inherit; font-size: 14px; font-weight: 600; color: var(--ink-2); cursor: pointer; min-height: 38px; }
+.ph-pill.on { background: var(--ink); border-color: var(--ink); color: var(--surface); }
+.ph-sheet-card select.input { height: 46px; font-size: 16px; border-radius: 12px; }
+.ph-big { height: 50px !important; font-size: 16px; justify-content: center; border-radius: 12px !important; }
+.ph-links { display: flex; justify-content: center; gap: 24px; padding-top: 2px; }
+.ph-link { border: 0; background: none; color: var(--accent); font: inherit; font-size: 14.5px; font-weight: 600; padding: 8px 4px; cursor: pointer; }
+.ph-rows { display: grid; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+.ph-row { display: flex; align-items: center; gap: 12px; width: 100%; padding: 0 14px; min-height: 52px; border: 0; background: var(--surface); font: inherit; font-size: 16px; color: var(--ink); cursor: pointer; text-align: start; }
+.ph-row + .ph-row { border-top: 1px solid var(--line-2, var(--line)); }
+.ph-row b { font-weight: 500; flex: 1; }
+.ph-row small { color: var(--ink-3); font-size: 14px; }
+.ph-row > svg { color: var(--ink-3); flex: none; }
+.ph-row-seg { cursor: default; }
+.ph-row-seg .seg button { min-height: 34px; padding: 0 12px; }
 html.ph-sheet-on body { overflow: hidden; }
-.ph-search { position: relative; display: block; }
-.ph-search svg { position: absolute; left: 14px; top: 15px; color: var(--ink-3); pointer-events: none; }
-.ph-search .input { width: 100%; padding-left: 40px; }
-.ph-chip { min-width: 74px; }
-/* the Canvas tab on a phone goes straight to the map */
+
+/* the Canvas tab: straight to the map, with only the controls a phone needs */
 html.phone-mode.ph-canvas #main .wrap > .today-strip, html.phone-mode.ph-canvas #main .wrap > .brief, html.phone-mode.ph-canvas #main .wrap > .callout { display: none !important; }
-html.phone-mode.ph-canvas #main { padding-top: 8px !important; }
-html.phone-mode.ph-canvas .map-viewport { height: calc(100dvh - 290px - env(safe-area-inset-bottom, 0px)); }
+html.phone-mode.ph-canvas #main { padding-top: 10px !important; }
+html.phone-mode.ph-canvas .map-tools > .mode-seg, html.phone-mode.ph-canvas .map-tools > .mt-mine, html.phone-mode.ph-canvas .map-tools > .mt-dir, html.phone-mode.ph-canvas .map-tools > .mt-group,
+html.phone-mode.ph-canvas .map-tools > .mt-seg:not(.zoom), html.phone-mode.ph-canvas .map-tools > [data-act="map-full"], html.phone-mode.ph-canvas .minimap { display: none !important; }
+html.phone-mode.ph-canvas .map-tools { flex-wrap: nowrap; padding: 6px; }
+html.phone-mode.ph-canvas .map-tools .todo-search { order: 0; flex: 1 1 auto; min-width: 0; }
+html.phone-mode.ph-canvas .map-viewport { height: calc(100dvh - 230px - env(safe-area-inset-bottom, 0px)); min-height: 360px; }
+html.phone-mode .toasts { left: 12px !important; right: 12px !important; width: auto !important; transform: none !important; }
+html.phone-mode .toast { border-radius: 12px; padding: 12px 14px; }
+.ph-drawer .th-next { display: none; }
 
 </style>
 <div class="titlestrip" id="titlestrip"><span class="ts-brand"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c3.3 4 6 7.2 6 10.4a6 6 0 0 1-12 0C6 10.2 8.7 7 12 3z"/><path d="m9.3 13.6 1.9 1.9 3.6-4.1"/></svg> Action Register</span><button class="ts-search" data-act="palette" title="Search and commands (Ctrl+K)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg><span>Search or type a command</span><kbd>Ctrl K</kbd></button><span class="ts-space"></span></div>
@@ -12229,6 +12258,14 @@ HOOKS.ready.push(() => { try { if (!SUBWIN && !localStorage.getItem('ar-toured')
 /* ---------- Arabic interface text: English → Arabic. {0}, {1}… stand for numbers in the sentence. ---------- */
 // Generated from the strings shown in the app, translated for Egyptian / Gulf engineering use. Add a line to extend it.
 const AR_DICT = {
+"Now": "الآن",
+"Next 7 days": "الأيام السبعة القادمة",
+"Phone layout": "تصميم الهاتف",
+"Check Gmail": "افحص Gmail",
+"Add emails or files": "أضف رسائل أو ملفات",
+"You are all clear": "لا شيء عليك الآن",
+"Nothing due": "لا شيء مستحق",
+"Swipe right to finish · swipe left for tomorrow": "اسحب يمينًا للإنهاء · يسارًا للغد",
 "Briefing": "الموجز",
 "Risk radar": "رادار المخاطر",
 "Due today and not started": "مستحقة اليوم ولم تبدأ",
@@ -15692,7 +15729,7 @@ const PH_DEF = typeof AR_LITE !== 'undefined' && AR_LITE ? 'auto' : 'off';
 const phPref = () => { try { return localStorage.getItem(PH_LS) || PH_DEF; } catch { return PH_DEF; } };
 const phSmall = () => window.matchMedia && window.matchMedia('(max-width: 640px)').matches;
 const phoneOn = () => phPref() === 'on' || (phPref() === 'auto' && phSmall());
-UI.phF = UI.phF || 'all'; UI.phQ = UI.phQ || '';
+UI.phF = UI.phF || 'mine'; UI.phQ = UI.phQ || '';
 function phApply() {
   const on = phoneOn(); document.documentElement.classList.toggle('phone-mode', on);
   const b = document.getElementById('phone-btn'); if (b) { b.setAttribute('aria-pressed', String(on)); b.title = on ? 'Phone mode is on — tap for the full layout' : 'Phone mode: made for a phone'; }
@@ -15720,54 +15757,64 @@ HOOKS.beforeRender.push(() => {
 HOOKS.afterRender.push(() => { const nav = document.getElementById('ph-nav'); if (nav && !nav.hidden) nav.innerHTML = deco(phNavHTML()); });
 
 /* --- bottom bar --- */
+const PH_IC = {
+  today: svg('<circle cx="12" cy="12" r="8.5"/><path d="m8.5 12.2 2.4 2.4 4.8-5"/>', 22),
+  threads: svg('<path d="M4 5h11a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H9l-4 3v-3H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/><path d="M19 9h1a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h-1v3l-4-3h-3"/>', 22),
+  canvas: svg('<circle cx="5" cy="12" r="2.5"/><circle cx="19" cy="6" r="2.5"/><circle cx="19" cy="18" r="2.5"/><path d="M7.4 11 16.6 7M7.4 13l9.2 4"/>', 22),
+  more: svg('<path d="M4 7h16M4 12h16M4 17h16"/>', 22),
+  search: svg('<circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/>', 22),
+};
 function phNavHTML() {
   const rc = counts().review, tab = UI.view === 'phone' ? (UI.ph || 'today') : UI.view === 'todo' ? 'canvas' : 'more';
-  const b = (k, ic, label, act, extra = '') => `<button class="ph-tab ${tab === k ? 'on' : ''}" data-act="${act}" data-k="${k}" aria-current="${tab === k ? 'page' : 'false'}">${ic}<span>${label}</span>${extra}</button>`;
-  return `${b('today', '☀️', 'Today', 'ph-go')}${b('threads', '🧵', 'Threads', 'ph-go')}
-    <button class="ph-add" data-act="ph-add" aria-label="Add">＋</button>
-    ${b('canvas', '🧠', 'Canvas', 'ph-go')}${b('more', '☰', 'More', 'ph-more', rc ? `<i class="ph-badge">${rc}</i>` : '')}`;
+  const b = (k, label, act, extra = '') => `<button class="ph-tab ${tab === k ? 'on' : ''}" data-act="${act}" data-k="${k}" aria-current="${tab === k ? 'page' : 'false'}">${PH_IC[k]}<span>${label}</span>${extra}</button>`;
+  return `${b('today', 'Today', 'ph-go')}${b('threads', 'Threads', 'ph-go')}
+    <button class="ph-add" data-act="ph-add" aria-label="Add">${svg('<path d="M12 5v14M5 12h14"/>', 26)}</button>
+    ${b('canvas', 'Canvas', 'ph-go')}${b('more', 'More', 'ph-more', rc ? `<i class="ph-dot" aria-label="${rc} to review"></i>` : '')}`;
+}
+// a page head: small date line, the title, and a search button that opens the search field
+function phHead(sub, title) {
+  const open = UI.phSearch || UI.phQ;
+  return `<header class="ph-top"><div><small>${esc(sub)}</small><h1>${esc(title)}</h1></div><button class="ph-icon ${open ? 'on' : ''}" data-act="ph-search" aria-label="Search" aria-pressed="${!!open}">${PH_IC.search}</button></header>
+    ${open ? `<label class="ph-search"><span class="sr">Search</span><input class="input" id="ph-q" type="search" placeholder="Search" value="${esc(UI.phQ)}" data-inp="phQ" autocomplete="off"></label>` : ''}`;
 }
 
 /* --- Today --- */
 const phTomorrow = () => { const d = new Date(); d.setDate(d.getDate() + 1); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
-function phThreadLine(t) {
-  if (typeof taskConvs !== 'function') return '';
-  const cid = taskConvs(t)[0]; if (!cid) return '';
-  const st = threadSteps({ conv: cid }), x = st[st.length - 1]; if (!x) return '';
-  return `<span class="ph-thread" dir="auto">🧵 <b>${esc(x.me ? 'Me' : E.clip(x.from || '', 22))}</b>${x.date ? ' · ' + esc(fmtDate(x.date)) : ''}: ${esc(E.clip(x.says || '', 80))}${st.length > 1 ? ` <i>(${st.length})</i>` : ''}</span>`;
-}
+// one card: the task, and one line under it — when, which project, who you wait for
 function phCard(t) {
-  const d = dueInfo(t), done = t.status === 'done', subs = subsOf(t);
-  return `<div class="ph-card p-${esc(t.priority || 'medium')}${done ? ' done' : ''}" data-tid="${esc(t.id)}">
-    <button class="ph-tick" data-act="toggle-done" data-id="${esc(t.id)}" aria-label="${done ? 'Reopen' : 'Mark done'}">${I.check}</button>
+  const d = dueInfo(t), done = t.status === 'done';
+  const conv = typeof taskConvs === 'function' ? taskConvs(t)[0] : null, n = conv ? threadSteps({ conv }).length : 0;
+  const bits = [d.cls !== 'none' || !done ? `<span class="ph-due ${d.cls}">${esc(d.txt)}</span>` : '', t.ownership === 'waiting' ? `<span>${esc(E.clip(t.owner || 'Others', 22))}</span>` : '', t.project ? `<span class="ph-proj" dir="auto">${esc(t.project)}</span>` : ''].filter(Boolean);
+  return `<div class="ph-card${t.priority === 'critical' || t.priority === 'high' ? ' p-' + t.priority : ''}${done ? ' done' : ''}" data-tid="${esc(t.id)}">
+    <button class="ph-tick" data-act="toggle-done" data-id="${esc(t.id)}" aria-label="${done ? 'Reopen' : 'Mark done'}"><span></span></button>
     <button class="ph-body" data-act="open-task" data-id="${esc(t.id)}">
       <b dir="auto">${esc(t.title)}</b>
-      <span class="ph-meta"><span class="ph-due ${d.cls}">${esc(d.txt)}</span>${t.ownership === 'waiting' ? `<span>⏳ ${esc(E.clip(t.owner || 'others', 24))}</span>` : ''}<span class="mono">${esc(t.ref || '')}</span>${t.project ? `<span dir="auto">${esc(E.clip(t.project, 22))}</span>` : ''}${subs.length ? `<span>☑ ${subsDone(t)}/${subs.length}</span>` : ''}</span>
-      ${phThreadLine(t)}
+      <span class="ph-meta">${bits.join('<i>·</i>')}${n > 1 ? `<span class="ph-n" title="${n} messages in its email thread">${svg('<path d="M4 5h16v11H9l-5 4z"/>', 13)}${n}</span>` : ''}</span>
     </button></div>`;
 }
+const PH_TIP = 'ar-ph-tip';
 function viewPhone() {
   if ((UI.ph || 'today') === 'threads') return phThreads();
   const q = E.normMatch(UI.phQ || ''), all = [...St.tasks.values()].filter(t => !q || E.normMatch(`${t.title} ${t.ref} ${t.project} ${t.owner} ${t.sourceSubject || ''}`).includes(q));
   const open = all.filter(t => t.status !== 'done'), mine = open.filter(t => isMine(t) && t.status !== 'waiting'), wait = open.filter(t => !(isMine(t) && t.status !== 'waiting') && t.ownership !== 'fyi');
-  const B = { over: [], today: [], week: [], later: [], none: [] };
-  for (const t of mine) { const b = bucketOf(t); (b === 'Overdue' ? B.over : b === 'Today' ? B.today : b === 'Next 7 days' ? B.week : b === 'No deadline' ? B.none : B.later).push(t); }
   const byDue = (a, b) => (a.deadline || '9999').localeCompare(b.deadline || '9999') || (PRIO_RANK[a.priority] ?? 2) - (PRIO_RANK[b.priority] ?? 2);
-  Object.values(B).forEach(l => l.sort(byDue)); wait.sort(byDue);
-  const doneToday = all.filter(t => t.status === 'done' && dayOf(t.completedAt) === T());
-  const f = UI.phF, show = k => f === 'all' || f === k;
-  const sec = (k, title, list, open = true) => list.length && show(k === 'wait' ? 'wait' : k === 'over' ? 'over' : k === 'today' ? 'today' : 'all') ? `<details class="ph-sec ${k}" ${open ? 'open' : ''}><summary><span>${title}</span><b>${list.length}</b></summary>${list.map(phCard).join('')}</details>` : '';
-  const hour = new Date().getHours(), hi = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
-  const name = (St.settings.me.name || St.profileName || '').split(' ')[0];
-  const rc = counts().review, chip = (k, n, label) => `<button class="ph-chip ${k} ${f === k ? 'on' : ''}" data-act="ph-filter" data-f="${k}" aria-pressed="${f === k}"><b>${n}</b><span>${label}</span></button>`;
-  const body = sec('over', '⚠️ Overdue', B.over) + sec('today', '📌 Today', B.today) + sec('week', '🗓 This week', B.week) + sec('later', 'Later', B.later, B.over.length + B.today.length + B.week.length < 4) + sec('none', 'No date', B.none, false) + sec('wait', '⏳ Waiting on others', wait, f === 'wait');
+  const G = { now: [], next: [], later: [] };
+  for (const t of mine.sort(byDue)) { const b = bucketOf(t); (b === 'Overdue' || b === 'Today' ? G.now : b === 'Next 7 days' ? G.next : G.later).push(t); }
+  wait.sort(byDue);
+  const over = mine.filter(t => bucketOf(t) === 'Overdue').length, doneToday = all.filter(t => t.status === 'done' && dayOf(t.completedAt) === T());
+  const tab = UI.phF === 'wait' ? 'wait' : 'mine', rc = counts().review;
+  const group = (title, list, cls = '') => list.length ? `<section class="ph-group ${cls}"><h2>${esc(title)}</h2><div class="ph-list">${list.map(phCard).join('')}</div></section>` : '';
+  const summary = tab === 'wait' ? (wait.length ? `${wait.length} waiting on others` : 'Nobody owes you anything') : mine.length ? `${mine.length} task${mine.length > 1 ? 's' : ''} for you${over ? ` · <b class="ph-over">${over} overdue</b>` : ''}` : 'You are all clear';
+  const body = tab === 'wait' ? group('Waiting on others', wait) : group('Now', G.now, 'now') + group('Next 7 days', G.next) + group('Later', G.later);
+  let tip = false; try { tip = !localStorage.getItem(PH_TIP) && (mine.length + wait.length) > 0; } catch {}
   return `<div class="wrap ph">
-    <div class="ph-hello"><small>${esc(fmtDate(T(), { weekday: 'long', day: 'numeric', month: 'long' }))}</small><h1>${hi}${name ? ', ' + esc(name) : ''}</h1></div>
-    <div class="ph-chips" role="group" aria-label="Show">${chip('all', mine.length, 'Mine')}${chip('over', B.over.length, 'Overdue')}${chip('today', B.today.length, 'Today')}${chip('wait', wait.length, 'Waiting')}${rc ? `<button class="ph-chip review" data-act="nav" data-view="review"><b>${rc}</b><span>To review</span></button>` : ''}</div>
-    <label class="search ph-search">${I.search}<span class="sr">Search tasks</span><input class="input" id="ph-q" type="search" placeholder="Search tasks, projects, people…" value="${esc(UI.phQ)}" data-inp="phQ"></label>
-    ${body || `<div class="empty ph-empty"><div class="big-emoji">🎉</div><h3>${q ? 'Nothing matches' : 'Nothing waiting for you'}</h3><p>${q ? 'Try other words.' : 'Add emails with ＋ and the tasks will appear here.'}</p></div>`}
-    ${doneToday.length ? `<details class="ph-sec donel"><summary><span>✓ Done today</span><b>${doneToday.length}</b></summary>${doneToday.map(phCard).join('')}</details>` : ''}
-    <p class="small muted ph-tip">Swipe a card right to finish it, left to move it to tomorrow.</p>
+    ${phHead(fmtDate(T(), { weekday: 'long', day: 'numeric', month: 'long' }), 'Today')}
+    <p class="ph-sum">${summary}</p>
+    <div class="ph-seg2" role="tablist"><button role="tab" data-act="ph-filter" data-f="mine" aria-selected="${tab === 'mine'}">Mine <span>${mine.length}</span></button><button role="tab" data-act="ph-filter" data-f="wait" aria-selected="${tab === 'wait'}">Waiting <span>${wait.length}</span></button></div>
+    ${rc ? `<button class="ph-note" data-act="nav" data-view="review"><span>${rc} email${rc > 1 ? 's' : ''} to review</span>${svg('<path d="m9 6 6 6-6 6"/>', 18)}</button>` : ''}
+    ${body || `<div class="ph-empty"><div class="ph-empty-ic">${PH_IC.today}</div><h3>${q ? 'No matches' : tab === 'wait' ? 'Nothing pending from others' : 'Nothing due'}</h3><p>${q ? 'Try other words.' : 'New tasks from your emails will appear here.'}</p></div>`}
+    ${doneToday.length && tab === 'mine' ? `<details class="ph-done"><summary>${doneToday.length} done today</summary><div class="ph-list">${doneToday.map(phCard).join('')}</div></details>` : ''}
+    ${tip ? `<p class="ph-tip">Swipe right to finish · swipe left for tomorrow <button class="ph-x" data-act="ph-tip-ok" aria-label="Got it">${I.x}</button></p>` : ''}
   </div>`;
 }
 
@@ -15781,26 +15828,24 @@ function phThreads() {
     return { cid, ems, st, last, tasks, open: tasks.filter(t => t.status !== 'done'), at: [...st].reverse().find(x => x.date)?.date || (ems[ems.length - 1].date || '').slice(0, 10) };
   }).filter(x => !q || E.normMatch(x.ems.map(e => e.subject + ' ' + e.from).join(' ') + ' ' + x.st.map(s => s.says).join(' ')).includes(q))
     .sort((a, b) => (b.open.length > 0) - (a.open.length > 0) || (b.at || '').localeCompare(a.at || ''));
+  const active = list.filter(x => x.open.length).length;
   return `<div class="wrap ph">
-    <div class="ph-hello"><small>${list.length} conversation${list.length === 1 ? '' : 's'}</small><h1>Threads</h1></div>
-    <label class="search ph-search">${I.search}<span class="sr">Search threads</span><input class="input" id="ph-q" type="search" placeholder="Search subject, people, what was said…" value="${esc(UI.phQ)}" data-inp="phQ"></label>
-    ${list.length ? list.map(x => `<button class="ph-th" data-act="ph-thread" data-cid="${esc(x.cid)}">
-      <span class="ph-th-h"><b dir="auto">${esc(E.clip(E.normSubject(x.ems[0].subject || '') || 'Email thread', 80))}</b><time>${x.at ? esc(fmtDate(x.at)) : ''}</time></span>
-      <span class="ph-th-l" dir="auto">${x.last.me ? '<b>Me</b>' : `<b>${esc(E.clip(x.last.from || '', 24))}</b>`}: ${esc(E.clip(x.last.says || '', 110))}</span>
-      <span class="ph-meta"><span>✉ ${x.st.length}</span>${x.open.length ? `<span class="ph-due today">${x.open.length} open</span>` : x.tasks.length ? '<span class="ph-due">all done ✓</span>' : ''}${x.open.slice(0, 2).map(t => `<span class="mono">${esc(t.ref)}</span>`).join('')}</span>
-    </button>`).join('') : '<div class="empty ph-empty"><div class="big-emoji">🧵</div><h3>No threads yet</h3><p>Every email you add joins its conversation here.</p></div>'}
+    ${phHead(`${list.length} conversation${list.length === 1 ? '' : 's'}${active ? ` · ${active} with open tasks` : ''}`, 'Threads')}
+    ${list.length ? `<div class="ph-list ph-threads">${list.map(x => `<button class="ph-th" data-act="ph-thread" data-cid="${esc(x.cid)}">
+      <span class="ph-th-h"><b dir="auto">${esc(E.normSubject(x.ems[0].subject || '') || 'Email thread')}</b><time>${x.at ? esc(fmtDate(x.at)) : ''}</time></span>
+      <span class="ph-th-l"><span dir="auto">${esc(x.last.me ? 'You' : E.clip(x.last.from || '', 24))}: ${esc(x.last.says || '')}</span>${x.open.length ? `<i class="ph-pill-n">${x.open.length}</i>` : ''}</span>
+    </button>`).join('')}</div>` : `<div class="ph-empty"><div class="ph-empty-ic">${PH_IC.threads}</div><h3>No threads yet</h3><p>Every email you add joins its conversation here.</p></div>`}
   </div>`;
 }
 DRAWER_FN.phthread = dr => {
   const ems = convEmails(dr.id); if (!ems.length) return null;
   const last = ems[ems.length - 1], ids = new Set(ems.map(e => e.id));
   const tasks = [...St.tasks.values()].filter(t => (t.emailIds || []).some(id => ids.has(id))).sort((a, b) => (a.status === 'done') - (b.status === 'done') || (a.deadline || '9999').localeCompare(b.deadline || '9999'));
-  return `<div class="drawer-h"><span class="label">🧵 Thread</span><span class="spacer"></span><button class="icon-btn" data-act="close-drawer" aria-label="Close">${I.x}</button></div>
+  return `<div class="drawer-h"><button class="icon-btn" data-act="close-drawer" aria-label="Back">${I.back || I.x}</button><span class="label">Thread</span><span class="spacer"></span></div>
   <div class="drawer-b ph-drawer">
-    <h2 dir="auto" style="font-size:19px">${esc(E.normSubject(ems[0].subject || '') || 'Email thread')}</h2>
-    ${tasks.length ? `<div><div class="label" style="margin-bottom:6px">Tasks from this thread</div>${tasks.map(phCard).join('')}</div>` : ''}
+    <h2 dir="auto" class="ph-dr-title">${esc(E.normSubject(ems[0].subject || '') || 'Email thread')}</h2>
+    ${tasks.length ? `<section class="ph-group"><h2>Tasks</h2><div class="ph-list">${tasks.map(phCard).join('')}</div></section>` : ''}
     ${threadHistHTML(last, { open: true }) || `<p class="muted small">One email so far.</p>`}
-    <div class="row">${ems.slice().reverse().map(e => `<button class="btn sm ghost" data-act="open-email" data-id="${esc(e.id)}">✉ ${esc(fmtDate((e.date || '').slice(0, 10)))} ${esc(E.clip(thName(e.from), 18))}</button>`).join('')}</div>
   </div>`;
 };
 
@@ -15815,23 +15860,21 @@ function phSheet(html) {
 UI.phDue = UI.phDue || 'today';
 function phAddHTML() {
   const due = UI.phDue, d = k => `<button class="ph-pill ${due === k[0] ? 'on' : ''}" data-act="ph-due" data-d="${k[0]}" aria-pressed="${due === k[0]}">${k[1]}</button>`;
-  const g = gmCfg();
+  const g = gmCfg(), projs = projectsList();
   return `<h3>New task</h3>
     <input class="input ph-new" id="ph-new" placeholder="What needs doing?" enterkeyhint="done" dir="auto" autocomplete="off">
     <div class="ph-pills">${[['today', 'Today'], ['tomorrow', 'Tomorrow'], ['week', 'This week'], ['none', 'No date']].map(d).join('')}</div>
-    <select class="input" id="ph-proj" aria-label="Project"><option value="">No project</option>${projectsList().map(p => `<option ${p === UI.phProj ? 'selected' : ''}>${esc(p)}</option>`).join('')}</select>
+    ${projs.length ? `<select class="input" id="ph-proj" aria-label="Project"><option value="">No project</option>${projs.map(p => `<option ${p === UI.phProj ? 'selected' : ''}>${esc(p)}</option>`).join('')}</select>` : ''}
     <button class="btn primary ph-big" data-act="ph-create">Add task</button>
-    <div class="ph-or"><span>or</span></div>
-    ${St.mcp && g.address ? `<button class="btn ph-big" data-act="ph-gmail">📥 Check Gmail for forwarded emails</button>` : ''}
-    <button class="btn ph-big" data-act="ph-import">✉ Add emails or files</button>`;
+    <div class="ph-links">${St.mcp && g.address ? `<button class="ph-link" data-act="ph-gmail">Check Gmail</button>` : ''}<button class="ph-link" data-act="ph-import">Add emails or files</button></div>`;
 }
 function phMoreHTML() {
   const rc = counts().review, pref = phPref();
-  const it = (view, ic, label, extra = '') => `<button class="ph-row" data-act="ph-nav" data-view="${view}"><span>${ic}</span><b>${label}</b>${extra}</button>`;
+  const it = (view, label, extra = '') => `<button class="ph-row" data-act="ph-nav" data-view="${view}"><b>${label}</b>${extra}${svg('<path d="m9 6 6 6-6 6"/>', 18)}</button>`;
   return `<h3>More</h3>
-    ${it('review', '✅', 'Review', rc ? `<i class="ph-badge">${rc}</i>` : '')}${it('emails', '✉', 'Emails')}${it('import', '⬆', 'Add emails')}${VIEWS.includes('daily') && VIEW_FN.daily ? it('daily', '📅', 'Daily') : ''}${it('setup', '⚙', 'Setup')}
-    <button class="ph-row" data-act="site-toggle"><span>☀</span><b>Site mode</b><small>${document.documentElement.classList.contains('site-mode') ? 'On' : 'Off'}</small></button>
-    <div class="ph-seg"><span>📱 Phone mode</span><div class="seg">${[['auto', 'Auto'], ['on', 'On'], ['off', 'Off']].map(([v, l]) => `<button data-act="ph-mode" data-v="${v}" aria-pressed="${pref === v}">${l}</button>`).join('')}</div></div>`;
+    <div class="ph-rows">${it('review', 'Review', rc ? `<i class="ph-pill-n">${rc}</i>` : '')}${it('emails', 'Emails')}${it('import', 'Add emails')}${it('setup', 'Setup')}</div>
+    <div class="ph-rows"><button class="ph-row" data-act="ph-site"><b>Site mode</b><small>${document.documentElement.classList.contains('site-mode') ? 'On' : 'Off'}</small></button>
+    <div class="ph-row ph-row-seg"><b>Phone layout</b><div class="seg">${[['auto', 'Auto'], ['on', 'On'], ['off', 'Off']].map(([v, l]) => `<button data-act="ph-mode" data-v="${v}" aria-pressed="${pref === v}">${l}</button>`).join('')}</div></div></div>`;
 }
 Object.assign(ACT, {
   'phone-toggle': () => phSet(phoneOn() ? 'off' : 'on'),
@@ -15839,12 +15882,13 @@ Object.assign(ACT, {
   'ph-go': el => {
     const k = el.dataset.k; phSheet(null); closeDrawer();
     if (k === 'canvas') { UI.phCanvas = true; UI.todoMode = 'map'; UI.map.fitted = false; go('todo'); return; }
-    UI.phCanvas = false; UI.ph = k; UI.phQ = ''; go('phone');
+    UI.phCanvas = false; UI.ph = k; UI.phQ = ''; UI.phSearch = false; go('phone');
   },
   'ph-more': () => phSheet(phMoreHTML()),
   'ph-nav': el => { phSheet(null); UI.phCanvas = false; go(el.dataset.view); },
   'ph-add': () => { phSheet(phAddHTML()); setTimeout(() => { const i = document.getElementById('ph-new'); if (i) i.focus(); }, 60); },
   'ph-sheet-close': () => phSheet(null),
+  'ph-site': () => { phSheet(null); siteToggle(); },
   'ph-due': el => { UI.phDue = el.dataset.d; document.querySelectorAll('.ph-pill').forEach(b => { const on = b.dataset.d === UI.phDue; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); }); },
   'ph-create': () => {
     const i = document.getElementById('ph-new'), title = (i && i.value || '').trim(); if (!title) { if (i) i.focus(); return; }
@@ -15856,7 +15900,9 @@ Object.assign(ACT, {
   },
   'ph-gmail': () => { phSheet(null); checkGmail(true); },
   'ph-import': () => { phSheet(null); UI.phCanvas = false; go('import'); },
-  'ph-filter': el => { UI.phF = UI.phF === el.dataset.f ? 'all' : el.dataset.f; render(); },
+  'ph-filter': el => { UI.phF = el.dataset.f; render(); },
+  'ph-search': () => { UI.phSearch = !(UI.phSearch || UI.phQ); if (!UI.phSearch) UI.phQ = ''; render(); if (UI.phSearch) setTimeout(() => { const i = document.getElementById('ph-q'); if (i) i.focus(); }, 30); },
+  'ph-tip-ok': () => { try { localStorage.setItem(PH_TIP, '1'); } catch {} render(); },
   'ph-thread': el => openDrawer('phthread', el.dataset.cid),
 });
 document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target && e.target.id === 'ph-new') { e.preventDefault(); ACT['ph-create'](); } if (e.key === 'Escape') phSheet(null); });
@@ -15887,6 +15933,7 @@ const swEnd = () => {
   if (SW.lock !== 'x') return;
   // a swipe is not a tap
   const stop = ev => { ev.stopPropagation(); ev.preventDefault(); }; document.addEventListener('click', stop, { capture: true, once: true }); setTimeout(() => document.removeEventListener('click', stop, { capture: true }), 400);
+  try { localStorage.setItem(PH_TIP, '1'); } catch {}
   if (dx > 90) { const t = St.tasks.get(id); if (t && t.status !== 'done') ACT['toggle-done']({ dataset: { id } }); }
   else if (dx < -90) phTomorrowTask(id);
 };

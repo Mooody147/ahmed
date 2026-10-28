@@ -1,6 +1,14 @@
 /* ---------- Arabic interface text: English → Arabic. {0}, {1}… stand for numbers in the sentence. ---------- */
 // Generated from the strings shown in the app, translated for Egyptian / Gulf engineering use. Add a line to extend it.
 const AR_DICT = {
+"Now": "الآن",
+"Next 7 days": "الأيام السبعة القادمة",
+"Phone layout": "تصميم الهاتف",
+"Check Gmail": "افحص Gmail",
+"Add emails or files": "أضف رسائل أو ملفات",
+"You are all clear": "لا شيء عليك الآن",
+"Nothing due": "لا شيء مستحق",
+"Swipe right to finish · swipe left for tomorrow": "اسحب يمينًا للإنهاء · يسارًا للغد",
 "Briefing": "الموجز",
 "Risk radar": "رادار المخاطر",
 "Due today and not started": "مستحقة اليوم ولم تبدأ",

@@ -394,15 +394,20 @@ async def main():
         mp.on('pageerror', lambda e: errors.append('PAGEERROR site ' + str(e)))
         await mp.goto('https://app.test/#todo'); await mp.wait_for_selector('h1'); await mp.wait_for_timeout(1200)
         bg0 = await mp.evaluate("getComputedStyle(document.body).backgroundColor")
-        assert await mp.evaluate("!!document.getElementById('site-btn') && !!document.getElementById('site-btn').offsetParent"), 'site button in the header'
-        await mp.click('#site-btn'); await mp.wait_for_timeout(400)
-        st = await mp.evaluate("[document.documentElement.classList.contains('site-mode'), getComputedStyle(document.body).backgroundColor, getComputedStyle(document.body).color, getComputedStyle(document.body).fontSize, (document.querySelector('.btn') ? document.querySelector('.btn').getBoundingClientRect().height : 0)]"); print('SITE', bg0, '→', st)
+        # a phone opens in phone mode, where site mode is in More
+        async def site_switch():
+            if await mp.evaluate("document.documentElement.classList.contains('phone-mode')"):
+                await mp.click('.ph-tab[data-k="more"]'); await mp.click('[data-act="ph-site"]')
+            else: await mp.click('#site-btn')
+            await mp.wait_for_timeout(400)
+        await site_switch()
+        st = await mp.evaluate("[document.documentElement.classList.contains('site-mode'), getComputedStyle(document.body).backgroundColor, getComputedStyle(document.body).color, getComputedStyle(document.body).fontSize, (b => b ? b.getBoundingClientRect().height : 99)([...document.querySelectorAll('.btn')].find(x => x.offsetParent))]"); print('SITE', bg0, '→', st)
         assert st[0] and st[1] == 'rgb(255, 255, 255)' and st[2] == 'rgb(0, 0, 0)' and st[3] == '17px' and st[4] >= 40
         await mp.screenshot(path=SHOTS + '/tools-8-site.png')
         await mp.reload(); await mp.wait_for_selector('h1'); await mp.wait_for_timeout(800)
         assert await mp.evaluate("document.documentElement.classList.contains('site-mode')"), 'remembered on this device'
         assert not await mp.evaluate("document.documentElement.scrollWidth > innerWidth"), 'no sideways scroll'
-        await mp.click('#site-btn'); await mp.wait_for_timeout(200); assert not await mp.evaluate("document.documentElement.classList.contains('site-mode')")
+        await site_switch(); assert not await mp.evaluate("document.documentElement.classList.contains('site-mode')")
         await m.close()
         print('SITE OK')
 
