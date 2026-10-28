@@ -1480,6 +1480,94 @@ html.site-mode .ts-ic { width: 66px; height: 66px; }
 .mnode.thread.has-sel { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft), var(--elev-1); }
 .mnode.task.th-glow { box-shadow: 0 0 0 3px var(--accent-soft), var(--elev-2); }
 
+/* ---------- phone mode ---------- */
+html.phone-mode .rail .nav:not(.site-btn):not(.phone-btn), html.phone-mode .rail .rail-foot { display: none !important; }
+html.phone-mode .rail { justify-content: flex-start; }
+html.phone-mode .rail .brand { border-right: 0; margin-right: auto; }
+html.phone-mode .rail .brand-name { display: block !important; font-size: 16px !important; }
+html.phone-mode .rail .site-btn, html.phone-mode .rail .phone-btn { font-size: 0; padding: 8px; min-width: 40px; min-height: 40px; justify-content: center; }
+html.phone-mode .rail .site-btn .site-ic, html.phone-mode .rail .phone-btn .site-ic { font-size: 18px; }
+.phone-btn[aria-pressed="true"] { background: rgba(255,255,255,.16); }
+html.phone-mode main { padding-top: 12px !important; padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)) !important; }
+html.phone-mode .toasts { bottom: calc(86px + env(safe-area-inset-bottom, 0px)) !important; }
+html.phone-mode .map-viewport { height: calc(100dvh - 200px - env(safe-area-inset-bottom, 0px)); min-height: 360px; }
+html.phone-mode .drawer { width: 100%; border-left: 0; padding-bottom: env(safe-area-inset-bottom, 0px); }
+html.phone-mode .drawer .btn, html.phone-mode .drawer .input { min-height: 44px; }
+.ph-nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 35; display: grid; grid-template-columns: repeat(2, 1fr) 76px repeat(2, 1fr); align-items: end; background: var(--surface); border-top: 1px solid var(--line); box-shadow: 0 -8px 24px -16px rgba(0,0,0,.35); padding: 6px max(8px, env(safe-area-inset-right, 0px)) calc(6px + env(safe-area-inset-bottom, 0px)) max(8px, env(safe-area-inset-left, 0px)); }
+.ph-nav[hidden] { display: none; }
+.ph-tab { position: relative; display: grid; justify-items: center; gap: 2px; padding: 6px 2px; border: 0; background: none; color: var(--ink-3); font: inherit; font-size: 11px; font-weight: 600; cursor: pointer; min-height: 52px; border-radius: 12px; }
+.ph-tab svg, .ph-tab img { width: 22px; height: 22px; }
+.ph-tab.on { color: var(--accent); background: var(--accent-soft); }
+.ph-add { justify-self: center; width: 60px; height: 60px; margin-top: -26px; border-radius: 50%; border: 4px solid var(--surface); background: var(--accent); color: var(--accent-ink, #fff); font-size: 30px; line-height: 1; box-shadow: var(--elev-2); cursor: pointer; }
+.ph-badge { position: absolute; top: 2px; right: calc(50% - 22px); min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--crit); color: #fff; font-style: normal; font-size: 11px; line-height: 18px; }
+.ph-row .ph-badge { position: static; margin-inline-start: auto; }
+.wrap.ph { max-width: 640px; gap: 14px; padding-inline: max(14px, env(safe-area-inset-left, 0px)) max(14px, env(safe-area-inset-right, 0px)); }
+.ph-hello small { color: var(--ink-3); font-size: 13px; text-transform: uppercase; letter-spacing: .06em; font-weight: 600; }
+.ph-hello h1 { font-size: 26px; margin: 2px 0 0; }
+.ph-chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
+.ph-chip { flex: none; display: grid; justify-items: start; gap: 0; min-width: 86px; padding: 8px 12px; border-radius: 14px; border: 1px solid var(--line); background: var(--surface); color: var(--ink-2); font: inherit; font-size: 12px; cursor: pointer; text-align: start; }
+.ph-chip b { font-size: 22px; line-height: 1.1; color: var(--ink); font-family: var(--f-display, inherit); }
+.ph-chip.over b { color: var(--crit); } .ph-chip.today b { color: var(--high); } .ph-chip.wait b { color: var(--wait); } .ph-chip.review b { color: var(--accent); }
+.ph-chip.on { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+.ph-search .input { height: 46px; font-size: 16px; border-radius: 14px; }
+.ph-sec { display: grid; gap: 8px; }
+.ph-sec > summary { display: flex; align-items: center; justify-content: space-between; list-style: none; cursor: pointer; padding: 6px 2px; font-weight: 700; font-size: 15px; }
+.ph-sec > summary::-webkit-details-marker { display: none; }
+.ph-sec > summary b { font-size: 12px; min-width: 24px; height: 22px; line-height: 22px; text-align: center; border-radius: 11px; background: var(--sunken); color: var(--ink-2); padding: 0 7px; }
+.ph-sec.over > summary { color: var(--crit); }
+.ph-card { position: relative; display: grid; grid-template-columns: 52px 1fr; align-items: stretch; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--elev-1); overflow: hidden; touch-action: pan-y; transition: transform .18s ease, background .15s; margin-bottom: 8px; }
+.ph-card::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--med); }
+.ph-card.p-critical::before { background: var(--crit); } .ph-card.p-high::before { background: var(--high); } .ph-card.p-low::before { background: var(--low); }
+.ph-card.sw-done { background: var(--ok-soft); } .ph-card.sw-later { background: var(--warn-soft); }
+.ph-tick { display: grid; place-items: center; border: 0; background: none; cursor: pointer; color: var(--ink-3); }
+.ph-tick svg { width: 26px; height: 26px; padding: 4px; border-radius: 50%; border: 2px solid currentColor; box-sizing: content-box; }
+.ph-card.done .ph-tick { color: var(--ok); }
+.ph-card.done b { text-decoration: line-through; color: var(--ink-3); }
+.ph-body { display: grid; gap: 4px; padding: 12px 14px 12px 2px; border: 0; background: none; text-align: start; font: inherit; color: var(--ink); cursor: pointer; min-width: 0; }
+.ph-body > b { font-size: 15.5px; line-height: 1.3; overflow-wrap: anywhere; }
+.ph-meta { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 12px; color: var(--ink-3); align-items: center; }
+.ph-due { font-weight: 700; color: var(--ink-2); }
+.ph-due.over { color: var(--crit); } .ph-due.today { color: var(--high); } .ph-due.soon { color: var(--med); }
+.ph-thread { font-size: 12.5px; color: var(--ink-2); line-height: 1.35; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.ph-thread i { color: var(--ink-3); font-style: normal; }
+.ph-tip { text-align: center; margin: 4px 0 0; }
+.ph-th { display: grid; gap: 4px; width: 100%; text-align: start; padding: 14px 16px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); box-shadow: var(--elev-1); font: inherit; color: var(--ink); cursor: pointer; margin-bottom: 8px; }
+.ph-th-h { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+.ph-th-h b { font-size: 15px; line-height: 1.3; }
+.ph-th-h time { flex: none; font-size: 12px; color: var(--ink-3); }
+.ph-th-l { font-size: 13px; color: var(--ink-2); line-height: 1.4; }
+.ph-empty { padding: 40px 10px; }
+.ph-sheet { position: fixed; inset: 0; z-index: 60; }
+.ph-sheet[hidden] { display: none; }
+.ph-sheet-bg { position: absolute; inset: 0; background: rgba(20, 6, 12, .45); }
+.ph-sheet-card { position: absolute; left: 0; right: 0; bottom: 0; max-height: 88dvh; overflow-y: auto; overscroll-behavior: contain; display: grid; gap: 10px; padding: 10px 18px calc(18px + env(safe-area-inset-bottom, 0px)); background: var(--surface); border-radius: 22px 22px 0 0; box-shadow: var(--shadow); }
+@media (prefers-reduced-motion: no-preference) { .ph-sheet-card { animation: phup .2s ease-out; } @keyframes phup { from { transform: translateY(30px); opacity: .6; } } }
+.ph-grab { justify-self: center; width: 40px; height: 5px; border-radius: 3px; background: var(--line); }
+.ph-sheet-card h3 { margin: 2px 0; font-size: 18px; }
+.ph-new { height: 52px; font-size: 17px; border-radius: 14px; }
+.ph-pills { display: flex; gap: 8px; flex-wrap: wrap; }
+.ph-pill { padding: 9px 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); font: inherit; font-weight: 600; color: var(--ink-2); cursor: pointer; min-height: 40px; }
+.ph-pill.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink, #fff); }
+.ph-sheet-card select.input { height: 46px; font-size: 16px; }
+.ph-big { height: 50px !important; font-size: 16px; justify-content: center; border-radius: 14px !important; }
+.ph-or { display: flex; align-items: center; gap: 10px; color: var(--ink-3); font-size: 12px; }
+.ph-or::before, .ph-or::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+.ph-row { display: flex; align-items: center; gap: 14px; width: 100%; padding: 14px 6px; border: 0; border-bottom: 1px solid var(--line-2, var(--line)); background: none; font: inherit; font-size: 16px; color: var(--ink); cursor: pointer; text-align: start; min-height: 52px; }
+.ph-row > span { width: 26px; text-align: center; font-size: 18px; }
+.ph-row small { margin-inline-start: auto; color: var(--ink-3); }
+.ph-seg { display: grid; gap: 8px; padding: 12px 6px 4px; }
+.ph-seg .seg button { min-height: 40px; flex: 1; }
+.ph-drawer { gap: 14px; }
+html.ph-sheet-on body { overflow: hidden; }
+.ph-search { position: relative; display: block; }
+.ph-search svg { position: absolute; left: 14px; top: 15px; color: var(--ink-3); pointer-events: none; }
+.ph-search .input { width: 100%; padding-left: 40px; }
+.ph-chip { min-width: 74px; }
+/* the Canvas tab on a phone goes straight to the map */
+html.phone-mode.ph-canvas #main .wrap > .today-strip, html.phone-mode.ph-canvas #main .wrap > .brief, html.phone-mode.ph-canvas #main .wrap > .callout { display: none !important; }
+html.phone-mode.ph-canvas #main { padding-top: 8px !important; }
+html.phone-mode.ph-canvas .map-viewport { height: calc(100dvh - 290px - env(safe-area-inset-bottom, 0px)); }
+
 </style>
 <div class="titlestrip" id="titlestrip"><span class="ts-brand"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c3.3 4 6 7.2 6 10.4a6 6 0 0 1-12 0C6 10.2 8.7 7 12 3z"/><path d="m9.3 13.6 1.9 1.9 3.6-4.1"/></svg> Action Register</span><button class="ts-search" data-act="palette" title="Search and commands (Ctrl+K)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg><span>Search or type a command</span><kbd>Ctrl K</kbd></button><span class="ts-space"></span></div>
 <div class="app">
@@ -12141,6 +12229,65 @@ HOOKS.ready.push(() => { try { if (!SUBWIN && !localStorage.getItem('ar-toured')
 /* ---------- Arabic interface text: English → Arabic. {0}, {1}… stand for numbers in the sentence. ---------- */
 // Generated from the strings shown in the app, translated for Egyptian / Gulf engineering use. Add a line to extend it.
 const AR_DICT = {
+"Briefing": "الموجز",
+"Risk radar": "رادار المخاطر",
+"Due today and not started": "مستحقة اليوم ولم تبدأ",
+"Matrix": "المصفوفة",
+"Rearrange": "إعادة الترتيب",
+"Refresh": "تحديث",
+"Direction": "الاتجاه",
+"→ Left to right": "→ من اليسار لليمين",
+"↓ Top to bottom": "↓ من أعلى لأسفل",
+"Trace open tasks in my emails": "تتبّع المهام المفتوحة في رسائلي",
+"Stylus & touch": "القلم واللمس",
+"✍ Touch & stylus settings…": "✍ إعدادات اللمس والقلم…",
+"Email threads under each topic": "سلاسل البريد تحت كل موضوع",
+"Tasks inside their email thread": "المهام داخل سلسلة بريدها",
+"Board templates": "قوالب اللوحات",
+"Task map": "خريطة المهام",
+"PDF for printing (A3)": "PDF للطباعة (A3)",
+"📱 Phone mode": "📱 وضع الهاتف",
+"Auto (small screens)": "تلقائي (الشاشات الصغيرة)",
+"Always": "دائمًا",
+"Never": "أبدًا",
+"A layout made for a phone: Today with big cards you tick or swipe, your email threads, quick add, and a bottom bar in thumb reach. This device only.": "تصميم مخصص للهاتف: «اليوم» ببطاقات كبيرة تؤشرها أو تسحبها، وسلاسل بريدك، وإضافة سريعة، وشريط سفلي في متناول الإبهام. لهذا الجهاز فقط.",
+"Email files": "ملفات البريد",
+"Check storage": "فحص التخزين",
+"Always balanced": "متوازن دائمًا",
+"Always thorough (most tokens)": "دقيق دائمًا (أكثر استهلاكًا)",
+"Smart — Claude picks the model for each email (saves tokens)": "ذكي — يختار Claude النموذج لكل رسالة (يوفر الاستهلاك)",
+"Ready": "جاهز",
+"Add the file": "أضف الملف",
+"Add file": "إضافة ملف",
+"Send": "إرسال",
+"Move to…": "نقل إلى…",
+"Clear list": "مسح القائمة",
+"⚡ Quick": "⚡ سريع",
+"Threads": "السلاسل",
+"Canvas": "اللوحة",
+"⚠️ Overdue": "⚠️ متأخرة",
+"📌 Today": "📌 اليوم",
+"🗓 This week": "🗓 هذا الأسبوع",
+"Later": "لاحقًا",
+"⏳ Waiting on others": "⏳ بانتظار الآخرين",
+"✓ Done today": "✓ أُنجز اليوم",
+"Swipe a card right to finish it, left to move it to tomorrow.": "اسحب البطاقة يمينًا لإنهائها، ويسارًا لنقلها إلى الغد.",
+"No project": "بدون مشروع",
+"Add task": "أضف المهمة",
+"or": "أو",
+"📥 Check Gmail for forwarded emails": "📥 افحص Gmail للرسائل المحوّلة",
+"✉ Add emails or files": "✉ أضف رسائل أو ملفات",
+"Site mode": "وضع الموقع",
+"Phone mode": "وضع الهاتف",
+"Auto": "تلقائي",
+"Tasks from this thread": "مهام هذه السلسلة",
+"🧵 Thread": "🧵 السلسلة",
+"Thread history": "سجل السلسلة",
+"Where it stands": "الوضع الحالي",
+"Touch & stylus": "اللمس والقلم",
+"Touch input": "الإدخال باللمس",
+"Stylus": "القلم",
+"Reset": "إعادة الضبط",
 "Site": "الموقع",
 "Tasks": "المهام",
 "☆ Views": "☆ العروض",
@@ -15530,6 +15677,225 @@ document.addEventListener('mouseover', e => {
   const eid = r.dataset.eid;
   for (const t of St.tasks.values()) if ((t.emailIds || []).includes(eid)) { const n = document.querySelector(`.mnode.task[data-tid="${CSS.escape(t.id)}"]`); if (n) n.classList.add('th-glow'); }
 }, { passive: true });
+
+/* ===== features/41-phone.js ===== */
+/* ---------- phone mode: the register made for a phone held in one hand ---------- */
+// On a phone (automatically on small screens, or with 📱 in the header) the app opens on Today: what needs you,
+// in big cards — overdue, today, this week, later, then what you are waiting on. Tick a card to finish it, swipe it
+// right to finish, swipe it left to move it to tomorrow (Undo in the message). Each card shows the latest message of
+// its email thread. Threads lists every conversation, newest first; a tap opens the whole thread with its tasks.
+// The ＋ button adds a task in two taps, checks Gmail or adds emails. A bottom bar (Today · Threads · ＋ · Canvas ·
+// More) is in thumb reach; screens open full width with large touch targets. Remembered on this device only.
+const PH_LS = 'ar-phone-mode';
+// automatic in the claude.ai artifact; the desktop app keeps its own phone layout unless phone mode is switched on
+const PH_DEF = typeof AR_LITE !== 'undefined' && AR_LITE ? 'auto' : 'off';
+const phPref = () => { try { return localStorage.getItem(PH_LS) || PH_DEF; } catch { return PH_DEF; } };
+const phSmall = () => window.matchMedia && window.matchMedia('(max-width: 640px)').matches;
+const phoneOn = () => phPref() === 'on' || (phPref() === 'auto' && phSmall());
+UI.phF = UI.phF || 'all'; UI.phQ = UI.phQ || '';
+function phApply() {
+  const on = phoneOn(); document.documentElement.classList.toggle('phone-mode', on);
+  const b = document.getElementById('phone-btn'); if (b) { b.setAttribute('aria-pressed', String(on)); b.title = on ? 'Phone mode is on — tap for the full layout' : 'Phone mode: made for a phone'; }
+  let nav = document.getElementById('ph-nav');
+  if (on && !nav) { nav = document.createElement('nav'); nav.id = 'ph-nav'; nav.className = 'ph-nav'; nav.setAttribute('aria-label', 'Phone'); document.body.appendChild(nav); }
+  if (nav) { nav.hidden = !on; if (on) nav.innerHTML = deco(phNavHTML()); }
+  return on;
+}
+function phSet(v) { try { localStorage.setItem(PH_LS, v); } catch {} const on = phApply(); if (on && UI.view === 'todo' && !UI.phCanvas) UI.view = 'phone'; if (!on && UI.view === 'phone') UI.view = 'todo'; render(); }
+(() => {
+  const rail = document.querySelector('.rail'); if (!rail || document.getElementById('phone-btn')) return;
+  const b = document.createElement('button'); b.id = 'phone-btn'; b.className = 'nav phone-btn'; b.dataset.act = 'phone-toggle';
+  b.innerHTML = '<span class="site-ic" aria-hidden="true">📱</span><span class="site-lbl">Phone</span>';
+  rail.insertBefore(b, document.getElementById('site-btn') || rail.querySelector('.rail-foot'));
+  if (window.matchMedia) window.matchMedia('(max-width: 640px)').addEventListener('change', () => { if (phPref() === 'auto') phSet('auto'); });
+})();
+VIEWS.push('phone');
+VIEW_FN.phone = () => viewPhone();
+// on a phone the to-do page opens as Today; the Canvas tab still opens the map
+HOOKS.beforeRender.push(() => {
+  if (!phApply()) { document.documentElement.classList.remove('ph-canvas'); return; }
+  if (UI.view === 'todo' && !UI.phCanvas) UI.view = 'phone';
+  document.documentElement.classList.toggle('ph-canvas', UI.view === 'todo');
+});
+HOOKS.afterRender.push(() => { const nav = document.getElementById('ph-nav'); if (nav && !nav.hidden) nav.innerHTML = deco(phNavHTML()); });
+
+/* --- bottom bar --- */
+function phNavHTML() {
+  const rc = counts().review, tab = UI.view === 'phone' ? (UI.ph || 'today') : UI.view === 'todo' ? 'canvas' : 'more';
+  const b = (k, ic, label, act, extra = '') => `<button class="ph-tab ${tab === k ? 'on' : ''}" data-act="${act}" data-k="${k}" aria-current="${tab === k ? 'page' : 'false'}">${ic}<span>${label}</span>${extra}</button>`;
+  return `${b('today', '☀️', 'Today', 'ph-go')}${b('threads', '🧵', 'Threads', 'ph-go')}
+    <button class="ph-add" data-act="ph-add" aria-label="Add">＋</button>
+    ${b('canvas', '🧠', 'Canvas', 'ph-go')}${b('more', '☰', 'More', 'ph-more', rc ? `<i class="ph-badge">${rc}</i>` : '')}`;
+}
+
+/* --- Today --- */
+const phTomorrow = () => { const d = new Date(); d.setDate(d.getDate() + 1); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+function phThreadLine(t) {
+  if (typeof taskConvs !== 'function') return '';
+  const cid = taskConvs(t)[0]; if (!cid) return '';
+  const st = threadSteps({ conv: cid }), x = st[st.length - 1]; if (!x) return '';
+  return `<span class="ph-thread" dir="auto">🧵 <b>${esc(x.me ? 'Me' : E.clip(x.from || '', 22))}</b>${x.date ? ' · ' + esc(fmtDate(x.date)) : ''}: ${esc(E.clip(x.says || '', 80))}${st.length > 1 ? ` <i>(${st.length})</i>` : ''}</span>`;
+}
+function phCard(t) {
+  const d = dueInfo(t), done = t.status === 'done', subs = subsOf(t);
+  return `<div class="ph-card p-${esc(t.priority || 'medium')}${done ? ' done' : ''}" data-tid="${esc(t.id)}">
+    <button class="ph-tick" data-act="toggle-done" data-id="${esc(t.id)}" aria-label="${done ? 'Reopen' : 'Mark done'}">${I.check}</button>
+    <button class="ph-body" data-act="open-task" data-id="${esc(t.id)}">
+      <b dir="auto">${esc(t.title)}</b>
+      <span class="ph-meta"><span class="ph-due ${d.cls}">${esc(d.txt)}</span>${t.ownership === 'waiting' ? `<span>⏳ ${esc(E.clip(t.owner || 'others', 24))}</span>` : ''}<span class="mono">${esc(t.ref || '')}</span>${t.project ? `<span dir="auto">${esc(E.clip(t.project, 22))}</span>` : ''}${subs.length ? `<span>☑ ${subsDone(t)}/${subs.length}</span>` : ''}</span>
+      ${phThreadLine(t)}
+    </button></div>`;
+}
+function viewPhone() {
+  if ((UI.ph || 'today') === 'threads') return phThreads();
+  const q = E.normMatch(UI.phQ || ''), all = [...St.tasks.values()].filter(t => !q || E.normMatch(`${t.title} ${t.ref} ${t.project} ${t.owner} ${t.sourceSubject || ''}`).includes(q));
+  const open = all.filter(t => t.status !== 'done'), mine = open.filter(t => isMine(t) && t.status !== 'waiting'), wait = open.filter(t => !(isMine(t) && t.status !== 'waiting') && t.ownership !== 'fyi');
+  const B = { over: [], today: [], week: [], later: [], none: [] };
+  for (const t of mine) { const b = bucketOf(t); (b === 'Overdue' ? B.over : b === 'Today' ? B.today : b === 'Next 7 days' ? B.week : b === 'No deadline' ? B.none : B.later).push(t); }
+  const byDue = (a, b) => (a.deadline || '9999').localeCompare(b.deadline || '9999') || (PRIO_RANK[a.priority] ?? 2) - (PRIO_RANK[b.priority] ?? 2);
+  Object.values(B).forEach(l => l.sort(byDue)); wait.sort(byDue);
+  const doneToday = all.filter(t => t.status === 'done' && dayOf(t.completedAt) === T());
+  const f = UI.phF, show = k => f === 'all' || f === k;
+  const sec = (k, title, list, open = true) => list.length && show(k === 'wait' ? 'wait' : k === 'over' ? 'over' : k === 'today' ? 'today' : 'all') ? `<details class="ph-sec ${k}" ${open ? 'open' : ''}><summary><span>${title}</span><b>${list.length}</b></summary>${list.map(phCard).join('')}</details>` : '';
+  const hour = new Date().getHours(), hi = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+  const name = (St.settings.me.name || St.profileName || '').split(' ')[0];
+  const rc = counts().review, chip = (k, n, label) => `<button class="ph-chip ${k} ${f === k ? 'on' : ''}" data-act="ph-filter" data-f="${k}" aria-pressed="${f === k}"><b>${n}</b><span>${label}</span></button>`;
+  const body = sec('over', '⚠️ Overdue', B.over) + sec('today', '📌 Today', B.today) + sec('week', '🗓 This week', B.week) + sec('later', 'Later', B.later, B.over.length + B.today.length + B.week.length < 4) + sec('none', 'No date', B.none, false) + sec('wait', '⏳ Waiting on others', wait, f === 'wait');
+  return `<div class="wrap ph">
+    <div class="ph-hello"><small>${esc(fmtDate(T(), { weekday: 'long', day: 'numeric', month: 'long' }))}</small><h1>${hi}${name ? ', ' + esc(name) : ''}</h1></div>
+    <div class="ph-chips" role="group" aria-label="Show">${chip('all', mine.length, 'Mine')}${chip('over', B.over.length, 'Overdue')}${chip('today', B.today.length, 'Today')}${chip('wait', wait.length, 'Waiting')}${rc ? `<button class="ph-chip review" data-act="nav" data-view="review"><b>${rc}</b><span>To review</span></button>` : ''}</div>
+    <label class="search ph-search">${I.search}<span class="sr">Search tasks</span><input class="input" id="ph-q" type="search" placeholder="Search tasks, projects, people…" value="${esc(UI.phQ)}" data-inp="phQ"></label>
+    ${body || `<div class="empty ph-empty"><div class="big-emoji">🎉</div><h3>${q ? 'Nothing matches' : 'Nothing waiting for you'}</h3><p>${q ? 'Try other words.' : 'Add emails with ＋ and the tasks will appear here.'}</p></div>`}
+    ${doneToday.length ? `<details class="ph-sec donel"><summary><span>✓ Done today</span><b>${doneToday.length}</b></summary>${doneToday.map(phCard).join('')}</details>` : ''}
+    <p class="small muted ph-tip">Swipe a card right to finish it, left to move it to tomorrow.</p>
+  </div>`;
+}
+
+/* --- Threads --- */
+function phThreads() {
+  const idx = typeof convIndex === 'function' ? convIndex() : { ids: new Map() };
+  const q = E.normMatch(UI.phQ || '');
+  const list = [...idx.ids.entries()].map(([cid, ems]) => {
+    const st = threadSteps({ conv: cid }), last = st[st.length - 1] || {}, ids = new Set(ems.map(e => e.id));
+    const tasks = [...St.tasks.values()].filter(t => (t.emailIds || []).some(id => ids.has(id)));
+    return { cid, ems, st, last, tasks, open: tasks.filter(t => t.status !== 'done'), at: [...st].reverse().find(x => x.date)?.date || (ems[ems.length - 1].date || '').slice(0, 10) };
+  }).filter(x => !q || E.normMatch(x.ems.map(e => e.subject + ' ' + e.from).join(' ') + ' ' + x.st.map(s => s.says).join(' ')).includes(q))
+    .sort((a, b) => (b.open.length > 0) - (a.open.length > 0) || (b.at || '').localeCompare(a.at || ''));
+  return `<div class="wrap ph">
+    <div class="ph-hello"><small>${list.length} conversation${list.length === 1 ? '' : 's'}</small><h1>Threads</h1></div>
+    <label class="search ph-search">${I.search}<span class="sr">Search threads</span><input class="input" id="ph-q" type="search" placeholder="Search subject, people, what was said…" value="${esc(UI.phQ)}" data-inp="phQ"></label>
+    ${list.length ? list.map(x => `<button class="ph-th" data-act="ph-thread" data-cid="${esc(x.cid)}">
+      <span class="ph-th-h"><b dir="auto">${esc(E.clip(E.normSubject(x.ems[0].subject || '') || 'Email thread', 80))}</b><time>${x.at ? esc(fmtDate(x.at)) : ''}</time></span>
+      <span class="ph-th-l" dir="auto">${x.last.me ? '<b>Me</b>' : `<b>${esc(E.clip(x.last.from || '', 24))}</b>`}: ${esc(E.clip(x.last.says || '', 110))}</span>
+      <span class="ph-meta"><span>✉ ${x.st.length}</span>${x.open.length ? `<span class="ph-due today">${x.open.length} open</span>` : x.tasks.length ? '<span class="ph-due">all done ✓</span>' : ''}${x.open.slice(0, 2).map(t => `<span class="mono">${esc(t.ref)}</span>`).join('')}</span>
+    </button>`).join('') : '<div class="empty ph-empty"><div class="big-emoji">🧵</div><h3>No threads yet</h3><p>Every email you add joins its conversation here.</p></div>'}
+  </div>`;
+}
+DRAWER_FN.phthread = dr => {
+  const ems = convEmails(dr.id); if (!ems.length) return null;
+  const last = ems[ems.length - 1], ids = new Set(ems.map(e => e.id));
+  const tasks = [...St.tasks.values()].filter(t => (t.emailIds || []).some(id => ids.has(id))).sort((a, b) => (a.status === 'done') - (b.status === 'done') || (a.deadline || '9999').localeCompare(b.deadline || '9999'));
+  return `<div class="drawer-h"><span class="label">🧵 Thread</span><span class="spacer"></span><button class="icon-btn" data-act="close-drawer" aria-label="Close">${I.x}</button></div>
+  <div class="drawer-b ph-drawer">
+    <h2 dir="auto" style="font-size:19px">${esc(E.normSubject(ems[0].subject || '') || 'Email thread')}</h2>
+    ${tasks.length ? `<div><div class="label" style="margin-bottom:6px">Tasks from this thread</div>${tasks.map(phCard).join('')}</div>` : ''}
+    ${threadHistHTML(last, { open: true }) || `<p class="muted small">One email so far.</p>`}
+    <div class="row">${ems.slice().reverse().map(e => `<button class="btn sm ghost" data-act="open-email" data-id="${esc(e.id)}">✉ ${esc(fmtDate((e.date || '').slice(0, 10)))} ${esc(E.clip(thName(e.from), 18))}</button>`).join('')}</div>
+  </div>`;
+};
+
+/* --- the ＋ sheet and More --- */
+function phSheet(html) {
+  let s = document.getElementById('ph-sheet');
+  if (!html) { if (s) s.hidden = true; document.documentElement.classList.remove('ph-sheet-on'); return; }
+  if (!s) { s = document.createElement('div'); s.id = 'ph-sheet'; s.className = 'ph-sheet'; s.setAttribute('role', 'dialog'); document.body.appendChild(s); }
+  s.innerHTML = `<div class="ph-sheet-bg" data-act="ph-sheet-close"></div><div class="ph-sheet-card"><span class="ph-grab" aria-hidden="true"></span>${deco(html)}</div>`;
+  s.hidden = false; document.documentElement.classList.add('ph-sheet-on');
+}
+UI.phDue = UI.phDue || 'today';
+function phAddHTML() {
+  const due = UI.phDue, d = k => `<button class="ph-pill ${due === k[0] ? 'on' : ''}" data-act="ph-due" data-d="${k[0]}" aria-pressed="${due === k[0]}">${k[1]}</button>`;
+  const g = gmCfg();
+  return `<h3>New task</h3>
+    <input class="input ph-new" id="ph-new" placeholder="What needs doing?" enterkeyhint="done" dir="auto" autocomplete="off">
+    <div class="ph-pills">${[['today', 'Today'], ['tomorrow', 'Tomorrow'], ['week', 'This week'], ['none', 'No date']].map(d).join('')}</div>
+    <select class="input" id="ph-proj" aria-label="Project"><option value="">No project</option>${projectsList().map(p => `<option ${p === UI.phProj ? 'selected' : ''}>${esc(p)}</option>`).join('')}</select>
+    <button class="btn primary ph-big" data-act="ph-create">Add task</button>
+    <div class="ph-or"><span>or</span></div>
+    ${St.mcp && g.address ? `<button class="btn ph-big" data-act="ph-gmail">📥 Check Gmail for forwarded emails</button>` : ''}
+    <button class="btn ph-big" data-act="ph-import">✉ Add emails or files</button>`;
+}
+function phMoreHTML() {
+  const rc = counts().review, pref = phPref();
+  const it = (view, ic, label, extra = '') => `<button class="ph-row" data-act="ph-nav" data-view="${view}"><span>${ic}</span><b>${label}</b>${extra}</button>`;
+  return `<h3>More</h3>
+    ${it('review', '✅', 'Review', rc ? `<i class="ph-badge">${rc}</i>` : '')}${it('emails', '✉', 'Emails')}${it('import', '⬆', 'Add emails')}${VIEWS.includes('daily') && VIEW_FN.daily ? it('daily', '📅', 'Daily') : ''}${it('setup', '⚙', 'Setup')}
+    <button class="ph-row" data-act="site-toggle"><span>☀</span><b>Site mode</b><small>${document.documentElement.classList.contains('site-mode') ? 'On' : 'Off'}</small></button>
+    <div class="ph-seg"><span>📱 Phone mode</span><div class="seg">${[['auto', 'Auto'], ['on', 'On'], ['off', 'Off']].map(([v, l]) => `<button data-act="ph-mode" data-v="${v}" aria-pressed="${pref === v}">${l}</button>`).join('')}</div></div>`;
+}
+Object.assign(ACT, {
+  'phone-toggle': () => phSet(phoneOn() ? 'off' : 'on'),
+  'ph-mode': el => { phSheet(null); phSet(el.dataset.v); toast(el.dataset.v === 'auto' ? '📱 Phone mode follows the screen size.' : el.dataset.v === 'on' ? '📱 Phone mode on.' : 'Phone mode off.'); },
+  'ph-go': el => {
+    const k = el.dataset.k; phSheet(null); closeDrawer();
+    if (k === 'canvas') { UI.phCanvas = true; UI.todoMode = 'map'; UI.map.fitted = false; go('todo'); return; }
+    UI.phCanvas = false; UI.ph = k; UI.phQ = ''; go('phone');
+  },
+  'ph-more': () => phSheet(phMoreHTML()),
+  'ph-nav': el => { phSheet(null); UI.phCanvas = false; go(el.dataset.view); },
+  'ph-add': () => { phSheet(phAddHTML()); setTimeout(() => { const i = document.getElementById('ph-new'); if (i) i.focus(); }, 60); },
+  'ph-sheet-close': () => phSheet(null),
+  'ph-due': el => { UI.phDue = el.dataset.d; document.querySelectorAll('.ph-pill').forEach(b => { const on = b.dataset.d === UI.phDue; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); }); },
+  'ph-create': () => {
+    const i = document.getElementById('ph-new'), title = (i && i.value || '').trim(); if (!title) { if (i) i.focus(); return; }
+    const p = document.getElementById('ph-proj'); UI.phProj = p ? p.value : '';
+    const d = new Date(), iso = x => x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0') + '-' + String(x.getDate()).padStart(2, '0');
+    const deadline = UI.phDue === 'today' ? T() : UI.phDue === 'tomorrow' ? phTomorrow() : UI.phDue === 'week' ? (d.setDate(d.getDate() + Math.max(1, 5 - d.getDay() + (d.getDay() > 5 ? 7 : 0))), iso(d)) : null;
+    const t = makeTask({ title, project: UI.phProj, deadline, deadlineBasis: deadline ? 'explicit' : 'none', history: [{ at: nowISO(), text: 'Added on the phone' }] });
+    cvApply({ tasks: { [t.id]: t } }); phSheet(null); render(); toast(`＋ ${t.ref} added.`, { action: 'Undo', fn: cvUndo });
+  },
+  'ph-gmail': () => { phSheet(null); checkGmail(true); },
+  'ph-import': () => { phSheet(null); UI.phCanvas = false; go('import'); },
+  'ph-filter': el => { UI.phF = UI.phF === el.dataset.f ? 'all' : el.dataset.f; render(); },
+  'ph-thread': el => openDrawer('phthread', el.dataset.cid),
+});
+document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target && e.target.id === 'ph-new') { e.preventDefault(); ACT['ph-create'](); } if (e.key === 'Escape') phSheet(null); });
+// move a task to tomorrow (swipe left)
+function phTomorrowTask(id) {
+  const t0 = St.tasks.get(id); if (!t0 || t0.status === 'done') return;
+  const t = clone(t0), to = phTomorrow(); t.deadline = to; t.deadlineBasis = 'explicit'; (t.history = t.history || []).push({ at: nowISO(), text: `Moved to ${fmtDate(to)} on the phone` });
+  cvApply({ tasks: { [id]: t } }); render(); toast(`➜ ${t.ref} moved to tomorrow.`, { action: 'Undo', fn: cvUndo });
+}
+
+/* --- swipe a card: right finishes it, left moves it to tomorrow --- */
+const SW = { el: null };
+document.addEventListener('pointerdown', e => {
+  const c = e.target.closest && e.target.closest('.ph-card'); if (!c || e.button > 0 || e.target.closest('.ph-tick')) return;
+  SW.el = c; SW.x = e.clientX; SW.y = e.clientY; SW.dx = 0; SW.lock = null; SW.id = e.pointerId;
+}, { passive: true });
+document.addEventListener('pointermove', e => {
+  if (!SW.el || e.pointerId !== SW.id) return;
+  const dx = e.clientX - SW.x, dy = e.clientY - SW.y;
+  if (!SW.lock && Math.hypot(dx, dy) > 10) SW.lock = Math.abs(dx) > Math.abs(dy) * 1.3 ? 'x' : 'y';
+  if (SW.lock !== 'x') return;
+  SW.dx = dx; SW.el.style.transform = `translateX(${dx}px)`; SW.el.classList.toggle('sw-done', dx > 70); SW.el.classList.toggle('sw-later', dx < -70);
+}, { passive: true });
+const swEnd = () => {
+  const c = SW.el; if (!c) return; SW.el = null;
+  const id = c.dataset.tid, dx = SW.dx || 0;
+  c.style.transform = ''; c.classList.remove('sw-done', 'sw-later');
+  if (SW.lock !== 'x') return;
+  // a swipe is not a tap
+  const stop = ev => { ev.stopPropagation(); ev.preventDefault(); }; document.addEventListener('click', stop, { capture: true, once: true }); setTimeout(() => document.removeEventListener('click', stop, { capture: true }), 400);
+  if (dx > 90) { const t = St.tasks.get(id); if (t && t.status !== 'done') ACT['toggle-done']({ dataset: { id } }); }
+  else if (dx < -90) phTomorrowTask(id);
+};
+document.addEventListener('pointerup', swEnd); document.addEventListener('pointercancel', () => { if (SW.el) { SW.el.style.transform = ''; SW.el = null; } });
+
+SETUP_EXTRA.push(() => `<section class="card pad" data-sec="Phone mode" style="display:grid;gap:8px"><div class="section-title"><h2>📱 Phone mode</h2></div>
+  <p class="small muted" style="margin:0">A layout made for a phone: Today with big cards you tick or swipe, your email threads, quick add, and a bottom bar in thumb reach. This device only.</p>
+  <div class="seg">${[['auto', 'Auto (small screens)'], ['on', 'Always'], ['off', 'Never']].map(([v, l]) => `<button data-act="ph-mode" data-v="${v}" aria-pressed="${phPref() === v}">${l}</button>`).join('')}</div></section>`);
+phApply();
 
 /* ---------- boot ---------- */
 const startView = (location.hash || '').replace('#', '');

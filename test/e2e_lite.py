@@ -74,9 +74,15 @@ async def main():
         m = await b.new_context(viewport={'width': 390, 'height': 844}, is_mobile=True, has_touch=True, color_scheme='dark'); mp = await m.new_page(); await mp.route('**/*', route)
         mp.on('pageerror', lambda e: errors.append('PAGEERROR mobile ' + str(e)))
         await mp.goto('https://app.test/#todo'); await mp.wait_for_selector('h1'); await mp.wait_for_timeout(1200)
+        # a phone opens in phone mode: Today, with its own bottom bar (the header tabs move into it); e2e_phone has the rest
+        assert await mp.evaluate("document.documentElement.classList.contains('phone-mode')"), 'phone mode on a phone'
+        tabs = await mp.evaluate("[...document.querySelectorAll('#ph-nav [data-k]')].filter(b => b.offsetParent).map(b => b.dataset.k)"); print('PHONE TABS', tabs)
+        assert tabs == ['today', 'threads', 'canvas', 'more'], tabs
+        assert not await mp.evaluate("!!(document.querySelector('.tabbar') && document.querySelector('.tabbar').offsetParent)"), 'not the old bottom tab bar'
+        # with phone mode off, the header tabs come back
+        await mp.evaluate("localStorage.setItem('ar-phone-mode', 'off')"); await mp.reload(); await mp.wait_for_selector('h1'); await mp.wait_for_timeout(1000)
         tabs = await mp.evaluate("[...document.querySelectorAll('.rail [data-nav]')].filter(b => b.offsetParent && b.getBoundingClientRect().top < 80).map(b => b.dataset.nav)"); print('HEADER TABS on phone', tabs)
         assert tabs == ['todo', 'review', 'import', 'emails', 'setup'], tabs
-        assert not await mp.evaluate("!!(document.querySelector('.tabbar') && document.querySelector('.tabbar').offsetParent)"), 'no bottom tab bar'
         await mp.screenshot(path=SHOTS + '/lite-3-phone.png')
         print('MOBILE overflow', await mp.evaluate("document.documentElement.scrollWidth>innerWidth"))
         print('ERRORS', errors); assert not errors
