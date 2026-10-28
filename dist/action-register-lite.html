@@ -1452,6 +1452,24 @@ html.site-mode .ts-ic { width: 66px; height: 66px; }
 .th-next .th-dot { background: var(--surface); border-style: dashed; }
 .th-open { margin: 2px 0 0; padding: 0; list-style: none; display: grid; gap: 4px; }
 
+/* ---------- email thread cards on the canvas ---------- */
+.mnode.thread { display: grid; align-content: start; gap: 6px; padding: 10px 12px 10px; border-radius: 14px; background: color-mix(in srgb, var(--wait) 6%, var(--surface)); border: 1.5px solid color-mix(in srgb, var(--wait) 45%, var(--line)); box-shadow: var(--elev-1); cursor: pointer; }
+.thn-h { display: flex; align-items: flex-start; gap: 8px; }
+.thn-ic { font-size: 16px; line-height: 1.2; }
+.thn-ht { flex: 1; min-width: 0; display: grid; gap: 1px; }
+.thn-ht b { font-size: 13px; line-height: 1.3; overflow-wrap: anywhere; }
+.thn-ht small { font-size: 11px; color: var(--ink-3); }
+.mnode.thread .mfocus { position: static; opacity: 1; }
+.thn-list { list-style: none; margin: 0; padding: 0 0 0 6px; display: grid; gap: 1px; border-inline-start: 2px solid color-mix(in srgb, var(--wait) 35%, var(--line)); }
+.thn-row { width: 100%; display: grid; grid-template-columns: 20px 44px 1fr; gap: 4px; align-items: baseline; text-align: start; background: none; border: 0; padding: 3px 4px; border-radius: 6px; font: inherit; color: var(--ink); cursor: pointer; }
+.thn-row:hover { background: color-mix(in srgb, var(--wait) 10%, transparent); }
+.thn-i { font-size: 12px; }
+.thn-d { font-size: 11px; color: var(--ink-3); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.thn-t { font-size: 11.5px; line-height: 1.35; overflow-wrap: anywhere; }
+.thn-list li.me .thn-t b { color: var(--accent); }
+.thn-list li.last .thn-row { background: color-mix(in srgb, var(--accent) 8%, transparent); }
+.thn-gap button { background: none; border: 0; color: var(--ink-3); font: inherit; font-size: 11px; padding: 2px 4px 2px 28px; cursor: pointer; }
+
 /* ================= Action Register on claude.ai — burgundy & white ================= */
 /* Layout: a burgundy command bar across the top (brand · tabs · status), white working sheets below, the canvas as
    a large white board. Phones: burgundy title bar, white tab bar with a burgundy marker on the open tab.
@@ -3412,7 +3430,7 @@ function buildPrompt(input) {
     me.scope ? `I am responsible for: ${me.scope}` : '',
   ].filter(Boolean).join('\n');
   const proj = (input.projects || []).map(p => `- ${p.code ? p.code + ' — ' : ''}${p.name}${p.aliases ? ' (also: ' + p.aliases + ')' : ''}`).join('\n');
-  const open = (input.openTasks || []).map(t => `- [${t.id}] ${t.ref ? t.ref + ' ' : ''}${t.title} | project: ${t.project || '-'} | category: ${t.discipline || '-'} | owner: ${t.owner || 'me'} | status: ${t.status} | due: ${t.deadline || '-'}`).join('\n');
+  const open = (input.openTasks || []).map(t => `- [${t.id}] ${t.ref ? t.ref + ' ' : ''}${t.title} | project: ${t.project || '-'}${t.topic ? ' | topic: ' + t.topic : ''} | category: ${t.discipline || '-'} | owner: ${t.owner || 'me'} | status: ${t.status} | due: ${t.deadline || '-'}${t.sameThread ? ' | SAME CONVERSATION' : ''}`).join('\n');
   const head = `You are the email triage assistant of a mechanical design engineer in water/wastewater treatment. Read ONE email (with its quoted conversation history and attachments) and extract the obligations it creates. Reply with JSON only.
 
 TODAY: ${today} (${weekday}), time zone ${input.tz || 'local'}.
@@ -3434,7 +3452,7 @@ RULES
 8. One task per distinct deliverable. When a deliverable contains several items (review comments, punch-list items, BOQ lines, drawings to revise, documents to provide, questions to answer), keep ONE task and list EVERY item in "subtasks" in source order — each short and specific, starting with its number or reference (e.g. "C-02 — provide pump curve at 410 m3/h / 14.5 m"). Include only open items that need action; skip items already closed. Leave subtasks empty for a single action. Split an item into its own task only if it has its own owner or date.
 9. If this email changes the state of a TRACKED TASK listed above (answered, delivered, approved, closed, superseded, deadline moved, blocked or unblocked), put it in "updates", not "tasks" — judge by outcome, not wording: the document, data or answer I was waiting for arriving completes that waiting task; someone confirming that my item was received, approved or is no longer needed completes mine. Give "verdict", a one-line "reason" and your "confidence" (0–1) for each update.
 10. Flags: attachment referenced but not provided; content unreadable/truncated that may hold requirements; conflicting instructions; owner unclear; deadline uncertain; revision mismatch (comments refer to a different revision than attached).
-11. Relationships and placement: in "relatedTaskIds" list TRACKED TASK ids that this task follows on from, depends on, answers, or continues (e.g. a resubmission after comments, a reply to a query I raised). Never invent ids; [] when none. Always choose the single best project and topic yourself (see CATEGORIES › project) — I will not be asked. Set "placementConfidence" (0–1); when it is below 0.7, also give up to 3 "placementOptions" — other places {project, discipline, relatedTaskId, reason} — I can switch to later.
+11. Relationships and placement: in "relatedTaskIds" list TRACKED TASK ids that this task follows on from, depends on, answers, or continues (e.g. a resubmission after comments, a reply to a query I raised). Never invent ids; [] when none. Always choose the single best project and topic yourself (see CATEGORIES › project) — I will not be asked. Tasks marked SAME CONVERSATION come from earlier emails of this very conversation: new tasks from this email belong to the same project and topic as them (unless the email clearly moves to another project), and list them in relatedTaskIds when they follow on. Set "placementConfidence" (0–1); when it is below 0.7, also give up to 3 "placementOptions" — other places {project, discipline, relatedTaskId, reason} — I can switch to later.
 12. If nothing is needed from me, set actionRequired false and explain in noActionReason. Waiting/FYI items may still be listed if useful.
 14. Task headers: "title" is a short header I can scan on a canvas — what to do, 3–8 words, at most 55 characters, written like a to-do item ("Revise RAS pump calc", "Answer CRS comments on valve spec", "Confirm anchor bolt layout"). Summarise in your own words; no greetings, no full sentences, no "Please", no long document titles (a short doc no. or tag only when it tells tasks apart). Put the detail in "action" (one or two short sentences) and the individual items in "subtasks".
 15. No duplicates: never return two tasks for the same deliverable, and if a TRACKED TASK above is the same obligation (even worded differently, or the same email forwarded again), set "matchesTaskId" to its id instead of creating a new one.
@@ -4088,7 +4106,7 @@ function taskDrawerHTML(t) {
   <div class="drawer-b two"><div class="dcol-main">
     <textarea class="title-edit" id="d-title" rows="1" data-chg="task-field" data-field="title" dir="auto" aria-label="Title">${esc(t.title)}</textarea>
     ${mailDateLine(t)}
-    ${typeof threadHistHTML === 'function' ? threadHistHTML(St.emails.get((t.emailIds || [])[(t.emailIds || []).length - 1]) || { threadKey: t.threadKey }, { task: t }) : ''}
+    ${typeof threadHistHTML === 'function' ? threadHistHTML(St.emails.get((t.emailIds || [])[(t.emailIds || []).length - 1]) || { conv: taskConvs(t)[0] }, { task: t }) : ''}
     ${t.placement && t.placement.status !== 'confirmed' && (t.placement.options || []).length ? `<details class="small wrong-place"><summary class="muted">Wrong place? Other places Claude considered</summary><div style="display:grid;gap:6px;margin-top:8px">${(t.placement.options || []).map((o, i) => { const r = o.relatedTaskId && St.tasks.get(o.relatedTaskId); return `<button class="btn sm opt-btn" data-act="use-placement" data-i="${i}">${o.project ? '📁 ' + esc(o.project) : ''}${o.discipline ? ' › ' + esc(E.DISCIPLINES[o.discipline]) : ''}${r ? ' · 🔗 ' + esc(r.ref) : ''}${o.reason ? `<span class="muted small"> — ${esc(o.reason)}</span>` : ''}</button>`; }).join('')}<button class="btn sm ghost" data-act="keep-placement">Keep it here${t.project ? ': ' + esc(t.project) : ''}</button></div></details>` : ''}
     <div class="seg" role="group" aria-label="Status">${Object.entries(STATUS).map(([k, v]) => `<button data-act="set-status" data-id="${esc(t.id)}" data-status="${k}" aria-pressed="${t.status === k}">${v}</button>`).join('')}</div>
     ${taskActionsHTML(t)}
@@ -4481,15 +4499,15 @@ UI.map = { x: 30, y: 30, k: 0.85, fitted: false }; UI.mapCollapsed = new Set(); 
 UI.mapShowDone = true; UI.mapFocus = 'all'; UI.mapQ = ''; UI.mapActivity = true;
 UI.tool = 'select'; UI.cvColor = 'ink'; UI.cvWidth = 3; UI.cvSel = new Set(); UI.cvUndo = []; UI.cvRedo = []; UI.cvTemp = null; UI.cvDrop = null;
 UI.mapFull = false; UI.mapAsOf = ''; UI.mapDay = '';
-const MX = { root: 0, project: 250, topic: 540, task: 830, item: 1190 };
+const MX = { root: 0, project: 250, topic: 540, task: 830, thread: 830, item: 1190 };
 // the mind map grows left to right (h, the default) or top to bottom (v); boxes moved by hand are remembered
 // separately for each direction (St.layout.off / St.layout.offv)
 const mapDir = () => ((St.settings.ui || {}).mapDir === 'v' ? 'v' : 'h');
 const offKey = () => (mapDir() === 'v' ? 'offv' : 'off');
 const VGAP = { root: 64, project: 54, topic: 46, task: 0 }, HGAP = { project: 44, topic: 26, task: 16, item: 8, root: 0 };
-const MW = { root: 200, project: 250, topic: 250, task: 320, item: 280 };
-const MH = { root: 78, project: 72, topic: 52, task: 82, item: 34 };
-const MGAP = { project: 20, topic: 14, task: 12, item: 6, root: 0 };
+const MW = { root: 200, project: 250, topic: 250, task: 320, thread: 340, item: 280 };
+const MH = { root: 78, project: 72, topic: 52, task: 82, thread: 60, item: 34 };
+const MGAP = { project: 20, topic: 14, task: 12, thread: 14, item: 6, root: 0 };
 const MGAP_AFTER = { root: 0, project: 34, topic: 16, task: 8 };
 const relIds = t => Array.isArray(t.relatedIds) ? t.relatedIds : [];
 const dayOf = iso => { if (!iso) return ''; if (/^\d{4}-\d{2}-\d{2}$/.test(iso)) return iso; const d = new Date(iso); return isNaN(d) ? '' : d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
@@ -4532,16 +4550,23 @@ function buildMap() {
     P.cats.get(ck).tasks.push(t);
   }
   const openOf = P => P.n - P.done;
+  // an email conversation that feeds several topics is shown whole in the topic of its first task, and as a one-line
+  // card (tap to open) in the others
+  const convHome = new Map();
+  if (UI.mapThreads !== false && typeof taskConvs === 'function') for (const t of [...tasks].sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || ''))) for (const c of taskConvs(t)) if (!convHome.has(c)) convHome.set(c, topicKey(t));
   const projects = [...projs.values()].sort((a, b) => (a.id === 'p:~') - (b.id === 'p:~') || openOf(b) - openOf(a) || a.label.localeCompare(b.label));
   const root = { id: 'root', type: 'root', children: [] };
   for (const P of projects) {
     // project → topics (most recent activity first) → tasks (oldest first: historical progression)
     const last = C => C.tasks.reduce((m, t) => (t.updatedAt || '') > m ? t.updatedAt : m, '');
     P.children = [...P.cats.values()].sort((a, b) => (a.key === '~') - (b.key === '~') || last(b).localeCompare(last(a))).map(C => {
-      C.children = C.tasks.sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || '')).map(t => ({
+      // the topic's email conversations come first, each as one card from the first email to the latest reply
+      const convs = UI.mapThreads === false || typeof taskConvs !== 'function' ? [] : [...new Set(C.tasks.flatMap(taskConvs))]
+        .map(cid => ({ cid, first: (convEmails(cid)[0] || {}).date || '' })).sort((a, b) => a.first.localeCompare(b.first));
+      C.children = [...convs.map(({ cid }) => ({ id: 'th:' + C.id + ':' + cid, type: 'thread', conv: cid, compact: convHome.get(cid) !== C.id, hue: P.hue, children: [] })), ...C.tasks.sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || '')).map(t => ({
         id: 't:' + t.id, type: 'task', t, hue: P.hue,
         children: UI.mapItems.has(t.id) ? subsOf(t).map(s2 => ({ id: 's:' + t.id + ':' + s2.id, type: 'item', s: s2, t, hue: P.hue, children: [] })) : [],
-      }));
+      }))];
       return C;
     });
     root.children.push(P);
@@ -4574,10 +4599,11 @@ function buildMap() {
     const maxH = {}; for (const n of all) if (n.type !== 'item') maxH[n.type] = Math.max(maxH[n.type] || 0, n.h);
     const rowY = { root: 0 }; let y = 0;
     for (const t of ['root', 'project', 'topic', 'task']) { rowY[t] = y; y += (maxH[t] || MH[t]) + (VGAP[t] || 40); }
+    rowY.thread = rowY.task;
     let cx = 0;
     const put = n => {
       n.y = rowY[n.type] ?? 0;
-      if (n.type === 'task' || !n.kids.length) {
+      if (n.type === 'task' || n.type === 'thread' || !n.kids.length) {
         const items = n.type === 'task' ? n.kids : [];
         const w = Math.max(n.w, ...items.map(k => k.w + 22));
         n.x = cx + (w - n.w) / 2; cx += w + (HGAP[n.type] || 16);
@@ -4630,6 +4656,7 @@ const nodeTasks = n => n.tasks || (n.cats ? [...n.cats.values()].flatMap(c => c.
 const urgentForMe = t => { const c = dueInfo(t).cls; return c === 'over' || c === 'today' || t.priority === 'critical'; };
 function mapNodeHTML(n, hits, day) {
   const st = `left:${n.x || 0}px;top:${n.y || 0}px;width:${n.w}px;${n.h ? `height:${n.h}px;` : ''}--h:${n.hue ?? 186}`;
+  if (n.type === 'thread') return typeof threadNodeHTML === 'function' ? threadNodeHTML(n, st) : '';
   const more = n.hiddenKids ? `<span class="mmore">+${n.hiddenKids}</span>` : '';
   const rz = `<span class="rz" data-rz="${esc(n.id)}" data-kind="node" title="Drag to resize" aria-hidden="true"></span>`;
   const drag = UI.cvTemp && UI.cvTemp.kind === 'node' && UI.cvTemp.id === n.id ? ' dragging' : '';
@@ -5087,6 +5114,7 @@ function viewMap() {
             <label class="check small"><input type="checkbox" id="map-act" data-chg="map-opt" data-key="mapActivity" ${UI.mapActivity ? 'checked' : ''}>Activity panel</label>
             <label class="check small"><input type="checkbox" id="map-bands" data-chg="map-opt" data-key="mapBands" ${UI.mapBands !== false ? 'checked' : ''}>Project colour bands</label>
             <label class="check small"><input type="checkbox" id="map-mini" data-chg="map-opt" data-key="mapMini" ${UI.mapMini !== false ? 'checked' : ''}>Minimap</label>
+            <label class="check small"><input type="checkbox" id="map-threads" data-chg="map-opt" data-key="mapThreads" ${UI.mapThreads !== false ? 'checked' : ''}>Email threads under each topic</label>
             ${offN || Object.keys(St.layout.size || {}).length ? `<button class="btn sm ghost" data-act="map-reset-layout" title="Put every box back in its place and its normal size">↺ Reset positions and sizes</button>` : ''}</div>
           <div class="mt-sec"><div class="label">History</div>
             <label class="small map-date" title="Highlight the tasks worked on that day">📌 Highlight day <input class="input" type="date" id="map-day" data-chg="map-day" value="${esc(UI.mapDay)}" max="${T()}"></label>
@@ -5565,6 +5593,7 @@ const NODE_EXTRA = [], MAP_BTN = {};
 function clickNode(node, target) {
   const kind = node.dataset.type, btn = target && target.closest && target.closest('[data-map]');
   if (node.dataset.node === 'root') { mapFit(); return true; }
+  if (kind === 'thread') { if (typeof threadNodeClick === 'function') threadNodeClick(node, btn); return true; }
   if (btn && btn.dataset.map === 'del') { deleteNode(node); return true; }
   if ((kind === 'project' || kind === 'topic') && btn && btn.dataset.map === 'rename') { startNodeEdit(node.dataset.node); return true; }
   if (kind === 'project' && btn && btn.dataset.map === 'focus') { UI.mapFocus = node.dataset.pk; UI.map.fitted = false; render(); return true; }
@@ -6509,7 +6538,11 @@ async function analyzeBundle(b, signal, onProgress) {
   }
   const tk = E.threadKey(em);
   const fromMe = isMeSender(em);
-  const related = E.relatedOpenTasks([...St.tasks.values()], { ...em, fromMe }, tk).map(t => ({ id: t.id, ref: t.ref, title: t.title, project: t.project, discipline: t.discipline, owner: t.ownership === 'mine' ? 'me' : t.owner, status: t.status, deadline: t.deadline }));
+  // tasks from earlier emails of this conversation are always listed, and marked, so new tasks join their topic
+  const peers = typeof convPeers === 'function' ? convPeers({ ...em, gmailThread: b.gmailThread }, tk) : new Set();
+  const same = t => (t.emailIds || []).some(id => peers.has(id));
+  const rel0 = E.relatedOpenTasks([...St.tasks.values()], { ...em, fromMe }, tk), relIdsSet = new Set(rel0.map(t => t.id));
+  const related = [...[...St.tasks.values()].filter(t => same(t) && !relIdsSet.has(t.id)).slice(0, 15), ...rel0].map(t => ({ id: t.id, ref: t.ref, title: t.title, project: t.project, topic: topicOf(t), discipline: t.discipline, owner: t.ownership === 'mine' ? 'me' : t.owner, status: t.status, deadline: t.deadline, sameThread: same(t) }));
   const budget = ((St.limits && St.limits.maxPromptBytes) || 262144) - 10000;
   const input = {
     me: s.me, projects: allProjects(), topics: allTopics(), today: E.todayISO(), tz: TZ,
@@ -6579,7 +6612,7 @@ async function analyzeBundle(b, signal, onProgress) {
   const id = b.recordId || E.uid('e');
   const rec = {
     id, threadKey: tk, subject: b.source === 'docs' ? 'Documents: ' + b.atts.map(a => a.name).slice(0, 3).join(', ') + (b.atts.length > 3 ? ` +${b.atts.length - 3}` : '') : (em.subject || ''), from: em.from || '', fromEmail: em.fromEmail || '', to: em.to || '', cc: em.cc || '', date: em.date || '',
-    messageId: em.messageId || '', convIndex: em.convIndex || '', source: b.source, fileName: b.fileName || '', importedAt: b.importedAt || nowISO(),
+    messageId: em.messageId || '', convIndex: em.convIndex || '', inReplyTo: E.clip(em.inReplyTo || '', 300), references: E.clip(em.references || '', 2000), gmailThread: b.gmailThread || '', source: b.source, fileName: b.fileName || '', importedAt: b.importedAt || nowISO(),
     snippet: E.clip((em.body || '').replace(/\s+/g, ' '), 280), quoted: E.quotedHistory(em.body || ''),
     attachments: b.atts.map(a => ({ name: a.name, kindLabel: (a.res && a.res.kindLabel) || 'File', size: a.size || 0, status: a.include ? ((a.res && a.res.status) || 'unknown') : 'excluded', note: (a.res && a.res.note) || '', pages: (a.res && a.res.pages) || null, images: (a.res && a.res.images && a.include) ? a.res.images.length : 0, textLen: (a.res && a.res.text || '').length })),
     analysis: an, reviewState: 'pending', hasText: !!s.storeText, fromMe,
@@ -6796,7 +6829,7 @@ async function checkGmail(manual) {
       for (const m of msgs) {
         if (!m.id || seen[m.id] || UI.staging.some(b => b.gmailId === m.id)) continue;
         if (!hasAddr(m, addr)) continue;
-        cands.push(m);
+        cands.push(Object.assign(m, { _thread: th.id }));
       }
     }
     cands.sort((a, b) => (a.internalDate || a.date || '').localeCompare(b.internalDate || b.date || ''));
@@ -6827,7 +6860,7 @@ async function checkGmail(manual) {
           b.warnings.push(list.length ? `This email is larger than Gmail lets the app download${mb}, so its text was read but its ${list.length === 1 ? 'attachment' : list.length + ' attachments'} must be added by hand: press “Add file” next to each (Open in Gmail to download it), or analyse the text only.` : `The full message could not be downloaded${mb}; its text was read.`);
         } catch { continue; }
       }
-      b.gmailId = m.id; b.gmailUrl = m.viewUrl || '';
+      b.gmailId = m.id; b.gmailUrl = m.viewUrl || ''; b.gmailThread = m._thread || '';
       for (const x of [b, ...more]) { UI.staging.push(x); checkDuplicateEmail(x); added++; }
     }
     GM.status = 'idle'; GM.error = ''; GM.lastChecked = nowISO(); GM.newCount = added;
@@ -8162,6 +8195,12 @@ function mapSVG(M) {
       parts.push(`<rect x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" rx="10" fill="${done ? '#F2F5F4' : '#FFFFFF'}" stroke="#CBD5D3"/><rect x="${n.x}" y="${n.y + 6}" width="4" height="${n.h - 12}" rx="2" fill="${pc}"/>`
         + svgText(n.x + 14, n.y + 21, wrapText(t.title, (n.w - 26) / 7.2, Math.max(1, Math.floor((n.h - 26) / 17))), 13, done ? '#7A8A87' : '#15201E', 500)
         + svgText(n.x + 14, n.y + n.h - 9, [`${t.ref || ''}   ${done ? '✓ ' + fmtDate((t.completedAt || t.updatedAt || '').slice(0, 10)) : d.txt}`], 11, done ? '#2F7A3E' : d.cls === 'over' ? '#C62828' : '#5B6B68'));
+      continue;
+    }
+    if (n.type === 'thread') {
+      const st = typeof threadSteps === 'function' ? threadSteps({ conv: n.conv }) : [];
+      parts.push(`<rect x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" rx="12" fill="#FBF8FF" stroke="#B9A3DA"/>` + svgText(n.x + 14, n.y + 22, [E.clip('🧵 ' + ((convEmails(n.conv)[0] || {}).subject || 'Email thread'), 46)], 13, '#3B2466', 600)
+        + svgText(n.x + 14, n.y + 44, st.slice(-Math.max(1, Math.floor((n.h - 50) / 17))).map(x => E.clip(`${x.date ? fmtDate(x.date) + ' · ' : ''}${x.me ? 'Me' : x.from || ''}: ${x.says || ''}`, 52)), 11, '#3F4A48'));
       continue;
     }
     parts.push(`<rect x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" rx="8" fill="#FFFFFF" stroke="#DDE4E2"/>` + svgText(n.x + 12, n.y + n.h / 2 + 4, [(n.s.done ? '☑ ' : '☐ ') + E.clip(n.s.text, Math.floor((n.w - 30) / 6.8))], 12, n.s.done ? '#7A8A87' : '#15201E'));
@@ -11572,10 +11611,77 @@ window.addEventListener('resize', () => requestAnimationFrame(fitPops));
 const TH_KIND = { request: '📩', reply: '↩️', submission: '📤', comments: '💬', approval: '✅', rejection: '⛔', reminder: '⏰', decision: '⚖️', info: '✉️' };
 const thMe = f => /^(me|أنا)$/i.test(String(f || '').trim()) || isMeSender({ from: f || '' });
 const thName = f => String(f || '').replace(/<[^>]*>/g, '').replace(/["']/g, '').trim();
+/* --- conversations: the emails that belong together, whatever their subject became --- */
+// Two emails are one conversation when they share the subject (without RE:/FW:/[EXTERNAL]), one replies to the other
+// (In-Reply-To / References), Gmail keeps them in one thread, one quotes the other (same sender and day in its
+// quoted history), or they feed the same task (an email that updates, completes or repeats a task joins that task's
+// conversation). Worked out again whenever emails or tasks change, so older emails are linked too.
+const convSubj = s => E.normMatch(E.normSubject(s || ''));
+const convWho = f => E.normMatch(thName(f)).split(' ')[0] || '';
+let CONV = { sig: null, of: new Map(), ids: new Map() };
+function convIndex() {
+  const ems = [...St.emails.values()];
+  let sig = ems.length + ':' + St.tasks.size;
+  for (const t of St.tasks.values()) sig += (t.emailIds || []).length;
+  for (const e of ems) sig += (e.analysis && (e.analysis.updates || []).length) || 0;
+  sig += ':' + ems.reduce((m, e) => ((e.importedAt || '') > m ? e.importedAt : m), '') + ':' + ems.reduce((n, e) => n + ((e.quoted || []).length), 0);
+  if (CONV.sig === sig) return CONV;
+  const P = new Map(ems.map(e => [e.id, e.id]));
+  const find = x => { while (P.get(x) !== x) { P.set(x, P.get(P.get(x))); x = P.get(x); } return x; };
+  const join = (a, b) => { if (!P.has(a) || !P.has(b)) return; const ra = find(a), rb = find(b); if (ra !== rb) P.set(ra, rb); };
+  const byKey = new Map(), byMid = new Map(), byGt = new Map(), byWhoDay = new Map();
+  const put = (m, k, id) => { if (!k) return; if (m.has(k)) join(m.get(k), id); else m.set(k, id); };
+  for (const e of ems) {
+    if (e.threadKey && !/^x:/.test(e.threadKey)) put(byKey, e.threadKey, e.id);
+    if (e.gmailThread) put(byGt, e.gmailThread, e.id);
+    if (e.messageId) byMid.set(e.messageId.trim(), e.id);
+    const d = (e.date || '').slice(0, 10), w = e.fromMe ? 'me' : convWho(e.from);
+    if (d && w) { const k = d + '|' + w; if (!byWhoDay.has(k)) byWhoDay.set(k, []); byWhoDay.get(k).push(e); }
+  }
+  for (const e of ems) {
+    for (const r of String((e.inReplyTo || '') + ' ' + (e.references || '')).split(/\s+/).filter(Boolean)) if (byMid.has(r)) join(e.id, byMid.get(r));
+    for (const q of e.quoted || []) {
+      if (!q.date) continue;
+      const w = thMe(q.from) ? 'me' : convWho(q.from);
+      for (const o of byWhoDay.get(q.date + '|' + w) || []) if (o.id !== e.id && (!q.subject || convSubj(q.subject) === convSubj(o.subject))) join(e.id, o.id);
+    }
+  }
+  for (const t of St.tasks.values()) { const ids = (t.emailIds || []).filter(id => P.has(id)); for (let i = 1; i < ids.length; i++) join(ids[0], ids[i]); }
+  for (const e of ems) {
+    const a = e.analysis || {};
+    for (const u of a.updates || []) { const t = St.tasks.get(u.taskId); if (t && (u.accept || u.applied)) for (const id of t.emailIds || []) join(e.id, id); }
+    for (const p of a.tasks || []) { const t = p.merge && St.tasks.get(p.dupOf); if (t) for (const id of t.emailIds || []) join(e.id, id); }
+  }
+  // each conversation is named after its first email
+  const groups = new Map();
+  for (const e of ems) { const r = find(e.id); if (!groups.has(r)) groups.set(r, []); groups.get(r).push(e); }
+  const of = new Map(), ids = new Map();
+  for (const list of groups.values()) {
+    list.sort((a, b) => (a.date || a.importedAt || '').localeCompare(b.date || b.importedAt || ''));
+    const cid = list[0].id; ids.set(cid, list); list.forEach(e => of.set(e.id, cid));
+  }
+  CONV = { sig, of, ids };
+  return CONV;
+}
+const convOf = id => convIndex().of.get(id) || null;
+const convEmails = cid => convIndex().ids.get(cid) || [];
+// the conversations a task belongs to (normally one)
+const taskConvs = t => [...new Set((t.emailIds || []).map(convOf).filter(Boolean))];
 function threadEmails(e) {
   if (!e) return [];
-  const list = e.threadKey ? [...St.emails.values()].filter(x => x.threadKey === e.threadKey) : (e.id ? [e] : []);
-  return list.sort((a, b) => (a.date || a.importedAt || '').localeCompare(b.date || b.importedAt || ''));
+  if (e.id && St.emails.has(e.id)) return convEmails(convOf(e.id));
+  if (e.conv) return convEmails(e.conv);
+  return e.id ? [e] : [];
+}
+// emails already stored that a new email would join (before it is saved): used to tell Claude which tracked tasks
+// come from the same conversation
+function convPeers(em, tk) {
+  const out = new Set(), mids = String((em.inReplyTo || '') + ' ' + (em.references || '')).split(/\s+/).filter(Boolean), qs = E.quotedHistory(em.body || '');
+  for (const o of St.emails.values()) {
+    if ((tk && !/^x:/.test(tk) && o.threadKey === tk) || (o.messageId && mids.includes(o.messageId.trim())) || (em.gmailThread && o.gmailThread === em.gmailThread)
+      || qs.some(q => q.date && q.date === (o.date || '').slice(0, 10) && (thMe(q.from) ? !!o.fromMe : convWho(q.from) === convWho(o.from)) && (!q.subject || convSubj(q.subject) === convSubj(o.subject)))) out.add(convOf(o.id));
+  }
+  return new Set([...out].flatMap(c => convEmails(c).map(x => x.id)));
 }
 function threadSteps(e) {
   const steps = [], seen = new Map();
@@ -11587,7 +11693,8 @@ function threadSteps(e) {
   };
   for (const em of threadEmails(e)) {
     const a = em.analysis || {}, h = (a.thread && a.thread.history) || [];
-    if (h.length) h.forEach((x, i) => add({ ...x, me: thMe(x.from) || (i === h.length - 1 && !!em.fromMe), ...(i === h.length - 1 ? { emailId: em.id } : {}) }));
+    // the newest message of Claude's list is this email: its own header gives the exact date and sender
+    if (h.length) h.forEach((x, i) => add(i === h.length - 1 ? { ...x, date: (em.date || '').slice(0, 10) || x.date, from: thName(em.from) || x.from, me: !!em.fromMe || thMe(x.from), emailId: em.id } : { ...x, me: thMe(x.from) }));
     else {
       (em.quoted || []).forEach(q => add({ date: q.date, from: q.from, kind: 'info', says: q.subject ? `“${q.subject}”` : '', me: thMe(q.from) }));
       add({ date: (em.date || '').slice(0, 10) || null, from: thName(em.from), kind: em.fromMe ? 'reply' : 'info', says: a.summary || em.subject || '', emailId: em.id, me: !!em.fromMe });
@@ -11601,8 +11708,8 @@ function threadSteps(e) {
 function threadHistHTML(e, opt = {}) {
   if (!e) return '';
   const steps = threadSteps(e); if (steps.length < 2) return '';
-  const ems = threadEmails(e), ids = new Set(ems.map(x => x.id)), tk = e.threadKey;
-  const tasks = [...St.tasks.values()].filter(t => (t.emailIds || []).some(id => ids.has(id)) || (tk && t.threadKey === tk));
+  const ems = threadEmails(e), ids = new Set(ems.map(x => x.id));
+  const tasks = [...St.tasks.values()].filter(t => (t.emailIds || []).some(id => ids.has(id)));
   const tasksOf = id => tasks.filter(t => (t.emailIds || []).includes(id));
   const chip = t => `<button class="th-task ${t.status === 'done' ? 'done' : ''}" data-act="open-task" data-id="${esc(t.id)}" title="${esc(t.title)}">${t.status === 'done' ? '✓' : '○'} ${esc(t.ref || '')} <span dir="auto">${esc(E.clip(t.title, 40))}</span></button>`;
   const open = tasks.filter(t => t.status !== 'done');
@@ -11624,6 +11731,45 @@ function threadHistHTML(e, opt = {}) {
     ${stand || pending ? `<li class="th-step th-next"><span class="th-dot" aria-hidden="true">➜</span><div class="th-body"><div class="th-meta"><b>Where it stands</b></div>${pending ? `<div class="small">${pending} task${pending > 1 ? 's' : ''} proposed from this email — check them below.</div>` : ''}${stand ? `<ul class="th-open">${stand}</ul>` : ''}</div></li>` : ''}
     </ol></details>`;
 }
+
+/* --- on the canvas: one card per conversation under its topic, from the first email to the latest reply --- */
+// A long conversation shows its first message, how many are in between, and the latest three; ▾ All opens it whole.
+// A row opens that email; the card can be moved and resized like any box.
+UI.thOpen = UI.thOpen || new Set();
+function threadNodeHTML(n, st) {
+  const ems = convEmails(n.conv); if (!ems.length) return '';
+  const steps = threadSteps({ conv: n.conv }), opened = UI.thOpen.has(n.id), all = opened || (!n.compact && steps.length <= 6);
+  const shown = all ? steps : n.compact ? [...(steps.length > 1 ? [{ gap: steps.length - 1 }] : []), steps[steps.length - 1]] : [steps[0], { gap: steps.length - 4 }, ...steps.slice(-3)];
+  const first = steps.find(x => x.date), last = [...steps].reverse().find(x => x.date);
+  const open = [...St.tasks.values()].filter(t => t.status !== 'done' && (t.emailIds || []).some(id => ems.some(e => e.id === id))).length;
+  const drag = UI.cvTemp && UI.cvTemp.kind === 'node' && UI.cvTemp.id === n.id ? ' dragging' : '';
+  const row = (x, i) => x.gap ? `<li class="thn-gap"><button data-map="th-all">⋯ ${x.gap} more message${x.gap > 1 ? 's' : ''}</button></li>`
+    : `<li class="${x.me ? 'me' : ''}${x === steps[steps.length - 1] ? ' last' : ''}"><button class="thn-row" data-map="th-email" ${x.emailId ? `data-eid="${esc(x.emailId)}"` : ''} title="${esc(x.says || '')}"><span class="thn-i" aria-hidden="true">${x === steps[steps.length - 1] ? '📍' : TH_KIND[x.kind] || TH_KIND.info}</span><span class="thn-d">${x.date ? esc(fmtDate(x.date, { day: 'numeric', month: 'short' })) : '—'}</span><span class="thn-t" dir="auto"><b>${esc(x.me ? 'Me' : E.clip(x.from || 'Someone', 26))}</b> ${esc(E.clip(x.says || '', 90))}</span></button></li>`;
+  return `<div class="mnode thread${n.compact && !opened ? ' compact' : ''}${drag}" data-node="${esc(n.id)}" data-type="thread" style="${st}">
+    <div class="thn-h"><span class="thn-ic" aria-hidden="true">🧵</span><div class="thn-ht"><b dir="auto">${esc(E.clip(E.normSubject(ems[0].subject || '') || 'Email thread', 70))}</b><small>${steps.length} message${steps.length > 1 ? 's' : ''} · ${ems.length} added${first ? ` · ${esc(fmtDate(first.date, { day: 'numeric', month: 'short' }))}${last && last.date !== first.date ? ' → ' + esc(fmtDate(last.date, { day: 'numeric', month: 'short' })) : ''}` : ''}${open ? ` · ${open} open` : ''}</small></div>${steps.length > 6 || (n.compact && steps.length > 1) ? `<button class="mfocus" data-map="th-all" title="${all ? 'Show less' : 'Show the whole conversation'}">${all ? '▴' : '▾'}</button>` : ''}</div>
+    <ol class="thn-list">${shown.map(row).join('')}</ol>
+    <span class="rz" data-rz="${esc(n.id)}" data-kind="node" title="Drag to resize" aria-hidden="true"></span></div>`;
+}
+function threadNodeClick(node, btn) {
+  const id = node.dataset.node;
+  if (btn && btn.dataset.map === 'th-all') { UI.thOpen.has(id) ? UI.thOpen.delete(id) : UI.thOpen.add(id); render(); return; }
+  const eid = btn && btn.dataset.eid; const cid = id.split(':').pop(), ems = convEmails(cid);
+  const target = eid && St.emails.has(eid) ? eid : (ems[ems.length - 1] || {}).id;
+  if (target) { UI.previews.clear(); openDrawer('email', target); }
+}
+
+/* --- emails added before this: read their quoted history once from the saved text, so they link up too --- */
+HOOKS.ready.push(() => setTimeout(async () => {
+  if (St.mode === 'viewer') return;
+  const todo = [...St.emails.values()].filter(e => !Array.isArray(e.quoted) && e.hasText);
+  for (const e of todo.slice(0, 200)) {
+    const tx = await getTexts(e.id).catch(() => null);
+    const cur = St.emails.get(e.id); if (!cur || Array.isArray(cur.quoted)) continue;
+    putEmail({ ...cur, quoted: E.quotedHistory((tx && tx.body) || '') });
+    await new Promise(r => setTimeout(r, 120));
+  }
+  if (todo.length) scheduleRender();
+}, 1500));
 
 /* ---------- boot ---------- */
 const startView = (location.hash || '').replace('#', '');

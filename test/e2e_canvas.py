@@ -29,6 +29,8 @@ async def main():
 
         # full screen
         await pg.click('[data-act="map-full"]'); await pg.wait_for_timeout(500)
+        # thread cards are tested in e2e_thread; off here so "empty area to the right of the tree" stays empty
+        await ev("document.getElementById('map-threads').click()"); await pg.wait_for_timeout(300); await pg.click('[data-act="map-fit"]'); await pg.wait_for_timeout(400)
         vp = await box('#map-vp')
         print('FULL', await ev("!!document.querySelector('.map-wrap.full')"), round(vp['height']))
         assert await ev("!!document.querySelector('.map-wrap.full')") and vp['height'] > 700

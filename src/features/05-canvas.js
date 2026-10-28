@@ -122,6 +122,12 @@ function mapSVG(M) {
         + svgText(n.x + 14, n.y + n.h - 9, [`${t.ref || ''}   ${done ? '✓ ' + fmtDate((t.completedAt || t.updatedAt || '').slice(0, 10)) : d.txt}`], 11, done ? '#2F7A3E' : d.cls === 'over' ? '#C62828' : '#5B6B68'));
       continue;
     }
+    if (n.type === 'thread') {
+      const st = typeof threadSteps === 'function' ? threadSteps({ conv: n.conv }) : [];
+      parts.push(`<rect x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" rx="12" fill="#FBF8FF" stroke="#B9A3DA"/>` + svgText(n.x + 14, n.y + 22, [E.clip('🧵 ' + ((convEmails(n.conv)[0] || {}).subject || 'Email thread'), 46)], 13, '#3B2466', 600)
+        + svgText(n.x + 14, n.y + 44, st.slice(-Math.max(1, Math.floor((n.h - 50) / 17))).map(x => E.clip(`${x.date ? fmtDate(x.date) + ' · ' : ''}${x.me ? 'Me' : x.from || ''}: ${x.says || ''}`, 52)), 11, '#3F4A48'));
+      continue;
+    }
     parts.push(`<rect x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" rx="8" fill="#FFFFFF" stroke="#DDE4E2"/>` + svgText(n.x + 12, n.y + n.h / 2 + 4, [(n.s.done ? '☑ ' : '☐ ') + E.clip(n.s.text, Math.floor((n.w - 30) / 6.8))], 12, n.s.done ? '#7A8A87' : '#15201E'));
   }
   for (const el of boardEls()) {

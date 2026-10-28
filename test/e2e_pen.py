@@ -29,6 +29,8 @@ async def main():
         if await ev("document.querySelector('[data-act=\"todo-mode\"][data-mode=\"map\"]').getAttribute('aria-pressed') !== 'true'"):
             await pg.click('[data-act="todo-mode"][data-mode="map"]'); await pg.wait_for_timeout(800)
         assert await ev("document.querySelectorAll('.mnode.task').length") >= 3
+        # (email thread cards are tested in e2e_thread; off here so the map keeps the zoom these steps expect)
+        await ev("document.getElementById('map-threads').click()"); await pg.wait_for_timeout(300); await pg.click('[data-act="map-fit"]'); await pg.wait_for_timeout(400)
 
         # 0. tasks that need action by me are marked; My actions fades everything else
         mine = await ev("[...window.__AR.St.tasks.values()].filter(t => t.status !== 'done' && t.status !== 'waiting' && t.ownership !== 'waiting' && t.ownership !== 'fyi').map(t => t.id)")

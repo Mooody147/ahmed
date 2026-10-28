@@ -1446,3 +1446,21 @@ html.site-mode .ts-ic { width: 66px; height: 66px; }
 .th-task.done { color: var(--ink-3); text-decoration: line-through; }
 .th-next .th-dot { background: var(--surface); border-style: dashed; }
 .th-open { margin: 2px 0 0; padding: 0; list-style: none; display: grid; gap: 4px; }
+
+/* ---------- email thread cards on the canvas ---------- */
+.mnode.thread { display: grid; align-content: start; gap: 6px; padding: 10px 12px 10px; border-radius: 14px; background: color-mix(in srgb, var(--wait) 6%, var(--surface)); border: 1.5px solid color-mix(in srgb, var(--wait) 45%, var(--line)); box-shadow: var(--elev-1); cursor: pointer; }
+.thn-h { display: flex; align-items: flex-start; gap: 8px; }
+.thn-ic { font-size: 16px; line-height: 1.2; }
+.thn-ht { flex: 1; min-width: 0; display: grid; gap: 1px; }
+.thn-ht b { font-size: 13px; line-height: 1.3; overflow-wrap: anywhere; }
+.thn-ht small { font-size: 11px; color: var(--ink-3); }
+.mnode.thread .mfocus { position: static; opacity: 1; }
+.thn-list { list-style: none; margin: 0; padding: 0 0 0 6px; display: grid; gap: 1px; border-inline-start: 2px solid color-mix(in srgb, var(--wait) 35%, var(--line)); }
+.thn-row { width: 100%; display: grid; grid-template-columns: 20px 44px 1fr; gap: 4px; align-items: baseline; text-align: start; background: none; border: 0; padding: 3px 4px; border-radius: 6px; font: inherit; color: var(--ink); cursor: pointer; }
+.thn-row:hover { background: color-mix(in srgb, var(--wait) 10%, transparent); }
+.thn-i { font-size: 12px; }
+.thn-d { font-size: 11px; color: var(--ink-3); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.thn-t { font-size: 11.5px; line-height: 1.35; overflow-wrap: anywhere; }
+.thn-list li.me .thn-t b { color: var(--accent); }
+.thn-list li.last .thn-row { background: color-mix(in srgb, var(--accent) 8%, transparent); }
+.thn-gap button { background: none; border: 0; color: var(--ink-3); font: inherit; font-size: 11px; padding: 2px 4px 2px 28px; cursor: pointer; }

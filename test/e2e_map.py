@@ -53,6 +53,7 @@ async def main():
         assert any(x[0] == 'project' and x[2] == 'WTP-21' for x in lr), 'moving a task on the canvas teaches Claude'
         assert 'CORRECTIONS I MADE BEFORE' in (await pg.evaluate("window.__AR.learnedNotes ? window.__AR.learnedNotes(null) : ''"))
         # pan & zoom
+        await pg.evaluate("document.getElementById('map-threads').click()"); await pg.wait_for_timeout(300)  # thread cards: see e2e_thread
         vp=await (await pg.query_selector('#map-vp')).bounding_box()
         before=await pg.evaluate("JSON.stringify(window.__AR.UI.map)")
         await pg.mouse.move(vp['x']+vp['width']-60, vp['y']+vp['height']-60); await pg.mouse.down(); await pg.mouse.move(vp['x']+vp['width']-160, vp['y']+vp['height']-120, steps=6); await pg.mouse.up()

@@ -384,7 +384,7 @@ function taskDrawerHTML(t) {
   <div class="drawer-b two"><div class="dcol-main">
     <textarea class="title-edit" id="d-title" rows="1" data-chg="task-field" data-field="title" dir="auto" aria-label="Title">${esc(t.title)}</textarea>
     ${mailDateLine(t)}
-    ${typeof threadHistHTML === 'function' ? threadHistHTML(St.emails.get((t.emailIds || [])[(t.emailIds || []).length - 1]) || { threadKey: t.threadKey }, { task: t }) : ''}
+    ${typeof threadHistHTML === 'function' ? threadHistHTML(St.emails.get((t.emailIds || [])[(t.emailIds || []).length - 1]) || { conv: taskConvs(t)[0] }, { task: t }) : ''}
     ${t.placement && t.placement.status !== 'confirmed' && (t.placement.options || []).length ? `<details class="small wrong-place"><summary class="muted">Wrong place? Other places Claude considered</summary><div style="display:grid;gap:6px;margin-top:8px">${(t.placement.options || []).map((o, i) => { const r = o.relatedTaskId && St.tasks.get(o.relatedTaskId); return `<button class="btn sm opt-btn" data-act="use-placement" data-i="${i}">${o.project ? '📁 ' + esc(o.project) : ''}${o.discipline ? ' › ' + esc(E.DISCIPLINES[o.discipline]) : ''}${r ? ' · 🔗 ' + esc(r.ref) : ''}${o.reason ? `<span class="muted small"> — ${esc(o.reason)}</span>` : ''}</button>`; }).join('')}<button class="btn sm ghost" data-act="keep-placement">Keep it here${t.project ? ': ' + esc(t.project) : ''}</button></div></details>` : ''}
     <div class="seg" role="group" aria-label="Status">${Object.entries(STATUS).map(([k, v]) => `<button data-act="set-status" data-id="${esc(t.id)}" data-status="${k}" aria-pressed="${t.status === k}">${v}</button>`).join('')}</div>
     ${taskActionsHTML(t)}
@@ -777,15 +777,15 @@ UI.map = { x: 30, y: 30, k: 0.85, fitted: false }; UI.mapCollapsed = new Set(); 
 UI.mapShowDone = true; UI.mapFocus = 'all'; UI.mapQ = ''; UI.mapActivity = true;
 UI.tool = 'select'; UI.cvColor = 'ink'; UI.cvWidth = 3; UI.cvSel = new Set(); UI.cvUndo = []; UI.cvRedo = []; UI.cvTemp = null; UI.cvDrop = null;
 UI.mapFull = false; UI.mapAsOf = ''; UI.mapDay = '';
-const MX = { root: 0, project: 250, topic: 540, task: 830, item: 1190 };
+const MX = { root: 0, project: 250, topic: 540, task: 830, thread: 830, item: 1190 };
 // the mind map grows left to right (h, the default) or top to bottom (v); boxes moved by hand are remembered
 // separately for each direction (St.layout.off / St.layout.offv)
 const mapDir = () => ((St.settings.ui || {}).mapDir === 'v' ? 'v' : 'h');
 const offKey = () => (mapDir() === 'v' ? 'offv' : 'off');
 const VGAP = { root: 64, project: 54, topic: 46, task: 0 }, HGAP = { project: 44, topic: 26, task: 16, item: 8, root: 0 };
-const MW = { root: 200, project: 250, topic: 250, task: 320, item: 280 };
-const MH = { root: 78, project: 72, topic: 52, task: 82, item: 34 };
-const MGAP = { project: 20, topic: 14, task: 12, item: 6, root: 0 };
+const MW = { root: 200, project: 250, topic: 250, task: 320, thread: 340, item: 280 };
+const MH = { root: 78, project: 72, topic: 52, task: 82, thread: 60, item: 34 };
+const MGAP = { project: 20, topic: 14, task: 12, thread: 14, item: 6, root: 0 };
 const MGAP_AFTER = { root: 0, project: 34, topic: 16, task: 8 };
 const relIds = t => Array.isArray(t.relatedIds) ? t.relatedIds : [];
 const dayOf = iso => { if (!iso) return ''; if (/^\d{4}-\d{2}-\d{2}$/.test(iso)) return iso; const d = new Date(iso); return isNaN(d) ? '' : d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
@@ -828,16 +828,23 @@ function buildMap() {
     P.cats.get(ck).tasks.push(t);
   }
   const openOf = P => P.n - P.done;
+  // an email conversation that feeds several topics is shown whole in the topic of its first task, and as a one-line
+  // card (tap to open) in the others
+  const convHome = new Map();
+  if (UI.mapThreads !== false && typeof taskConvs === 'function') for (const t of [...tasks].sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || ''))) for (const c of taskConvs(t)) if (!convHome.has(c)) convHome.set(c, topicKey(t));
   const projects = [...projs.values()].sort((a, b) => (a.id === 'p:~') - (b.id === 'p:~') || openOf(b) - openOf(a) || a.label.localeCompare(b.label));
   const root = { id: 'root', type: 'root', children: [] };
   for (const P of projects) {
     // project → topics (most recent activity first) → tasks (oldest first: historical progression)
     const last = C => C.tasks.reduce((m, t) => (t.updatedAt || '') > m ? t.updatedAt : m, '');
     P.children = [...P.cats.values()].sort((a, b) => (a.key === '~') - (b.key === '~') || last(b).localeCompare(last(a))).map(C => {
-      C.children = C.tasks.sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || '')).map(t => ({
+      // the topic's email conversations come first, each as one card from the first email to the latest reply
+      const convs = UI.mapThreads === false || typeof taskConvs !== 'function' ? [] : [...new Set(C.tasks.flatMap(taskConvs))]
+        .map(cid => ({ cid, first: (convEmails(cid)[0] || {}).date || '' })).sort((a, b) => a.first.localeCompare(b.first));
+      C.children = [...convs.map(({ cid }) => ({ id: 'th:' + C.id + ':' + cid, type: 'thread', conv: cid, compact: convHome.get(cid) !== C.id, hue: P.hue, children: [] })), ...C.tasks.sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || '')).map(t => ({
         id: 't:' + t.id, type: 'task', t, hue: P.hue,
         children: UI.mapItems.has(t.id) ? subsOf(t).map(s2 => ({ id: 's:' + t.id + ':' + s2.id, type: 'item', s: s2, t, hue: P.hue, children: [] })) : [],
-      }));
+      }))];
       return C;
     });
     root.children.push(P);
@@ -870,10 +877,11 @@ function buildMap() {
     const maxH = {}; for (const n of all) if (n.type !== 'item') maxH[n.type] = Math.max(maxH[n.type] || 0, n.h);
     const rowY = { root: 0 }; let y = 0;
     for (const t of ['root', 'project', 'topic', 'task']) { rowY[t] = y; y += (maxH[t] || MH[t]) + (VGAP[t] || 40); }
+    rowY.thread = rowY.task;
     let cx = 0;
     const put = n => {
       n.y = rowY[n.type] ?? 0;
-      if (n.type === 'task' || !n.kids.length) {
+      if (n.type === 'task' || n.type === 'thread' || !n.kids.length) {
         const items = n.type === 'task' ? n.kids : [];
         const w = Math.max(n.w, ...items.map(k => k.w + 22));
         n.x = cx + (w - n.w) / 2; cx += w + (HGAP[n.type] || 16);
@@ -926,6 +934,7 @@ const nodeTasks = n => n.tasks || (n.cats ? [...n.cats.values()].flatMap(c => c.
 const urgentForMe = t => { const c = dueInfo(t).cls; return c === 'over' || c === 'today' || t.priority === 'critical'; };
 function mapNodeHTML(n, hits, day) {
   const st = `left:${n.x || 0}px;top:${n.y || 0}px;width:${n.w}px;${n.h ? `height:${n.h}px;` : ''}--h:${n.hue ?? 186}`;
+  if (n.type === 'thread') return typeof threadNodeHTML === 'function' ? threadNodeHTML(n, st) : '';
   const more = n.hiddenKids ? `<span class="mmore">+${n.hiddenKids}</span>` : '';
   const rz = `<span class="rz" data-rz="${esc(n.id)}" data-kind="node" title="Drag to resize" aria-hidden="true"></span>`;
   const drag = UI.cvTemp && UI.cvTemp.kind === 'node' && UI.cvTemp.id === n.id ? ' dragging' : '';
@@ -1383,6 +1392,7 @@ function viewMap() {
             <label class="check small"><input type="checkbox" id="map-act" data-chg="map-opt" data-key="mapActivity" ${UI.mapActivity ? 'checked' : ''}>Activity panel</label>
             <label class="check small"><input type="checkbox" id="map-bands" data-chg="map-opt" data-key="mapBands" ${UI.mapBands !== false ? 'checked' : ''}>Project colour bands</label>
             <label class="check small"><input type="checkbox" id="map-mini" data-chg="map-opt" data-key="mapMini" ${UI.mapMini !== false ? 'checked' : ''}>Minimap</label>
+            <label class="check small"><input type="checkbox" id="map-threads" data-chg="map-opt" data-key="mapThreads" ${UI.mapThreads !== false ? 'checked' : ''}>Email threads under each topic</label>
             ${offN || Object.keys(St.layout.size || {}).length ? `<button class="btn sm ghost" data-act="map-reset-layout" title="Put every box back in its place and its normal size">↺ Reset positions and sizes</button>` : ''}</div>
           <div class="mt-sec"><div class="label">History</div>
             <label class="small map-date" title="Highlight the tasks worked on that day">📌 Highlight day <input class="input" type="date" id="map-day" data-chg="map-day" value="${esc(UI.mapDay)}" max="${T()}"></label>
@@ -1861,6 +1871,7 @@ const NODE_EXTRA = [], MAP_BTN = {};
 function clickNode(node, target) {
   const kind = node.dataset.type, btn = target && target.closest && target.closest('[data-map]');
   if (node.dataset.node === 'root') { mapFit(); return true; }
+  if (kind === 'thread') { if (typeof threadNodeClick === 'function') threadNodeClick(node, btn); return true; }
   if (btn && btn.dataset.map === 'del') { deleteNode(node); return true; }
   if ((kind === 'project' || kind === 'topic') && btn && btn.dataset.map === 'rename') { startNodeEdit(node.dataset.node); return true; }
   if (kind === 'project' && btn && btn.dataset.map === 'focus') { UI.mapFocus = node.dataset.pk; UI.map.fitted = false; render(); return true; }
@@ -2805,7 +2816,11 @@ async function analyzeBundle(b, signal, onProgress) {
   }
   const tk = E.threadKey(em);
   const fromMe = isMeSender(em);
-  const related = E.relatedOpenTasks([...St.tasks.values()], { ...em, fromMe }, tk).map(t => ({ id: t.id, ref: t.ref, title: t.title, project: t.project, discipline: t.discipline, owner: t.ownership === 'mine' ? 'me' : t.owner, status: t.status, deadline: t.deadline }));
+  // tasks from earlier emails of this conversation are always listed, and marked, so new tasks join their topic
+  const peers = typeof convPeers === 'function' ? convPeers({ ...em, gmailThread: b.gmailThread }, tk) : new Set();
+  const same = t => (t.emailIds || []).some(id => peers.has(id));
+  const rel0 = E.relatedOpenTasks([...St.tasks.values()], { ...em, fromMe }, tk), relIdsSet = new Set(rel0.map(t => t.id));
+  const related = [...[...St.tasks.values()].filter(t => same(t) && !relIdsSet.has(t.id)).slice(0, 15), ...rel0].map(t => ({ id: t.id, ref: t.ref, title: t.title, project: t.project, topic: topicOf(t), discipline: t.discipline, owner: t.ownership === 'mine' ? 'me' : t.owner, status: t.status, deadline: t.deadline, sameThread: same(t) }));
   const budget = ((St.limits && St.limits.maxPromptBytes) || 262144) - 10000;
   const input = {
     me: s.me, projects: allProjects(), topics: allTopics(), today: E.todayISO(), tz: TZ,
@@ -2875,7 +2890,7 @@ async function analyzeBundle(b, signal, onProgress) {
   const id = b.recordId || E.uid('e');
   const rec = {
     id, threadKey: tk, subject: b.source === 'docs' ? 'Documents: ' + b.atts.map(a => a.name).slice(0, 3).join(', ') + (b.atts.length > 3 ? ` +${b.atts.length - 3}` : '') : (em.subject || ''), from: em.from || '', fromEmail: em.fromEmail || '', to: em.to || '', cc: em.cc || '', date: em.date || '',
-    messageId: em.messageId || '', convIndex: em.convIndex || '', source: b.source, fileName: b.fileName || '', importedAt: b.importedAt || nowISO(),
+    messageId: em.messageId || '', convIndex: em.convIndex || '', inReplyTo: E.clip(em.inReplyTo || '', 300), references: E.clip(em.references || '', 2000), gmailThread: b.gmailThread || '', source: b.source, fileName: b.fileName || '', importedAt: b.importedAt || nowISO(),
     snippet: E.clip((em.body || '').replace(/\s+/g, ' '), 280), quoted: E.quotedHistory(em.body || ''),
     attachments: b.atts.map(a => ({ name: a.name, kindLabel: (a.res && a.res.kindLabel) || 'File', size: a.size || 0, status: a.include ? ((a.res && a.res.status) || 'unknown') : 'excluded', note: (a.res && a.res.note) || '', pages: (a.res && a.res.pages) || null, images: (a.res && a.res.images && a.include) ? a.res.images.length : 0, textLen: (a.res && a.res.text || '').length })),
     analysis: an, reviewState: 'pending', hasText: !!s.storeText, fromMe,
@@ -3092,7 +3107,7 @@ async function checkGmail(manual) {
       for (const m of msgs) {
         if (!m.id || seen[m.id] || UI.staging.some(b => b.gmailId === m.id)) continue;
         if (!hasAddr(m, addr)) continue;
-        cands.push(m);
+        cands.push(Object.assign(m, { _thread: th.id }));
       }
     }
     cands.sort((a, b) => (a.internalDate || a.date || '').localeCompare(b.internalDate || b.date || ''));
@@ -3123,7 +3138,7 @@ async function checkGmail(manual) {
           b.warnings.push(list.length ? `This email is larger than Gmail lets the app download${mb}, so its text was read but its ${list.length === 1 ? 'attachment' : list.length + ' attachments'} must be added by hand: press “Add file” next to each (Open in Gmail to download it), or analyse the text only.` : `The full message could not be downloaded${mb}; its text was read.`);
         } catch { continue; }
       }
-      b.gmailId = m.id; b.gmailUrl = m.viewUrl || '';
+      b.gmailId = m.id; b.gmailUrl = m.viewUrl || ''; b.gmailThread = m._thread || '';
       for (const x of [b, ...more]) { UI.staging.push(x); checkDuplicateEmail(x); added++; }
     }
     GM.status = 'idle'; GM.error = ''; GM.lastChecked = nowISO(); GM.newCount = added;
