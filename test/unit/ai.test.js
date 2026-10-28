@@ -15,3 +15,10 @@ const sources={BODY:{text:em.body,name:'Email body'},A1:{text:crs,name:'CRS.xlsx
 n.tasks.forEach(t=>{t.evidence=E.verifyEvidence(t.evidence,sources); console.log(t.title,t.deadline,t.deadlineBasis,t.evidence.map(e=>[e.check,e.location]));});
 console.log(n.summary, n.updates);
 const dup=E.findDuplicate({title:'Reply to open CRS comments on valves specification',action:'respond comments'},[{id:'T1',title:'Respond to open CRS comments 2 and 3 on valves spec',status:'todo',threadKey:'sub:x'}],'sub:x'); console.log('dup',dup&&dup.score);
+// quoted conversation history (Outlook, Gmail, Arabic Outlook headers), oldest first after sorting by date
+const qh=E.quotedHistory('Thanks, sent.\n\nFrom: Ahmed Hassan <ah@x.com>\nSent: Monday, October 20, 2025 10:12 AM\nSubject: RE: Disc filter\n\nPlease review.\n\nOn Sun, 19 Oct 2025 at 09:00, Omar Ali <o@y.com> wrote:\n> request\n\nمن: محمد\nتاريخ الإرسال: 2025-10-18 08:00\nالموضوع: فلتر').sort((a,b)=>a.date.localeCompare(b.date));
+const assert=require('assert');
+assert.deepStrictEqual(qh.map(x=>[x.from,x.date]),[['محمد','2025-10-18'],['Omar Ali','2025-10-19'],['Ahmed Hassan','2025-10-20']]);
+const th=E.normalizeAnalysis({summary:'x',tasks:[],thread:{first:'2025-10-18',last:'2025-10-20',messages:2,history:[{date:'2025-10-18',from:'Omar',kind:'Request',says:'asked'},{date:'bad',from:'me',says:'sent it'}]}},{}).thread;
+assert.deepStrictEqual(th.history,[{date:'2025-10-18',from:'Omar',kind:'request',says:'asked'},{date:null,from:'me',kind:'info',says:'sent it'}]);
+console.log('thread history: ok');

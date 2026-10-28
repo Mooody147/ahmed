@@ -384,6 +384,7 @@ function taskDrawerHTML(t) {
   <div class="drawer-b two"><div class="dcol-main">
     <textarea class="title-edit" id="d-title" rows="1" data-chg="task-field" data-field="title" dir="auto" aria-label="Title">${esc(t.title)}</textarea>
     ${mailDateLine(t)}
+    ${typeof threadHistHTML === 'function' ? threadHistHTML(St.emails.get((t.emailIds || [])[(t.emailIds || []).length - 1]) || { threadKey: t.threadKey }, { task: t }) : ''}
     ${t.placement && t.placement.status !== 'confirmed' && (t.placement.options || []).length ? `<details class="small wrong-place"><summary class="muted">Wrong place? Other places Claude considered</summary><div style="display:grid;gap:6px;margin-top:8px">${(t.placement.options || []).map((o, i) => { const r = o.relatedTaskId && St.tasks.get(o.relatedTaskId); return `<button class="btn sm opt-btn" data-act="use-placement" data-i="${i}">${o.project ? '📁 ' + esc(o.project) : ''}${o.discipline ? ' › ' + esc(E.DISCIPLINES[o.discipline]) : ''}${r ? ' · 🔗 ' + esc(r.ref) : ''}${o.reason ? `<span class="muted small"> — ${esc(o.reason)}</span>` : ''}</button>`; }).join('')}<button class="btn sm ghost" data-act="keep-placement">Keep it here${t.project ? ': ' + esc(t.project) : ''}</button></div></details>` : ''}
     <div class="seg" role="group" aria-label="Status">${Object.entries(STATUS).map(([k, v]) => `<button data-act="set-status" data-id="${esc(t.id)}" data-status="${k}" aria-pressed="${t.status === k}">${v}</button>`).join('')}</div>
     ${taskActionsHTML(t)}
@@ -1191,6 +1192,46 @@ function roundedPath(raw) {
   }
   const L = P[P.length - 1]; return d + ` L${f(L[0])} ${f(L[1])}`;
 }
+// links between tasks: each one gets its own lane in the free space beside the task column (right of the boxes on a
+// left-to-right map, below them on a top-to-bottom one), clear of every box. Links over the same stretch run side by
+// side instead of on top of each other, and several links on one box leave and enter it at different points. A link
+// whose way out is blocked goes around the boxes instead.
+function laneLinks(M) {
+  if (!M.links.length) return [];
+  const V = mapDir() === 'v', GAP = 46, STEP = 22, PAD = 10;
+  // worked out as if the map ran left to right; on a top-to-bottom map x and y swap
+  const T = o => V ? { x: o.y, y: o.x, w: o.h || 40, h: o.w } : { x: o.x, y: o.y, w: o.w, h: o.h || 40 };
+  const back = V ? pts => pts.map(([x, y]) => [y, x]) : pts => pts;
+  const obs = routeObstacles(M, []).map(T);
+  const box = new Map(), ends = new Map();
+  for (const l of M.links) for (const n of [l.from, l.to]) { if (!box.has(n.id)) box.set(n.id, T(n)); if (!ends.has(n.id)) ends.set(n.id, []); ends.get(n.id).push(l); }
+  // where each link meets a box: spread over the side, in the order of the boxes at the other ends
+  const port = new Map();
+  for (const [id, ls] of ends) {
+    const b = box.get(id), other = l => box.get((l.from.id === id ? l.to : l.from).id);
+    ls.sort((p, q) => (other(p).y + other(p).h / 2) - (other(q).y + other(q).h / 2))
+      .forEach((l, i) => port.set((l.from.id === id ? 'f:' : 't:') + M.links.indexOf(l), b.y + b.h * (i + 1) / (ls.length + 1)));
+  }
+  const hits = (x0, x1, y0, y1) => obs.find(o => o.x < x1 && o.x + o.w > x0 && o.y < y1 && o.y + o.h > y0);
+  const items = M.links.map((l, i) => { const a = box.get(l.from.id), b = box.get(l.to.id), ya = port.get('f:' + i), yb = port.get('t:' + i); return { l, a, b, ya, yb, lo: Math.min(ya, yb), hi: Math.max(ya, yb) }; })
+    .sort((p, q) => (p.hi - p.lo) - (q.hi - q.lo));
+  const used = [], out = new Map();
+  for (const it of items) {
+    const { a, b, ya, yb, lo, hi } = it, ax = a.x + a.w, bx = b.x + b.w;
+    let x = Math.max(ax, bx) + GAP;
+    for (let g = 0; g < 40; g++) {
+      const o = hits(x - PAD, x + PAD, lo - PAD, hi + PAD);
+      if (o) { x = o.x + o.w + GAP; continue; }
+      if (used.some(u => Math.abs(u.x - x) < STEP - 1 && u.lo < hi + 10 && u.hi > lo - 10)) { x += STEP; continue; }
+      break;
+    }
+    // the short runs from each box out to the lane must be clear too
+    if (hits(ax + 1, x, ya - 2, ya + 2) || hits(bx + 1, x, yb - 2, yb + 2)) continue;
+    used.push({ x, lo, hi });
+    out.set(it.l, roundedPath(back([[ax, ya], [x, ya], [x, yb], [bx + 3, yb]])));
+  }
+  return M.links.map(l => ({ l, d: out.get(l) || routePath(l.from, l.to, routeObstacles(M, ['n:' + l.from.id, 'n:' + l.to.id])) || linkPath(l.from, l.to) }));
+}
 // the path of a free link: smart (around boxes, the default), curved or straight
 function connD(el, M) {
   const a = refBox(el.from, M), b = refBox(el.to, M); if (!a || !b) return '';
@@ -1244,10 +1285,10 @@ function worldHTML(M) {
   if (!showMap) M = { ...M, nodes: [], edges: [], links: [], projects: [] };
   return `${frames.map(e => belHTML(e, hits)).join('')}
     <svg class="map-edges" width="${M.w}" height="${M.h}" aria-hidden="true">
-      <defs><marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="arrowhead"/></marker></defs>
+      <defs><marker id="arrow" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="arrowhead"/></marker><marker id="link-dot" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5"><circle cx="5" cy="5" r="4" class="arrowhead"/></marker></defs>
       ${UI.mapBands !== false && M.projects.length ? projectBands(M).map(b => `<rect class="band" x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" rx="26" style="--h:${b.hue}"/>`).join('') : ''}
       ${M.edges.map(e => `<path class="edge ${e.b.type === 'task' && e.b.t.status === 'done' ? 'done' : ''}" style="--h:${e.hue}" d="${edgePath(e.a, e.b)}"/>`).join('')}
-      ${M.links.map(l => `<path class="link ${sel && (l.from.t.id === sel || l.to.t.id === sel) ? 'hot' : ''}" d="${routePath(l.from, l.to, routeObstacles(M, ['n:' + l.from.id, 'n:' + l.to.id])) || linkPath(l.from, l.to)}" marker-end="url(#arrow)"/>`).join('')}
+      ${laneLinks(M).map(({ l, d }) => { const hot = sel && (l.from.t.id === sel || l.to.t.id === sel) ? ' hot' : ''; return `<path class="link-halo${hot}" d="${d}"/><path class="link${hot}" d="${d}" marker-start="url(#link-dot)" marker-end="url(#arrow)"/>`; }).join('')}
     </svg>
     ${blocks.map(e => belHTML(e, hits)).join('')}
     ${UI.mapBands !== false && M.projects.length ? projectBands(M).map(b => `<div class="band-label" style="left:${b.x + 14}px;top:${b.y + 10}px;--h:${b.hue}" dir="auto">${esc(b.label)}</div>`).join('') : ''}
@@ -2272,6 +2313,7 @@ function reviewCard(e) {
       <div class="small muted" dir="auto">From ${esc(e.from || 'unknown')}</div>
       ${a.summary ? `<p style="margin:2px 0 0" dir="auto">${esc(a.summary)}</p>` : ''}
     </div>
+    ${typeof threadHistHTML === 'function' ? threadHistHTML(e, { open: true }) : ''}
     <div class="rv-b">
       ${a.actionRequired === false ? callout('ok', `<p><b>No action needed from you.</b> ${esc(a.noActionReason || '')}</p>`) : ''}
       ${flags.length ? callout('warn', `<p><b>Check before relying on this:</b></p><ul>${flags.map(f => `<li><b>${esc(FLAG[f.kind] || f.kind)}</b>${f.source ? ` <span class="mono">(${esc(srcName(e, f.source))})</span>` : ''}: <span dir="auto">${esc(f.detail)}</span></li>`).join('')}</ul>`) : ''}
@@ -2834,7 +2876,7 @@ async function analyzeBundle(b, signal, onProgress) {
   const rec = {
     id, threadKey: tk, subject: b.source === 'docs' ? 'Documents: ' + b.atts.map(a => a.name).slice(0, 3).join(', ') + (b.atts.length > 3 ? ` +${b.atts.length - 3}` : '') : (em.subject || ''), from: em.from || '', fromEmail: em.fromEmail || '', to: em.to || '', cc: em.cc || '', date: em.date || '',
     messageId: em.messageId || '', convIndex: em.convIndex || '', source: b.source, fileName: b.fileName || '', importedAt: b.importedAt || nowISO(),
-    snippet: E.clip((em.body || '').replace(/\s+/g, ' '), 280),
+    snippet: E.clip((em.body || '').replace(/\s+/g, ' '), 280), quoted: E.quotedHistory(em.body || ''),
     attachments: b.atts.map(a => ({ name: a.name, kindLabel: (a.res && a.res.kindLabel) || 'File', size: a.size || 0, status: a.include ? ((a.res && a.res.status) || 'unknown') : 'excluded', note: (a.res && a.res.note) || '', pages: (a.res && a.res.pages) || null, images: (a.res && a.res.images && a.include) ? a.res.images.length : 0, textLen: (a.res && a.res.text || '').length })),
     analysis: an, reviewState: 'pending', hasText: !!s.storeText, fromMe,
     gmailId: b.gmailId || '', gmailUrl: b.gmailUrl || '', forwardedBy: em.forwardedBy || '', forwardMode: em.forwardMode || '',
@@ -3157,6 +3199,7 @@ function emailDrawerHTML(e) {
     ${emailActionsHTML(e)}
     ${a.summary ? `<div><div class="label" style="margin-bottom:4px">Summary</div><p style="margin:0" dir="auto">${esc(a.summary)}</p>${a.actionRequired === false ? `<p class="small" style="margin:6px 0 0"><span class="chip ok">No action for you</span> ${esc(a.noActionReason || '')}</p>` : ''}</div>` : ''}
     ${(a.flags || []).length ? callout('warn', `<ul style="margin:0">${a.flags.map(f => `<li><b>${esc(FLAG[f.kind] || f.kind)}</b>${f.source ? ` <span class="mono">(${esc(srcName(e, f.source))})</span>` : ''}: ${esc(f.detail)}</li>`).join('')}</ul>`) : ''}
+    ${typeof threadHistHTML === 'function' ? threadHistHTML(e, { open: true }) : ''}
     ${tasks.length ? `<div><div class="label" style="margin-bottom:6px">Tasks from this email</div><div class="register">${tasks.map(taskRow).join('')}</div></div>` : ''}
     <div><div class="label" style="margin-bottom:6px">Attachments</div>${(e.attachments || []).length ? `<div class="register">${e.attachments.map((x, i) => {
       const st = ATT_STATUS[x.status] || [x.status, ''];

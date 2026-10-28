@@ -108,7 +108,7 @@ function mapSVG(M) {
     }
   }
   for (const e of M.edges) parts.push(`<path d="${edgePath(e.a, e.b)}" fill="none" stroke="hsl(${e.hue},40%,${e.b.type === 'task' && e.b.t.status === 'done' ? 80 : 62}%)" stroke-width="2"/>`);
-  for (const l of M.links) parts.push(`<path d="${routePath(l.from, l.to, routeObstacles(M, ['n:' + l.from.id, 'n:' + l.to.id])) || linkPath(l.from, l.to)}" fill="none" stroke="#B26B00" stroke-width="1.6" stroke-dasharray="5 4"/>`);
+  for (const { d } of laneLinks(M)) parts.push(`<path d="${d}" fill="none" stroke="#FFFFFF" stroke-width="6" stroke-linejoin="round"/><path d="${d}" fill="none" stroke="#7A4FB3" stroke-width="2" stroke-dasharray="7 5" stroke-linejoin="round"/>`);
   for (const n of M.nodes) {
     const h = n.hue ?? 186;
     if (n.type === 'root') { parts.push(`<rect x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" rx="16" fill="#0A6B74"/>` + svgText(n.x + 18, n.y + n.h / 2 + 6, ['My work'], 18, '#FFFFFF', 600)); continue; }

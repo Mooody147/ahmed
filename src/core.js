@@ -910,6 +910,7 @@ RULES
 15. No duplicates: never return two tasks for the same deliverable, and if a TRACKED TASK above is the same obligation (even worded differently, or the same email forwarded again), set "matchesTaskId" to its id instead of creating a new one.
 16. Dates in the conversation: for each task set "askedOn" to the date (YYYY-MM-DD) of the message in this thread where it was asked — from that message's own header or quoted "Sent:"/"Date:" line; the email's sent date when it is the newest message. Also give "thread": the dates of the first and the newest message in the conversation.
 17. My own replies and updates: when the email (or its newest message) was sent BY ME, it usually answers or moves on a TRACKED TASK above — find it (same conversation, the person I am writing to, the equipment, document or subject it is about), even when the wording differs. Decide whether my message shows that task's work is done — judge by the OUTCOME, not the exact verb: "fulfilled" when my message delivers what the task was for (the task was to review / check / prepare / reply / answer / send / submit / confirm / coordinate something, and my message sends the result — comments, a reviewed or approved document, a calculation, the civil / structural / electrical input or requirements, an answer, a confirmation — to the person or team who needed it; e.g. task "Review disc filter submittal" and my email "sending the disc filter civil requirements to the PM" → fulfilled) → an "updates" entry with change "completed", newStatus "done"; "partial" (it covers some items or only promises to follow up) → change "note", newStatus "in_progress", list the items it covers in "doneItems" (their ref or text exactly as in the task) and say what is still open in "note"; "not_fulfilled" (it is related but does not do what was asked) → change "note" with the reason. Always give "verdict" and a one-line "reason" quoting what my message did. Do not create tasks for me from my own message, except when I promise a new deliverable with a date (then one task for me: what I promised). Anything my message asks of others is "waiting".
+18. Thread history: in "thread"."history" list EVERY message of this conversation, oldest first, ending with the newest one (this email): its date (YYYY-MM-DD from its header or quoted "Sent:"/"Date:" line, null if not shown), who sent it (short name, company in brackets when known; "me" when it is mine), its kind, and in "says" one plain line (at most 20 words) of what that message did — asked, answered, sent, commented, approved, rejected, reminded, decided. Write in the language of the email. [] only when the email has no quoted history.
 13. Documents: list in "documents" every drawing/document/datasheet/calculation that this email submits, returns with a review status code, approves, rejects or requests (for my document register): its number exactly as written, title, revision, the review code if one is given (1 approved, 2 approved with comments, 3 revise and resubmit, 4 rejected — use the digit), and who issued or returned it. [] when there are none.
 ${input.notes ? '\nUSER RULES AND PREFERENCES (follow these)\n' + input.notes + '\n' : ''}
 ${ENGINEERING_NOTES}
@@ -922,7 +923,7 @@ OUTPUT — exactly this JSON shape:
 "noActionReason":null,
 "project":"project code/name if identifiable, else null",
 "category":"submittal_review|technical_query|rfq_tender|design_coordination|vendor_comments|meeting|approval_request|site_issue|info_only|other",
-"thread":{"first":"YYYY-MM-DD or null","last":"YYYY-MM-DD or null","messages":3},
+"thread":{"first":"YYYY-MM-DD or null","last":"YYYY-MM-DD or null","messages":3,"history":[{"date":"YYYY-MM-DD or null","from":"Name (Company) or me","kind":"request|reply|submission|comments|approval|rejection|reminder|decision|info","says":"what this message did, one line"}]},
 "tasks":[{"ref":"N1","title":"short header, 3–8 words, ≤55 chars","action":"what must be done, one or two short sentences","askedOn":"YYYY-MM-DD or null","type":"do|reply|review|approve|submit|revise|decide|follow_up|attend","ownership":"mine|waiting|fyi","topic":"short subject name","workType":"one of the workType values","discipline":"one of the discipline values","owner":"me or responsible person/company","requestedBy":"who asked","project":"…","priority":"critical|high|medium|low","deadline":"YYYY-MM-DD or null","deadlineText":"as written, or null","deadlineBasis":"explicit|relative|none|uncertain","nextStep":"one concrete first step","dependsOn":null,"blocked":false,"blockedReason":null,"tags":["pumps"],"subtasks":[{"text":"C-01 — item needing action","ref":"C-01","location":"Sheet CRS, row 5"}],"evidence":[{"source":"A1","location":"Sheet CRS, row 14","quote":"exact words from the source"}],"confidence":0.9,"matchesTaskId":null,"relatedTaskIds":[],"placementConfidence":0.9,"placementOptions":[]}],
 "updates":[{"taskId":"existing id","change":"completed|status|deadline|note","newStatus":"todo|in_progress|waiting|blocked|done|null","newDeadline":"YYYY-MM-DD or null","note":"what changed","verdict":"fulfilled|partial|not_fulfilled|null","reason":"one line: what the email did","doneItems":["C-01"],"confidence":0.9,"evidence":[{"source":"BODY","location":null,"quote":"…"}]}],
 "decisions":["decision — by whom"],
@@ -1036,11 +1037,37 @@ function normalizeAnalysis(raw, ctx) {
     summary: S(r.summary), actionRequired: r.actionRequired !== false, noActionReason: S(r.noActionReason),
     project: S(r.project), category: S(r.category) || 'other',
     tasks: mergeSameTasks(tasks), updates,
-    thread: r.thread && typeof r.thread === 'object' ? { first: validISO(r.thread.first) ? r.thread.first : null, last: validISO(r.thread.last) ? r.thread.last : null, messages: Math.max(0, Math.min(500, parseInt(r.thread.messages, 10) || 0)) } : null,
+    thread: r.thread && typeof r.thread === 'object' ? { first: validISO(r.thread.first) ? r.thread.first : null, last: validISO(r.thread.last) ? r.thread.last : null, messages: Math.max(0, Math.min(500, parseInt(r.thread.messages, 10) || 0)),
+      history: (Array.isArray(r.thread.history) ? r.thread.history : []).slice(0, 40).map(h => ({ date: validISO(S(h && h.date)) ? S(h.date) : null, from: S(h && h.from).slice(0, 80), kind: S(h && h.kind).toLowerCase().slice(0, 20) || 'info', says: S(h && h.says).slice(0, 220) })).filter(h => h.says || h.from) } : null,
     decisions: (Array.isArray(r.decisions) ? r.decisions : []).map(S).filter(Boolean).slice(0, 12),
     documents: (Array.isArray(r.documents) ? r.documents : []).slice(0, 60).map(d => ({ number: S(d && d.number), title: S(d && d.title), revision: S(d && d.revision), code: /^[1-4]$/.test(S(d && d.code)) ? S(d.code) : '', status: ['submitted', 'returned', 'approved', 'rejected', 'requested', 'for_info'].includes(S(d && d.status)) ? S(d.status) : '', by: S(d && d.by), date: validISO(S(d && d.date)) ? S(d.date) : '', source: S(d && d.source).toUpperCase() })).filter(d => d.number || d.title),
     flags: (Array.isArray(r.flags) ? r.flags : []).map(f => ({ kind: S(f && f.kind) || 'ambiguous', detail: S(f && f.detail), source: S(f && f.source) })).filter(f => f.detail).slice(0, 20),
   };
+}
+
+/* ---------- quoted conversation history ---------- */
+// The earlier messages quoted under a reply, read from their headers: Outlook ("From: … Sent: …", also in Arabic
+// "من: … تاريخ الإرسال: …") and Gmail / Apple Mail ("On 20 Oct 2025, at 10:12, Name <a@b> wrote:"). Oldest first.
+function quotedHistory(body) {
+  const lines = String(body || '').split(/\r?\n/).map(l => l.replace(/^[>\s]+/, '').trim()), out = [];
+  const day = v => { const c = String(v || '').replace(/\b(Mon|Tue|Wed|Thu|Fri|Sat|Sun)[a-z]*,?\s*/i, '').replace(/\s+at\s+/i, ' ').replace(/[\u200e\u200f]/g, '').trim(); const d = new Date(c); return isNaN(d) || d.getFullYear() < 1990 ? null : `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+  const who = v => String(v || '').replace(/<[^>]*>/g, '').replace(/\[mailto:[^\]]*\]/gi, '').replace(/["']/g, '').trim().slice(0, 80);
+  for (let i = 0; i < lines.length; i++) {
+    const l = lines[i];
+    let m = /^(?:\*{0,2})(?:From|من)\s*:\s*\*{0,2}\s*(.+)$/i.exec(l);
+    if (m && i > 0) {
+      let date = null, subject = '';
+      for (let j = i + 1; j < Math.min(lines.length, i + 6); j++) {
+        const d = /^(?:\*{0,2})(?:Sent|Date|تاريخ الإرسال|التاريخ|أرسل|المرسل في)\s*:\s*\*{0,2}\s*(.+)$/i.exec(lines[j]); if (d && !date) date = day(d[1]);
+        const sb = /^(?:\*{0,2})(?:Subject|الموضوع)\s*:\s*\*{0,2}\s*(.+)$/i.exec(lines[j]); if (sb) subject = sb[1].slice(0, 160);
+      }
+      if (date || subject) out.push({ from: who(m[1]), date, subject });
+      continue;
+    }
+    m = /^On (.+?\d{4}(?:,? (?:at )?\d{1,2}:\d{2}(?:\s?[AP]M)?)?),? (.+?) wrote:$/i.exec(l);
+    if (m) out.push({ from: who(m[2]), date: day(m[1]), subject: '' });
+  }
+  return out.reverse().slice(0, 30);
 }
 
 /* ---------- evidence verification ---------- */
@@ -1137,7 +1164,7 @@ return {
   parseEml, readMsgFromCfb, unwrapForward, b64urlToBytes, findHeaderBlock, decompressRTF, rtfToText, parsePasted, htmlToText, tidyText, decodeMimeWords, parseParams,
   normSubject, threadKey, kindOf, KIND_LABEL, extract, need, guessMime, firstEmail,
   WORK_TYPES, DISCIPLINES, buildCategorizePrompt,
-  makeMasker, buildPrompt, normalizeAnalysis, shortTitle, verifyEvidence, normMatch, findDuplicate, relatedOpenTasks, localFlags, tokens, jaccard, splitForwards, parseTnef,
+  makeMasker, buildPrompt, normalizeAnalysis, shortTitle, verifyEvidence, normMatch, findDuplicate, relatedOpenTasks, quotedHistory, localFlags, tokens, jaccard, splitForwards, parseTnef,
   RTF_PREBUF,
 };
 })();

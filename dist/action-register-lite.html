@@ -480,8 +480,10 @@ body { background-color: var(--bg); background-image: linear-gradient(var(--grid
 .map-edges { position: absolute; inset: 0; overflow: visible; pointer-events: none; }
 .map-edges .edge { fill: none; stroke: hsl(var(--h) 55% 55% / .55); stroke-width: 2.4; }
 .map-edges .edge.done { stroke-dasharray: 2 5; opacity: .6; }
-.map-edges .link { fill: none; stroke: var(--wait); stroke-width: 2; stroke-dasharray: 6 5; opacity: .75; }
-.map-edges .link.hot { stroke-width: 3.2; opacity: 1; }
+.map-edges .link { fill: none; stroke: var(--wait); stroke-width: 2.2; stroke-dasharray: 7 5; stroke-linejoin: round; opacity: .9; }
+.map-edges .link-halo { fill: none; stroke: var(--surface); stroke-width: 7; stroke-linejoin: round; opacity: .85; }
+.map-edges .link.hot { stroke-width: 3.2; opacity: 1; stroke-dasharray: none; }
+.map-edges .link-halo.hot { stroke-width: 9; }
 .map-edges .arrowhead { fill: var(--wait); }
 
 .mnode { position: absolute; display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 14px; background: linear-gradient(180deg, var(--face-top), transparent 50%), var(--surface); border: 1px solid var(--line); box-shadow: var(--elev-1), 0 3px 0 -1px color-mix(in srgb, var(--line) 80%, transparent); cursor: pointer; transition: box-shadow .15s, transform .15s, opacity .15s; }
@@ -1422,6 +1424,33 @@ body.cv-clean .cv-tools, body.cv-clean .cv-sub, body.cv-clean .cv-panel, body.cv
   .cv-panel { left: 8px; right: 8px; top: auto; bottom: 104px; width: auto; }
 }
 html.site-mode .ts-ic { width: 66px; height: 66px; }
+
+/* ---------- thread history ---------- */
+.th-hist { border: 1px solid var(--line); border-radius: 12px; background: var(--surface); padding: 0; margin: 4px 0; }
+.rv > .th-hist { margin: 0 16px 8px; }
+.th-hist > summary { cursor: pointer; padding: 10px 14px; font-weight: 600; list-style: none; }
+.th-hist > summary::-webkit-details-marker { display: none; }
+.th-hist > summary::before { content: "▸"; display: inline-block; margin-inline-end: 6px; transition: transform .15s; color: var(--ink-3); }
+.th-hist[open] > summary::before { transform: rotate(90deg); }
+.th-steps { list-style: none; margin: 0; padding: 2px 14px 12px; display: grid; gap: 0; }
+.th-step { position: relative; display: grid; grid-template-columns: 28px 1fr; gap: 8px; padding: 6px 0; }
+.th-step::before { content: ""; position: absolute; inset-inline-start: 13px; top: 30px; bottom: -6px; width: 2px; background: var(--line); }
+.th-step:last-child::before { display: none; }
+.th-dot { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font-size: 14px; background: var(--sunken); border: 1px solid var(--line); z-index: 1; }
+.th-step.me .th-dot { background: var(--accent-soft); border-color: color-mix(in srgb, var(--accent) 40%, var(--line)); }
+.th-step.now .th-dot { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+.th-step.task .th-body { border-inline-start: 3px solid var(--accent); padding-inline-start: 8px; }
+.th-body { min-width: 0; display: grid; gap: 3px; }
+.th-meta { font-size: 12.5px; color: var(--ink-2); display: flex; flex-wrap: wrap; gap: 4px; align-items: baseline; }
+.th-meta b { color: var(--ink); }
+.th-nowtag { font-weight: 700; color: var(--accent); text-transform: uppercase; font-size: 11px; letter-spacing: .04em; }
+.th-meta .linkish { background: none; border: 0; padding: 0; color: var(--accent); cursor: pointer; text-decoration: underline; font: inherit; }
+.th-says { font-size: 13.5px; line-height: 1.4; }
+.th-tasks { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 2px; }
+.th-task { border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 999px; padding: 2px 9px; font: inherit; font-size: 12px; cursor: pointer; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.th-task.done { color: var(--ink-3); text-decoration: line-through; }
+.th-next .th-dot { background: var(--surface); border-style: dashed; }
+.th-open { margin: 2px 0 0; padding: 0; list-style: none; display: grid; gap: 4px; }
 
 /* ================= Action Register on claude.ai — burgundy & white ================= */
 /* Layout: a burgundy command bar across the top (brand · tabs · status), white working sheets below, the canvas as
@@ -3411,6 +3440,7 @@ RULES
 15. No duplicates: never return two tasks for the same deliverable, and if a TRACKED TASK above is the same obligation (even worded differently, or the same email forwarded again), set "matchesTaskId" to its id instead of creating a new one.
 16. Dates in the conversation: for each task set "askedOn" to the date (YYYY-MM-DD) of the message in this thread where it was asked — from that message's own header or quoted "Sent:"/"Date:" line; the email's sent date when it is the newest message. Also give "thread": the dates of the first and the newest message in the conversation.
 17. My own replies and updates: when the email (or its newest message) was sent BY ME, it usually answers or moves on a TRACKED TASK above — find it (same conversation, the person I am writing to, the equipment, document or subject it is about), even when the wording differs. Decide whether my message shows that task's work is done — judge by the OUTCOME, not the exact verb: "fulfilled" when my message delivers what the task was for (the task was to review / check / prepare / reply / answer / send / submit / confirm / coordinate something, and my message sends the result — comments, a reviewed or approved document, a calculation, the civil / structural / electrical input or requirements, an answer, a confirmation — to the person or team who needed it; e.g. task "Review disc filter submittal" and my email "sending the disc filter civil requirements to the PM" → fulfilled) → an "updates" entry with change "completed", newStatus "done"; "partial" (it covers some items or only promises to follow up) → change "note", newStatus "in_progress", list the items it covers in "doneItems" (their ref or text exactly as in the task) and say what is still open in "note"; "not_fulfilled" (it is related but does not do what was asked) → change "note" with the reason. Always give "verdict" and a one-line "reason" quoting what my message did. Do not create tasks for me from my own message, except when I promise a new deliverable with a date (then one task for me: what I promised). Anything my message asks of others is "waiting".
+18. Thread history: in "thread"."history" list EVERY message of this conversation, oldest first, ending with the newest one (this email): its date (YYYY-MM-DD from its header or quoted "Sent:"/"Date:" line, null if not shown), who sent it (short name, company in brackets when known; "me" when it is mine), its kind, and in "says" one plain line (at most 20 words) of what that message did — asked, answered, sent, commented, approved, rejected, reminded, decided. Write in the language of the email. [] only when the email has no quoted history.
 13. Documents: list in "documents" every drawing/document/datasheet/calculation that this email submits, returns with a review status code, approves, rejects or requests (for my document register): its number exactly as written, title, revision, the review code if one is given (1 approved, 2 approved with comments, 3 revise and resubmit, 4 rejected — use the digit), and who issued or returned it. [] when there are none.
 ${input.notes ? '\nUSER RULES AND PREFERENCES (follow these)\n' + input.notes + '\n' : ''}
 ${ENGINEERING_NOTES}
@@ -3423,7 +3453,7 @@ OUTPUT — exactly this JSON shape:
 "noActionReason":null,
 "project":"project code/name if identifiable, else null",
 "category":"submittal_review|technical_query|rfq_tender|design_coordination|vendor_comments|meeting|approval_request|site_issue|info_only|other",
-"thread":{"first":"YYYY-MM-DD or null","last":"YYYY-MM-DD or null","messages":3},
+"thread":{"first":"YYYY-MM-DD or null","last":"YYYY-MM-DD or null","messages":3,"history":[{"date":"YYYY-MM-DD or null","from":"Name (Company) or me","kind":"request|reply|submission|comments|approval|rejection|reminder|decision|info","says":"what this message did, one line"}]},
 "tasks":[{"ref":"N1","title":"short header, 3–8 words, ≤55 chars","action":"what must be done, one or two short sentences","askedOn":"YYYY-MM-DD or null","type":"do|reply|review|approve|submit|revise|decide|follow_up|attend","ownership":"mine|waiting|fyi","topic":"short subject name","workType":"one of the workType values","discipline":"one of the discipline values","owner":"me or responsible person/company","requestedBy":"who asked","project":"…","priority":"critical|high|medium|low","deadline":"YYYY-MM-DD or null","deadlineText":"as written, or null","deadlineBasis":"explicit|relative|none|uncertain","nextStep":"one concrete first step","dependsOn":null,"blocked":false,"blockedReason":null,"tags":["pumps"],"subtasks":[{"text":"C-01 — item needing action","ref":"C-01","location":"Sheet CRS, row 5"}],"evidence":[{"source":"A1","location":"Sheet CRS, row 14","quote":"exact words from the source"}],"confidence":0.9,"matchesTaskId":null,"relatedTaskIds":[],"placementConfidence":0.9,"placementOptions":[]}],
 "updates":[{"taskId":"existing id","change":"completed|status|deadline|note","newStatus":"todo|in_progress|waiting|blocked|done|null","newDeadline":"YYYY-MM-DD or null","note":"what changed","verdict":"fulfilled|partial|not_fulfilled|null","reason":"one line: what the email did","doneItems":["C-01"],"confidence":0.9,"evidence":[{"source":"BODY","location":null,"quote":"…"}]}],
 "decisions":["decision — by whom"],
@@ -3537,11 +3567,37 @@ function normalizeAnalysis(raw, ctx) {
     summary: S(r.summary), actionRequired: r.actionRequired !== false, noActionReason: S(r.noActionReason),
     project: S(r.project), category: S(r.category) || 'other',
     tasks: mergeSameTasks(tasks), updates,
-    thread: r.thread && typeof r.thread === 'object' ? { first: validISO(r.thread.first) ? r.thread.first : null, last: validISO(r.thread.last) ? r.thread.last : null, messages: Math.max(0, Math.min(500, parseInt(r.thread.messages, 10) || 0)) } : null,
+    thread: r.thread && typeof r.thread === 'object' ? { first: validISO(r.thread.first) ? r.thread.first : null, last: validISO(r.thread.last) ? r.thread.last : null, messages: Math.max(0, Math.min(500, parseInt(r.thread.messages, 10) || 0)),
+      history: (Array.isArray(r.thread.history) ? r.thread.history : []).slice(0, 40).map(h => ({ date: validISO(S(h && h.date)) ? S(h.date) : null, from: S(h && h.from).slice(0, 80), kind: S(h && h.kind).toLowerCase().slice(0, 20) || 'info', says: S(h && h.says).slice(0, 220) })).filter(h => h.says || h.from) } : null,
     decisions: (Array.isArray(r.decisions) ? r.decisions : []).map(S).filter(Boolean).slice(0, 12),
     documents: (Array.isArray(r.documents) ? r.documents : []).slice(0, 60).map(d => ({ number: S(d && d.number), title: S(d && d.title), revision: S(d && d.revision), code: /^[1-4]$/.test(S(d && d.code)) ? S(d.code) : '', status: ['submitted', 'returned', 'approved', 'rejected', 'requested', 'for_info'].includes(S(d && d.status)) ? S(d.status) : '', by: S(d && d.by), date: validISO(S(d && d.date)) ? S(d.date) : '', source: S(d && d.source).toUpperCase() })).filter(d => d.number || d.title),
     flags: (Array.isArray(r.flags) ? r.flags : []).map(f => ({ kind: S(f && f.kind) || 'ambiguous', detail: S(f && f.detail), source: S(f && f.source) })).filter(f => f.detail).slice(0, 20),
   };
+}
+
+/* ---------- quoted conversation history ---------- */
+// The earlier messages quoted under a reply, read from their headers: Outlook ("From: … Sent: …", also in Arabic
+// "من: … تاريخ الإرسال: …") and Gmail / Apple Mail ("On 20 Oct 2025, at 10:12, Name <a@b> wrote:"). Oldest first.
+function quotedHistory(body) {
+  const lines = String(body || '').split(/\r?\n/).map(l => l.replace(/^[>\s]+/, '').trim()), out = [];
+  const day = v => { const c = String(v || '').replace(/\b(Mon|Tue|Wed|Thu|Fri|Sat|Sun)[a-z]*,?\s*/i, '').replace(/\s+at\s+/i, ' ').replace(/[\u200e\u200f]/g, '').trim(); const d = new Date(c); return isNaN(d) || d.getFullYear() < 1990 ? null : `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+  const who = v => String(v || '').replace(/<[^>]*>/g, '').replace(/\[mailto:[^\]]*\]/gi, '').replace(/["']/g, '').trim().slice(0, 80);
+  for (let i = 0; i < lines.length; i++) {
+    const l = lines[i];
+    let m = /^(?:\*{0,2})(?:From|من)\s*:\s*\*{0,2}\s*(.+)$/i.exec(l);
+    if (m && i > 0) {
+      let date = null, subject = '';
+      for (let j = i + 1; j < Math.min(lines.length, i + 6); j++) {
+        const d = /^(?:\*{0,2})(?:Sent|Date|تاريخ الإرسال|التاريخ|أرسل|المرسل في)\s*:\s*\*{0,2}\s*(.+)$/i.exec(lines[j]); if (d && !date) date = day(d[1]);
+        const sb = /^(?:\*{0,2})(?:Subject|الموضوع)\s*:\s*\*{0,2}\s*(.+)$/i.exec(lines[j]); if (sb) subject = sb[1].slice(0, 160);
+      }
+      if (date || subject) out.push({ from: who(m[1]), date, subject });
+      continue;
+    }
+    m = /^On (.+?\d{4}(?:,? (?:at )?\d{1,2}:\d{2}(?:\s?[AP]M)?)?),? (.+?) wrote:$/i.exec(l);
+    if (m) out.push({ from: who(m[2]), date: day(m[1]), subject: '' });
+  }
+  return out.reverse().slice(0, 30);
 }
 
 /* ---------- evidence verification ---------- */
@@ -3638,7 +3694,7 @@ return {
   parseEml, readMsgFromCfb, unwrapForward, b64urlToBytes, findHeaderBlock, decompressRTF, rtfToText, parsePasted, htmlToText, tidyText, decodeMimeWords, parseParams,
   normSubject, threadKey, kindOf, KIND_LABEL, extract, need, guessMime, firstEmail,
   WORK_TYPES, DISCIPLINES, buildCategorizePrompt,
-  makeMasker, buildPrompt, normalizeAnalysis, shortTitle, verifyEvidence, normMatch, findDuplicate, relatedOpenTasks, localFlags, tokens, jaccard, splitForwards, parseTnef,
+  makeMasker, buildPrompt, normalizeAnalysis, shortTitle, verifyEvidence, normMatch, findDuplicate, relatedOpenTasks, quotedHistory, localFlags, tokens, jaccard, splitForwards, parseTnef,
   RTF_PREBUF,
 };
 })();
@@ -4032,6 +4088,7 @@ function taskDrawerHTML(t) {
   <div class="drawer-b two"><div class="dcol-main">
     <textarea class="title-edit" id="d-title" rows="1" data-chg="task-field" data-field="title" dir="auto" aria-label="Title">${esc(t.title)}</textarea>
     ${mailDateLine(t)}
+    ${typeof threadHistHTML === 'function' ? threadHistHTML(St.emails.get((t.emailIds || [])[(t.emailIds || []).length - 1]) || { threadKey: t.threadKey }, { task: t }) : ''}
     ${t.placement && t.placement.status !== 'confirmed' && (t.placement.options || []).length ? `<details class="small wrong-place"><summary class="muted">Wrong place? Other places Claude considered</summary><div style="display:grid;gap:6px;margin-top:8px">${(t.placement.options || []).map((o, i) => { const r = o.relatedTaskId && St.tasks.get(o.relatedTaskId); return `<button class="btn sm opt-btn" data-act="use-placement" data-i="${i}">${o.project ? '📁 ' + esc(o.project) : ''}${o.discipline ? ' › ' + esc(E.DISCIPLINES[o.discipline]) : ''}${r ? ' · 🔗 ' + esc(r.ref) : ''}${o.reason ? `<span class="muted small"> — ${esc(o.reason)}</span>` : ''}</button>`; }).join('')}<button class="btn sm ghost" data-act="keep-placement">Keep it here${t.project ? ': ' + esc(t.project) : ''}</button></div></details>` : ''}
     <div class="seg" role="group" aria-label="Status">${Object.entries(STATUS).map(([k, v]) => `<button data-act="set-status" data-id="${esc(t.id)}" data-status="${k}" aria-pressed="${t.status === k}">${v}</button>`).join('')}</div>
     ${taskActionsHTML(t)}
@@ -4839,6 +4896,46 @@ function roundedPath(raw) {
   }
   const L = P[P.length - 1]; return d + ` L${f(L[0])} ${f(L[1])}`;
 }
+// links between tasks: each one gets its own lane in the free space beside the task column (right of the boxes on a
+// left-to-right map, below them on a top-to-bottom one), clear of every box. Links over the same stretch run side by
+// side instead of on top of each other, and several links on one box leave and enter it at different points. A link
+// whose way out is blocked goes around the boxes instead.
+function laneLinks(M) {
+  if (!M.links.length) return [];
+  const V = mapDir() === 'v', GAP = 46, STEP = 22, PAD = 10;
+  // worked out as if the map ran left to right; on a top-to-bottom map x and y swap
+  const T = o => V ? { x: o.y, y: o.x, w: o.h || 40, h: o.w } : { x: o.x, y: o.y, w: o.w, h: o.h || 40 };
+  const back = V ? pts => pts.map(([x, y]) => [y, x]) : pts => pts;
+  const obs = routeObstacles(M, []).map(T);
+  const box = new Map(), ends = new Map();
+  for (const l of M.links) for (const n of [l.from, l.to]) { if (!box.has(n.id)) box.set(n.id, T(n)); if (!ends.has(n.id)) ends.set(n.id, []); ends.get(n.id).push(l); }
+  // where each link meets a box: spread over the side, in the order of the boxes at the other ends
+  const port = new Map();
+  for (const [id, ls] of ends) {
+    const b = box.get(id), other = l => box.get((l.from.id === id ? l.to : l.from).id);
+    ls.sort((p, q) => (other(p).y + other(p).h / 2) - (other(q).y + other(q).h / 2))
+      .forEach((l, i) => port.set((l.from.id === id ? 'f:' : 't:') + M.links.indexOf(l), b.y + b.h * (i + 1) / (ls.length + 1)));
+  }
+  const hits = (x0, x1, y0, y1) => obs.find(o => o.x < x1 && o.x + o.w > x0 && o.y < y1 && o.y + o.h > y0);
+  const items = M.links.map((l, i) => { const a = box.get(l.from.id), b = box.get(l.to.id), ya = port.get('f:' + i), yb = port.get('t:' + i); return { l, a, b, ya, yb, lo: Math.min(ya, yb), hi: Math.max(ya, yb) }; })
+    .sort((p, q) => (p.hi - p.lo) - (q.hi - q.lo));
+  const used = [], out = new Map();
+  for (const it of items) {
+    const { a, b, ya, yb, lo, hi } = it, ax = a.x + a.w, bx = b.x + b.w;
+    let x = Math.max(ax, bx) + GAP;
+    for (let g = 0; g < 40; g++) {
+      const o = hits(x - PAD, x + PAD, lo - PAD, hi + PAD);
+      if (o) { x = o.x + o.w + GAP; continue; }
+      if (used.some(u => Math.abs(u.x - x) < STEP - 1 && u.lo < hi + 10 && u.hi > lo - 10)) { x += STEP; continue; }
+      break;
+    }
+    // the short runs from each box out to the lane must be clear too
+    if (hits(ax + 1, x, ya - 2, ya + 2) || hits(bx + 1, x, yb - 2, yb + 2)) continue;
+    used.push({ x, lo, hi });
+    out.set(it.l, roundedPath(back([[ax, ya], [x, ya], [x, yb], [bx + 3, yb]])));
+  }
+  return M.links.map(l => ({ l, d: out.get(l) || routePath(l.from, l.to, routeObstacles(M, ['n:' + l.from.id, 'n:' + l.to.id])) || linkPath(l.from, l.to) }));
+}
 // the path of a free link: smart (around boxes, the default), curved or straight
 function connD(el, M) {
   const a = refBox(el.from, M), b = refBox(el.to, M); if (!a || !b) return '';
@@ -4892,10 +4989,10 @@ function worldHTML(M) {
   if (!showMap) M = { ...M, nodes: [], edges: [], links: [], projects: [] };
   return `${frames.map(e => belHTML(e, hits)).join('')}
     <svg class="map-edges" width="${M.w}" height="${M.h}" aria-hidden="true">
-      <defs><marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="arrowhead"/></marker></defs>
+      <defs><marker id="arrow" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="arrowhead"/></marker><marker id="link-dot" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5"><circle cx="5" cy="5" r="4" class="arrowhead"/></marker></defs>
       ${UI.mapBands !== false && M.projects.length ? projectBands(M).map(b => `<rect class="band" x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" rx="26" style="--h:${b.hue}"/>`).join('') : ''}
       ${M.edges.map(e => `<path class="edge ${e.b.type === 'task' && e.b.t.status === 'done' ? 'done' : ''}" style="--h:${e.hue}" d="${edgePath(e.a, e.b)}"/>`).join('')}
-      ${M.links.map(l => `<path class="link ${sel && (l.from.t.id === sel || l.to.t.id === sel) ? 'hot' : ''}" d="${routePath(l.from, l.to, routeObstacles(M, ['n:' + l.from.id, 'n:' + l.to.id])) || linkPath(l.from, l.to)}" marker-end="url(#arrow)"/>`).join('')}
+      ${laneLinks(M).map(({ l, d }) => { const hot = sel && (l.from.t.id === sel || l.to.t.id === sel) ? ' hot' : ''; return `<path class="link-halo${hot}" d="${d}"/><path class="link${hot}" d="${d}" marker-start="url(#link-dot)" marker-end="url(#arrow)"/>`; }).join('')}
     </svg>
     ${blocks.map(e => belHTML(e, hits)).join('')}
     ${UI.mapBands !== false && M.projects.length ? projectBands(M).map(b => `<div class="band-label" style="left:${b.x + 14}px;top:${b.y + 10}px;--h:${b.hue}" dir="auto">${esc(b.label)}</div>`).join('') : ''}
@@ -5920,6 +6017,7 @@ function reviewCard(e) {
       <div class="small muted" dir="auto">From ${esc(e.from || 'unknown')}</div>
       ${a.summary ? `<p style="margin:2px 0 0" dir="auto">${esc(a.summary)}</p>` : ''}
     </div>
+    ${typeof threadHistHTML === 'function' ? threadHistHTML(e, { open: true }) : ''}
     <div class="rv-b">
       ${a.actionRequired === false ? callout('ok', `<p><b>No action needed from you.</b> ${esc(a.noActionReason || '')}</p>`) : ''}
       ${flags.length ? callout('warn', `<p><b>Check before relying on this:</b></p><ul>${flags.map(f => `<li><b>${esc(FLAG[f.kind] || f.kind)}</b>${f.source ? ` <span class="mono">(${esc(srcName(e, f.source))})</span>` : ''}: <span dir="auto">${esc(f.detail)}</span></li>`).join('')}</ul>`) : ''}
@@ -6482,7 +6580,7 @@ async function analyzeBundle(b, signal, onProgress) {
   const rec = {
     id, threadKey: tk, subject: b.source === 'docs' ? 'Documents: ' + b.atts.map(a => a.name).slice(0, 3).join(', ') + (b.atts.length > 3 ? ` +${b.atts.length - 3}` : '') : (em.subject || ''), from: em.from || '', fromEmail: em.fromEmail || '', to: em.to || '', cc: em.cc || '', date: em.date || '',
     messageId: em.messageId || '', convIndex: em.convIndex || '', source: b.source, fileName: b.fileName || '', importedAt: b.importedAt || nowISO(),
-    snippet: E.clip((em.body || '').replace(/\s+/g, ' '), 280),
+    snippet: E.clip((em.body || '').replace(/\s+/g, ' '), 280), quoted: E.quotedHistory(em.body || ''),
     attachments: b.atts.map(a => ({ name: a.name, kindLabel: (a.res && a.res.kindLabel) || 'File', size: a.size || 0, status: a.include ? ((a.res && a.res.status) || 'unknown') : 'excluded', note: (a.res && a.res.note) || '', pages: (a.res && a.res.pages) || null, images: (a.res && a.res.images && a.include) ? a.res.images.length : 0, textLen: (a.res && a.res.text || '').length })),
     analysis: an, reviewState: 'pending', hasText: !!s.storeText, fromMe,
     gmailId: b.gmailId || '', gmailUrl: b.gmailUrl || '', forwardedBy: em.forwardedBy || '', forwardMode: em.forwardMode || '',
@@ -6805,6 +6903,7 @@ function emailDrawerHTML(e) {
     ${emailActionsHTML(e)}
     ${a.summary ? `<div><div class="label" style="margin-bottom:4px">Summary</div><p style="margin:0" dir="auto">${esc(a.summary)}</p>${a.actionRequired === false ? `<p class="small" style="margin:6px 0 0"><span class="chip ok">No action for you</span> ${esc(a.noActionReason || '')}</p>` : ''}</div>` : ''}
     ${(a.flags || []).length ? callout('warn', `<ul style="margin:0">${a.flags.map(f => `<li><b>${esc(FLAG[f.kind] || f.kind)}</b>${f.source ? ` <span class="mono">(${esc(srcName(e, f.source))})</span>` : ''}: ${esc(f.detail)}</li>`).join('')}</ul>`) : ''}
+    ${typeof threadHistHTML === 'function' ? threadHistHTML(e, { open: true }) : ''}
     ${tasks.length ? `<div><div class="label" style="margin-bottom:6px">Tasks from this email</div><div class="register">${tasks.map(taskRow).join('')}</div></div>` : ''}
     <div><div class="label" style="margin-bottom:6px">Attachments</div>${(e.attachments || []).length ? `<div class="register">${e.attachments.map((x, i) => {
       const st = ATT_STATUS[x.status] || [x.status, ''];
@@ -8051,7 +8150,7 @@ function mapSVG(M) {
     }
   }
   for (const e of M.edges) parts.push(`<path d="${edgePath(e.a, e.b)}" fill="none" stroke="hsl(${e.hue},40%,${e.b.type === 'task' && e.b.t.status === 'done' ? 80 : 62}%)" stroke-width="2"/>`);
-  for (const l of M.links) parts.push(`<path d="${routePath(l.from, l.to, routeObstacles(M, ['n:' + l.from.id, 'n:' + l.to.id])) || linkPath(l.from, l.to)}" fill="none" stroke="#B26B00" stroke-width="1.6" stroke-dasharray="5 4"/>`);
+  for (const { d } of laneLinks(M)) parts.push(`<path d="${d}" fill="none" stroke="#FFFFFF" stroke-width="6" stroke-linejoin="round"/><path d="${d}" fill="none" stroke="#7A4FB3" stroke-width="2" stroke-dasharray="7 5" stroke-linejoin="round"/>`);
   for (const n of M.nodes) {
     const h = n.hue ?? 186;
     if (n.type === 'root') { parts.push(`<rect x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" rx="16" fill="#0A6B74"/>` + svgText(n.x + 18, n.y + n.h / 2 + 6, ['My work'], 18, '#FFFFFF', 600)); continue; }
@@ -11462,6 +11561,69 @@ function fitPops() {
 document.addEventListener('toggle', e => { if (e.target.matches && e.target.matches('details.menu') && e.target.open) requestAnimationFrame(fitPops); }, true);
 HOOKS.afterRender.push(() => requestAnimationFrame(fitPops));
 window.addEventListener('resize', () => requestAnimationFrame(fitPops));
+
+/* ===== features/40-thread.js ===== */
+/* ---------- thread history: how the conversation got to where it is now ---------- */
+// Every email you add shows its whole conversation, oldest first: who asked what and when, the replies, submissions,
+// comments and approvals, one line each, then 📍 Now (this email) and where things stand — your next step, or who
+// you are waiting for. Claude lists the messages it reads in the quoted history; for emails read before that, the
+// "From / Sent" headers under the reply are used. Earlier emails of the same conversation that you added are merged
+// in, with the tasks each one created and their status. Shown in Review, on the email and on each task.
+const TH_KIND = { request: '📩', reply: '↩️', submission: '📤', comments: '💬', approval: '✅', rejection: '⛔', reminder: '⏰', decision: '⚖️', info: '✉️' };
+const thMe = f => /^(me|أنا)$/i.test(String(f || '').trim()) || isMeSender({ from: f || '' });
+const thName = f => String(f || '').replace(/<[^>]*>/g, '').replace(/["']/g, '').trim();
+function threadEmails(e) {
+  if (!e) return [];
+  const list = e.threadKey ? [...St.emails.values()].filter(x => x.threadKey === e.threadKey) : (e.id ? [e] : []);
+  return list.sort((a, b) => (a.date || a.importedAt || '').localeCompare(b.date || b.importedAt || ''));
+}
+function threadSteps(e) {
+  const steps = [], seen = new Map();
+  const key = st => (st.date || '?') + '|' + (thMe(st.from) || st.me ? 'me' : E.normMatch(thName(st.from)).split(' ')[0]);
+  const add = st => {
+    const k = key(st), old = seen.get(k);
+    if (old) { if (!old.says && st.says) { old.says = st.says; old.kind = st.kind; } if (st.emailId) old.emailId = st.emailId; return; }
+    seen.set(k, st); steps.push(st);
+  };
+  for (const em of threadEmails(e)) {
+    const a = em.analysis || {}, h = (a.thread && a.thread.history) || [];
+    if (h.length) h.forEach((x, i) => add({ ...x, me: thMe(x.from) || (i === h.length - 1 && !!em.fromMe), ...(i === h.length - 1 ? { emailId: em.id } : {}) }));
+    else {
+      (em.quoted || []).forEach(q => add({ date: q.date, from: q.from, kind: 'info', says: q.subject ? `“${q.subject}”` : '', me: thMe(q.from) }));
+      add({ date: (em.date || '').slice(0, 10) || null, from: thName(em.from), kind: em.fromMe ? 'reply' : 'info', says: a.summary || em.subject || '', emailId: em.id, me: !!em.fromMe });
+    }
+  }
+  // in date order; a message without a date stays after the one before it
+  let last = '';
+  steps.forEach((s, i) => { s.ord = s.date || last; s.i = i; if (s.date) last = s.date; });
+  return steps.sort((a, b) => (a.ord || '').localeCompare(b.ord || '') || a.i - b.i);
+}
+function threadHistHTML(e, opt = {}) {
+  if (!e) return '';
+  const steps = threadSteps(e); if (steps.length < 2) return '';
+  const ems = threadEmails(e), ids = new Set(ems.map(x => x.id)), tk = e.threadKey;
+  const tasks = [...St.tasks.values()].filter(t => (t.emailIds || []).some(id => ids.has(id)) || (tk && t.threadKey === tk));
+  const tasksOf = id => tasks.filter(t => (t.emailIds || []).includes(id));
+  const chip = t => `<button class="th-task ${t.status === 'done' ? 'done' : ''}" data-act="open-task" data-id="${esc(t.id)}" title="${esc(t.title)}">${t.status === 'done' ? '✓' : '○'} ${esc(t.ref || '')} <span dir="auto">${esc(E.clip(t.title, 40))}</span></button>`;
+  const open = tasks.filter(t => t.status !== 'done');
+  const first = steps.find(s => s.date), cur = e.id ? steps.filter(s => s.emailId === e.id).pop() : null, now = cur || steps[steps.length - 1];
+  const who = t => t.ownership === 'waiting' ? `waiting on ${esc(t.owner || 'others')}` : t.ownership === 'fyi' ? 'for information' : 'your action';
+  const stand = open.length ? open.map(t => `<li><button class="th-task" data-act="open-task" data-id="${esc(t.id)}">${esc(t.ref || '')} <span dir="auto">${esc(E.clip(t.title, 60))}</span></button> <span class="small muted">— ${who(t)}${t.deadline ? ' · due ' + esc(fmtDate(t.deadline)) : ''}${t.status === 'blocked' ? ' · blocked' : ''}</span></li>`).join('')
+    : tasks.length ? '<li class="small">Everything from this conversation is done ✓</li>' : '';
+  const pending = e.id && e.reviewState === 'pending' ? ((e.analysis && e.analysis.tasks) || []).length : 0;
+  return `<details class="th-hist" ${opt.open ? 'open' : ''}>
+    <summary>🧵 Thread history <span class="small muted">· ${steps.length} messages${first ? ' · since ' + esc(fmtDate(first.date, { day: 'numeric', month: 'short', year: 'numeric' })) : ''}</span></summary>
+    <ol class="th-steps">${steps.map(s => {
+      const here = s === now, mine = s.me, ts = s.emailId && !here ? tasksOf(s.emailId) : [];
+      return `<li class="th-step${mine ? ' me' : ''}${here ? ' now' : ''}${opt.task && s.emailId && (opt.task.emailIds || []).includes(s.emailId) ? ' task' : ''}">
+        <span class="th-dot" aria-hidden="true">${here ? '📍' : TH_KIND[s.kind] || TH_KIND.info}</span>
+        <div class="th-body"><div class="th-meta"><b dir="auto">${esc(mine ? 'Me' : (s.from || 'Someone'))}</b>${s.date ? ` · ${esc(fmtDate(s.date, { weekday: 'short', day: 'numeric', month: 'short' }))}` : ''}${here ? ' · <span class="th-nowtag">Now</span>' : ''}${s.emailId && s.emailId !== e.id ? ` · <button class="linkish small" data-act="open-email" data-id="${esc(s.emailId)}">open email</button>` : ''}</div>
+          ${s.says ? `<div class="th-says" dir="auto">${esc(s.says)}</div>` : ''}
+          ${ts.length ? `<div class="th-tasks">${ts.map(chip).join('')}</div>` : ''}</div></li>`;
+    }).join('')}
+    ${stand || pending ? `<li class="th-step th-next"><span class="th-dot" aria-hidden="true">➜</span><div class="th-body"><div class="th-meta"><b>Where it stands</b></div>${pending ? `<div class="small">${pending} task${pending > 1 ? 's' : ''} proposed from this email — check them below.</div>` : ''}${stand ? `<ul class="th-open">${stand}</ul>` : ''}</div></li>` : ''}
+    </ol></details>`;
+}
 
 /* ---------- boot ---------- */
 const startView = (location.hash || '').replace('#', '');
