@@ -14,7 +14,7 @@ async def main():
         await pg.route('**/*', route); await pg.goto('https://app.test/'); await pg.wait_for_selector('h1'); await pg.wait_for_timeout(1200)
         ev = pg.evaluate
         navs = await ev("[...document.querySelectorAll('.rail [data-nav]')].map(b => b.dataset.nav)"); print('NAV', navs)
-        assert navs == ['todo', 'review', 'import', 'emails', 'setup'], navs
+        assert navs == ['todo', 'review', 'import', 'emails', 'finance', 'setup'], navs   # Money is its own tab
         if await ev("!!document.querySelector('#su-emails')"):
             await pg.fill('#su-emails', 'm.sobeah@contractor.example'); await pg.click('[data-act="save-quick-setup"]')
         # Gmail through the claude.ai connector: the forwarding inbox is checked and analysed by Claude
@@ -82,7 +82,7 @@ async def main():
         # with phone mode off, the header tabs come back
         await mp.evaluate("localStorage.setItem('ar-phone-mode', 'off')"); await mp.reload(); await mp.wait_for_selector('h1'); await mp.wait_for_timeout(1000)
         tabs = await mp.evaluate("[...document.querySelectorAll('.rail [data-nav]')].filter(b => b.offsetParent && b.getBoundingClientRect().top < 80).map(b => b.dataset.nav)"); print('HEADER TABS on phone', tabs)
-        assert tabs == ['todo', 'review', 'import', 'emails', 'setup'], tabs
+        assert tabs == ['todo', 'review', 'import', 'emails', 'finance', 'setup'], tabs
         await mp.screenshot(path=SHOTS + '/lite-3-phone.png')
         print('MOBILE overflow', await mp.evaluate("document.documentElement.scrollWidth>innerWidth"))
         print('ERRORS', errors); assert not errors
