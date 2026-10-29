@@ -137,14 +137,20 @@ document.addEventListener('pointerdown', () => { const r = document.getElementBy
 /* --- menus: a long menu scrolls inside the screen, so its last items can always be reached --- */
 // (a menu near the bottom of the screen opens upwards when there is more room above)
 function fitPops() {
-  const H = window.innerHeight;
+  const v = visBox(), W = document.documentElement.clientWidth;
   document.querySelectorAll('details.menu[open] > .menu-pop').forEach(p => {
     const sm = p.parentElement.querySelector('summary'); if (!sm) return;
-    const s = sm.getBoundingClientRect(), below = H - s.bottom - 18, above = s.top - 18, up = below < 300 && above > below;
+    const s = sm.getBoundingClientRect(), below = v.bottom - s.bottom - 18, above = s.top - v.top - 18, up = below < 300 && above > below;
     p.classList.toggle('up', up); p.style.maxHeight = Math.max(140, up ? above : below) + 'px';
+    // never past the left or right edge of the screen
+    p.style.translate = ''; const r = p.getBoundingClientRect(), lo = Math.max(8, v.left + 8), hi = Math.min(W, v.right) - 8;
+    if (r.right > hi) p.style.translate = `${Math.round(hi - r.right)}px 0`; else if (r.left < lo) p.style.translate = `${Math.round(lo - r.left)}px 0`;
   });
-  document.querySelectorAll('.cv-panel').forEach(p => { const r = p.getBoundingClientRect(); p.style.maxHeight = Math.max(180, H - Math.max(0, r.top) - 12) + 'px'; });
+  document.querySelectorAll('.cv-panel').forEach(p => { const r = p.getBoundingClientRect(); p.style.maxHeight = Math.max(180, v.bottom - Math.max(v.top, r.top) - 12) + 'px'; });
 }
 document.addEventListener('toggle', e => { if (e.target.matches && e.target.matches('details.menu') && e.target.open) requestAnimationFrame(fitPops); }, true);
 HOOKS.afterRender.push(() => requestAnimationFrame(fitPops));
 window.addEventListener('resize', () => requestAnimationFrame(fitPops));
+// pinch-zoom, the keyboard and scrolling change what is visible: an open menu follows
+if (window.visualViewport) { visualViewport.addEventListener('resize', () => requestAnimationFrame(fitPops)); visualViewport.addEventListener('scroll', () => requestAnimationFrame(fitPops)); }
+window.addEventListener('scroll', () => { if (document.querySelector('details.menu[open]')) requestAnimationFrame(fitPops); }, { passive: true });

@@ -1519,9 +1519,24 @@ function centerOnTask(id) {
   });
 }
 // the canvas takes all the height left on the screen below its toolbar (at least 480 px)
+// the part of the page the person can actually see: smaller than the window when the page is pinch-zoomed, when
+// the on-screen keyboard is up, or when the page sits in a frame taller than the screen (the observer below
+// measures what of this page shows on the screen)
+const VIS = { top: 0, bottom: Infinity };
+try {
+  new IntersectionObserver(es => { for (const e of es) { const r = e.intersectionRect; if (r && r.height > 50) { VIS.top = Math.max(0, r.top); VIS.bottom = r.bottom; } } }, { threshold: Array.from({ length: 101 }, (_, i) => i / 100) }).observe(document.documentElement);
+} catch {}
+function visBox() {
+  const vv = window.visualViewport, H = window.innerHeight;
+  let top = 0, bottom = H;
+  if (vv) { top = Math.max(top, vv.offsetTop); bottom = Math.min(bottom, vv.offsetTop + vv.height); }
+  if (VIS.bottom !== Infinity && VIS.bottom - VIS.top > 200) { top = Math.max(top, VIS.top); bottom = Math.min(bottom, VIS.bottom); }
+  return { top, bottom, height: bottom - top, left: vv ? vv.offsetLeft : 0, right: vv ? vv.offsetLeft + vv.width : window.innerWidth };
+}
 function fitMapHeight() {
   const vp = $('#map-vp'); if (!vp) return;
-  const top = vp.getBoundingClientRect().top + window.scrollY, h = window.innerHeight - (top < window.innerHeight * 0.7 ? top : 120) - 16;
+  const v = visBox(), H = Math.min(window.innerHeight, v.height);
+  const top = vp.getBoundingClientRect().top + window.scrollY, h = H - (top < H * 0.7 ? top : 120) - 16;
   document.documentElement.style.setProperty('--vp-fit', Math.max(480, Math.round(h)) + 'px');
 }
 window.addEventListener('resize', () => { if (UI.view === 'todo' && UI.todoMode === 'map') fitMapHeight(); });
