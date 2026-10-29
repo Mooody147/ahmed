@@ -68,7 +68,7 @@ async def main():
         await pen(seg((cx - 18, cy - 6), (cx - 6, cy + 8), 5) + seg((cx - 6, cy + 8), (cx + 22, cy - 22), 8)[1:])
         st = await ev(f"window.__AR.St.tasks.get('{t0}').status"); print('TICK →', st); assert st == 'done', 'a ✓ marks the task done'
         assert await ev("[...window.__AR.St.board.values()].filter(e => e.type === 'stroke').length") == 0, 'the ✓ is not kept as ink'
-        await pg.click('.map-tools [data-act="cv-undo"]'); await pg.wait_for_timeout(300)
+        await pg.click('.cv-sub [data-act="cv-undo"]'); await pg.wait_for_timeout(300)
         assert await ev(f"window.__AR.St.tasks.get('{t0}').status") != 'done', 'Undo'
         # 2. a line from one task to another links them
         a, z = tids[1], tids[2]; ba, bz = await box(f'.mnode.task[data-tid="{a}"]'), await box(f'.mnode.task[data-tid="{z}"]')
@@ -305,63 +305,9 @@ async def main():
         assert len(subs) == k0 + 3 and 'Recalculate NPSHa' in subs[-2]
         print('CANVAS AI OK')
 
-        # ---- fishbone, board templates, people lanes ----
+        # ---- A3 PDF (heat, critical path, laser, presenting and live cursors were removed) ----
         await pg.keyboard.press('Escape'); await pg.wait_for_timeout(200)
-        await ev("""window.__mockBaseL = window.__mockBaseL || window.__mockAnswer; window.__mockAnswer = p => /^Build an Ishikawa/.test(p) ? { branches: [{ name: 'Equipment', causes: ['Impeller wear', 'Wrong pump curve'] }, { name: 'Process', causes: ['Low wet-well level'] }] } : window.__mockBaseL(p); 0""")
-        nb0 = await ev("(window.__AR.St.layout.pages || []).length")
-        await pg.click('[data-menu="options"] summary'); await pg.click('[data-act="fish-open"]'); await pg.fill('#fish-q', 'RAS pump cavitation'); await pg.click('[data-act="fish-draw"]'); await pg.wait_for_timeout(900)
-        pg_now = await ev("window.__AR.UI.page"); assert pg_now != 'main' and await ev("(window.__AR.St.layout.pages || []).length") == nb0 + 1
-        texts = await ev(f"[...window.__AR.St.board.values()].filter(e => e.page === '{pg_now}' && e.type === 'text').map(e => e.text)"); print('FISH', texts)
-        assert all(c in texts for c in ['Design', 'Equipment', 'Process', 'Materials', 'Measurement', 'Site & people']) and 'Impeller wear' in texts and 'Low wet-well level' in texts
-        assert await ev(f"[...window.__AR.St.board.values()].some(e => e.page === '{pg_now}' && e.type === 'shape' && e.text === 'RAS pump cavitation')")
-        await pg.screenshot(path=SHOTS + '/tools-5-fishbone.png')
-        await pg.click('[data-menu="options"] summary'); await pg.click('[data-act="tpl-board-open"]'); await pg.click('#drawer [data-act="tpl-board"][data-k="submittal"]'); await pg.wait_for_timeout(600)
-        fr = await ev("[...window.__AR.St.board.values()].filter(e => e.page === window.__AR.UI.page && e.type === 'frame').map(e => e.text)"); print('TEMPLATE', fr)
-        assert 'Code 3 — revise & resubmit' in fr and len(fr) == 5
-        names = await ev("window.__AR.St.layout.pages.map(p => p.name)"); print('BOARDS', names); assert 'Submittal tracker' in names
-        await pg.click('[data-act="board-go"][data-id="main"]'); await pg.wait_for_timeout(500)
-        # people lanes
-        await pg.click('[data-act="todo-mode"][data-mode="people"]'); await pg.wait_for_timeout(500)
-        lanes = await ev("[...document.querySelectorAll('.pl-lane')].map(l => l.dataset.lane + ':' + l.querySelectorAll('.pl-card').length)"); print('LANES', lanes)
-        assert lanes[0].startswith('me:') and len(lanes) >= 2
-        other = [l for l in lanes if not l.startswith('me:')][0].split(':')[0]
-        card = await ev(f"document.querySelector('.pl-lane[data-lane=\"{other}\"] .pl-card').dataset.dragTask")
-        await pg.drag_and_drop(f'.pl-card[data-drag-task="{card}"]', '.pl-lane[data-lane="me"] .pl-cards'); await pg.wait_for_timeout(400)
-        t = await ev(f"window.__AR.St.tasks.get('{card}')"); print('TAKEN BACK', t['ownership'], t['owner']); assert t['ownership'] == 'mine'
-        await pg.screenshot(path=SHOTS + '/tools-6-people.png')
-        await pg.click('[data-act="todo-mode"][data-mode="map"]'); await pg.wait_for_timeout(500)
-        print('LAYOUTS OK')
-
-        # ---- heat, critical path, laser, frames, A3 PDF ----
-        open_ids = await ev("[...document.querySelectorAll('.mnode.task')].map(n => n.dataset.tid).filter(id => window.__AR.St.tasks.get(id).status !== 'done')")
-        ta, tb2 = open_ids[0], open_ids[1]
-        # an overdue deadline through the task panel
-        await pg.click(f'.mnode.task[data-tid="{ta}"] .mtxt b'); await pg.wait_for_timeout(400)
-        await pg.fill('#d-deadline', '2026-10-01'); await pg.dispatch_event('#d-deadline', 'change'); await pg.wait_for_timeout(300)
-        await pg.click('#drawer [data-act="close-drawer"]'); await pg.wait_for_timeout(300)
-        # link the two tasks with the Link tool
-        await pg.keyboard.press('c'); A = await box(f'.mnode.task[data-tid="{ta}"]'); B = await box(f'.mnode.task[data-tid="{tb2}"]')
-        await pg.mouse.move(A['x'] + 60, A['y'] + A['height'] / 2); await pg.mouse.down(); await pg.mouse.move(B['x'] + 60, B['y'] + B['height'] / 2, steps=10); await pg.mouse.up(); await pg.wait_for_timeout(400)
-        await pg.keyboard.press('Escape'); await pg.keyboard.press('v')
-        print('LINKED', await ev(f"[window.__AR.St.tasks.get('{ta}').relatedIds, window.__AR.St.tasks.get('{tb2}').relatedIds, window.__AR.St.tasks.get('{ta}').deadline]"))
-        await more(); await pg.click('[data-chg="ui-opt"][data-k="mapHeat"]'); await pg.wait_for_timeout(400)
-        heat = await ev("[...document.querySelectorAll('.mnode.task.heat-4')].length"); print('HEAT-4', heat); assert heat >= 1, 'an overdue task glows hottest'
-        await more(); await pg.click('[data-chg="ui-opt"][data-k="mapCrit"]'); await pg.wait_for_timeout(400)
-        crit = await ev("document.querySelectorAll('.mnode.task.crit-path').length"); print('CRIT nodes', crit); assert crit == 2 and await ev("!!document.querySelector('.cv-crit path')")
-        await pg.screenshot(path=SHOTS + '/tools-7-heat-crit.png')
-        await more(); await pg.click('[data-chg="ui-opt"][data-k="mapHeat"]'); await more(); await pg.click('[data-chg="ui-opt"][data-k="mapCrit"]'); await pg.wait_for_timeout(200)
-        # laser
-        await pg.keyboard.press('Escape'); await pg.keyboard.press('Shift+L'); vp = await box('#map-vp')
-        for i in range(8): await pg.mouse.move(vp['x'] + 300 + i * 20, vp['y'] + 400 + i * 5); await pg.wait_for_timeout(16)
-        assert await ev("!!document.querySelector('#map-vp > canvas.cv-laser')"), 'laser layer'
-        await pg.keyboard.press('Shift+L')
-        # present the template board frame by frame
-        tb = await ev("window.__AR.St.layout.pages.find(p => p.name === 'Submittal tracker').id")
-        await pg.click(f'[data-act="board-go"][data-id="{tb}"]'); await pg.wait_for_timeout(500)
-        await more(); await pg.click('[data-act="present-frames"]'); await pg.wait_for_timeout(700)
-        bar = await pg.text_content('.present-bar'); print('PRESENT', ' '.join(bar.split())[:60]); assert '1 / 5' in bar and 'To prepare' in bar
-        await pg.keyboard.press('ArrowRight'); await pg.wait_for_timeout(400); assert '2 / 5' in await pg.text_content('.present-bar')
-        await pg.click('.present-bar [data-act="present-exit"]'); await pg.wait_for_timeout(400)
+        assert await ev("!document.querySelector('[data-k=\"mapHeat\"], [data-k=\"mapCrit\"], [data-act=\"present-frames\"], [data-act=\"map-present\"], [data-act=\"fish-open\"], [data-act=\"tpl-board-open\"], [data-mode=\"people\"]')"), 'removed tools are gone'
         # A3 PDF of this board
         await more(); await pg.click('[data-act="map-export-a3"]')
         for i in range(50):
@@ -369,15 +315,10 @@ async def main():
             await pg.wait_for_timeout(300)
         saved = await ev("window.__saves.filter(s => /A3\\.pdf$/.test(s.filename))"); print('PDF', saved); assert saved and saved[-1]['len'] > 20000
         head = await ev("(async () => { const d = Object.entries(window.__saveData).find(([k]) => /A3\\.pdf$/.test(k))[1]; const b = d instanceof Blob ? new Uint8Array(await d.arrayBuffer()) : d; return String.fromCharCode(...b.slice(0, 8)); })()"); print('PDF head', head); assert head.startswith('%PDF-1.4')
-        await pg.click('[data-act="board-go"][data-id="main"]'); await pg.wait_for_timeout(400)
         print('SEE OK')
-        # ---- live cursors and comment pins (room and comments available) ----
-        p2 = await setup(b, "window.__room = { peers: [{ peer: 'pk1', by: 'u777', isMe: false, sameTab: false, kind: 'viewer', guest: false, presence: { cur: { x: 300, y: 200, p: 'main' }, c: '#0A6B74' } }] }; window.__comments = true;")
+        # ---- comment pins (comments available) ----
+        p2 = await setup(b, "window.__comments = true;")
         await p2.wait_for_timeout(4500)
-        await p2.evaluate("window.__peersHandler && window.__peersHandler({ peers: window.__room.peers, joined: [], left: [], updated: window.__room.peers })"); await p2.wait_for_timeout(500)
-        cur = await p2.evaluate("(document.querySelector('.cv-cursor') || {}).textContent || ''"); print('CURSOR', cur); assert 'Khaled Nabil' in cur, 'a named live cursor'
-        await p2.mouse.move(400, 600); await p2.mouse.move(420, 620); await p2.wait_for_timeout(200)
-        assert await p2.evaluate("!!(window.__presence && window.__presence.cur)"), 'my cursor is shared'
         assert await p2.evaluate("!!window.__cmCb"), 'comment pins registered'
         tid2 = await p2.evaluate("(document.querySelector('.mnode.task') || {}).dataset?.tid")
         if tid2:

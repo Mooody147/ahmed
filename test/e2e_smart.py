@@ -111,7 +111,7 @@ async def main():
         print('MERGED items', [x['text'][:14] for x in kept['subtasks']])
         assert any('C-03' in x['text'] for x in kept['subtasks']), 'items moved to the task that stays'
         await pg.keyboard.press('Escape'); await pg.wait_for_timeout(200)
-        await pg.click('.map-tools [data-act="cv-undo"]'); await pg.wait_for_timeout(300)
+        await pg.click('.cv-sub [data-act="cv-undo"]'); await pg.wait_for_timeout(300)
         assert await ev("window.__AR.St.tasks.size") == n2, 'Undo brings the duplicate back'
         await pg.click('[data-act="dup-merge-all"]'); await pg.wait_for_timeout(400)
         assert await ev("window.__AR.St.tasks.size") == n2 - 1 and 'duplicate task' not in (await pg.text_content('#main'))
@@ -141,8 +141,8 @@ async def main():
         wid = await ev("[...window.__AR.St.tasks.values()].find(t => t.ownership === 'waiting' && t.status !== 'done').id")
         await ev(f"(() => {{ const t = window.__AR.St.tasks.get('{wid}'); t.createdAt = t.askedOn = '2026-10-15'; t.sourceDate = '2026-10-15T09:00:00Z'; }})()")
         await pg.click('[data-act="todo-mode"][data-mode="map"]'); await pg.wait_for_timeout(600)
-        assert 'owes you' in (await pg.text_content('#main')) or 'owe you' in (await pg.text_content('#main')), 'who owes you a reply'
-        await pg.click('[data-act="rc-list"]'); await pg.wait_for_timeout(300)
+        # (the "owes you" banner was removed with the To-do header; the chaser is on the task itself)
+        await pg.click(f'.mnode.task[data-tid="{wid}"] .mtxt b'); await pg.wait_for_selector('#drawer [data-act="rc-draft"]')
         await pg.click('#drawer [data-act="rc-draft"]'); await pg.wait_for_timeout(900)
         body = await ev("document.getElementById('rc-body').value"); print('CHASER', body[:80].replace('\n', ' '))
         assert body.strip()

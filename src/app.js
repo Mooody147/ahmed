@@ -472,7 +472,7 @@ function setStatus(id, status) {
 /* ---------- TO-DO view (grouped; categories assigned by Claude) ---------- */
 const TODO_GROUPS = [['project', 'Project'], ['topic', 'Topic'], ['discipline', 'Category'], ['deadline', 'Deadline'], ['priority', 'Priority']];
 const TODO_LS = 'action-register-todo-v2';
-(() => { try { const v = JSON.parse(localStorage.getItem(TODO_LS) || '{}'); if (v.group) UI.todoGroup = v.group; UI.todoWaiting = !!v.waiting; if (v.mode) UI.todoMode = v.mode; } catch {} })();
+(() => { try { const v = JSON.parse(localStorage.getItem(TODO_LS) || '{}'); if (v.group) UI.todoGroup = v.group; UI.todoWaiting = !!v.waiting; if (v.mode && v.mode !== 'people') UI.todoMode = v.mode; } catch {} })();
 if (UI.todoGroup === 'workType') UI.todoGroup = 'topic';
 UI.subOpen = new Set(); UI.todoFilter = 'all'; UI.todoMode = UI.todoMode || 'map';
 UI.todoGroup = UI.todoGroup || 'project'; UI.collapsed = new Set(); UI.todoShowDone = false;
@@ -729,13 +729,14 @@ function viewTodo() {
   const tiles = [['all', '📋', 'Open tasks', ''], ['overdue', '🔥', 'Overdue', 'over'], ['today', '⏰', 'Due today', 'today'], ['week', '📆', 'Next 7 days', ''], ['waiting', '⏳', 'Waiting on others', 'wait']];
   const f = UI.todoFilter || 'all';
   return `<div class="wrap">
-    ${todayStripHTML()}
+    <h1 class="sr">To-do</h1>
+    ${UI.updateReady ? callout('ok', `<div class="row"><span>Version ${esc(UI.updateReady)} has been downloaded.</span><span class="spacer"></span><button class="btn sm primary" data-act="update-install">Restart to update</button></div>`) : ''}
     ${!St.settings.setupDone ? setupCardHTML() : ''}
     ${uncategorised && St.sample ? callout('info', `<div class="row"><span>${CAT.running ? '🧠 Claude is sorting your tasks into projects and categories…' : `🏷️ ${uncategorised} task${uncategorised > 1 ? 's are' : ' is'} not categorised yet.`}</span><span class="spacer"></span>${CAT.running ? '<div class="progress indet" style="width:90px"><i></i></div>' : `<button class="btn sm primary" data-act="ai-categorize">Categorise with Claude</button>`}</div>`) : ''}
     ${CAT.error && !CAT.running ? callout('warn', `<p>${esc(CAT.error)}</p>`) : ''}
-    ${typeof dupCallout === 'function' ? dupCallout() : ''}${typeof headersCallout === 'function' ? headersCallout() : ''}${typeof traceCallout === 'function' ? traceCallout() : ''}${typeof chaseCallout === 'function' ? chaseCallout() : ''}
+    ${typeof dupCallout === 'function' ? dupCallout() : ''}${typeof headersCallout === 'function' ? headersCallout() : ''}${typeof traceCallout === 'function' ? traceCallout() : ''}
     ${St.tasks.size && TODO_VIEWS[UI.todoMode] ? TODO_VIEWS[UI.todoMode]() : ''}
-    ${St.tasks.size && UI.todoMode !== 'map' && !TODO_VIEWS[UI.todoMode] ? `<div class="mode-bar">${modeSegHTML()}</div>` : ''}
+    ${St.tasks.size && UI.todoMode !== 'map' && !TODO_VIEWS[UI.todoMode] ? `<div class="mode-bar">${modeSegHTML()}<span class="spacer"></span><button class="btn sm primary" data-act="new-task">${I.plus} Task</button></div>` : ''}
     ${St.tasks.size && UI.todoMode === 'map' ? viewMap() : ''}
     ${St.tasks.size && UI.todoMode !== 'map' && !TODO_VIEWS[UI.todoMode] ? `<div class="tiles" role="toolbar" aria-label="Filter">${tiles.map(([k, e, l, cls]) => `<button class="tile ${cls} ${c[k] ? '' : 'zero'}" data-act="todo-filter" data-filter="${k}" aria-pressed="${f === k}"><span class="tile-e">${e}</span><span class="tile-n num">${c[k]}</span><span class="tile-l">${l}</span></button>`).join('')}</div>
     <div class="todo-bar">
@@ -774,7 +775,7 @@ function toggleSub(id, sid) {
 // The user can override it: St.layout.off moves a node and its whole branch, St.layout.size widens it.
 // Free board elements (stickies, text, shapes, frames, arrows, connectors, ink) live in St.board.
 UI.map = { x: 30, y: 30, k: 0.85, fitted: false }; UI.mapCollapsed = new Set(); UI.mapItems = new Set(); UI.mapSel = null;
-UI.mapShowDone = true; UI.mapFocus = 'all'; UI.mapQ = ''; UI.mapActivity = true;
+UI.mapShowDone = true; UI.mapFocus = 'all'; UI.mapQ = ''; UI.mapActivity = false;
 UI.tool = 'select'; UI.cvColor = 'ink'; UI.cvWidth = 3; UI.cvSel = new Set(); UI.cvUndo = []; UI.cvRedo = []; UI.cvTemp = null; UI.cvDrop = null;
 UI.mapFull = false; UI.mapAsOf = ''; UI.mapDay = '';
 const MX = { root: 0, project: 250, topic: 540, task: 830, thread: 830, item: 1190 };
@@ -1386,7 +1387,7 @@ function viewMap() {
   const sugN = [...St.tasks.values()].filter(t => t.placement && t.placement.status === 'suggested').length;
   const act = UI.mapActivity ? activityList() : [];
   const offN = Object.keys(St.layout[offKey()] || {}).length + Object.keys(St.layout.size || {}).length;
-  return `<div class="map-wrap ${UI.mapFull ? 'full' : ''} ${UI.present ? 'presenting' : ''}">
+  return `<div class="map-wrap ${UI.mapFull ? 'full' : ''}">
     ${sugN ? callout('info', `<div class="row"><span>❓ Claude wasn’t sure where ${sugN} task${sugN > 1 ? 's belong' : ' belongs'}. Pick the right place from its suggestions.</span><span class="spacer"></span><button class="btn sm primary" data-act="map-next-suggest">Review</button></div>`) : ''}
     ${UI.mapRefresh && (UI.mapRefresh.pending || UI.mapRefresh.binned) ? callout('info', `<div class="row"><span>⟳ Canvas refreshed.${UI.mapRefresh.pending ? ` <b>${UI.mapRefresh.pending}</b> analysed email${UI.mapRefresh.pending > 1 ? 's have' : ' has'} tasks not added yet.` : ''}${UI.mapRefresh.binned ? ` <b>${UI.mapRefresh.binned}</b> task${UI.mapRefresh.binned > 1 ? 's' : ''} from emails ${UI.mapRefresh.binned > 1 ? 'were' : 'was'} deleted in the last 30 days.` : ''}</span><span class="spacer"></span>${UI.mapRefresh.pending ? '<button class="btn sm primary" data-act="map-add-pending">Add their tasks</button>' : ''}${UI.mapRefresh.binned ? '<button class="btn sm" data-act="map-restore-binned">Put them back</button>' : ''}<button class="btn sm ghost" data-act="map-refresh-close">✕</button></div>`) : ''}
     ${UI.mapAsOf ? callout('info', `<div class="row"><span>🕒 Showing the map as it was on <b>${esc(fmtDate(UI.mapAsOf, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }))}</b>: later tasks are hidden and work finished later shows as open. Projects and topics are shown as they are now.</span><span class="spacer"></span><button class="btn sm" data-act="map-now">Back to now</button></div>`) : ''}
@@ -1396,13 +1397,12 @@ function viewMap() {
         <label class="search todo-search">${I.search}<span class="sr">Find on map</span><input class="input" id="map-q" type="search" placeholder="Find a task, item or note…" value="${esc(UI.mapQ)}" data-inp="mapQ"></label>
         ${hits ? `<span class="small muted mt-hits">${hits.size} found</span>` : ''}
         <span class="mt-spacer"></span>
+        ${St.mode !== 'viewer' ? `<button class="btn sm primary mt-new" data-act="new-task" title="New task">${I.plus}<span class="lbl">Task</span></button>` : ''}
         ${St.mode !== 'viewer' ? (() => { const n = [...St.tasks.values()].filter(needsMe).length; return `<button class="btn sm mt-mine ${myFocus() ? 'on' : ''}" data-act="map-mine" aria-pressed="${myFocus()}" title="Highlight the tasks that need action by you and fade the rest (Shift+M)">🙋<span class="lbl">My actions</span> <b class="mt-count">${n}</b></button>`; })() : ''}
-        <button class="btn sm mt-dir" data-act="map-dir" data-dir="${mapDir() === 'v' ? 'h' : 'v'}" title="${mapDir() === 'v' ? 'Switch to a left-to-right map' : 'Switch to a top-to-bottom map'} (Shift+V)" aria-label="${mapDir() === 'v' ? 'Switch to horizontal map' : 'Switch to vertical map'}">${mapDir() === 'v' ? '↔' : '↕'}<span class="lbl">${mapDir() === 'v' ? 'Horizontal' : 'Vertical'}</span></button>
         <div class="mt-group">
           <button class="btn sm" data-act="map-rearrange" title="Put every box back in tidy order (Shift+R)">⊞<span class="lbl">Rearrange</span></button>
           <button class="btn sm" data-act="map-refresh" title="Show every task and email again">⟳<span class="lbl">Refresh</span></button>
         </div>
-        <div class="seg mt-seg"><button data-act="cv-undo" title="Undo (Ctrl+Z)" aria-label="Undo" ${UI.cvUndo.length ? '' : 'disabled'}>↶</button><button data-act="cv-redo" title="Redo (Ctrl+Shift+Z)" aria-label="Redo" ${UI.cvRedo.length ? '' : 'disabled'}>↷</button></div>
         <div class="seg zoom mt-seg"><button data-act="map-zoom" data-z="-1" aria-label="Zoom out" title="Zoom out">−</button><button data-act="map-fit" aria-label="Fit to screen" title="Fit to screen">Fit</button><button data-act="map-zoom" data-z="1" aria-label="Zoom in" title="Zoom in">+</button></div>
         ${DESKTOP && !SUBWIN ? '<button class="btn sm" data-act="pop-out" data-view="todo" title="Open the canvas in another window (second monitor)">⧉</button>' : ''}
         <button class="btn sm" data-act="map-full" aria-pressed="${UI.mapFull}" title="${UI.mapFull ? 'Exit full screen (Esc)' : 'Full screen (Shift+F)'}" aria-label="Full screen">${UI.mapFull ? '⤡' : '⤢'}</button>
@@ -1427,7 +1427,6 @@ function viewMap() {
           <div class="mt-sec"><div class="label">Export</div>
             <button class="btn sm ghost" data-act="map-export" data-f="png">🖼 Image (PNG)</button>
             <button class="btn sm ghost" data-act="map-export" data-f="pdf">📄 PDF</button>
-            <button class="btn sm ghost" data-act="map-present">🖥 Present project by project</button>
             ${DESKTOP ? '<button class="btn sm ghost" data-act="map-share">🔗 Share link (always up to date)…</button>' : ''}</div>
         </div></details>
       </div>
@@ -1443,7 +1442,6 @@ function viewMap() {
         ${toolsHTML()}
         <div id="cv-ctx-slot">${ctxHTML()}</div>
         ${UI.mapMini !== false && (M.projects.length || St.board.size) ? '<canvas class="minimap" id="minimap" width="200" height="130" aria-label="Minimap — click to move there"></canvas>' : ''}
-        ${UI.present ? presentBarHTML() : ''}
       </div>
       ${UI.mapActivity ? `<aside class="map-activity"><div class="label" style="padding:12px 14px 6px">Activity${UI.mapDay ? ' · ' + esc(fmtDate(UI.mapDay)) : ''}</div>${act.length ? `<ol>${act.map(e => `<li><button data-act="map-goto" data-id="${esc(e.t.id)}"><span class="ae">${evEmoji(e.text)}</span><span class="atxt"><b>${esc(e.t.ref || '')}</b> <span dir="auto">${esc(E.clip(e.t.title, 60))}</span><small dir="auto">${esc(e.text)}</small></span><time>${esc(fmtDate(e.at.slice(0, 10)))}</time></button></li>`).join('')}</ol>` : '<p class="small muted" style="padding:0 14px">No activity yet.</p>'}</aside>` : ''}
     </div>
@@ -1520,8 +1518,16 @@ function centerOnTask(id) {
     vp.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   });
 }
+// the canvas takes all the height left on the screen below its toolbar (at least 480 px)
+function fitMapHeight() {
+  const vp = $('#map-vp'); if (!vp) return;
+  const top = vp.getBoundingClientRect().top + window.scrollY, h = window.innerHeight - (top < window.innerHeight * 0.7 ? top : 120) - 16;
+  document.documentElement.style.setProperty('--vp-fit', Math.max(480, Math.round(h)) + 'px');
+}
+window.addEventListener('resize', () => { if (UI.view === 'todo' && UI.todoMode === 'map') fitMapHeight(); });
 function afterMapRender() {
   const vp = $('#map-vp'); if (!vp) return;
+  const h0 = vp.clientHeight; fitMapHeight(); if (Math.abs(vp.clientHeight - h0) > 40) UI.map.fitted = false;
   if (!UI.map.fitted) requestAnimationFrame(() => mapFit(true));
   vp.addEventListener('wheel', e => {
     e.preventDefault();

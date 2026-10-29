@@ -25,7 +25,7 @@ function phSet(v) { try { localStorage.setItem(PH_LS, v); } catch {} const on = 
   const rail = document.querySelector('.rail'); if (!rail || document.getElementById('phone-btn')) return;
   const b = document.createElement('button'); b.id = 'phone-btn'; b.className = 'nav phone-btn'; b.dataset.act = 'phone-toggle';
   b.innerHTML = '<span class="site-ic" aria-hidden="true">📱</span><span class="site-lbl">Phone</span>';
-  rail.insertBefore(b, document.getElementById('site-btn') || rail.querySelector('.rail-foot'));
+  rail.insertBefore(b, rail.querySelector('.rail-foot'));
   if (window.matchMedia) window.matchMedia('(max-width: 640px)').addEventListener('change', () => { if (phPref() === 'auto') phSet('auto'); });
 })();
 VIEWS.push('phone');
@@ -155,7 +155,7 @@ function phMoreHTML() {
   const it = (view, label, extra = '') => `<button class="ph-row" data-act="ph-nav" data-view="${view}"><b>${label}</b>${extra}${svg('<path d="m9 6 6 6-6 6"/>', 18)}</button>`;
   return `<h3>More</h3>
     <div class="ph-rows">${it('review', 'Review', rc ? `<i class="ph-pill-n">${rc}</i>` : '')}${it('emails', 'Emails')}${it('import', 'Add emails')}${it('setup', 'Setup')}</div>
-    <div class="ph-rows"><button class="ph-row" data-act="ph-site"><b>Site mode</b><small>${document.documentElement.classList.contains('site-mode') ? 'On' : 'Off'}</small></button>
+    <div class="ph-rows"><button class="ph-row" data-act="ph-site"><b>Big text for site</b><small>${document.documentElement.classList.contains('site-mode') ? 'On' : 'Off'}</small></button>
     <div class="ph-row ph-row-seg"><b>Phone layout</b><div class="seg">${[['auto', 'Auto'], ['on', 'On'], ['off', 'Off']].map(([v, l]) => `<button data-act="ph-mode" data-v="${v}" aria-pressed="${pref === v}">${l}</button>`).join('')}</div></div></div>`;
 }
 Object.assign(ACT, {
@@ -223,5 +223,6 @@ document.addEventListener('pointerup', swEnd); document.addEventListener('pointe
 
 SETUP_EXTRA.push(() => `<section class="card pad" data-sec="Phone mode" style="display:grid;gap:8px"><div class="section-title"><h2>📱 Phone mode</h2></div>
   <p class="small muted" style="margin:0">A layout made for a phone: Today with big cards you tick or swipe, your email threads, quick add, and a bottom bar in thumb reach. This device only.</p>
-  <div class="seg">${[['auto', 'Auto (small screens)'], ['on', 'Always'], ['off', 'Never']].map(([v, l]) => `<button data-act="ph-mode" data-v="${v}" aria-pressed="${phPref() === v}">${l}</button>`).join('')}</div></section>`);
+  <div class="seg">${[['auto', 'Auto (small screens)'], ['on', 'Always'], ['off', 'Never']].map(([v, l]) => `<button data-act="ph-mode" data-v="${v}" aria-pressed="${phPref() === v}">${l}</button>`).join('')}</div>
+  <label class="check"><input type="checkbox" data-chg="site-mode" ${typeof siteOn === 'function' && siteOn() ? 'checked' : ''}>Big text for site — black on white for sunlight, thick lines and large buttons</label></section>`);
 phApply();

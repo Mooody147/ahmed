@@ -198,15 +198,7 @@ async def main():
         await pg.wait_for_function("(window.__saves||[]).some(s=>s.filename.endsWith('.png'))", timeout=10000)
         sv = await ev("(window.__saves||[]).map(s=>s.filename)"); print('EXPORT saves', sv); assert any(n.endswith('.png') for n in sv)
         svgok = await ev("(()=>{const x=window.__AR.mapSVG(); return x.svg.startsWith('<svg') && x.svg.includes('My work') && x.w>300})()"); assert svgok
-        # presentation
-        await pg.click('details[data-menu="options"] > summary'); await pg.click('[data-act="map-present"]'); await pg.wait_for_timeout(700)
-        pres = await ev("document.querySelector('.present-bar') && document.querySelector('.present-bar').textContent"); print('PRESENT', ' '.join((pres or '').split()))
-        assert pres and '1 /' in pres
-        await pg.screenshot(path=SHOTS + '/87-canvas-present.png')
-        await pg.keyboard.press('ArrowRight'); await pg.wait_for_timeout(500)
-        pres2 = await ev("document.querySelector('.present-bar').textContent"); assert '2 /' in pres2 or pres2 == pres
-        await pg.keyboard.press('Escape'); await pg.wait_for_timeout(400)
-        assert not await ev("!!document.querySelector('.present-bar')")
+        assert not await ev("!!document.querySelector('[data-act=\"map-present\"]')"), 'presenting was removed'
 
         # backup carries canvas and daily data
         await pg.click('.rail [data-nav="setup"]'); await pg.wait_for_timeout(200); await pg.click('[data-act="export-json"]'); await pg.wait_for_timeout(300)
@@ -222,14 +214,14 @@ async def main():
         tid = await ev("document.querySelector('.mnode.task').dataset.tid")
         await pg.hover(f'.mnode.task[data-tid="{tid}"]'); await pg.click(f'.mnode.task[data-tid="{tid}"] [data-map="del"]'); await pg.wait_for_timeout(300)
         assert await ntasks() == n0 - 1 and not await ev(f"window.__AR.St.tasks.has({tid!r})"), 'task deleted from the canvas'
-        await pg.click('.map-tools [data-act="cv-undo"]'); await pg.wait_for_timeout(300)
+        await pg.click('.cv-sub [data-act="cv-undo"]'); await pg.wait_for_timeout(300)
         assert await ev(f"window.__AR.St.tasks.has({tid!r})") and await ntasks() == n0, 'undo brings it back'
         # a whole project box
         pk = await ev("document.querySelector('.mnode.project:not([data-pk=\"p:~\"])').dataset.pk")
         inproj = await ev(f"[...window.__AR.St.tasks.values()].filter(t => 'p:' + window.__AR.E.normMatch((t.project||'').trim()) === {pk!r}).length")
         await pg.hover(f'.mnode.project[data-pk="{pk}"]'); await pg.click(f'.mnode.project[data-pk="{pk}"] [data-map="del"]'); await pg.wait_for_timeout(300)
         assert await ntasks() == n0 - inproj and inproj >= 1, ('project deleted with its tasks', inproj)
-        await pg.click('.map-tools [data-act="cv-undo"]'); await pg.wait_for_timeout(300); assert await ntasks() == n0
+        await pg.click('.cv-sub [data-act="cv-undo"]'); await pg.wait_for_timeout(300); assert await ntasks() == n0
         # tick done is undoable
         st0 = await ev(f"window.__AR.St.tasks.get({tid!r}).status")
         await pg.click(f'.mnode.task[data-tid="{tid}"] [data-map="tick"]'); await pg.wait_for_timeout(300)

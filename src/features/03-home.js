@@ -51,7 +51,7 @@ async function makeBrief(manual) {
     colPut('prefs', { id: briefKey(), ...localBrief() });
   } finally { BRIEF.running = false; render(); }
 }
-HOOKS.ready.push(() => { if (autoPrefs().briefing !== false && !todayBrief() && St.tasks.size) setTimeout(() => makeBrief(false), 1500); });
+// (the To-do page no longer shows the morning briefing, so it is not written in the background)
 function todayStripHTML() {
   const n = todaysNumbers(), all = openMine();
   const waiting = all.filter(t => t.ownership === 'waiting' || t.status === 'waiting').length;

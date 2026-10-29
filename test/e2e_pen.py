@@ -50,12 +50,13 @@ async def main():
         assert await ev("window.__AR.St.settings.ui.mapMine") is False and not await ev("!!document.querySelector('.mnode.dim')")
         await pg.click('[data-act="map-mine"]'); await pg.wait_for_timeout(300)
 
-        # 1. direction: one tap in the toolbar flips it, Shift+V flips it back
+        # 1. direction: More › Direction flips it, Shift+V flips it back
         pos = "(() => { const L = window.__AR.UI.mapLayout; const by = t => [...L.byId.values()].filter(n => n.type === t); const r = by('root')[0], ps = by('project'), ts = by('task'); return { r: [r.x, r.y], p: ps.map(n => [n.x, n.y]), t: ts.map(n => [n.x, n.y]) }; })()"
         h = await ev(pos)
-        await pg.click('.map-tools > [data-act="map-dir"]'); await pg.wait_for_timeout(700)
+        await pg.click('[data-menu="options"] summary'); await pg.click('[data-act="map-dir"][data-dir="v"]'); await pg.wait_for_timeout(700)
         assert await ev("window.__AR.St.settings.ui.mapDir") == 'v'
-        assert await ev("document.querySelector('.map-tools > [data-act=\"map-dir\"]').dataset.dir") == 'h', 'button now offers horizontal'
+        assert not await ev("!!document.querySelector('.map-tools > [data-act=\"map-dir\"]')"), 'direction lives in More only'
+        await pg.keyboard.press('Escape')
         await pg.focus('#map-vp'); await pg.keyboard.press('Shift+V'); await pg.wait_for_timeout(500); assert await ev("window.__AR.St.settings.ui.mapDir") == 'h'
         await pg.keyboard.press('Shift+V'); await pg.wait_for_timeout(700); assert await ev("window.__AR.St.settings.ui.mapDir") == 'v'
         assert await ev("document.querySelectorAll('.mnode.task.dim').length") == len(others), 'highlight kept after flipping'
@@ -174,7 +175,7 @@ async def main():
         await pen('mouseReleased', x0 + 70, y0 + 10, 0, 'left', 0); await pg.wait_for_timeout(300)
         assert await ev("[...window.__AR.St.board.values()].filter(e => e.type === 'stroke').length") == s0 + 1, 'no stroke when the setting is off'
         # back to left to right
-        await pg.click('.map-tools > [data-act="map-dir"]'); await pg.wait_for_timeout(500)
+        await pg.click('[data-menu="options"] summary'); await pg.click('[data-act="map-dir"][data-dir="h"]'); await pg.wait_for_timeout(500)
         assert await ev("window.__AR.St.settings.ui.mapDir") == 'h'
         await pg.screenshot(path=SHOTS + '/pen-2-horizontal.png')
         print('ERRORS', errors); assert not errors

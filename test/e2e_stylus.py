@@ -86,10 +86,15 @@ async def main():
 
         # 6. a touch while the pen hovers just above the screen is a palm
         await cdp.send('Input.dispatchMouseEvent', {'type': 'mouseMoved', 'x': ex + 50, 'y': ey, 'button': 'none', 'buttons': 0, 'pointerType': 'pen', 'force': 0})
-        await touch(seg((ex + 300, ey + 100), (ex + 400, ey + 160)))
+        # an empty spot of canvas (no box, note or toolbar under the finger)
+        fx, fy = await ev("""() => { const r = document.getElementById('map-vp').getBoundingClientRect();
+          for (let y = r.top + 80; y < Math.min(r.bottom, innerHeight) - 120; y += 30) for (let x = r.left + 80; x < r.right - 140; x += 30) {
+            const ok = [[0, 0], [100, 60], [50, 30]].every(([dx, dy]) => { const e = document.elementFromPoint(x + dx, y + dy); return e && e.closest('#map-vp') && !e.closest('.mnode,[data-el],.cv-tools,.cv-sub,.cv-ctx,.cv-panel,.board-bar,.minimap,button'); });
+            if (ok) return [x, y]; } return [r.left + 300, r.top + 300]; }""")
+        await touch(seg((fx, fy), (fx + 100, fy + 60)))
         assert await ev(CAM) == cam1, 'palm while the pen hovers is ignored'
         await pg.wait_for_timeout(700)
-        await touch(seg((ex + 300, ey + 100), (ex + 400, ey + 160)))
+        await touch(seg((fx, fy), (fx + 100, fy + 60)))
         assert await ev(CAM) != cam1, 'a finger later still moves the canvas'
 
         # 7. a stroke the browser cancels part way is kept

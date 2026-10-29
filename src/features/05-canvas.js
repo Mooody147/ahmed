@@ -1,4 +1,4 @@
-/* ---------- canvas extras: project bands, minimap, menus, export, presentation ---------- */
+/* ---------- canvas extras: project bands, minimap, menus, export ---------- */
 // Project bands: a soft coloured area behind each project's whole branch.
 function projectBands(M) {
   const out = [];
@@ -171,50 +171,17 @@ async function exportMap(fmt) {
   catch { offerFile(name + '.svg', x.svg, 'image/svg+xml'); }
 }
 
-/* --- presentation: full screen, one project at a time --- */
-function presentBarHTML() {
-  const P = (UI.mapLayout || { projects: [] }).projects, i = UI.present ? UI.present.i : 0, cur = P[i];
-  return `<div class="present-bar" role="toolbar" aria-label="Presentation">
-    <button class="btn sm ghost" data-act="present-step" data-d="-1" ${i ? '' : 'disabled'} aria-label="Previous project">◀</button>
-    <span class="small"><b dir="auto">${esc(cur ? cur.label : 'Overview')}</b> <span class="muted">${P.length ? i + 1 : 0} / ${P.length}</span>${cur ? ` · ${cur.n - cur.done} open · ${cur.done} done` : ''}</span>
-    <button class="btn sm ghost" data-act="present-step" data-d="1" ${i < P.length - 1 ? '' : 'disabled'} aria-label="Next project">▶</button>
-    <button class="btn sm" data-act="present-exit">Exit</button></div>`;
-}
+/* --- centre the canvas on a box --- */
 function fitBox(b) {
   const vp = $('#map-vp'); if (!vp || !b) return;
   // with the zoom locked the box is only centred
   const W = vp.clientWidth, H = vp.clientHeight, k = zoomLocked() ? UI.map.k : Math.max(0.2, Math.min(1.4, (W - 120) / b.w, (H - 140) / b.h));
   UI.map.k = k; UI.map.x = W / 2 - (b.x + b.w / 2) * k; UI.map.y = (H - 40) / 2 - (b.y + b.h / 2) * k; UI.map.fitted = true; applyCam(true);
 }
-function presentGo(i) {
-  const M = UI.mapLayout; if (!M || !UI.present) return;
-  UI.present.i = Math.max(0, Math.min(M.projects.length - 1, i));
-  const bar = $('.present-bar'); if (bar) bar.outerHTML = deco(presentBarHTML());
-  const P = M.projects[UI.present.i]; if (!P) return;
-  if (UI.mapCollapsed.has(P.id)) { UI.mapCollapsed.delete(P.id); renderWorld(); }
-  fitBox(projectBands(UI.mapLayout).find(b => b.id === P.id));
-}
-function presentStart() {
-  if (!(UI.mapLayout && UI.mapLayout.projects.length)) { toast('Add some tasks first — there are no projects to present.'); return; }
-  UI.present = { i: 0 }; UI.mapFocus = 'all'; UI.tool = 'select';
-  if (!UI.mapFull) toggleFull(true); else render();
-  requestAnimationFrame(() => requestAnimationFrame(() => presentGo(0)));
-}
-function presentStop() { UI.present = null; if (UI.mapFull) toggleFull(false); else render(); }
 Object.assign(ACT, {
   'map-hist-clear': () => { UI.mapDay = ''; UI.mapAsOf = ''; UI.map.fitted = false; render(); },
   'map-export': el => { closeMenus(); exportMap(el.dataset.f); },
-  'map-present': () => { closeMenus(); presentStart(); },
-  'present-step': el => presentGo((UI.present ? UI.present.i : 0) + +el.dataset.d),
-  'present-exit': () => presentStop(),
 });
-document.addEventListener('keydown', e => {
-  if (!UI.present || UI.view !== 'todo' || UI.todoMode !== 'map') return;
-  if (e.key === 'ArrowRight' || e.key === 'PageDown') { e.preventDefault(); presentGo(UI.present.i + 1); }
-  else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); presentGo(UI.present.i - 1); }
-  else if (e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); presentStop(); }
-}, true);
-document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && UI.present) { UI.present = null; render(); } });
 // any action chosen from a menu closes it
 document.addEventListener('click', e => { if (e.target.closest && e.target.closest('.menu-pop [data-act]')) setTimeout(closeMenus, 0); });
 // a menu that was open stays open when the page is drawn again

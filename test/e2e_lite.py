@@ -38,7 +38,7 @@ async def main():
         tid = await ev("document.querySelector('.mnode.task').dataset.tid")
         await pg.hover(f'.mnode.task[data-tid="{tid}"]'); await pg.click(f'.mnode.task[data-tid="{tid}"] [data-map="del"]'); await pg.wait_for_timeout(300)
         assert await ev("window.__AR.St.tasks.size") == n0 - 1
-        await pg.click('.map-tools [data-act="cv-undo"]'); await pg.wait_for_timeout(300); assert await ev("window.__AR.St.tasks.size") == n0
+        await pg.click('.cv-sub [data-act="cv-undo"]'); await pg.wait_for_timeout(300); assert await ev("window.__AR.St.tasks.size") == n0
         await pg.click('[data-act="map-refresh"]'); await pg.wait_for_timeout(500)
         # move a box by hand, then Rearrange puts it back (and Undo restores the move)
         nb = await (await pg.query_selector('.mnode.root')).bounding_box()
@@ -46,7 +46,7 @@ async def main():
         moved = await ev("Object.keys(window.__AR.St.layout.off || {}).length"); print('MOVED boxes', moved); assert moved >= 1
         await pg.click('[data-act="map-rearrange"]'); await pg.wait_for_timeout(500)
         assert await ev("Object.keys(window.__AR.St.layout.off || {}).length") == 0, 'Rearrange puts every box back'
-        await pg.click('.map-tools [data-act="cv-undo"]'); await pg.wait_for_timeout(300)
+        await pg.click('.cv-sub [data-act="cv-undo"]'); await pg.wait_for_timeout(300)
         assert await ev("Object.keys(window.__AR.St.layout.off || {}).length") == moved, 'Undo brings the move back'
         await pg.click('[data-act="map-rearrange"]'); await pg.wait_for_timeout(400)
         await pg.screenshot(path=SHOTS + '/lite-1-canvas.png')

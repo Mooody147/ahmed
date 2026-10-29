@@ -47,7 +47,7 @@ async def main():
         sel = await ev("[...window.__AR.UI.cvSel]"); print('SELECTED', sel); assert sel == [ids[0]], 'a stylus stroke can be selected'
         await key('Delete'); await settle()
         left = await ev(STROKES); print('AFTER DELETE', len(left)); assert ids[0] not in left and len(left) == 2, 'deleted stroke stays deleted'
-        await pg.click('.map-tools [data-act="cv-undo"]'); await settle()
+        await pg.click('.cv-sub [data-act="cv-undo"]'); await settle()
         assert await ev(STROKES) == ids, 'Undo brings it back and it stays back'
 
         # 2. one quick eraser swipe (two moves) across all three strokes takes all of them

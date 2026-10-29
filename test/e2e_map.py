@@ -85,7 +85,9 @@ async def main():
         print('TYPES', sorted(set(await pg.eval_on_selector_all('.mnode','e=>e.map(x=>x.dataset.type||"root")'))))
         await pg.click('[data-act="map-fit"]'); await pg.wait_for_timeout(500)
         await pg.screenshot(path=SHOTS+'/76-map-fulltext.png')
-        # activity goto
+        # activity goto (the panel is off until turned on in More › Show)
+        assert not await pg.evaluate("!!document.querySelector('.map-activity')")
+        await pg.evaluate("document.getElementById('map-act').click()"); await pg.wait_for_timeout(400)
         await pg.click('.map-activity li button >> nth=3'); await pg.wait_for_timeout(500)
         print('SEL', await pg.evaluate("window.__AR.UI.mapSel"))
         # search

@@ -53,6 +53,14 @@ async function storeImage(c) {
   return { src: url };
 }
 // a free spot of w×h for new things, as near the middle of the screen as possible without covering anything
+// a box just placed is brought into view (the zoom stays) when part of it is outside the visible canvas
+function revealBoxes(list) {
+  const vp = $('#map-vp'); if (!vp || !list.length) return;
+  const k = UI.map.k, x0 = Math.min(...list.map(b => b.x)), y0 = Math.min(...list.map(b => b.y)), x1 = Math.max(...list.map(b => b.x + b.w)), y1 = Math.max(...list.map(b => b.y + b.h));
+  const sx0 = x0 * k + UI.map.x, sy0 = y0 * k + UI.map.y, sx1 = x1 * k + UI.map.x, sy1 = y1 * k + UI.map.y, W = vp.clientWidth, H = vp.clientHeight;
+  if (sx0 >= 60 && sy0 >= 50 && sx1 <= W - 20 && sy1 <= H - 60) return;
+  UI.map.x = W / 2 - (x0 + x1) / 2 * k; UI.map.y = H / 2 - (y0 + y1) / 2 * k; applyCam(true);
+}
 function freeSpot(w, h, near) {
   const vp = $('#map-vp'), k = UI.map.k;
   const c = near || (vp ? { x: (vp.clientWidth / 2 - UI.map.x) / k - w / 2, y: (vp.clientHeight / 2 - UI.map.y) / k - h / 2 } : { x: 100, y: 100 });
@@ -83,6 +91,7 @@ async function addImages(files, at) {
   }
   if (!n) return;
   cvApply(ch); UI.cvSel = new Set(Object.keys(ch.els)); UI.tool = 'select'; render();
+  revealBoxes(Object.values(ch.els).map(elBox));
   toast(`${n} image${n > 1 ? 's' : ''} placed — mark up with the pen, then “Read my markups”.`);
 }
 function pickImages(at) {

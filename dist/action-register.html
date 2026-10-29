@@ -470,10 +470,10 @@ body { background-color: var(--bg); background-image: linear-gradient(var(--grid
 .map-body { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
 .map-body.with-act { grid-template-columns: minmax(0, 1fr) 300px; }
 @media (max-width: 1100px) { .map-body.with-act { grid-template-columns: minmax(0, 1fr); } }
-.map-viewport { position: relative; height: max(520px, calc(100vh - 300px)); overflow: hidden; border-radius: 18px; border: 1px solid var(--line); background:
+.map-viewport { position: relative; height: var(--vp-fit, max(520px, calc(100vh - 300px))); overflow: hidden; border-radius: 18px; border: 1px solid var(--line); background:
   radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--ink-3) 28%, transparent) 1px, transparent 0) 0 0 / 22px 22px, linear-gradient(180deg, var(--surface), var(--bg)); box-shadow: inset 0 2px 10px rgba(0,0,0,.05), var(--elev-2); touch-action: none; cursor: grab; user-select: none; -webkit-user-select: none; }
 .map-viewport:active { cursor: grabbing; }
-@media (max-width: 860px) { .map-viewport { height: 68vh; } }
+@media (max-width: 860px) { .map-viewport { height: var(--vp-fit, 68vh); } }
 .map-world { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
 .map-world.moving { will-change: transform; }
 .map-world.anim { transition: transform .35s cubic-bezier(.2,.7,.2,1); }
@@ -1596,6 +1596,9 @@ html.phone-mode.ph-canvas .map-viewport { height: calc(100dvh - 230px - env(safe
 html.phone-mode .toasts { left: 12px !important; right: 12px !important; width: auto !important; transform: none !important; }
 html.phone-mode .toast { border-radius: 12px; padding: 12px 14px; }
 .ph-drawer .th-next { display: none; }
+
+/* the canvas page uses the whole width of the window */
+#main .wrap:has(> .map-wrap) { max-width: none; padding-inline: max(14px, env(safe-area-inset-left, 0px)) max(14px, env(safe-area-inset-right, 0px)); }
 
 </style>
 <div class="titlestrip" id="titlestrip"><span class="ts-brand"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c3.3 4 6 7.2 6 10.4a6 6 0 0 1-12 0C6 10.2 8.7 7 12 3z"/><path d="m9.3 13.6 1.9 1.9 3.6-4.1"/></svg> Action Register</span><button class="ts-search" data-act="palette" title="Search and commands (Ctrl+K)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg><span>Search or type a command</span><kbd>Ctrl K</kbd></button><span class="ts-space"></span></div>
@@ -4182,7 +4185,7 @@ function setStatus(id, status) {
 /* ---------- TO-DO view (grouped; categories assigned by Claude) ---------- */
 const TODO_GROUPS = [['project', 'Project'], ['topic', 'Topic'], ['discipline', 'Category'], ['deadline', 'Deadline'], ['priority', 'Priority']];
 const TODO_LS = 'action-register-todo-v2';
-(() => { try { const v = JSON.parse(localStorage.getItem(TODO_LS) || '{}'); if (v.group) UI.todoGroup = v.group; UI.todoWaiting = !!v.waiting; if (v.mode) UI.todoMode = v.mode; } catch {} })();
+(() => { try { const v = JSON.parse(localStorage.getItem(TODO_LS) || '{}'); if (v.group) UI.todoGroup = v.group; UI.todoWaiting = !!v.waiting; if (v.mode && v.mode !== 'people') UI.todoMode = v.mode; } catch {} })();
 if (UI.todoGroup === 'workType') UI.todoGroup = 'topic';
 UI.subOpen = new Set(); UI.todoFilter = 'all'; UI.todoMode = UI.todoMode || 'map';
 UI.todoGroup = UI.todoGroup || 'project'; UI.collapsed = new Set(); UI.todoShowDone = false;
@@ -4439,13 +4442,14 @@ function viewTodo() {
   const tiles = [['all', '📋', 'Open tasks', ''], ['overdue', '🔥', 'Overdue', 'over'], ['today', '⏰', 'Due today', 'today'], ['week', '📆', 'Next 7 days', ''], ['waiting', '⏳', 'Waiting on others', 'wait']];
   const f = UI.todoFilter || 'all';
   return `<div class="wrap">
-    ${todayStripHTML()}
+    <h1 class="sr">To-do</h1>
+    ${UI.updateReady ? callout('ok', `<div class="row"><span>Version ${esc(UI.updateReady)} has been downloaded.</span><span class="spacer"></span><button class="btn sm primary" data-act="update-install">Restart to update</button></div>`) : ''}
     ${!St.settings.setupDone ? setupCardHTML() : ''}
     ${uncategorised && St.sample ? callout('info', `<div class="row"><span>${CAT.running ? '🧠 Claude is sorting your tasks into projects and categories…' : `🏷️ ${uncategorised} task${uncategorised > 1 ? 's are' : ' is'} not categorised yet.`}</span><span class="spacer"></span>${CAT.running ? '<div class="progress indet" style="width:90px"><i></i></div>' : `<button class="btn sm primary" data-act="ai-categorize">Categorise with Claude</button>`}</div>`) : ''}
     ${CAT.error && !CAT.running ? callout('warn', `<p>${esc(CAT.error)}</p>`) : ''}
-    ${typeof dupCallout === 'function' ? dupCallout() : ''}${typeof headersCallout === 'function' ? headersCallout() : ''}${typeof traceCallout === 'function' ? traceCallout() : ''}${typeof chaseCallout === 'function' ? chaseCallout() : ''}
+    ${typeof dupCallout === 'function' ? dupCallout() : ''}${typeof headersCallout === 'function' ? headersCallout() : ''}${typeof traceCallout === 'function' ? traceCallout() : ''}
     ${St.tasks.size && TODO_VIEWS[UI.todoMode] ? TODO_VIEWS[UI.todoMode]() : ''}
-    ${St.tasks.size && UI.todoMode !== 'map' && !TODO_VIEWS[UI.todoMode] ? `<div class="mode-bar">${modeSegHTML()}</div>` : ''}
+    ${St.tasks.size && UI.todoMode !== 'map' && !TODO_VIEWS[UI.todoMode] ? `<div class="mode-bar">${modeSegHTML()}<span class="spacer"></span><button class="btn sm primary" data-act="new-task">${I.plus} Task</button></div>` : ''}
     ${St.tasks.size && UI.todoMode === 'map' ? viewMap() : ''}
     ${St.tasks.size && UI.todoMode !== 'map' && !TODO_VIEWS[UI.todoMode] ? `<div class="tiles" role="toolbar" aria-label="Filter">${tiles.map(([k, e, l, cls]) => `<button class="tile ${cls} ${c[k] ? '' : 'zero'}" data-act="todo-filter" data-filter="${k}" aria-pressed="${f === k}"><span class="tile-e">${e}</span><span class="tile-n num">${c[k]}</span><span class="tile-l">${l}</span></button>`).join('')}</div>
     <div class="todo-bar">
@@ -4484,7 +4488,7 @@ function toggleSub(id, sid) {
 // The user can override it: St.layout.off moves a node and its whole branch, St.layout.size widens it.
 // Free board elements (stickies, text, shapes, frames, arrows, connectors, ink) live in St.board.
 UI.map = { x: 30, y: 30, k: 0.85, fitted: false }; UI.mapCollapsed = new Set(); UI.mapItems = new Set(); UI.mapSel = null;
-UI.mapShowDone = true; UI.mapFocus = 'all'; UI.mapQ = ''; UI.mapActivity = true;
+UI.mapShowDone = true; UI.mapFocus = 'all'; UI.mapQ = ''; UI.mapActivity = false;
 UI.tool = 'select'; UI.cvColor = 'ink'; UI.cvWidth = 3; UI.cvSel = new Set(); UI.cvUndo = []; UI.cvRedo = []; UI.cvTemp = null; UI.cvDrop = null;
 UI.mapFull = false; UI.mapAsOf = ''; UI.mapDay = '';
 const MX = { root: 0, project: 250, topic: 540, task: 830, thread: 830, item: 1190 };
@@ -5096,7 +5100,7 @@ function viewMap() {
   const sugN = [...St.tasks.values()].filter(t => t.placement && t.placement.status === 'suggested').length;
   const act = UI.mapActivity ? activityList() : [];
   const offN = Object.keys(St.layout[offKey()] || {}).length + Object.keys(St.layout.size || {}).length;
-  return `<div class="map-wrap ${UI.mapFull ? 'full' : ''} ${UI.present ? 'presenting' : ''}">
+  return `<div class="map-wrap ${UI.mapFull ? 'full' : ''}">
     ${sugN ? callout('info', `<div class="row"><span>❓ Claude wasn’t sure where ${sugN} task${sugN > 1 ? 's belong' : ' belongs'}. Pick the right place from its suggestions.</span><span class="spacer"></span><button class="btn sm primary" data-act="map-next-suggest">Review</button></div>`) : ''}
     ${UI.mapRefresh && (UI.mapRefresh.pending || UI.mapRefresh.binned) ? callout('info', `<div class="row"><span>⟳ Canvas refreshed.${UI.mapRefresh.pending ? ` <b>${UI.mapRefresh.pending}</b> analysed email${UI.mapRefresh.pending > 1 ? 's have' : ' has'} tasks not added yet.` : ''}${UI.mapRefresh.binned ? ` <b>${UI.mapRefresh.binned}</b> task${UI.mapRefresh.binned > 1 ? 's' : ''} from emails ${UI.mapRefresh.binned > 1 ? 'were' : 'was'} deleted in the last 30 days.` : ''}</span><span class="spacer"></span>${UI.mapRefresh.pending ? '<button class="btn sm primary" data-act="map-add-pending">Add their tasks</button>' : ''}${UI.mapRefresh.binned ? '<button class="btn sm" data-act="map-restore-binned">Put them back</button>' : ''}<button class="btn sm ghost" data-act="map-refresh-close">✕</button></div>`) : ''}
     ${UI.mapAsOf ? callout('info', `<div class="row"><span>🕒 Showing the map as it was on <b>${esc(fmtDate(UI.mapAsOf, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }))}</b>: later tasks are hidden and work finished later shows as open. Projects and topics are shown as they are now.</span><span class="spacer"></span><button class="btn sm" data-act="map-now">Back to now</button></div>`) : ''}
@@ -5106,13 +5110,12 @@ function viewMap() {
         <label class="search todo-search">${I.search}<span class="sr">Find on map</span><input class="input" id="map-q" type="search" placeholder="Find a task, item or note…" value="${esc(UI.mapQ)}" data-inp="mapQ"></label>
         ${hits ? `<span class="small muted mt-hits">${hits.size} found</span>` : ''}
         <span class="mt-spacer"></span>
+        ${St.mode !== 'viewer' ? `<button class="btn sm primary mt-new" data-act="new-task" title="New task">${I.plus}<span class="lbl">Task</span></button>` : ''}
         ${St.mode !== 'viewer' ? (() => { const n = [...St.tasks.values()].filter(needsMe).length; return `<button class="btn sm mt-mine ${myFocus() ? 'on' : ''}" data-act="map-mine" aria-pressed="${myFocus()}" title="Highlight the tasks that need action by you and fade the rest (Shift+M)">🙋<span class="lbl">My actions</span> <b class="mt-count">${n}</b></button>`; })() : ''}
-        <button class="btn sm mt-dir" data-act="map-dir" data-dir="${mapDir() === 'v' ? 'h' : 'v'}" title="${mapDir() === 'v' ? 'Switch to a left-to-right map' : 'Switch to a top-to-bottom map'} (Shift+V)" aria-label="${mapDir() === 'v' ? 'Switch to horizontal map' : 'Switch to vertical map'}">${mapDir() === 'v' ? '↔' : '↕'}<span class="lbl">${mapDir() === 'v' ? 'Horizontal' : 'Vertical'}</span></button>
         <div class="mt-group">
           <button class="btn sm" data-act="map-rearrange" title="Put every box back in tidy order (Shift+R)">⊞<span class="lbl">Rearrange</span></button>
           <button class="btn sm" data-act="map-refresh" title="Show every task and email again">⟳<span class="lbl">Refresh</span></button>
         </div>
-        <div class="seg mt-seg"><button data-act="cv-undo" title="Undo (Ctrl+Z)" aria-label="Undo" ${UI.cvUndo.length ? '' : 'disabled'}>↶</button><button data-act="cv-redo" title="Redo (Ctrl+Shift+Z)" aria-label="Redo" ${UI.cvRedo.length ? '' : 'disabled'}>↷</button></div>
         <div class="seg zoom mt-seg"><button data-act="map-zoom" data-z="-1" aria-label="Zoom out" title="Zoom out">−</button><button data-act="map-fit" aria-label="Fit to screen" title="Fit to screen">Fit</button><button data-act="map-zoom" data-z="1" aria-label="Zoom in" title="Zoom in">+</button></div>
         ${DESKTOP && !SUBWIN ? '<button class="btn sm" data-act="pop-out" data-view="todo" title="Open the canvas in another window (second monitor)">⧉</button>' : ''}
         <button class="btn sm" data-act="map-full" aria-pressed="${UI.mapFull}" title="${UI.mapFull ? 'Exit full screen (Esc)' : 'Full screen (Shift+F)'}" aria-label="Full screen">${UI.mapFull ? '⤡' : '⤢'}</button>
@@ -5137,7 +5140,6 @@ function viewMap() {
           <div class="mt-sec"><div class="label">Export</div>
             <button class="btn sm ghost" data-act="map-export" data-f="png">🖼 Image (PNG)</button>
             <button class="btn sm ghost" data-act="map-export" data-f="pdf">📄 PDF</button>
-            <button class="btn sm ghost" data-act="map-present">🖥 Present project by project</button>
             ${DESKTOP ? '<button class="btn sm ghost" data-act="map-share">🔗 Share link (always up to date)…</button>' : ''}</div>
         </div></details>
       </div>
@@ -5153,7 +5155,6 @@ function viewMap() {
         ${toolsHTML()}
         <div id="cv-ctx-slot">${ctxHTML()}</div>
         ${UI.mapMini !== false && (M.projects.length || St.board.size) ? '<canvas class="minimap" id="minimap" width="200" height="130" aria-label="Minimap — click to move there"></canvas>' : ''}
-        ${UI.present ? presentBarHTML() : ''}
       </div>
       ${UI.mapActivity ? `<aside class="map-activity"><div class="label" style="padding:12px 14px 6px">Activity${UI.mapDay ? ' · ' + esc(fmtDate(UI.mapDay)) : ''}</div>${act.length ? `<ol>${act.map(e => `<li><button data-act="map-goto" data-id="${esc(e.t.id)}"><span class="ae">${evEmoji(e.text)}</span><span class="atxt"><b>${esc(e.t.ref || '')}</b> <span dir="auto">${esc(E.clip(e.t.title, 60))}</span><small dir="auto">${esc(e.text)}</small></span><time>${esc(fmtDate(e.at.slice(0, 10)))}</time></button></li>`).join('')}</ol>` : '<p class="small muted" style="padding:0 14px">No activity yet.</p>'}</aside>` : ''}
     </div>
@@ -5230,8 +5231,16 @@ function centerOnTask(id) {
     vp.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   });
 }
+// the canvas takes all the height left on the screen below its toolbar (at least 480 px)
+function fitMapHeight() {
+  const vp = $('#map-vp'); if (!vp) return;
+  const top = vp.getBoundingClientRect().top + window.scrollY, h = window.innerHeight - (top < window.innerHeight * 0.7 ? top : 120) - 16;
+  document.documentElement.style.setProperty('--vp-fit', Math.max(480, Math.round(h)) + 'px');
+}
+window.addEventListener('resize', () => { if (UI.view === 'todo' && UI.todoMode === 'map') fitMapHeight(); });
 function afterMapRender() {
   const vp = $('#map-vp'); if (!vp) return;
+  const h0 = vp.clientHeight; fitMapHeight(); if (Math.abs(vp.clientHeight - h0) > 40) UI.map.fitted = false;
   if (!UI.map.fitted) requestAnimationFrame(() => mapFit(true));
   vp.addEventListener('wheel', e => {
     e.preventDefault();
@@ -7673,7 +7682,7 @@ async function makeBrief(manual) {
     colPut('prefs', { id: briefKey(), ...localBrief() });
   } finally { BRIEF.running = false; render(); }
 }
-HOOKS.ready.push(() => { if (autoPrefs().briefing !== false && !todayBrief() && St.tasks.size) setTimeout(() => makeBrief(false), 1500); });
+// (the To-do page no longer shows the morning briefing, so it is not written in the background)
 function todayStripHTML() {
   const n = todaysNumbers(), all = openMine();
   const waiting = all.filter(t => t.ownership === 'waiting' || t.status === 'waiting').length;
@@ -8086,7 +8095,7 @@ function usageHTML() {
 TASK_ACTIONS.push(t => templatesList().length ? `<span class="row tpl-pick"><select class="input" id="d-tpl" aria-label="Checklist template">${templatesList().map(x => `<option value="${esc(x.id)}">${esc(x.name)}</option>`).join('')}</select><button class="btn sm" data-act="tpl-apply">${I.plus} Checklist</button></span>` : '');
 
 /* ===== features/05-canvas.js ===== */
-/* ---------- canvas extras: project bands, minimap, menus, export, presentation ---------- */
+/* ---------- canvas extras: project bands, minimap, menus, export ---------- */
 // Project bands: a soft coloured area behind each project's whole branch.
 function projectBands(M) {
   const out = [];
@@ -8259,50 +8268,17 @@ async function exportMap(fmt) {
   catch { offerFile(name + '.svg', x.svg, 'image/svg+xml'); }
 }
 
-/* --- presentation: full screen, one project at a time --- */
-function presentBarHTML() {
-  const P = (UI.mapLayout || { projects: [] }).projects, i = UI.present ? UI.present.i : 0, cur = P[i];
-  return `<div class="present-bar" role="toolbar" aria-label="Presentation">
-    <button class="btn sm ghost" data-act="present-step" data-d="-1" ${i ? '' : 'disabled'} aria-label="Previous project">◀</button>
-    <span class="small"><b dir="auto">${esc(cur ? cur.label : 'Overview')}</b> <span class="muted">${P.length ? i + 1 : 0} / ${P.length}</span>${cur ? ` · ${cur.n - cur.done} open · ${cur.done} done` : ''}</span>
-    <button class="btn sm ghost" data-act="present-step" data-d="1" ${i < P.length - 1 ? '' : 'disabled'} aria-label="Next project">▶</button>
-    <button class="btn sm" data-act="present-exit">Exit</button></div>`;
-}
+/* --- centre the canvas on a box --- */
 function fitBox(b) {
   const vp = $('#map-vp'); if (!vp || !b) return;
   // with the zoom locked the box is only centred
   const W = vp.clientWidth, H = vp.clientHeight, k = zoomLocked() ? UI.map.k : Math.max(0.2, Math.min(1.4, (W - 120) / b.w, (H - 140) / b.h));
   UI.map.k = k; UI.map.x = W / 2 - (b.x + b.w / 2) * k; UI.map.y = (H - 40) / 2 - (b.y + b.h / 2) * k; UI.map.fitted = true; applyCam(true);
 }
-function presentGo(i) {
-  const M = UI.mapLayout; if (!M || !UI.present) return;
-  UI.present.i = Math.max(0, Math.min(M.projects.length - 1, i));
-  const bar = $('.present-bar'); if (bar) bar.outerHTML = deco(presentBarHTML());
-  const P = M.projects[UI.present.i]; if (!P) return;
-  if (UI.mapCollapsed.has(P.id)) { UI.mapCollapsed.delete(P.id); renderWorld(); }
-  fitBox(projectBands(UI.mapLayout).find(b => b.id === P.id));
-}
-function presentStart() {
-  if (!(UI.mapLayout && UI.mapLayout.projects.length)) { toast('Add some tasks first — there are no projects to present.'); return; }
-  UI.present = { i: 0 }; UI.mapFocus = 'all'; UI.tool = 'select';
-  if (!UI.mapFull) toggleFull(true); else render();
-  requestAnimationFrame(() => requestAnimationFrame(() => presentGo(0)));
-}
-function presentStop() { UI.present = null; if (UI.mapFull) toggleFull(false); else render(); }
 Object.assign(ACT, {
   'map-hist-clear': () => { UI.mapDay = ''; UI.mapAsOf = ''; UI.map.fitted = false; render(); },
   'map-export': el => { closeMenus(); exportMap(el.dataset.f); },
-  'map-present': () => { closeMenus(); presentStart(); },
-  'present-step': el => presentGo((UI.present ? UI.present.i : 0) + +el.dataset.d),
-  'present-exit': () => presentStop(),
 });
-document.addEventListener('keydown', e => {
-  if (!UI.present || UI.view !== 'todo' || UI.todoMode !== 'map') return;
-  if (e.key === 'ArrowRight' || e.key === 'PageDown') { e.preventDefault(); presentGo(UI.present.i + 1); }
-  else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); presentGo(UI.present.i - 1); }
-  else if (e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); presentStop(); }
-}, true);
-document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && UI.present) { UI.present = null; render(); } });
 // any action chosen from a menu closes it
 document.addEventListener('click', e => { if (e.target.closest && e.target.closest('.menu-pop [data-act]')) setTimeout(closeMenus, 0); });
 // a menu that was open stays open when the page is drawn again
@@ -14616,6 +14592,14 @@ async function storeImage(c) {
   return { src: url };
 }
 // a free spot of w×h for new things, as near the middle of the screen as possible without covering anything
+// a box just placed is brought into view (the zoom stays) when part of it is outside the visible canvas
+function revealBoxes(list) {
+  const vp = $('#map-vp'); if (!vp || !list.length) return;
+  const k = UI.map.k, x0 = Math.min(...list.map(b => b.x)), y0 = Math.min(...list.map(b => b.y)), x1 = Math.max(...list.map(b => b.x + b.w)), y1 = Math.max(...list.map(b => b.y + b.h));
+  const sx0 = x0 * k + UI.map.x, sy0 = y0 * k + UI.map.y, sx1 = x1 * k + UI.map.x, sy1 = y1 * k + UI.map.y, W = vp.clientWidth, H = vp.clientHeight;
+  if (sx0 >= 60 && sy0 >= 50 && sx1 <= W - 20 && sy1 <= H - 60) return;
+  UI.map.x = W / 2 - (x0 + x1) / 2 * k; UI.map.y = H / 2 - (y0 + y1) / 2 * k; applyCam(true);
+}
 function freeSpot(w, h, near) {
   const vp = $('#map-vp'), k = UI.map.k;
   const c = near || (vp ? { x: (vp.clientWidth / 2 - UI.map.x) / k - w / 2, y: (vp.clientHeight / 2 - UI.map.y) / k - h / 2 } : { x: 100, y: 100 });
@@ -14646,6 +14630,7 @@ async function addImages(files, at) {
   }
   if (!n) return;
   cvApply(ch); UI.cvSel = new Set(Object.keys(ch.els)); UI.tool = 'select'; render();
+  revealBoxes(Object.values(ch.els).map(elBox));
   toast(`${n} image${n > 1 ? 's' : ''} placed — mark up with the pen, then “Read my markups”.`);
 }
 function pickImages(at) {
@@ -14984,286 +14969,13 @@ MORE_SECTIONS.unshift(() => St.mode === 'viewer' ? '' : `<div class="mt-sec"><di
   ${typeof fishboneOpen === 'function' ? '<button class="btn sm" data-act="fish-open">🐟 Fishbone (root cause)</button>' : ''}
   ${typeof TEMPLATES !== 'undefined' ? '<button class="btn sm" data-act="tpl-board-open">▦ Board templates</button>' : ''}</div></div>`);
 
-/* ===== features/36-layouts.js ===== */
-/* ---------- layouts: fishbone, people swimlanes, board templates ---------- */
-// 🐟 Fishbone: type a problem ("RAS pump cavitation"), or start from the selected task, and a root-cause diagram is
-//    drawn on its own board — the problem at the head, six cause branches (Design, Equipment, Process, Materials,
-//    Measurement, Site & people) — with Claude's likely causes on each when Claude is available. Edit freely after.
-// 👥 People: every open task in a lane per person — mine first, then whoever owes me what — oldest deadline first;
-//    drag a card to another lane to hand it over (or take it back).
-// ▦ Templates: ready boards — project kick-off, submittal tracker, weekly plan (Sun–Thu), meeting board, risk board.
-const FISH_CATS = ['Design', 'Equipment', 'Process', 'Materials', 'Measurement', 'Site & people'];
-function fishboneEls(problem, cats) {
-  const els = [], W = 1500, spineY = 420, x0 = 80, headX = x0 + W;
-  const mk = (type, p) => { const e = newEl(type, p); els.push(e); return e; };
-  mk('line', { x1: x0, y1: spineY, x2: headX, y2: spineY, width: 5, arrow: true, color: 'ink' });
-  mk('shape', { kind: 'rect', x: headX + 10, y: spineY - 70, w: 300, h: 140, text: problem, color: '#C62828' });
-  const n = cats.length, step = W / (Math.ceil(n / 2) + 1);
-  cats.forEach((c, i) => {
-    const top = i % 2 === 0, k = Math.floor(i / 2), bx = x0 + step * (k + 1), tipX = bx - 220, tipY = top ? spineY - 300 : spineY + 300;
-    mk('line', { x1: tipX, y1: tipY, x2: bx, y2: spineY, width: 3, color: 'ink' });
-    mk('text', { x: tipX - 90, y: top ? tipY - 46 : tipY + 8, w: 240, h: 36, text: c.name, size: 22, color: '#0A6B74' });
-    (c.causes || []).slice(0, 5).forEach((cause, j) => {
-      const f = (j + 1) / ((c.causes || []).length + 1), cx = tipX + (bx - tipX) * f, cy = tipY + (spineY - tipY) * f;
-      mk('line', { x1: cx - 150, y1: cy, x2: cx, y2: cy, width: 1.5, color: 'ink' });
-      mk('text', { x: cx - 300, y: cy - 22, w: 290, h: 30, text: cause, size: 15, color: 'ink' });
-    });
-  });
-  return els;
-}
-const FISH = { busy: false };
-function fishboneOpen() {
-  const m = $('#modal'); if (!m) return; const t = UI.mapSel && St.tasks.get(UI.mapSel);
-  m.innerHTML = deco(`<div class="card pad mail-draft" role="dialog" aria-label="Fishbone"><div class="row"><b>🐟 Fishbone — find the root cause</b><span class="spacer"></span><button class="icon-btn" data-act="close-modal" aria-label="Close">${I.x}</button></div>
-    <label class="field"><span>The problem (the fish's head)</span><input class="input" id="fish-q" dir="auto" value="${esc(t ? t.title : '')}" placeholder="e.g. RAS pump cavitation at low wet-well level"></label>
-    <label class="check small"><input type="checkbox" id="fish-ai" ${St.sample ? 'checked' : 'disabled'}>${St.sample ? 'Let Claude suggest likely causes on each branch' : 'Empty branches to fill in'}</label>
-    <div class="row end"><button class="btn" data-act="close-modal">Cancel</button><button class="btn primary" data-act="fish-draw" ${FISH.busy ? 'disabled' : ''}>${FISH.busy ? 'Thinking…' : 'Draw'}</button></div></div>`);
-  m.hidden = false; setTimeout(() => { const i = $('#fish-q'); if (i) i.focus(); }, 30);
-}
-ACT['fish-open'] = () => { UI.menuOpen = ''; fishboneOpen(); };
-ACT['fish-draw'] = async () => {
-  const q = (($('#fish-q') || {}).value || '').trim(); if (!q) return;
-  let cats = FISH_CATS.map(name => ({ name, causes: [] }));
-  if (($('#fish-ai') || {}).checked && St.sample) {
-    FISH.busy = true; fishboneOpen(); $('#fish-q').value = q;
-    try {
-      const r = await St.sample.json(`Build an Ishikawa (fishbone) diagram for this engineering problem in water/wastewater plants. Use exactly these 6 branches: ${FISH_CATS.join(', ')}. Give 2–4 likely, specific causes per branch (≤ 7 words each), in the problem's language. Reply with JSON only: {"branches":[{"name":"Design","causes":["…"]}]}
-PROBLEM: ${q}`, { modelTier: 'default' });
-      const by = new Map(((r && r.branches) || []).map(b => [E.normMatch(b.name || ''), (b.causes || []).map(String).filter(Boolean)]));
-      cats = FISH_CATS.map(name => ({ name, causes: by.get(E.normMatch(name)) || [] }));
-    } catch (e) { toast('Claude could not suggest causes now — empty branches drawn.', { err: true }); }
-    FISH.busy = false;
-  }
-  $('#modal').hidden = true;
-  const id = newBoard(E.clip('Fishbone: ' + q, 40), fishboneEls(q, cats)); goBoard(id);
-  toast('🐟 Fishbone drawn on its own board — edit any cause, add notes, or draw on it.', { action: 'Undo', fn: () => { cvUndo(); goBoard('main'); } });
-};
-
-/* --- people swimlanes --- */
-TODO_MODES.splice(TODO_MODES.findIndex(m => m[0] === 'board'), 0, ['people', '👥', 'People', 'Swimlanes: every task in a lane per person']);
-const laneOf = t => (isMine(t) && t.status !== 'waiting') ? 'me' : (t.owner && !/^me$/i.test(t.owner) ? t.owner : (t.requestedBy || 'Someone'));
-function viewPeople() {
-  const ts = viewTasks(), lanes = new Map([['me', []]]);
-  for (const t of ts) { const k = laneOf(t); if (!lanes.has(k)) lanes.set(k, []); lanes.get(k).push(t); }
-  const order = (a, b) => (a.deadline || '9').localeCompare(b.deadline || '9') || PRIO_RANK[a.priority] - PRIO_RANK[b.priority];
-  const rows = [...lanes.entries()].sort((a, b) => (a[0] === 'me' ? -1 : b[0] === 'me' ? 1 : b[1].length - a[1].length));
-  const card = t => { const d = dueInfo(t); return `<div class="${cardCls(t)} pl-card" draggable="true" data-drag-task="${esc(t.id)}" data-act="open-task" data-id="${esc(t.id)}" role="button" tabindex="0"><span class="tl-tags">${cardTags(t)}</span><b dir="auto">${esc(t.title)}</b><small><span class="mono">${esc(t.ref || '')}</span><span class="duepill ${d.cls}">${esc(d.txt)}</span>${t.project ? `<span dir="auto">${esc(E.clip(t.project, 24))}</span>` : ''}</small></div>`; };
-  return `${vHeader('People', 'A lane per person · drag a card to another lane to hand it over')}
-  <div class="pl">${rows.map(([who, list]) => { const over = list.filter(t => t.deadline && t.deadline < T()).length; return `<section class="pl-lane card" data-lane="${esc(who)}">
-    <header><span class="pl-av">${esc(who === 'me' ? '🙋' : who.split(/\s+/).map(w => w[0] || '').join('').slice(0, 2).toUpperCase())}</span><b dir="auto">${esc(who === 'me' ? 'Me' : who)}</b><small>${list.length} open${over ? ` · <span class="crit">${over} overdue</span>` : ''}</small></header>
-    <div class="pl-cards">${list.sort(order).map(card).join('') || '<p class="small muted">Nothing here.</p>'}</div></section>`; }).join('')}</div>`;
-}
-TODO_VIEWS.people = viewPeople;
-let plDrag = null;
-document.addEventListener('dragstart', e => { const c = e.target.closest && e.target.closest('[data-drag-task]'); if (!c) return; plDrag = c.dataset.dragTask; e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', plDrag); c.classList.add('dragging'); });
-document.addEventListener('dragend', () => { plDrag = null; document.querySelectorAll('.pl-lane.over,.pl-card.dragging').forEach(x => x.classList.remove('over', 'dragging')); });
-document.addEventListener('dragover', e => { if (!plDrag) return; const l = e.target.closest && e.target.closest('.pl-lane'); if (!l) return; e.preventDefault(); document.querySelectorAll('.pl-lane.over').forEach(x => x !== l && x.classList.remove('over')); l.classList.add('over'); });
-document.addEventListener('drop', e => {
-  if (!plDrag) return; const l = e.target.closest && e.target.closest('.pl-lane'); if (!l) return; e.preventDefault(); e.stopImmediatePropagation();
-  const t0 = St.tasks.get(plDrag), who = l.dataset.lane; plDrag = null; if (!t0 || laneOf(t0) === who) { render(); return; }
-  const t = clone(t0), now = nowISO();
-  if (who === 'me') { t.ownership = 'mine'; t.owner = 'me'; if (t.status === 'waiting') t.status = 'todo'; }
-  else { t.ownership = 'waiting'; t.owner = who; if (t.status === 'todo' || t.status === 'in_progress') t.status = 'waiting'; }
-  (t.history = t.history || []).push({ at: now, text: who === 'me' ? 'Taken back: now mine' : `Handed over: waiting on ${who}` }); t.updatedAt = now;
-  cvApply({ tasks: { [t.id]: t } }); render(); toast(who === 'me' ? `${t.ref} is yours now.` : `${t.ref} handed to ${who}.`, { action: 'Undo', fn: cvUndo });
-}, true);
-
-/* --- board templates --- */
-const TEMPLATES = [
-  ['kickoff', '🚀 Project kick-off', 'Scope, stakeholders, deliverables, risks and key dates for a new project', () => frameRow([['Scope', ['What is in', 'What is out']], ['Stakeholders', ['Client', 'Consultant', 'Contractor', 'Vendors']], ['Deliverables', ['Drawings', 'Calculations', 'Datasheets', 'Specifications']], ['Risks', ['Long-lead items', 'Interfaces']], ['Key dates', ['Kick-off', 'IFR', 'IFC']]])],
-  ['submittal', '📑 Submittal tracker', 'Documents moving from preparation to approval, by review code', () => frameRow([['To prepare', []], ['Submitted — awaiting review', []], ['Code 2 — approved with comments', []], ['Code 3 — revise & resubmit', []], ['Code 1 — approved', []]], 300)],
-  ['week', '🗓 Weekly plan (Sun–Thu)', 'One column per working day plus a parking lot', () => frameRow([['Sunday', []], ['Monday', []], ['Tuesday', []], ['Wednesday', []], ['Thursday', []], ['Parking lot', []]], 260)],
-  ['meeting', '🤝 Meeting board', 'Agenda, notes, decisions and actions with owners', () => frameRow([['Agenda', ['1.', '2.', '3.']], ['Notes', []], ['Decisions', []], ['Actions (who · what · when)', []]])],
-  ['risk', '⚠️ Risk board', 'Risks sorted by likelihood and impact, with mitigations', () => frameGrid([['High impact · likely', []], ['High impact · unlikely', []], ['Low impact · likely', []], ['Low impact · unlikely', []]])],
-];
-function frameRow(cols, fw) {
-  const els = [], w = fw || 320, h = 620, gap = 40; let x = 80;
-  for (const [title, notes] of cols) {
-    els.push(newEl('frame', { x, y: 80, w, h, text: title, color: 'ink' }));
-    notes.forEach((n, i) => els.push(newEl('sticky', { x: x + 20, y: 130 + i * 110, w: w - 40, h: 90, text: n, color: '#FFD966' })));
-    x += w + gap;
-  }
-  return els;
-}
-function frameGrid(cells) {
-  const els = [], w = 560, h = 380, gap = 40;
-  cells.forEach(([title], i) => els.push(newEl('frame', { x: 80 + (i % 2) * (w + gap), y: 80 + Math.floor(i / 2) * (h + gap), w, h, text: title, color: i === 0 ? '#E5484D' : i === 3 ? '#9EE0A7' : '#FFB27A' })));
-  return els;
-}
-DRAWER_FN.tpl = () => `<div class="drawer-h"><b>▦ Board templates</b><span class="spacer"></span><button class="icon-btn" data-act="close-drawer" aria-label="Close">${I.x}</button></div>
-  <div class="drawer-b" style="display:grid;gap:10px"><p class="small muted" style="margin:0">Each template opens as a new board, ready to fill with notes, tasks and drawings.</p>
-  ${TEMPLATES.map(([k, n, d]) => `<button class="card pad tpl-card" data-act="tpl-board" data-k="${k}"><b>${esc(n)}</b><span class="small muted">${esc(d)}</span></button>`).join('')}
-  <button class="card pad tpl-card" data-act="fish-open"><b>🐟 Fishbone (root cause)</b><span class="small muted">The problem at the head, six cause branches${St.sample ? ', filled with Claude’s suggestions' : ''}</span></button></div>`;
-Object.assign(ACT, {
-  'tpl-board-open': () => { UI.menuOpen = ''; openDrawer('tpl', 'all'); },
-  'tpl-board': el => { const tp = TEMPLATES.find(t => t[0] === el.dataset.k); if (!tp) return; closeDrawer(); const id = newBoard(tp[1].replace(/^\S+\s/, ''), tp[3]()); goBoard(id); toast(`${tp[1]} board ready.`, { action: 'Undo', fn: () => { cvUndo(); goBoard('main'); } }); },
-});
-
 /* ===== features/37-meet.js ===== */
-/* ---------- see more and meet: heat, critical path, laser & frames presenting, live cursors, comment pins, A3 PDF ---------- */
-// 🔥 Heat: every open task glows by how stuck it is — overdue days, or days with nothing happening.
-// ⛓ Critical path: the longest chain of linked tasks (by date), the one that decides when the work is finished.
-// 🔴 Laser: a red dot with a short trail follows your pen or mouse — for meetings on a big screen; people viewing the
-//    shared canvas at the same time see it too. Present frames: walk through the frames on a board like slides.
-// 👥 Live cursors: whoever has the canvas open at the same time (you on another device, your manager on the shared
-//    view) appears as a named cursor. 💬 Pins: comments placed on a task or note stay pinned to it as the canvas moves.
+/* ---------- comment pins and the A3 PDF ---------- */
+// 💬 Pins: comments placed on a task or note stay pinned to it as the canvas moves.
 // 📄 A3 PDF: the board as a print-ready A3 landscape PDF.
-const uiOpt = k => (St.settings.ui || {})[k];
-
-/* --- heat --- */
-function heatLevel(t) {
-  if (t.status === 'done') return 0;
-  if (t.deadline && t.deadline < T()) { const d = E.dayDiff(t.deadline, T()); return d >= 7 ? 4 : d >= 3 ? 3 : 2; }
-  const last = (t.history || []).reduce((m, h) => (h.at || '') > m ? h.at : m, t.updatedAt || t.createdAt || '');
-  const idle = last ? E.dayDiff(last.slice(0, 10), T()) : 0;
-  return idle > 21 ? 3 : idle > 10 ? 2 : idle > 5 ? 1 : 0;
-}
-NODE_CLASS.push(t => uiOpt('mapHeat') ? `heat heat-${heatLevel(t)}` : '');
-
-/* --- critical path --- */
-function critChain() {
-  const open = [...St.tasks.values()].filter(t => t.status !== 'done'), byId = new Map(open.map(t => [t.id, t]));
-  const key = t => t.deadline || (t.createdAt || '').slice(0, 10) || '9999';
-  const out = new Map(open.map(t => [t.id, []]));
-  for (const t of open) for (const r of relIds(t)) { const u = byId.get(r); if (!u) continue; const [a, b] = key(t) <= key(u) ? [t, u] : [u, t]; if (!out.get(a.id).includes(b.id)) out.get(a.id).push(b.id); }
-  const memo = new Map();
-  const best = id => { if (memo.has(id)) return memo.get(id); memo.set(id, [id]); let b = [id]; for (const n of out.get(id) || []) { const c = [id, ...best(n)]; if (c.length > b.length || (c.length === b.length && key(byId.get(c[c.length - 1])) > key(byId.get(b[b.length - 1])))) b = c; } memo.set(id, b); return b; };
-  let chain = []; for (const t of open) { const c = best(t.id); if (c.length > chain.length) chain = c; }
-  return chain.length > 1 ? chain : [];
-}
-let CRIT = null;
-NODE_CLASS.push(t => CRIT && CRIT.includes(t.id) ? 'crit-path' : '');
-WORLD_EXTRA.push(M => {
-  if (!CRIT || CRIT.length < 2) return '';
-  const k = UI.map.k, seg = [];
-  for (let i = 0; i + 1 < CRIT.length; i++) { const a = M.byId.get('t:' + CRIT[i]), b = M.byId.get('t:' + CRIT[i + 1]); if (a && b) seg.push(smartPath(a, b)); }
-  return `<svg class="cv-crit" width="${M.w}" height="${M.h}" aria-hidden="true">${seg.map(d => `<path d="${d}" stroke-width="${Math.max(3, 4 / k)}"/>`).join('')}</svg>`;
-});
-HOOKS.beforeRender.push(() => { CRIT = uiOpt('mapCrit') ? critChain() : null; });
-
-MORE_SECTIONS.push(() => `<div class="mt-sec"><div class="label">See more</div>
-  <label class="check small"><input type="checkbox" data-chg="ui-opt" data-k="mapHeat" ${uiOpt('mapHeat') ? 'checked' : ''}>🔥 Heat — tasks glow by how stuck they are</label>
-  <label class="check small"><input type="checkbox" data-chg="ui-opt" data-k="mapCrit" ${uiOpt('mapCrit') ? 'checked' : ''}>⛓ Critical path — the chain of linked tasks that sets the finish date</label>
-  <label class="check small"><input type="checkbox" data-chg="ui-opt" data-k="laser" ${UI.laser ? 'checked' : ''}>🔴 Laser pointer</label>
-  ${boardEls().some(e => e.type === 'frame') ? '<button class="btn sm ghost" data-act="present-frames">🖥 Present this board frame by frame</button>' : ''}
-  <button class="btn sm ghost" data-act="map-export-a3">📄 PDF for printing (A3)</button></div>`);
-CHG['ui-opt'] = el => {
-  const k = el.dataset.k;
-  if (k === 'laser') { UI.laser = !!el.checked; laserSetup(); return; }
-  saveSettingsUi({ [k]: !!el.checked }); render();
-  if (k === 'mapCrit' && el.checked && !critChain().length) toast('No linked tasks yet — link tasks with the ● handle or the Link tool to see the chain.');
-};
-
-/* --- laser --- */
-const LZ = { pts: [], raf: 0, remote: new Map() };
-function laserSetup() {
-  const vp = document.getElementById('map-vp'); if (!vp) return;
-  let c = vp.querySelector(':scope > canvas.cv-laser');
-  if (!UI.laser && !LZ.remote.size) { if (c) c.remove(); return; }
-  if (!c) { c = document.createElement('canvas'); c.className = 'cv-laser cv-overlay'; vp.appendChild(c); }
-  const dpr = Math.min(3, devicePixelRatio || 1); c.width = vp.clientWidth * dpr; c.height = vp.clientHeight * dpr;
-  if (!LZ.raf) LZ.raf = requestAnimationFrame(laserDraw);
-}
-function laserDraw() {
-  LZ.raf = 0; const vp = document.getElementById('map-vp'), c = vp && vp.querySelector(':scope > canvas.cv-laser'); if (!c) return;
-  const ctx = c.getContext('2d'), dpr = c.width / vp.clientWidth, now = Date.now(); ctx.clearRect(0, 0, c.width, c.height);
-  const r = vp.getBoundingClientRect();
-  const draw = (pts, col) => {
-    const live = pts.filter(p => now - p.t < 700); if (!live.length) return;
-    for (let i = 1; i < live.length; i++) { const a = live[i - 1], b = live[i], age = (now - b.t) / 700; ctx.strokeStyle = col.replace('A', String(0.55 * (1 - age))); ctx.lineWidth = 6 * dpr * (1 - age * 0.6); ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(a.x * dpr, a.y * dpr); ctx.lineTo(b.x * dpr, b.y * dpr); ctx.stroke(); }
-    const h = live[live.length - 1]; ctx.fillStyle = col.replace('A', '1'); ctx.shadowColor = col.replace('A', '.9'); ctx.shadowBlur = 14 * dpr; ctx.beginPath(); ctx.arc(h.x * dpr, h.y * dpr, 7 * dpr, 0, 7); ctx.fill(); ctx.shadowBlur = 0;
-  };
-  if (UI.laser) draw(LZ.pts, 'rgba(229,32,48,A)');
-  for (const [, pts] of LZ.remote) draw(pts.map(p => ({ x: p.wx * UI.map.k + UI.map.x, y: p.wy * UI.map.k + UI.map.y, t: p.t })), 'rgba(229,32,48,A)');
-  LZ.pts = LZ.pts.filter(p => now - p.t < 700);
-  if (LZ.pts.length || [...LZ.remote.values()].some(p => p.length && now - p[p.length - 1].t < 700)) LZ.raf = requestAnimationFrame(laserDraw);
-  void r;
-}
-document.addEventListener('pointermove', e => {
-  const vp = document.getElementById('map-vp'); if (!vp || !e.target.closest || !e.target.closest('#map-vp')) return;
-  const r = vp.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
-  if (UI.laser) { LZ.pts.push({ x, y, t: Date.now() }); if (LZ.pts.length > 60) LZ.pts.shift(); if (!LZ.raf) LZ.raf = requestAnimationFrame(laserDraw); }
-  roomMove((x - UI.map.x) / UI.map.k, (y - UI.map.y) / UI.map.k);
-}, { passive: true });
-HOOKS.afterRender.push(() => { if (UI.laser || LZ.remote.size) laserSetup(); });
-
-/* --- present frames like slides --- */
-const presentBarProjects = presentBarHTML, presentGoProjects = presentGo;
-presentBarHTML = function () {
-  const P = UI.present; if (!P || !P.frames) return presentBarProjects();
-  const f = St.board.get(P.frames[P.i]);
-  return `<div class="present-bar" role="toolbar" aria-label="Presentation"><button class="btn sm ghost" data-act="present-step" data-d="-1" ${P.i ? '' : 'disabled'} aria-label="Previous">◀</button>
-    <span class="small"><b dir="auto">${esc(f ? f.text || 'Frame' : '')}</b> <span class="muted">${P.i + 1} / ${P.frames.length}</span></span>
-    <button class="btn sm ghost" data-act="present-step" data-d="1" ${P.i < P.frames.length - 1 ? '' : 'disabled'} aria-label="Next">▶</button>
-    <button class="btn sm ${UI.laser ? 'primary' : 'ghost'}" data-act="laser-toggle" title="Laser pointer">🔴</button><button class="btn sm" data-act="present-exit">Exit</button></div>`;
-};
-presentGo = function (i) {
-  const P = UI.present; if (!P || !P.frames) return presentGoProjects(i);
-  P.i = Math.max(0, Math.min(P.frames.length - 1, i));
-  const bar = $('.present-bar'); if (bar) bar.outerHTML = deco(presentBarHTML());
-  const f = St.board.get(P.frames[P.i]); if (f) fitBox(elBox(f));
-  roomEmitPresent();
-};
-ACT['present-frames'] = () => {
-  closeMenus(); const fr = boardEls().filter(e => e.type === 'frame').sort((a, b) => (Math.abs(a.y - b.y) > 120 ? a.y - b.y : a.x - b.x)).map(e => e.id);
-  if (!fr.length) { toast('Add frames to this board first (Frame tool, F).'); return; }
-  UI.present = { i: 0, frames: fr }; UI.tool = 'select'; if (!UI.mapFull) toggleFull(true); else render();
-  requestAnimationFrame(() => requestAnimationFrame(() => presentGo(0)));
-};
-ACT['laser-toggle'] = () => { UI.laser = !UI.laser; laserSetup(); const bar = $('.present-bar'); if (bar) bar.outerHTML = deco(presentBarHTML()); };
-document.addEventListener('keydown', e => { if (e.key && e.key.toLowerCase() === 'l' && e.shiftKey && UI.view === 'todo' && UI.todoMode === 'map' && !e.target.closest('input,textarea,[contenteditable]')) { e.preventDefault(); ACT['laser-toggle'](); } });
-
-/* --- live cursors (and the laser) through the room --- */
-const RM = { room: null, user: null, peers: new Map(), names: {}, last: 0, color: ['#E5484D', '#0A6B74', '#C26100', '#7A3EC8', '#2F6FB0'][Math.floor(Math.random() * 5)] };
-function roomMove(wx, wy) {
-  if (!RM.room || Date.now() - RM.last < 60) return; RM.last = Date.now();
-  RM.room.presence({ cur: { x: Math.round(wx), y: Math.round(wy), p: curPage() }, c: RM.color, lz: !!UI.laser }).catch(() => {});
-}
-function roomEmitPresent() { if (RM.room && UI.present && UI.present.frames) RM.room.presence({ show: { p: curPage(), f: UI.present.frames[UI.present.i] } }).catch(() => {}); }
-function cursorsHTML() {
-  const out = [];
-  for (const [peer, p] of RM.peers) {
-    const cur = p.presence && p.presence.cur; if (!cur || cur.p !== curPage() || p.isMe) continue;
-    const x = cur.x * UI.map.k + UI.map.x, y = cur.y * UI.map.k + UI.map.y, name = (p.by && RM.names[p.by]) || (p.guest ? 'Guest' : 'Viewer');
-    out.push(`<div class="cv-cursor" style="left:${x}px;top:${y}px;--c:${esc(String(p.presence.c || '#E5484D'))}"><svg width="18" height="18" viewBox="0 0 24 24"><path d="M3 2l7 19 2.5-8.5L21 10z" fill="var(--c)" stroke="#fff" stroke-width="1.5"/></svg><span>${esc(name)}</span></div>`);
-    void peer;
-  }
-  return out.join('');
-}
-function drawCursors() {
-  const vp = document.getElementById('map-vp'); if (!vp) return;
-  let layer = vp.querySelector(':scope > .cv-cursors');
-  if (!RM.peers.size) { if (layer) layer.remove(); return; }
-  if (!layer) { layer = document.createElement('div'); layer.className = 'cv-cursors cv-overlay'; vp.appendChild(layer); }
-  layer.innerHTML = cursorsHTML();
-  const n = [...RM.peers.values()].filter(p => !p.isMe).length, ind = document.querySelector('.board-bar .bb-here');
-  if (ind) ind.textContent = n ? `👥 ${n + 1} here` : '';
-}
+MORE_SECTIONS.push(() => `<div class="mt-sec"><div class="label">Print</div><button class="btn sm ghost" data-act="map-export-a3">📄 PDF for printing (A3)</button></div>`);
 const applyCam0 = applyCam;
-applyCam = function (animate) { applyCam0(animate); if (RM.peers.size) drawCursors(); if (CM.ctrl) cmPlace(); };
-HOOKS.afterRender.push(() => { drawCursors(); const bar = document.querySelector('#map-vp > .board-bar'); if (bar && RM.room && !bar.querySelector('.bb-here')) bar.insertAdjacentHTML('beforeend', '<span class="bb-here small"></span>'); drawCursors(); });
-async function roomStart() {
-  if (typeof claude === 'undefined' || !claude.use) return;
-  const room = await claude.use('room').catch(() => null); if (!room) return;
-  RM.room = room; RM.user = await claude.use('user').catch(() => null);
-  room.onPeers(ch => {
-    RM.peers = new Map(ch.peers.filter(p => !p.isMe && p.kind === 'viewer').map(p => [p.peer, p]));
-    // someone presenting with the laser on: their dot shows here too
-    for (const p of ch.updated || []) {
-      if (p.isMe || !p.presence || !p.presence.cur) continue;
-      if (p.presence.lz && p.presence.cur.p === curPage()) { const pts = LZ.remote.get(p.peer) || []; pts.push({ wx: p.presence.cur.x, wy: p.presence.cur.y, t: Date.now() }); LZ.remote.set(p.peer, pts.slice(-40)); laserSetup(); if (!LZ.raf) LZ.raf = requestAnimationFrame(laserDraw); }
-      // a viewer of the shared canvas follows the presenter's frames
-      if (St.mode === 'viewer' && p.presence.show && p.presence.show.f) { const f = St.board.get(p.presence.show.f); if (f) { UI.page = p.presence.show.p; render(); fitBox(elBox(f)); } }
-    }
-    const ids = [...RM.peers.values()].map(p => p.by).filter(id => id && !(id in RM.names));
-    if (ids.length && RM.user && RM.user.profiles) RM.user.profiles(ids).then(ps => { for (const id of ids) RM.names[id] = (ps && ps[id] && ps[id].name) || ''; drawCursors(); }).catch(() => {});
-    drawCursors();
-  }, () => { RM.room = null; RM.peers.clear(); drawCursors(); });
-}
-let meetStarted = false;
-const meetStart = () => { if (meetStarted) return; meetStarted = true; roomStart(); cmStart(); };
-HOOKS.ready.push(meetStart);
-setTimeout(meetStart, 4000); // the shared (viewer) page starts here too
+applyCam = function (animate) { applyCam0(animate); if (CM.ctrl) cmPlace(); };
 
 /* --- comment pins that follow the canvas --- */
 const CM = { api: null, ctrl: null, on: false, threads: [] };
@@ -15343,10 +15055,15 @@ ACT['map-export-a3'] = async () => {
     await offerFile(`action-register-${name}-${T()}-A3.pdf`, jpegPDF(jpg, c.width, c.height), 'application/pdf');
   } catch (e) { toast('Could not make the PDF.', { err: true }); }
 };
+// comment pins start once the data is ready (and on the shared, read-only page)
+let meetStarted = false;
+const meetStart = () => { if (meetStarted) return; meetStarted = true; cmStart(); };
+HOOKS.ready.push(meetStart);
+setTimeout(meetStart, 4000);
 
 /* ===== features/38-site.js ===== */
 /* ---------- site mode: readable outdoors on a phone or tablet ---------- */
-// ☀ in the header: big text, black-on-white contrast that holds up in sunlight, thicker lines and borders, large
+// Part of phone mode (More › Big text, or Setup › Phone mode): big text, black-on-white contrast that holds up in sunlight, thicker lines and borders, large
 // buttons for gloved or hurried fingers, no animation. Remembered on this device only (the office PC stays normal).
 const SITE_LS = 'ar-site-mode';
 const siteOn = () => { try { return localStorage.getItem(SITE_LS) === '1'; } catch { return false; } };
@@ -15359,18 +15076,8 @@ function siteToggle() {
   const on = !siteOn(); try { localStorage.setItem(SITE_LS, on ? '1' : '0'); } catch {}
   siteApply(on); UI.map.fitted = false; render(); toast(on ? '☀ Site mode on — big text and strong contrast.' : 'Site mode off.');
 }
-(() => {
-  const rail = document.querySelector('.rail'); if (!rail || document.getElementById('site-btn')) return;
-  const foot = rail.querySelector('.rail-foot');
-  const b = document.createElement('button'); b.id = 'site-btn'; b.className = 'nav site-btn'; b.dataset.act = 'site-toggle'; b.setAttribute('aria-pressed', 'false');
-  b.innerHTML = '<span class="site-ic" aria-hidden="true">☀</span><span class="site-lbl">Site</span>';
-  rail.insertBefore(b, foot || null);
-  siteApply(siteOn());
-})();
+siteApply(siteOn());
 ACT['site-toggle'] = () => siteToggle();
-SETUP_EXTRA.push(() => `<section class="card pad" data-sec="Site mode" style="display:grid;gap:8px"><div class="section-title"><h2>☀ Site mode</h2></div>
-  <p class="small muted" style="margin:0">For site visits: big text, black on white for sunlight, thick lines and large buttons. It applies to this device only.</p>
-  <label class="check"><input type="checkbox" data-chg="site-mode" ${siteOn() ? 'checked' : ''}>Use site mode on this device</label></section>`);
 CHG['site-mode'] = el => { if (!!el.checked !== siteOn()) siteToggle(); };
 
 /* ===== features/39-touch.js ===== */
@@ -15743,7 +15450,7 @@ function phSet(v) { try { localStorage.setItem(PH_LS, v); } catch {} const on = 
   const rail = document.querySelector('.rail'); if (!rail || document.getElementById('phone-btn')) return;
   const b = document.createElement('button'); b.id = 'phone-btn'; b.className = 'nav phone-btn'; b.dataset.act = 'phone-toggle';
   b.innerHTML = '<span class="site-ic" aria-hidden="true">📱</span><span class="site-lbl">Phone</span>';
-  rail.insertBefore(b, document.getElementById('site-btn') || rail.querySelector('.rail-foot'));
+  rail.insertBefore(b, rail.querySelector('.rail-foot'));
   if (window.matchMedia) window.matchMedia('(max-width: 640px)').addEventListener('change', () => { if (phPref() === 'auto') phSet('auto'); });
 })();
 VIEWS.push('phone');
@@ -15873,7 +15580,7 @@ function phMoreHTML() {
   const it = (view, label, extra = '') => `<button class="ph-row" data-act="ph-nav" data-view="${view}"><b>${label}</b>${extra}${svg('<path d="m9 6 6 6-6 6"/>', 18)}</button>`;
   return `<h3>More</h3>
     <div class="ph-rows">${it('review', 'Review', rc ? `<i class="ph-pill-n">${rc}</i>` : '')}${it('emails', 'Emails')}${it('import', 'Add emails')}${it('setup', 'Setup')}</div>
-    <div class="ph-rows"><button class="ph-row" data-act="ph-site"><b>Site mode</b><small>${document.documentElement.classList.contains('site-mode') ? 'On' : 'Off'}</small></button>
+    <div class="ph-rows"><button class="ph-row" data-act="ph-site"><b>Big text for site</b><small>${document.documentElement.classList.contains('site-mode') ? 'On' : 'Off'}</small></button>
     <div class="ph-row ph-row-seg"><b>Phone layout</b><div class="seg">${[['auto', 'Auto'], ['on', 'On'], ['off', 'Off']].map(([v, l]) => `<button data-act="ph-mode" data-v="${v}" aria-pressed="${pref === v}">${l}</button>`).join('')}</div></div></div>`;
 }
 Object.assign(ACT, {
@@ -15941,7 +15648,8 @@ document.addEventListener('pointerup', swEnd); document.addEventListener('pointe
 
 SETUP_EXTRA.push(() => `<section class="card pad" data-sec="Phone mode" style="display:grid;gap:8px"><div class="section-title"><h2>📱 Phone mode</h2></div>
   <p class="small muted" style="margin:0">A layout made for a phone: Today with big cards you tick or swipe, your email threads, quick add, and a bottom bar in thumb reach. This device only.</p>
-  <div class="seg">${[['auto', 'Auto (small screens)'], ['on', 'Always'], ['off', 'Never']].map(([v, l]) => `<button data-act="ph-mode" data-v="${v}" aria-pressed="${phPref() === v}">${l}</button>`).join('')}</div></section>`);
+  <div class="seg">${[['auto', 'Auto (small screens)'], ['on', 'Always'], ['off', 'Never']].map(([v, l]) => `<button data-act="ph-mode" data-v="${v}" aria-pressed="${phPref() === v}">${l}</button>`).join('')}</div>
+  <label class="check"><input type="checkbox" data-chg="site-mode" ${typeof siteOn === 'function' && siteOn() ? 'checked' : ''}>Big text for site — black on white for sunlight, thick lines and large buttons</label></section>`);
 phApply();
 
 /* ---------- boot ---------- */
