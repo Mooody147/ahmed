@@ -8,32 +8,35 @@ const ic = { I_TODO: svg('<rect x="4" y="4" width="16" height="16" rx="3"/><path
 const read = f => fs.readFileSync(f, 'utf8').replace(/\r\n/g, '\n');
 // app.js plus src/features/*.js (in name order), inserted before app.js's boot section so the
 // feature files share its scope (state, helpers, action tables)
+// the Money tab (features 42–45 and src/fin-core.js) is part of the claude.ai artifact only
+const LITE_ONLY = ['42', '43', '44', '45'];
 function appSource(keep) {
   const app = read('src/app.js'); const mark = '/* ---------- boot ---------- */';
   const i = app.indexOf(mark); if (i < 0) throw new Error('app.js: boot marker missing');
   const dir = 'src/features';
-  const parts = fs.existsSync(dir) ? fs.readdirSync(dir).filter(f => f.endsWith('.js') && (!keep || keep.includes(f.slice(0, 2)))).sort().map(f => `/* ===== features/${f} ===== */\n` + read(path.join(dir, f))) : [];
+  const parts = fs.existsSync(dir) ? fs.readdirSync(dir).filter(f => f.endsWith('.js') && (keep ? keep.includes(f.slice(0, 2)) : !LITE_ONLY.includes(f.slice(0, 2)))).sort().map(f => `/* ===== features/${f} ===== */\n` + read(path.join(dir, f))) : [];
   return app.slice(0, i) + parts.join('\n') + '\n' + app.slice(i);
 }
 // the workbook engine and converter run next to core.js (they set globalThis.WBE / WBC)
 const coreSource = () => read('src/wb/engine.js') + '\n' + read('src/wb/convert.js') + '\n' + read('src/core.js');
 let h = read('src/shell.html');
+const noFinance = x => x.split('\n').filter(l => !l.includes('data-nav="finance"')).join('\n');
 for (const [k, v] of Object.entries(ic)) h = h.split('/*' + k + '*/').join(v);
 
 // node build.js lite -> dist/action-register-lite.html: only tasks, the canvas and reading emails (a claude.ai
 // artifact you open on any device; data in your Claude account, emails read by your Claude plan, Gmail through
 // the claude.ai Gmail connector)
 if (process.argv[2] === 'lite') {
-  const KEEP = ['00', '01', '02', '03', '04', '05', '12', '22', '23', '24', '25', '26', '27', '28', '29', '30', '31', '32', '33', '34', '35', '37', '38', '39', '40', '41'];
+  const KEEP = ['00', '01', '02', '03', '04', '05', '12', '22', '23', '24', '25', '26', '27', '28', '29', '30', '31', '32', '33', '34', '35', '37', '38', '39', '40', '41', ...LITE_ONLY];
   const NAV_OFF = ['daily', 'docs', 'insights', 'plan', 'notebook', 'money', 'tools'];
   const lite = h.split('\n').filter(l => !NAV_OFF.some(v => l.includes(`data-nav="${v}"`))).join('\n');
   const fonts = lite.replace('family=IBM+Plex+Mono', 'family=Archivo:wght@500;600;700;800&family=IBM+Plex+Mono');
-  const out = fonts.replace('/*STYLE*/', () => read('src/style.css') + '\n' + read('src/lite.css')).replace('/*CORE*/', () => 'const AR_LITE = true;\n' + coreSource()).replace('/*APP*/', () => appSource(KEEP));
+  const out = fonts.replace('/*STYLE*/', () => read('src/style.css') + '\n' + read('src/lite.css') + '\n' + read('src/finance.css')).replace('/*CORE*/', () => 'const AR_LITE = true;\n' + coreSource() + '\n' + read('src/fin-core.js')).replace('/*APP*/', () => appSource(KEEP));
   fs.mkdirSync('dist', { recursive: true }); fs.writeFileSync('dist/action-register-lite.html', out); console.log('built dist/action-register-lite.html', out.length);
   return;
 }
 if (process.argv[2] !== 'desktop') {
-  const out = h.replace('/*STYLE*/', () => read('src/style.css')).replace('/*CORE*/', () => coreSource()).replace('/*APP*/', () => appSource());
+  const out = noFinance(h).replace('/*STYLE*/', () => read('src/style.css')).replace('/*CORE*/', () => coreSource()).replace('/*APP*/', () => appSource());
   fs.mkdirSync('dist', { recursive: true }); fs.writeFileSync('dist/action-register.html', out); console.log('built dist/action-register.html', out.length);
   return;
 }
@@ -61,7 +64,7 @@ for (const [fam, weights] of Object.entries(FONTS)) {
 fs.writeFileSync(path.join(OUT, 'fonts', 'fonts.css'), css);
 
 const CSP = "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self' data: blob:; worker-src 'self' blob:; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'";
-let d = h.replace(/<link rel="preconnect"[^\n]*\n/, '').replace(/<link rel="stylesheet" href="https:\/\/fonts\.googleapis\.com[^\n]*\n/, '<link rel="stylesheet" href="fonts/fonts.css">\n')
+let d = noFinance(h).replace(/<link rel="preconnect"[^\n]*\n/, '').replace(/<link rel="stylesheet" href="https:\/\/fonts\.googleapis\.com[^\n]*\n/, '<link rel="stylesheet" href="fonts/fonts.css">\n')
   .replace('<style>\n/*STYLE*/\n</style>', '<link rel="stylesheet" href="style.css">')
   .replace('<script>\n/*CORE*/\n</script>\n<script>\n/*APP*/\n</script>', '<script src="platform.js"></script>\n<script src="core.js"></script>\n<script src="app.js"></script>');
 if (/\/\*(STYLE|CORE|APP)\*\/|fonts\.googleapis/.test(d)) throw new Error('desktop shell: placeholder not replaced');

@@ -154,7 +154,7 @@ function phMoreHTML() {
   const rc = counts().review, pref = phPref();
   const it = (view, label, extra = '') => `<button class="ph-row" data-act="ph-nav" data-view="${view}"><b>${label}</b>${extra}${svg('<path d="m9 6 6 6-6 6"/>', 18)}</button>`;
   return `<h3>More</h3>
-    <div class="ph-rows">${it('review', 'Review', rc ? `<i class="ph-pill-n">${rc}</i>` : '')}${it('emails', 'Emails')}${it('import', 'Add emails')}${it('setup', 'Setup')}</div>
+    <div class="ph-rows">${it('review', 'Review', rc ? `<i class="ph-pill-n">${rc}</i>` : '')}${it('emails', 'Emails')}${it('import', 'Add emails')}${VIEWS.includes('finance') ? it('finance', 'Money') : ''}${it('setup', 'Setup')}</div>
     <div class="ph-rows"><button class="ph-row" data-act="ph-site"><b>Big text for site</b><small>${document.documentElement.classList.contains('site-mode') ? 'On' : 'Off'}</small></button>
     <div class="ph-row ph-row-seg"><b>Phone layout</b><div class="seg">${[['auto', 'Auto'], ['on', 'On'], ['off', 'Off']].map(([v, l]) => `<button data-act="ph-mode" data-v="${v}" aria-pressed="${pref === v}">${l}</button>`).join('')}</div></div></div>`;
 }

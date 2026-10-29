@@ -1,14 +1,17 @@
 // Mock of the claude.ai artifact runtime for local testing
 (function(){
  const store=new Map(); const subs=[];
+ // window.__persist: the store survives a page reload (as the real database does)
+ const PK='__mockstore'; if(window.__persist){ try{ for(const [k,v] of JSON.parse(localStorage.getItem(PK)||'[]')) store.set(k,v); }catch{} }
+ const persist=()=>{ if(window.__persist) try{ localStorage.setItem(PK, JSON.stringify([...store.entries()])); }catch{} };
  const notify=()=>subs.forEach(s=>s.fire());
  const clone=o=>JSON.parse(JSON.stringify(o));
  const mkSnap=(path,data)=>({id:path.split('/').pop(),exists:data!==undefined,data:()=>data&&Object.freeze(clone(data)),metadata:{fromCache:false,hasPendingWrites:false}});
  const docRef=path=>({id:path.split('/').pop(),path,
    get:async()=>mkSnap(path,store.get(path)),
-   set:async(d)=>{ const s=JSON.stringify(d).length; if(s>262144) throw {code:'invalid_argument',message:'too big '+s}; if(window.__dbLag){window.__busy=(window.__busy||0)+1; if(window.__busy>(window.__maxBusy||99)){window.__busy--; throw {code:'resource_exhausted',message:'too many writes'};} setTimeout(notify,1); await new Promise(r=>setTimeout(r,window.__dbLag)); window.__busy--;} store.set(path,clone(d)); window.__writes=(window.__writes||0)+1; setTimeout(notify,5);},
+   set:async(d)=>{ const s=JSON.stringify(d).length; if(s>262144) throw {code:'invalid_argument',message:'too big '+s}; if(window.__dbLag){window.__busy=(window.__busy||0)+1; if(window.__busy>(window.__maxBusy||99)){window.__busy--; throw {code:'resource_exhausted',message:'too many writes'};} setTimeout(notify,1); await new Promise(r=>setTimeout(r,window.__dbLag)); window.__busy--;} store.set(path,clone(d)); persist(); window.__writes=(window.__writes||0)+1; setTimeout(notify,5);},
    update:async(d)=>{store.set(path,{...store.get(path),...clone(d)});setTimeout(notify,5);},
-   delete:async()=>{ if(window.__dbLag){window.__busy=(window.__busy||0)+1; if(window.__busy>(window.__maxBusy||99)){window.__busy--; throw {code:'resource_exhausted',message:'too many writes'};} setTimeout(notify,1); await new Promise(r=>setTimeout(r,window.__dbLag)); window.__busy--;} store.delete(path);setTimeout(notify,5);},
+   delete:async()=>{ if(window.__dbLag){window.__busy=(window.__busy||0)+1; if(window.__busy>(window.__maxBusy||99)){window.__busy--; throw {code:'resource_exhausted',message:'too many writes'};} setTimeout(notify,1); await new Promise(r=>setTimeout(r,window.__dbLag)); window.__busy--;} store.delete(path); persist(); setTimeout(notify,5);},
    onSnapshot(next,err){const s={fire:()=>next(mkSnap(path,store.get(path)))};subs.push(s);setTimeout(s.fire,10);return()=>{}},
    collection:(c)=>colRef(path+'/'+c)});
  const colRef=path=>({path,doc:id=>docRef(path+'/'+(id||Math.random().toString(36).slice(2))),
