@@ -13248,6 +13248,7 @@ FIN_VIEW.dash = () => {
     finKpi('This month', `${fk(curM.inc)} <span class="muted">in</span> · ${fk(curM.exp)} <span class="muted">out</span>`, fmon(cur), { act: 'fin-drill', data: { kind: 'month', k: cur } }),
     finKpi('Budget left this month', plan.totalBudget ? fkc(plan.totalBudget - plan.rows.filter(r => r.budget !== null).reduce((s, r) => s + r.spent, 0)) : '—', plan.totalBudget ? `of ${fk(plan.totalBudget)} budgeted` : '<button class="btn sm" data-act="fin-sec" data-s="budget">Set budgets</button>'),
     finKpi('Disposable this month', fkc(r2(curM.inc - curM.exp - committedLeft)), `income − spending so far − ${fk(committedLeft)} still due`, { est: true }),
+    finKpi('Account balances', own.assets.filter(x => x.kind === 'bank' && x.verified).map(x => fk(x.amount, x.currency)).join(' + ') || '—', own.assets.some(x => x.kind === 'bank' && x.verified) ? 'latest statement balances — bank-confirmed' : 'no statement balance yet', { act: 'fin-sec', data: { s: 'accounts' } }),
     finKpi('Put into savings', fk(t.save), 'savings and investment moves out of my accounts, net'),
     finKpi('Savings rate', fpct(t.rate), '(income − expenses) ÷ income'),
     finKpi('Highest spending month', t.peakExp ? fk(t.peakExp.exp) : '—', t.peakExp ? fmon(t.peakExp.m) : '', t.peakExp ? { act: 'fin-drill', data: { kind: 'month', k: t.peakExp.m } } : {}),
@@ -13257,6 +13258,7 @@ FIN_VIEW.dash = () => {
     finKpi('Salary (recurring)', ib.salary !== null ? fk(ib.salary) : '—', ib.salary === null ? 'no salary found yet' : ib.verified ? `verified: ${ib.basis}` : `not verified (${ib.salaryMonths} of the last 4 months)`),
     finKpi('Expected income changes', simX && simX.scenarios.expected.monthlyIncrease ? fk(simX.scenarios.expected.monthlyIncrease, null) + ' /month' : '—', simX ? `${(p.sim.changes || []).length} change${(p.sim.changes || []).length === 1 ? '' : 's'} entered · forecast` : '<button class="btn sm" data-act="fin-sec" data-s="sim">Add a raise</button>', { est: true, act: 'fin-sec', data: { s: 'sim' } }),
     finKpi('Net worth (own money)', own.net !== null ? fk(own.net) : '—', own.net === null ? (own.missingRates.length ? 'needs a rate for ' + own.missingRates.join(', ') : 'no balances yet') : `${own.estimated ? 'includes balances or holdings not yet verified' : 'from statement balances and verified holdings'} · others’ money excluded`, { est: own.estimated, act: 'fin-sec', data: { s: 'own' } }),
+    finKpi('Projected savings in 12 months', (() => { const si = finSimInput(); if (si.base === null) return '—'; const fc = FIN.forecast(all, { cats: finCats(), today, horizon: 12, income: si.base }); const last = fc.rows[fc.rows.length - 1]; return last && last.cum !== null ? fkc(last.cum) : '—'; })(), 'recurring income − usual spending, 12 months', { est: true, act: 'fin-sec', data: { s: 'forecast' } }),
     finKpi('Goals', goals.length ? `${goals.filter(g => g.ok).length} of ${goals.length} on track` : '—', goals.length ? goals.slice(0, 2).map(g => `${esc(g.name)} ${fpct(g.progress)}`).join(' · ') : '<button class="btn sm" data-act="fin-sec" data-s="forecast">Add a goal</button>', { est: true }),
   ];
   const rows = an.months.map(b => ({ k: b.m, label: fmon(b.m), short: fmtDate(b.m + '-15', { month: 'short' }) + (b.m.endsWith('-01') ? ' ' + b.m.slice(2, 4) : ''), a: b.inc, b: b.exp, net: b.net, missing: !b.covered }));
@@ -13358,7 +13360,7 @@ DRAWER_FN.fintx = dr => {
       <label class="field"><span class="label">Amount (${esc(cur)})</span><input class="input num" id="ft-amt" inputmode="decimal" value="${typeof t.amount === 'number' ? Math.abs(t.amount) : ''}" placeholder="0.00"></label>
       <label class="field"><span class="label">Direction</span><select class="input" id="ft-dir"><option value="out" ${!(t.amount > 0) ? 'selected' : ''}>Money out</option><option value="in" ${t.amount > 0 ? 'selected' : ''}>Money in</option></select></label>
     </div>
-    <label class="field"><span class="label">Original description</span>${isNew ? `<input class="input" id="ft-desc" value="${esc(t.desc)}">` : `<div class="src-text small">${esc(t.desc || '')}</div>`}</label>
+    <label class="field"><span class="label">Original description</span>${isNew ? `<input class="input" id="ft-desc" value="${esc(t.desc)}">` : `<div class="src-text small">${esc(t.desc || '')}${t.desc0 && t.desc0 !== t.desc ? `<br><span class="muted">first imported as: ${esc(t.desc0)}</span>` : ''}</div>`}</label>
     <label class="field"><span class="label">Cleaned description</span><input class="input" id="ft-clean" value="${esc(t.clean || FIN.cleanDesc(t.desc || ''))}"></label>
     <div class="grid2">
       <label class="field"><span class="label">Category</span><select class="input" id="ft-cat"><option value="">— choose —</option>${finCatOptions(t.cat, null)}</select></label>
@@ -13611,6 +13613,7 @@ function finCommit(it) {
       for (const c of [...(r.changes || []), ...(r.conflicts || [])]) {
         if (c.f === 'date2') { t.dates = [...new Set([...(t.dates || []), c.to])]; finHist(t, 'other date', null, c.to, `the statement ${it.name} dates it ${c.to}`); continue; }
         if (c.f === 'amount' || c.f === 'date') continue;   // never changed by an import
+        if (c.f === 'desc' && !t.desc0) t.desc0 = t.desc;   // the very first wording stays with the record
         finHist(t, c.f, t[c.f] ?? null, c.to, `corrected by ${it.name}`); t[c.f] = c.to;
       }
     }
