@@ -52,9 +52,13 @@ async def main():
         await pg.fill('[data-chg="mon-rc"][data-k="start"]', '2026-08-26'); await pg.dispatch_event('[data-chg="mon-rc"][data-k="start"]', 'change')
         await pg.click('[data-act="mon-rc-run"]'); await pg.wait_for_timeout(200)
         sal = sorted(x['date'] for x in await tx() if x.get('recurringId')); print('SALARY', sal)
-        assert sal == ['2026-08-26', '2026-09-26'], sal
+        # every 26th from 26 Aug 2026 up to today (the run date decides how many)
+        import datetime
+        td, want, m = datetime.date.today(), [], datetime.date(2026, 8, 26)
+        while m <= td: want.append(m.isoformat()); m = (m.replace(day=1) + datetime.timedelta(days=32)).replace(day=26)
+        assert sal == want, (sal, want)
         await pg.click('[data-act="mon-rc-run"]'); await pg.wait_for_timeout(100)
-        assert len([x for x in await tx() if x.get('recurringId')]) == 2, 'no double entries'
+        assert len([x for x in await tx() if x.get('recurringId')]) == len(want), 'no double entries'
 
         # bank statement: header found below the account lines, dd/mm dates, debit/credit columns
         await pg.click('[data-act="mon-tab"][data-tab="import"]'); await pg.set_input_files('#mon-imp-file', os.path.join(FX, 'statement.csv')); await pg.wait_for_selector('.mon-imp-map')
@@ -66,7 +70,7 @@ async def main():
         await pg.click('[data-act="mon-imp-ai"]'); await pg.wait_for_timeout(800)
         await pg.screenshot(path=SHOTS + '/m1-statement.png', full_page=True)
         await pg.click('[data-act="mon-imp-go"]'); await pg.wait_for_timeout(300)
-        n1 = len(await tx()); assert n1 == 5 + 6, n1
+        n1 = len(await tx()); assert n1 == 3 + len(want) + 6, n1   # 3 entered, the salaries so far, 6 statement lines
         # the same statement again: every line is a duplicate
         await pg.click('[data-act="mon-tab"][data-tab="import"]'); await pg.set_input_files('#mon-imp-file', os.path.join(FX, 'statement.csv')); await pg.wait_for_selector('.mon-imp-map')
         assert await ev("window.__AR_MON.rows().every(r=>r.dup)") and await ev("document.querySelector('[data-act=\"mon-imp-go\"]').disabled")
