@@ -90,14 +90,17 @@ const FIN_SECS = [['dash', 'Dashboard'], ['import', 'Import statements'], ['ledg
 const FIN_VIEW = {};   // section → html (filled by the Money feature files)
 
 VIEW_FN.finance = () => {
-  const s = UI.fin.sec, p = finP(), filt = ['dash', 'ledger', 'exp', 'inc'].includes(s);
-  return `<div class="wrap fin">
+  // one page: the canvas first, then every section one under another; the bar jumps to them and follows the scroll
+  const p = finP(), cur = UI.fin.spy || 'map';
+  return `<div class="wrap fin fin-one">
   <div class="page-head"><div><h1>Money</h1><div class="sub">Your bank and card statements in one ledger, every number traced to its transactions. Your own money is kept apart from money you hold for others, and actual figures apart from forecasts.</div></div>
     <div class="row"><button class="btn" data-act="fin-new-tx">${I.plus} Transaction</button><button class="btn primary" data-act="fin-sec" data-s="import">🏦 Import statement</button></div></div>
-  <nav class="fin-nav" aria-label="Money sections">${FIN_SECS.map(([k, l]) => `<button data-act="fin-sec" data-s="${k}" aria-current="${s === k ? 'page' : 'false'}"><span aria-hidden="true">${FIN_ICON[k]}</span>${l}</button>`).join('')}</nav>
-  ${filt ? finFilterBar() : ''}
-  ${!p.accounts.length && s !== 'accounts' && s !== 'settings' && s !== 'import' ? `<div class="callout"><b>Start here:</b> import a bank or card statement — the account is created from it — or <button class="btn sm" data-act="fin-sec" data-s="accounts">add your accounts</button> first.</div>` : ''}
-  ${(FIN_VIEW[s] || FIN_VIEW.dash)()}
+  <nav class="fin-nav" aria-label="Money sections">${[['map', 'Canvas'], ...FIN_SECS].map(([k, l]) => `<button data-act="fin-sec" data-s="${k}" aria-current="${cur === k ? 'page' : 'false'}"><span aria-hidden="true">${FIN_ICON[k] || ''}</span>${l}</button>`).join('')}</nav>
+  ${!p.accounts.length ? `<div class="callout"><b>Start here:</b> import a bank or card statement — the account is created from it — or <button class="btn sm" data-act="fin-sec" data-s="accounts">add your accounts</button> first.</div>` : ''}
+  ${typeof finCvHTML === 'function' ? finCvHTML() : ''}
+  ${FIN_SECS.map(([k, l]) => `<section class="fin-sec" id="fin-s-${k}" aria-labelledby="fin-h-${k}"><h2 class="fin-sec-h" id="fin-h-${k}"><span aria-hidden="true">${FIN_ICON[k] || ''}</span>${l}</h2>
+    ${k === 'dash' ? finFilterBar() + '<p class="small muted fin-f-note">These filters apply to the Dashboard, Transactions, Expense analytics and Income sections.</p>' : ''}
+    ${(FIN_VIEW[k] || (() => ''))()}</section>`).join('')}
 </div>`;
 };
 
@@ -404,13 +407,13 @@ Object.assign(ACT, {
   'fin-drill-month': el => finDrill({ kind: 'month', k: el.dataset.k }),
   'fin-drill-cat': el => finDrill({ kind: 'cat', k: el.dataset.k }),
   'fin-drill-catmonth': el => finDrill({ kind: 'catmonth', k: el.dataset.k }),
-  'fin-drill-ledger': () => { const d = UI.fin.drill; closeDrawer(); UI.fin.l = { ...UI.fin.l, ids: d.ids, idsLabel: d.title, page: 0 }; UI.fin.sec = 'ledger'; render(); },
+  'fin-drill-ledger': () => { const d = UI.fin.drill; closeDrawer(); UI.fin.l = { ...UI.fin.l, ids: d.ids, idsLabel: d.title, page: 0 }; UI.fin.jump = UI.fin.sec = 'ledger'; render(); },
   'fin-ledger-all': () => { UI.fin.l.ids = null; render(); },
-  'fin-ledger-status': el => { UI.fin.l = { ...UI.fin.l, status: el.dataset.v, ids: null, page: 0 }; UI.fin.sec = 'ledger'; render(); },
+  'fin-ledger-status': el => { UI.fin.l = { ...UI.fin.l, status: el.dataset.v, ids: null, page: 0 }; UI.fin.jump = UI.fin.sec = 'ledger'; render(); },
   'fin-sort': el => { const L = UI.fin.l; if (L.sort === el.dataset.k) L.dir = -L.dir; else { L.sort = el.dataset.k; L.dir = el.dataset.k === 'date' || el.dataset.k === 'amount' ? -1 : 1; } render(); },
   'fin-page': el => { UI.fin.l.page = Math.max(0, UI.fin.l.page + +el.dataset.d); render(); },
   'fin-edit': el => { UI.fin.draft = null; openDrawer('fintx', el.dataset.id); },
-  'fin-new-tx': () => { if (!finP().accounts.length) { UI.fin.sec = 'accounts'; go('finance'); toast('Add an account first.'); return; } UI.fin.draft = null; openDrawer('fintx', 'new'); },
+  'fin-new-tx': () => { if (!finP().accounts.length) { UI.fin.jump = UI.fin.sec = 'accounts'; go('finance'); toast('Add an account first.'); return; } UI.fin.draft = null; openDrawer('fintx', 'new'); },
   'fin-save-tx': el => finSaveTx(el.dataset.id),
   'fin-del': el => { const t = FS.by.get(el.dataset.id); if (!t || !confirm('Delete this transaction? It is removed from every total; the deletion is kept in the log.')) return; finLog('deleted', { ids: [t.id], tx: [t] }); finWrite([], [t.id]); closeDrawer(); render(); toast('Deleted.'); },
   'fin-export': el => finExport(el.dataset.f),
@@ -437,7 +440,7 @@ HOOKS.afterRender.push(() => {
   let again = false;
   document.querySelectorAll('.fin-chart[data-key]:not([data-key=""])').forEach(svg => { const w = Math.round(svg.getBoundingClientRect().width); if (w > 120 && Math.abs(w - +svg.dataset.w) > 24) { FIN_W[svg.dataset.key] = Math.max(300, w); again = true; } });
   if (again) { FIN_W._self = true; scheduleRender(); }
-  const cur = document.querySelector('.fin-nav [aria-current="page"]'); if (cur && cur.scrollIntoView && document.querySelector('.fin-nav').scrollWidth > document.querySelector('.fin-nav').clientWidth) cur.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+
 });
 // a test hook
 window.__FIN = { tx: () => finTx(), an: o => finAn(o || {}), prefs: () => finP(), pos: () => finPosition(), third: id => FIN.thirdParty(finTx(), finP().parties).find(x => x.id === (id || 'ahmed')), sim: () => finSimRun(), batches: () => colList('finbatch') };

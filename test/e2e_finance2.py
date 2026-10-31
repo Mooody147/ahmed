@@ -3,7 +3,8 @@ credit never confused, foreign purchases at the amount charged, instalments "05 
 with the old reader repaired from their originals into one card account; a plain-words update with a screenshot read
 by Claude into a preview (new salary from its date, a balance, someone else's money, a purchase goal, a question);
 daily balances compared with the last ones and the unexplained difference asked about; deposits whose owner is
-unclear asked about; card and Halan terms; purchase goals planned together, with focus mode."""
+unclear asked about; card and Halan terms; purchase goals planned together, with focus mode; all of it on one page
+under a live Money canvas (follows the data, folds, focus, zoom, move, full screen, cards open their details)."""
 import asyncio, os, sys, json, subprocess, datetime
 os.environ['AR_PAGE'] = 'action-register-lite.html'
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -145,6 +146,51 @@ async def main():
         await pg.screenshot(path=os.path.join(HERE, 'shots', 'finance-buy.png'), full_page=True)
         await sec('update'); await pg.wait_for_timeout(300); await pg.screenshot(path=os.path.join(HERE, 'shots', 'finance-update.png'), full_page=True)
         await sec('credit'); await pg.wait_for_timeout(300); await pg.screenshot(path=os.path.join(HERE, 'shots', 'finance-credit.png'), full_page=True)
+
+        # ---- one page with a live Money canvas ----
+        await pg.click('.fin-nav [data-s="map"]'); await pg.wait_for_timeout(300)
+        assert await ev("document.querySelectorAll('.fin-sec').length") == 14, 'every section on the one page'
+        brs = await ev("[...document.querySelectorAll('.fin-cv-br')].map(b => b.dataset.id)"); print('CANVAS BRANCHES', brs)
+        for k in ('accts', 'inc', 'exp', 'com', 'own', 'buy'): assert k in brs, k
+        leaf = lambda pre: ev(f"[...document.querySelectorAll('.fin-leaf')].map(l => l.querySelector('b').textContent).filter(t => t.startsWith('{pre}'))")
+        assert await leaf('Primary account') and await leaf('Laptop') and await leaf('Sofa'), 'accounts and goals on the canvas'
+        assert await ev("[...document.querySelectorAll('.fin-leaf')].some(l => l.textContent.includes('Shop One') && l.textContent.includes('6 of 12'))"), 'the instalment with its count'
+        # it follows the data: a new goal appears at once, a deleted one goes
+        await sec('buy'); await pg.fill('#by-name', 'Camera'); await pg.fill('#by-price', '9000'); await pg.click('[data-act="fin-buy-save"]'); await pg.wait_for_timeout(300)
+        assert await leaf('Camera'), 'a new goal is on the canvas at once'
+        cam = await ev("window.__FIN.buy().items.find(i => i.name === 'Camera').id")
+        await ev(f"window.confirm = () => true; document.querySelector('#fin-s-buy button[data-act=\"fin-buy-edit\"][data-id=\"{cam}\"]').click()"); await pg.wait_for_timeout(300)
+        await ev("document.querySelector('[data-act=\"fin-buy-del\"]').click()"); await pg.wait_for_timeout(300)
+        assert not await leaf('Camera'), 'and gone when deleted'
+        # fold a branch (remembered after a reload), focus one, zoom, fit, move
+        await pg.click('.fin-nav [data-s="map"]'); await pg.wait_for_timeout(200)
+        n0 = await ev("document.querySelectorAll('.fin-leaf').length")
+        await pg.click('.fin-cv-br[data-id="exp"] .mtxt'); await pg.wait_for_timeout(250)
+        n1 = await ev("document.querySelectorAll('.fin-leaf').length"); more = await ev("document.querySelector('.fin-cv-br[data-id=\"exp\"] .mmore').textContent")
+        print('FOLD', n0, n1, more); assert n1 < n0 and more.startswith('+')
+        await ev("document.querySelector('.fin-cv-br[data-id=\"accts\"] .fin-cv-btn.fo').click()"); await pg.wait_for_timeout(250)
+        assert await ev("[...document.querySelectorAll('.fin-cv-br')].map(b => b.dataset.id).join()") == 'accts', 'only the chosen branch'
+        await pg.click('[data-act="fin-cv-focus"][data-id=""]'); await pg.wait_for_timeout(250)
+        assert len(await ev("[...document.querySelectorAll('.fin-cv-br')]")) >= 6
+        k0 = await ev("window.__AR.UI.fin.cv.k"); await pg.click('[data-act="fin-cv-zoom"][data-v="in"]'); assert await ev("window.__AR.UI.fin.cv.k") > k0
+        vp = await pg.locator('#fin-cv-vp').bounding_box(); x0 = await ev("window.__AR.UI.fin.cv.x")
+        await pg.mouse.move(vp['x'] + 30, vp['y'] + vp['height'] - 30); await pg.mouse.down(); await pg.mouse.move(vp['x'] + 130, vp['y'] + vp['height'] - 20, steps=5); await pg.mouse.up()
+        assert abs(await ev("window.__AR.UI.fin.cv.x") - x0 - 100) < 2, 'dragging moves the canvas'
+        await pg.click('[data-act="fin-cv-fit"]'); await pg.wait_for_timeout(100)
+        # a card opens its details: an account opens its transactions in the ledger below
+        acct = await ev("window.__FIN.prefs().accounts.find(a => /0012$/.test(a.number)).id")
+        await ev(f"document.querySelector('.fin-leaf[data-act=\"fin-acct-ledger\"][data-id=\"{acct}\"]').click()"); await pg.wait_for_timeout(500)
+        assert await ev("window.__AR.UI.fin.l.acct") == acct
+        top = await ev("Math.round(document.getElementById('fin-s-ledger').getBoundingClientRect().top - document.querySelector('.fin-nav').getBoundingClientRect().bottom)")
+        print('LEDGER JUMP', top, await ev("document.querySelector('.fin-nav [aria-current=page]').dataset.s")); assert 0 <= top <= 40
+        # full screen, Esc back; the fold is remembered after a reload
+        await pg.click('.fin-nav [data-s="map"]'); await pg.click('[data-act="fin-cv-full"]'); await pg.wait_for_timeout(250)
+        assert await ev("document.querySelector('.fin-cvwrap').classList.contains('full') && document.documentElement.classList.contains('fin-cv-lock')")
+        await pg.keyboard.press('Escape'); await pg.wait_for_timeout(250)
+        assert not await ev("document.querySelector('.fin-cvwrap').classList.contains('full')")
+        await pg.reload(); await pg.wait_for_selector('h1'); await pg.wait_for_timeout(1500); await pg.click('[data-nav="finance"]'); await pg.wait_for_timeout(500)
+        assert await ev("!!document.querySelector('.fin-cv-br[data-id=\"exp\"] .mmore')"), 'the fold is remembered'
+        await pg.locator('#fin-s-map').screenshot(path=os.path.join(HERE, 'shots', 'finance-canvas.png'))
         bad = [e for e in errors if 'PAGEERROR' in e]; assert not bad, bad
         print('FINANCE 2 E2E PASSED'); await b.close()
 

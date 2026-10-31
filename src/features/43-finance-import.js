@@ -240,7 +240,7 @@ function finCommit(it, auto) {
 async function finReread(ids) {
   const bs = ids.map(id => St.cols.finbatch.get(id)).filter(b => b && b.asset && !b.undone);
   if (!bs.length) return;
-  UI.fin.sec = 'import'; UI.fin.rereading = true; render();
+  UI.fin.jump = UI.fin.sec = 'import'; UI.fin.rereading = true; render();
   const oldAccts = new Set(bs.map(b => b.acct)), files = [];
   for (const b of bs) {
     try {
@@ -439,5 +439,5 @@ Object.assign(ACT, {
   'fin-orig': async (el, e) => { e && e.preventDefault && e.preventDefault(); const b = St.cols.finbatch.get(el.dataset.b); if (!b) return; try { const bytes = await afBytes({ id: b.asset, wrapped: true }); offerFile(b.file, new Blob([bytes])); } catch { toast('The original could not be opened.', { err: true }); } },
 });
 // statements dropped anywhere on the Money tab go to the importer (the To-do importer keeps its own drop)
-document.addEventListener('drop', e => { if (UI.view !== 'finance' || !e.dataTransfer || !e.dataTransfer.files.length) return; e.preventDefault(); e.stopImmediatePropagation(); UI.fin.sec = 'import'; finAuto([...e.dataTransfer.files], UI.fin.kind || 'current'); }, true);
+document.addEventListener('drop', e => { if (UI.view !== 'finance' || !e.dataTransfer || !e.dataTransfer.files.length) return; e.preventDefault(); e.stopImmediatePropagation(); UI.fin.jump = UI.fin.sec = 'import'; finAuto([...e.dataTransfer.files], UI.fin.kind || 'current'); }, true);
 document.addEventListener('dragenter', e => { if (UI.view === 'finance') e.stopImmediatePropagation(); }, true);
