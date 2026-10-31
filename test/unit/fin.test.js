@@ -302,6 +302,69 @@ yes(sens.delay[0].cumIncr > sens.delay[3].cumIncr, 'a later raise adds less');
 eq(F.refundOf({ id: 'x', desc: 'REFUND CARREFOUR MAADI', date: '2026-09-05', amount: 200 }, [{ id: 'g', desc: 'POS CARREFOUR MAADI 4455', date: '2026-09-03', amount: -1500, cat: 'groceries' }, { id: 'n', desc: 'NETFLIX', date: '2026-09-04', amount: -250, cat: 'subs' }]), 'groceries', 'a refund reverses the earlier purchase from the same shop');
 eq([F.detectBank('Commercial International Bank — Account statement'), F.detectBank('البنك الأهلي المصري كشف حساب'), F.detectBank('Bank of Test — Statement of account'), F.detectBank('QNB Alahli card statement'), F.detectBank('Statement of account')], ['CIB', 'NBE', 'Bank of Test', 'QNB', ''], 'the bank from the heading');
 eq([F.looksLikeCard('Card statement Card number: 4111'), F.looksLikeCard('Statement of account')], [true, false], 'a card statement recognised');
+
+/* a card statement read by column position (layout like a real one; figures invented) */
+const it = (x, s, w) => ({ x, w: w || s.length * 5, s });
+const layout = [[
+  { y: 700, items: [it(31, 'Card Number'), it(173, '512345******1111')] },
+  { y: 680, items: [it(31, 'Opening Balance'), it(173, '1000.00'), it(300, 'Closing Balance'), it(442, '2380.00')] },
+  { y: 660, items: [it(31, 'Total of Credit'), it(173, '9999.99'), it(300, 'Total of Debit'), it(442, '8888.88')] },
+  { y: 640, items: [it(31, 'Due Date'), it(173, '27 October 2026'), it(300, 'Credit Limit'), it(442, '50400')] },
+  { y: 620, items: [it(31, 'Minimum Payment Due'), it(173, '300'), it(300, 'Statement Date'), it(442, '30 September 2026')] },
+  { y: 540, items: [it(32, 'Transaction Date', 57), it(109, 'Posting Date', 42), it(185, 'Description', 38), it(341, 'Debit', 18), it(392, 'Credit', 20), it(443, 'Original', 26), it(486, 'Posting', 25), it(528, 'Auth Code', 35)] },
+  { y: 530, items: [it(443, 'Currency', 30), it(486, 'Amount', 27)] },
+  { y: 515, items: [it(31, '30 September 2026', 66), it(108, '30 September 2026', 66), it(184, 'SHOP ONE EGY', 70), it(272, '06 OF 12', 29), it(340, '1000.00', 26), it(442, 'EGP', 13), it(485, '1000', 20)] },
+  { y: 500, items: [it(31, '28 September 2026', 66), it(108, '28 September 2026', 66), it(184, 'EB-00CC1-CARD', 90), it(391, '1500.00', 26), it(442, 'EGP', 13), it(485, '1500', 20)] },
+  { y: 490, items: [it(184, 'PAYMENT:0001', 60)] },
+  { y: 475, items: [it(31, '02 September 2026', 66), it(108, '02 September 2026', 66), it(184, 'SOFTWARE SUB SAN', 90), it(340, '20.00', 20), it(442, 'USD', 13), it(485, '1000.00', 26), it(527, '488098', 24)] },
+  { y: 460, items: [it(31, '01 September 2026', 66), it(108, '02 September 2026', 66), it(184, 'CAFE', 30), it(340, '880.00', 24), it(442, 'EGP', 13), it(485, '880', 15), it(527, '123456', 24)] },
+  { y: 40, items: [it(31, 'Page No. 1', 40)] },
+]];
+const L = F.rowsFromLayout(layout, { card: true });
+eq(L.rows.map(r => [r.date, r.amount]), [['2026-09-30', -1000], ['2026-09-28', 1500], ['2026-09-02', -1000], ['2026-09-01', -880]], 'debit and credit by column; a foreign purchase charged at its posting amount');
+eq([L.rows[1].desc, L.rows[0].inst, L.rows[2].orig], ['EB-00CC1-CARD PAYMENT:0001', { n: 6, of: 12 }, { amount: 20, cur: 'USD' }], 'wrapped description joined; instalment 6 of 12; original currency kept');
+eq([L.meta.opening, L.meta.closing, L.meta.limit, L.meta.minDue, L.meta.dueDate, L.meta.statementDate, F.last4(L.meta.account)], [-1000, -2380, 50400, 300, '2026-10-27', '2026-09-30', '1111'], 'labelled facts: owed balances negative, limit, minimum, due date');
+eq(F.statementCheck(L.rows, L.meta).diff, 0, 'opening + lines = closing');
+
+/* financing quotes */
+eq(F.financeQuote(12000, { method: 'flat', rate: 2, feePct: 1 }, 12), { price: 12000, months: 12, monthly: 1240, interest: 2880, fees: 120, total: 15000, cost: 3000, method: 'flat', rate: 2 }, 'flat 2% a month for 12 months: 2,880 interest, 1,240 a month');
+near(F.financeQuote(12000, { method: 'reducing', rate: 24 }, 12).monthly, 1134.72, 'reducing 24% a year: 1,134.72 a month');
+eq(F.financeQuote(6000, { method: 'none' }, 6).monthly, 1000, '0% instalments');
+
+/* instalments from the statements */
+const itx = [['2026-07-30', 4], ['2026-08-30', 5], ['2026-09-30', 6]].map(([d, n], i) => ({ id: 'i' + i, acct: 'K', date: d, amount: -2500, desc: `Shop One Cairo EGY ${String(n).padStart(2, '0')} OF 12`, cat: 'shopping' }));
+const ins = F.detectInstallments(itx, '2026-10-30');
+eq(ins.map(i => [i.name, i.amount, i.n, i.of, i.remaining, i.end, i.status, i.outstanding]), [['Shop One Cairo EGY', 2500, 6, 12, 6, '2027-03', 'active', 15000]], 'Shop One 6 of 12: 6 left, ends March 2027, 19,978.98 still to pay');
+eq(F.detectInstallments(itx, '2027-01-15')[0].status, 'missing', 'not seen for months: missing, not finished');
+eq(F.detectInstallments(itx, '2027-01-15', [{ key: ins[0].key, status: 'completed' }])[0].status, 'completed', 'finished only when you say so');
+eq(F.installmentLoad(ins, '2027-03'), 2500, 'still paid in March 2027');
+eq(F.installmentLoad(ins, '2027-04'), 0, 'not after its end');
+
+/* inputs with the dates they apply from */
+let inp = F.setInput([], { id: 'a', key: 'salary', label: 'Salary', amount: 30000, from: '2026-01-01' }, '2026-01-01');
+inp = F.setInput(inp, { id: 'b', key: 'salary', amount: 36000, from: '2026-11-01' }, '2026-10-30');
+eq([F.activeInput(inp, 'salary', '2026-10-15').amount, F.activeInput(inp, 'salary', '2026-11-02').amount, inp.length, inp[0].to], [30000, 36000, 2, '2026-10-31'], 'a new salary replaces the old from its date; the old one stays as history');
+
+/* a balance against the last one */
+const bc = F.balanceChange({ balance: 25000, date: '2026-10-28' }, { balance: 21000, date: '2026-10-30' }, [{ id: 'x', date: '2026-10-29', amount: -1000 }]);
+eq([bc.diff, bc.recorded, bc.unexplained], [-4000, -1000, -3000], '4,000 less: 1,000 is recorded, 3,000 is unexplained (asked, not assumed)');
+
+/* buying: cash, card, Halan or save */
+const pp = F.planPurchases([{ id: 'tv', name: 'TV', price: 20000, priority: 1 }, { id: 'ph', name: 'Phone', price: 30000, priority: 2, wantBy: '2027-01-31' }, { id: 'lp', name: 'Laptop', price: 40000, priority: 3 }],
+  { cash: 25000, capacity: 10000, card: { available: 39000 }, halan: { available: 60000, terms: { method: 'flat', rate: 2, months: 12 } } }, '2026-10-30');
+const byId = Object.fromEntries(pp.items.map(i => [i.id, i]));
+eq([byId.tv.rec, byId.tv.fromCash, byId.ph.fromCash, byId.ph.need], ['cash', 20000, 5000, 25000], 'TV from cash now; 5,000 left goes to the phone');
+eq([byId.ph.required, byId.ph.ready, byId.ph.late], [8333.34, '2027-01', false], 'phone needs 8,333.33 a month for 3 months: ready January');
+eq([byId.lp.ready, pp.allBy], ['2027-05', '2027-05'], 'laptop after the phone, as savings move on to it');
+eq(F.planPurchases([{ id: 'x', name: 'X', price: 10000 }], { cash: 3000, capacity: 8000, card: { available: 20000 } }, '2026-10-30').items[0].rec, 'card_full', 'card now, cleared at the due date from savings');
+eq(F.planPurchases([{ id: 'x', name: 'X', price: 60000, wantBy: '2026-12-31' }], { cash: 0, capacity: 6000, halan: { available: 80000, terms: { method: 'flat', rate: 1, months: 12 } } }, '2026-10-30').items[0].rec, 'halan', 'too late by saving; Halan instalments fit');
+const pf = F.planPurchases([{ id: 'a', name: 'A', price: 10000, priority: 1 }, { id: 'b', name: 'B', price: 10000, priority: 3, focus: true }], { cash: 10000, capacity: 1000 }, '2026-10-30', { focus: true });
+eq(pf.items.map(i => [i.id, i.rec]), [['b', 'cash'], ['a', 'save']], 'focus mode: the focused item goes first');
+eq(F.health({ income: 30000, spending: 24000, essential: 10000, cash: 40000, installments: 6000, cardOwed: 11000, cardLimit: 50400 }).items.map(x => [x.k, x.v, x.g]), [['liquidity', 4, 'fair'], ['dti', 20, 'good'], ['util', 21.83, 'good'], ['save', 20, 'good']], 'health indicators');
+
+const both = F.planPurchases([{ id: 'l', name: 'Laptop', price: 40000, priority: 1 }, { id: 'p', name: 'Phone', price: 15000, priority: 2 }], { cash: 0, capacity: 45000, card: { available: 42440 } }, '2026-10-30');
+eq(both.items.map(i => [i.id, i.rec]), [['l', 'card_full'], ['p', 'save']], 'together: the card covers the laptop; the phone no longer fits the limit left');
+eq(both.items.find(i => i.id === 'p').ready, '2026-12', 'November: 40,000 repays the card, 5,000 towards the phone; ready in December');
 /* 15. backups */
 eq(F.validateBackup({ app: 'action-register-money', tx: [{ id: 'a', acct: 'A' }], prefs: {} }).ok, true, 'a backup is accepted');
 eq(F.validateBackup({ tx: 'x' }).ok, false, 'a damaged file is refused');

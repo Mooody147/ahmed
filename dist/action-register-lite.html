@@ -1684,7 +1684,8 @@ main { padding-top: 26px; }
 .toasts { bottom: calc(16px + env(safe-area-inset-bottom, 0px)) !important; }
 main { padding-bottom: 40px !important; }
 @media (max-width: 1120px) { .rail .brand-sub, .rail .rail-foot { display: none !important; } .rail .nav { padding: 9px 10px; } }
-@media (max-width: 760px) {
+/* icons only once the labels no longer fit (7 tabs need about 900px) */
+@media (max-width: 920px) {
   .rail { gap: 2px; padding-block: 8px; padding-left: max(12px, env(safe-area-inset-left, 0px)); padding-right: max(12px, env(safe-area-inset-right, 0px)); }
   .rail .brand { padding-right: 10px; margin-right: 4px; gap: 8px; }
   .rail .brand-name { font-size: 15px; }
@@ -1693,6 +1694,7 @@ main { padding-bottom: 40px !important; }
   .rail .nav .count { font-size: 10.5px; min-width: 18px; padding: 0 5px; margin-left: 2px; }
   .rail .nav[aria-current="page"]::after { left: 8px; right: 8px; bottom: -8px; }
 }
+@media (max-width: 920px) { .rail .nav .site-ic { font-size: 19px; line-height: 1; } }
 @media (max-width: 420px) { .rail .brand-name { display: none; } .rail .brand { border-right: 0; padding-right: 0; } }
 
 /* ---------- sheets, buttons, fields ---------- */
@@ -1767,7 +1769,9 @@ a { color: var(--wine); }
 .fin-note { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; padding: 8px 12px; border-radius: 10px; background: var(--warn-soft); color: var(--ink); font-size: 13px; }
 .fin-note.bad { background: var(--crit-soft); }
 .fin-banner { padding: 10px 14px; border-radius: 12px; background: var(--med-soft); margin-bottom: 12px; font-size: 13.5px; }
-.fin-card { margin-bottom: 14px; display: grid; gap: 10px; align-content: start; }
+.fin-card { margin-bottom: 14px; display: grid; gap: 10px; align-content: start; grid-template-columns: minmax(0, 1fr); min-width: 0; }
+.fin-card > * { min-width: 0; }
+.fin-party .row > .small { overflow-wrap: anywhere; }
 .fin-card h2 { font-size: 17px; }
 .fin-card h3 { font-size: 14px; margin-top: 6px; }
 .fin-grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
@@ -1901,6 +1905,44 @@ html.phone-mode .fin { padding-bottom: 90px; }
 .fin-q-h { display: flex; justify-content: space-between; gap: 10px; overflow-wrap: anywhere; }
 .fin-q.error, .fin-q.needs-ai { border-color: var(--crit); background: color-mix(in srgb, var(--crit-soft) 40%, transparent); }
 .fin-q.done { border-color: color-mix(in srgb, var(--ok) 45%, var(--line)); }
+/* update my position */
+.fin-draft { min-height: 110px; width: 100%; }
+.fin-preview { display: grid; gap: 8px; padding: 12px; border: 1px dashed var(--accent); border-radius: 12px; background: color-mix(in srgb, var(--accent-soft) 35%, transparent); }
+.fin-preview h3 { margin: 0; }
+.fin-qs { display: grid; gap: 8px; }
+.fin-q-item { padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; display: grid; gap: 6px; }
+.fin-q-item p { margin: 0; font-size: 13.5px; }
+.fin-q-item .row { flex-wrap: wrap; gap: 6px; }
+.fin-daily td { vertical-align: middle; }
+.fin-daily .row { flex-wrap: wrap; gap: 4px; }
+.fin-hist-d summary { cursor: pointer; }
+/* purchase map */
+.fin-map .fin-src rect { fill: var(--sunken); stroke: var(--line); }
+.fin-map .fin-item rect { fill: var(--surface); stroke: var(--line); cursor: pointer; }
+.fin-map .fin-item:hover rect, .fin-map .fin-item:focus rect { stroke: var(--accent); stroke-width: 2; }
+.fin-map .fin-item.focus rect { stroke: var(--accent); stroke-width: 2; }
+.fin-map .fin-item.late rect { stroke: var(--crit); }
+.fin-map .t1 { fill: var(--ink); font-size: 13px; font-weight: 600; font-family: var(--f-body); }
+.fin-map .t2 { fill: var(--ink-2); font-size: 11.5px; font-family: var(--f-body); }
+.fin-chart .fin-link { fill: none; stroke-width: 2.5; opacity: .75; }
+.fin-link.s1 { stroke: var(--fin-s1); } .fin-link.s2 { stroke: var(--fin-s2); } .fin-link.s3 { stroke: var(--fin-s3); } .fin-link.muted { stroke: var(--ink-3); stroke-dasharray: 4 4; }
+.fin-tl { display: flex; gap: 8px; overflow-x: auto; padding: 6px 0; }
+.fin-tl-m { flex: none; display: grid; gap: 4px; align-content: start; padding: 8px 10px; border-left: 3px solid var(--accent); background: var(--sunken); border-radius: 0 10px 10px 0; min-width: 120px; }
+.fin-buy td { vertical-align: top; }
+.fin-reread { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; }
+.fin-form-g .fin-wide { grid-column: 1 / -1; }
+/* purchase table on a phone: one block per item instead of nine columns scrolled sideways */
+@media (max-width: 640px) {
+  .tbl.fin-buy thead { display: none; }
+  .tbl.fin-buy, .tbl.fin-buy tbody, .tbl.fin-buy tr { display: block; width: 100%; }
+  .tbl.fin-buy tr { border-bottom: 1px solid var(--line-2); padding: 8px 0; display: grid; grid-template-columns: 1fr 1fr; gap: 4px 12px; }
+  .tbl.fin-buy td, .tbl.fin-buy td.num { display: block; border: 0; padding: 0; text-align: left !important; white-space: normal; }
+  .tbl.fin-buy td:nth-child(1), .tbl.fin-buy td:nth-child(3), .tbl.fin-buy td:last-child { grid-column: 1 / -1; }
+  .tbl.fin-buy td:nth-child(n+2):not(:last-child)::before { display: block; font-size: 11px; color: var(--ink-3); text-transform: uppercase; letter-spacing: .06em; }
+  .tbl.fin-buy td:nth-child(2)::before { content: "Price"; } .tbl.fin-buy td:nth-child(3)::before { content: "Best way"; }
+  .tbl.fin-buy td:nth-child(4)::before { content: "Cash now"; } .tbl.fin-buy td:nth-child(5)::before { content: "Save a month"; }
+  .tbl.fin-buy td:nth-child(6)::before { content: "Ready"; } .tbl.fin-buy td:nth-child(7)::before { content: "Card"; } .tbl.fin-buy td:nth-child(8)::before { content: "Halan"; }
+}
 
 </style>
 <div class="titlestrip" id="titlestrip"><span class="ts-brand"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c3.3 4 6 7.2 6 10.4a6 6 0 0 1-12 0C6 10.2 8.7 7 12 3z"/><path d="m9.3 13.6 1.9 1.9 3.6-4.1"/></svg> Action Register</span><button class="ts-search" data-act="palette" title="Search and commands (Ctrl+K)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg><span>Search or type a command</span><kbd>Ctrl K</kbd></button><span class="ts-space"></span></div>
@@ -4120,8 +4162,8 @@ const BUILTIN = [
   ['savings', 0, /savings|certificate|time deposit|شهاده|شهادات|ادخار|وديعه/],
   ['invest', 0, /invest|brokerage|securities|mutual fund|صندوق استثمار|استثمار|بورصه/],
   ['principal', -1, /principal|loan repayment|سداد اصل/],
-  ['debt', -1, /install?ment|\bemi\b|loan|valu\b|souhoola|sympl|aman\b|forsa|قسط|اقساط|تقسيط|قرض/],
   ['fees', -1, /\bfees?\b|charges?|commission|stamp duty|annual fee|عموله|رسوم|مصاريف|ضريبه دمغه|دمغه/],
+  ['debt', -1, /install?ment|\bemi\b|loan|valu\b|souhoola|sympl|aman\b|forsa|قسط|اقساط|تقسيط|قرض/],
   ['groceries', -1, /carrefour|spinneys|hyper|kazyon|oscar|seoudi|gourmet|metro market|grocery|supermarket|market|panda|lulu|breadfast|rabbit|بقاله|سوبر ?ماركت|خضار|هايبر/],
   ['dining', -1, /talabat|elmenus|mcdonald|kfc|starbucks|cafe|coffee|costa|cilantro|restaurant|pizza|burger|hardee|domino|مطعم|كافيه|قهوه/],
   ['transport', -1, /uber|careem|didi|indrive|swvl|fuel|petrol|benzin|gas station|wataniya|chillout|total ?energies|mobil\b|emarat|parking|toll|metro|بنزين|وقود|موقف|كارته/],
@@ -4215,10 +4257,87 @@ const isTotalLine = s => /^(opening|closing|brought|carried|total|balance (b\/f|
 function statementMeta(lines) {
   const text = lines.join(' \n ');
   const cur = CURRENCIES.map(c => [c, (text.match(new RegExp('\\b' + c + '\\b', 'g')) || []).length]).sort((a, b) => b[1] - a[1])[0];
-  const acct = /(?:card (?:no\.?|number)|account|a\/c|acct|iban|رقم الحساب|رقم البطاقه|الحساب)\s*(?:no\.?|number|#|:)?\s*[:\-]?\s*([A-Z]{0,4}[\d\s*xX-]{6,})/i.exec(AR(text));
+  const acct = /(?:card (?:no\.?|number)|account|a\/c|acct|iban|رقم الحساب|رقم البطاقه|الحساب)\s*(?:no\.?|number|#|:)?\s*[:\-]?\s*([A-Z]{0,4}[\d*xX•][\d *xX•-]{4,}\d)/i.exec(AR(text));
   const per = /(?:from|period|من|الفتره)[^0-9]{0,20}(\d{1,4}[-/.]\d{1,2}[-/.]\d{1,4}|\d{1,2}\s+[A-Za-z؀-ۿ]{3,}\.?\s+\d{2,4})\s*(?:to|until|-|–|الى|إلى|حتى)\s*(\d{1,4}[-/.]\d{1,2}[-/.]\d{1,4}|\d{1,2}\s+[A-Za-z؀-ۿ]{3,}\.?\s+\d{2,4})/i.exec(AR(text));
   return { currency: cur && cur[1] ? cur[0] : '', account: acct ? acct[1].replace(/\s+/g, '').slice(-14) : '', periodText: per ? [per[1], per[2]] : null };
 }
+// facts a statement prints with a label ("Opening Balance 1000.00 Closing Balance 2380.00", "Credit Limit 50400")
+function statementFacts(text) {
+  const t = AR(text || '').replace(/\s+/g, ' ');
+  const num = re => { const m = re.exec(t); if (!m) return null; const n = parseNum(m[1]); return n ? n.n : null; };
+  const date = re => { const m = re.exec(t); return m ? (parseDate(m[1]) || {}).iso || null : null; };
+  const N = '(\\(?-?[\\d,]+(?:\\.\\d+)?\\)?(?:\\s?(?:CR|DR))?)', D = '(\\d{1,2}[\\s\\-/.]+[A-Za-z]{3,}\\.?[\\s\\-/.,]+\\d{2,4}|\\d{1,4}[-/.]\\d{1,2}[-/.]\\d{1,4})';
+  const f = {
+    opening: num(new RegExp('(?:opening|previous|last statement) balance\\s*:?\\s*(?:EGP|USD|EUR)?\\s*' + N, 'i')), closing: num(new RegExp('(?:closing|current|new|statement) balance\\s*:?\\s*(?:EGP|USD|EUR)?\\s*' + N, 'i')),
+    totalCredit: num(new RegExp('total (?:of )?credits?\\s*:?\\s*' + N, 'i')), totalDebit: num(new RegExp('total (?:of )?debits?\\s*:?\\s*' + N, 'i')),
+    limit: num(new RegExp('credit limit\\s*:?\\s*(?:EGP)?\\s*' + N, 'i')), available: num(new RegExp('available (?:credit|limit|balance)\\s*:?\\s*(?:EGP)?\\s*' + N, 'i')), minDue: num(new RegExp('minimum (?:payment|amount)(?: due)?\\s*:?\\s*(?:EGP)?\\s*' + N, 'i')),
+    dueDate: date(new RegExp('(?:payment )?due date\\s*:?\\s*' + D, 'i')), statementDate: date(new RegExp('statement date\\s*:?\\s*' + D, 'i')),
+  };
+  for (const k of Object.keys(f)) if (f[k] === null) delete f[k];
+  return f;
+}
+// card installments printed on the line: "SHOP ONE 06 OF 12" → paid 6 of 12
+const instOf = desc => { const m = /\b(\d{1,2})\s?(?:OF|\/|من)\s?(\d{1,2})\b/i.exec(AR(desc || '')); if (!m) return null; const n = +m[1], of = +m[2]; return n >= 1 && of >= 2 && n <= of && of <= 120 ? { n, of } : null; };
+
+// a PDF read with the position of every piece of text: rows (top to bottom) of items {x, w, s}. The header row tells
+// where the Debit / Credit / Balance / Amount columns are; each number goes to the column it sits under, so a payment
+// and a purchase of the same amount are never confused (a flat text reading loses that)
+const COLW = { debit: /^(debit|debits|withdrawals?|money out|مدين|سحب|خصم)$/i, credit: /^(credit|credits|deposits?|money in|دائن|ايداع|إيداع)$/i, balance: /^(balance|running balance|الرصيد|رصيد)$/i, amount: /^(amount|المبلغ|transaction amount)$/i,
+  posting: /^(posting|posting amount|billed amount|amount in egp|المبلغ بالجنيه)$/i, orig: /^(original|original currency|original amount)$/i,
+  skip: /^(auth|auth code|currency|reference|ref\.?|value date|cheque|التاريخ)$/i, desc: /^(description|details|narrative|particulars|البيان|الوصف)$/i, date: /^(transaction date|date|posting date|value date|التاريخ)$/i };
+function rowsFromLayout(pages, o = {}) {
+  const rows = [], skipped = [], allText = [];
+  let cols = null, descX = null, prev = null, headerSeen = false, firstAmtX = Infinity;
+  const isNum = s => /^\(?-?[\d,]+(?:\.\d+)?\)?(?:\s?(?:CR|DR))?$/i.test(AR(s).trim());
+  pages.forEach((page, pi) => page.forEach((row, ri) => {
+    const items = row.items.filter(i => String(i.s).trim()), line = items.map(i => i.s).join(' ').trim();
+    if (!line) return;
+    if (!headerSeen) allText.push(line);
+    // a header row: at least a debit and a credit column, or an amount column, with a description column
+    const roles = items.map(i => { const s = String(i.s).trim(); for (const k of ['debit', 'credit', 'balance', 'posting', 'orig', 'amount', 'desc', 'skip']) if (COLW[k].test(s)) return { k, x: i.x + (i.w || 0) / 2, l: i.x, r: i.x + (i.w || 0) }; return null; }).filter(Boolean);
+    if (roles.some(r => r.k === 'debit') && roles.some(r => r.k === 'credit') || (roles.some(r => r.k === 'amount') && roles.some(r => r.k === 'desc'))) {
+      cols = roles.filter(r => r.k !== 'desc'); const d = roles.find(r => r.k === 'desc'); descX = d ? d.l : descX; headerSeen = true; prev = null;
+      firstAmtX = Math.min(...cols.filter(c => ['debit', 'credit', 'amount', 'balance'].includes(c.k)).map(c => c.l)); return;
+    }
+    if (!cols) return;
+    if (/^page\s*(no\.?)?\s*\d+|^continued|^صفحة/i.test(line)) return;
+    if (/^currency\b|^amount\b/i.test(line) && items.length <= 3) return;   // second line of a two-line header
+    // the left part: dates; the middle: description; numbers sit under the amount columns
+    // what is right of the amount columns (currency codes, posting amounts, auth codes) is never description
+    const left = items.filter(i => descX !== null ? i.x < descX - 2 : false), mid = items.filter(i => (descX === null || i.x >= descX - 2) && i.x + (i.w || 0) / 2 < firstAmtX - 12);
+    const origCur = (items.find(i => /^[A-Z]{3}$/.test(String(i.s).trim()) && i.x + (i.w || 0) / 2 >= firstAmtX - 12) || {}).s || '';
+    const nums = items.filter(i => i.x + (i.w || 0) / 2 >= firstAmtX - 12 && isNum(i.s)).map(i => { const c = i.x + (i.w || 0) / 2, r = i.x + (i.w || 0); let best = null, bd = 1e9; for (const col of cols) { const dd = Math.min(Math.abs(col.x - c), Math.abs(col.r - r), Math.abs(col.l - i.x)); if (dd < bd) { bd = dd; best = col; } } return { col: best, v: parseNum(i.s) }; });
+    const dateTxt = left.map(i => i.s).join(' ');
+    const dates = [...AR(dateTxt).matchAll(/(\d{1,2}[\s\-/.]+[A-Za-z؀-ۿ]{3,}\.?[\s\-/.,]+\d{2,4}|\d{1,4}[-/.]\d{1,2}[-/.]\d{1,4})/g)].map(m => parseDate(m[1], o.order || 'dmy')).filter(d => d && d.iso);
+    const desc = mid.map(i => i.s).join(' ').replace(/\s+/g, ' ').trim();
+    const amt = k => { const n = nums.find(x => x.col && x.col.k === k); return n && n.v ? n.v : null; };
+    const d = amt('debit'), c = amt('credit'), a = amt('amount'), b = amt('balance');
+    if (!dates.length) {
+      if (isTotalLine(line)) { skipped.push({ r: `p${pi + 1}·${ri + 1}`, raw: line.slice(0, 300), why: 'statement total or balance line' }); return; }
+      if (prev && desc && !nums.length) { prev.desc = (prev.desc + ' ' + desc).trim(); prev.raw = (prev.raw + ' ⏎ ' + line).slice(0, 600); }
+      return;
+    }
+    let amount = null; const flags = [];
+    // a foreign purchase: the debit/credit column shows the original amount; what was charged is the posting amount
+    const post = amt('posting'), home = o.currency || 'EGP', orig = origCur && origCur !== home && post ? { amount: Math.abs((d || c || a || { n: 0 }).n), cur: origCur } : null;
+    if (d || c) amount = r2((c ? Math.abs(c.n) : 0) - (d ? Math.abs(d.n) : 0));
+    if (orig && amount !== null) amount = r2(Math.sign(amount) * Math.abs(post.n));
+    else if (a) { amount = a.mark ? a.mark * Math.abs(a.n) : a.n; if (!a.mark && a.n > 0) flags.push('direction_unknown'); }
+    if (amount === null) flags.push('no_amount');
+    if (!desc) flags.push('no_description');
+    const bal = b ? (b.mark ? b.mark * Math.abs(b.n) : b.n) : null;
+    const r = { r: `p${pi + 1}·${ri + 1}`, raw: line.slice(0, 400), date: dates[0].iso, date2: dates[1] ? dates[1].iso : null, desc, amount: amount === null ? null : r2(amount), balance: bal === null ? null : r2(bal), currency: '', ref: '', flags };
+    const inst = instOf(desc); if (inst) r.inst = inst;
+    if (orig) { r.orig = orig; r.desc = (desc + ` (${orig.amount} ${orig.cur})`).trim(); }
+    rows.push(r); prev = r;
+  }));
+  const facts = statementFacts(allText.join(' \n ')), meta = { ...statementMeta(allText), ...facts, opening: facts.opening ?? null, closing: facts.closing ?? null, layout: !!cols };
+  if (facts.statementDate && !meta.periodText) meta.statementDate = facts.statementDate;
+  // a card statement prints what is owed as a positive balance: the ledger counts owed money as negative
+  if (o.card) { if (typeof meta.opening === 'number') meta.opening = -meta.opening; if (typeof meta.closing === 'number') meta.closing = -meta.closing; meta.signed = true; }
+  return { rows: cols ? chainBest(rows, meta, o.card) : [], skipped, meta, found: !!cols };
+}
+
 // a spreadsheet or CSV laid out as a grid: find the header row and what each column holds
 function detectGrid(grid) {
   grid = (grid || []).map(r => (r || []).map(c => (c === null || c === undefined ? '' : c)));
@@ -4341,6 +4460,12 @@ function rowsFromText(text, o = {}) {
     if (!desc) flags.push('no_description');
     rows.push({ r: i + 1, raw: line.slice(0, 400), date: dt && dt.iso || null, desc, amount: amount === null ? null : r2(amount), balance: balance === null ? null : r2(balance), currency: '', ref: '', flags });
   });
+  const facts = statementFacts(lines.slice(0, 40).join(' \n '));
+  if (facts.opening !== undefined) meta.opening = o.card ? -facts.opening : facts.opening;
+  if (facts.closing !== undefined) meta.closing = o.card ? -facts.closing : facts.closing;
+  if (o.card && (facts.opening !== undefined || facts.closing !== undefined)) meta.signed = true;
+  Object.assign(meta, { limit: facts.limit, minDue: facts.minDue, dueDate: facts.dueDate, statementDate: facts.statementDate, available: facts.available });
+  rows.forEach(r => { const i = instOf(r.desc); if (i) r.inst = i; });
   return { rows: chainBest(rows, meta, o.card), skipped, meta, order, year };
 }
 // the running balance decides a direction the statement did not print and catches misread amounts
@@ -4371,11 +4496,13 @@ function chain(rows, opening) {
 function chainBest(rows, meta, card) {
   const copy = flip => rows.map(r => ({ ...r, flags: r.flags.slice(), balance: r.balance === null || r.balance === undefined ? r.balance : flip ? -r.balance : r.balance }));
   const bad = rs => rs.filter(r => r.flags.includes('balance_mismatch') || r.flags.includes('direction_unknown')).length;
-  const a = chain(copy(false), meta.opening), withBal = rows.filter(r => typeof r.balance === 'number').length;
+  // meta.signed: the opening/closing were already turned to the ledger's sign (owed = negative)
+  const op = typeof meta.opening === 'number' ? meta.opening * (meta.signed ? -1 : 1) : meta.opening;
+  const a = chain(copy(false), op), withBal = rows.filter(r => typeof r.balance === 'number').length;
   if (!withBal || (!bad(a) && !card)) return a;
-  const b = chain(copy(true), typeof meta.opening === 'number' ? -meta.opening : meta.opening);
+  const b = chain(copy(true), typeof op === 'number' ? -op : op);
   // when both readings add up, a card account takes "the balance is what I owe"
-  if (bad(b) < bad(a) || (card && bad(b) <= bad(a))) { meta.balanceFlipped = true; if (typeof meta.opening === 'number') meta.opening = -meta.opening; if (typeof meta.closing === 'number') meta.closing = -meta.closing; return b; }
+  if (bad(b) < bad(a) || (card && bad(b) <= bad(a))) { meta.balanceFlipped = true; if (!meta.signed) { if (typeof meta.opening === 'number') meta.opening = -meta.opening; if (typeof meta.closing === 'number') meta.closing = -meta.closing; } return b; }
   return a;
 }
 // what a statement said about itself and what the rows add up to
@@ -4771,13 +4898,15 @@ function forecast(an, o) {
   const cur = ym(o.today), done = an.months.filter(b => b.covered && b.m < cur).slice(-6), H = Math.max(1, Math.min(36, +o.horizon || 12));
   const cats = catMap(o.cats), byCat = {};
   for (const c of Object.values(cats)) if (c.kind === 'expense') { const v = done.map(b => b.byCat[c.id] || 0); if (v.some(x => x)) byCat[c.id] = r2(median(v)); }
+  // instalments: today's are inside the medians; each month gets the ones still running then
+  const instNow = o.installments ? installmentLoad(o.installments, cur) : 0;
   const expBase = r2(sum(Object.values(byCat)));
   const incBase = o.income !== undefined && o.income !== null ? +o.income : null;
   const extra = o.incomeRows || null, infl = +o.inflation || 0;
   const rows = [];
   let bal = o.balance === null || o.balance === undefined ? null : +o.balance, cum = 0;
   for (let i = 0; i < H; i++) {
-    const m = addMonths(cur, i + 1), inc = extra && extra[i] ? extra[i].income : incBase, ex = r2(expBase * Math.pow(1 + infl / 100, (i + 1) / 12));
+    const m = addMonths(cur, i + 1), inc = extra && extra[i] ? extra[i].income : incBase, ex = r2(Math.max(0, expBase - instNow) * Math.pow(1 + infl / 100, (i + 1) / 12) + (o.installments ? installmentLoad(o.installments, m) : 0));
     const net = inc === null ? null : r2(inc - ex);
     if (net !== null) cum = r2(cum + net);
     if (bal !== null && net !== null) bal = r2(bal + net);
@@ -4924,6 +5053,166 @@ function position(o) {
   return { assets, liabilities, third, insideMine, perCurrency, net: missing.length ? null : r2(total), missingRates: missing, base, notes, estimated: assets.some(a => !a.verified) || liabilities.some(l => !l.verified) };
 }
 
+
+/* ---------- financing: credit card and Halan ---------- */
+// terms: {method: 'flat' (a monthly rate on the full price, as instalment shops quote it) | 'reducing' (a yearly rate
+// on what is still owed) | 'none' (0% instalments), rate (% a month for flat, % a year for reducing), feePct (% of the
+// price, paid at the start), feeFixed, months}
+function financeQuote(price, terms, months) {
+  price = +price || 0; months = Math.max(1, +months || +(terms && terms.months) || 1); const t = terms || {};
+  const rate = +t.rate || 0, fees = r2(price * (+t.feePct || 0) / 100 + (+t.feeFixed || 0));
+  let interest = 0, monthly;
+  if (t.method === 'reducing' && rate > 0) { const r = rate / 12 / 100; monthly = price * r / (1 - Math.pow(1 + r, -months)); interest = monthly * months - price; }
+  else if (t.method === 'flat' && rate > 0) { interest = price * rate / 100 * months; monthly = (price + interest) / months; }
+  else monthly = price / months;
+  return { price, months, monthly: r2(monthly), interest: r2(interest), fees, total: r2(price + interest + fees), cost: r2(interest + fees), method: t.method || 'none', rate };
+}
+
+/* ---------- instalments: what I still pay every month ---------- */
+// from the statements: lines that say "06 OF 12" (the bank counts them), and fixed payments that repeat every month
+// in instalment-like categories (count unknown — the user is asked). An instalment missing for a month or two is
+// never taken as finished: it stays expected until the count says so or the user confirms it ended.
+function detectInstallments(txs, today, known) {
+  const cur = ym(today), out = {}, kn = Object.fromEntries((known || []).map(k => [k.key, k]));
+  const base = d => payeeKey(String(d || '').replace(/\b\d{1,2}\s?(?:OF|\/|من)\s?\d{1,2}\b/ig, ' '));
+  for (const t of txs) {
+    if (!validDate(t.date) || typeof t.amount !== 'number' || t.amount >= 0) continue;
+    const io = t.inst || instOf(t.desc); if (!io) continue;
+    const key = 'i:' + base(t.desc) + ':' + cents(Math.abs(t.amount)) + ':' + io.of;
+    const o = out[key] = out[key] || { key, name: cleanDesc(String(t.desc).replace(/\b\d{1,2}\s?(?:OF|\/|من)\s?\d{1,2}\b/ig, ' ')), amount: r2(-t.amount), of: io.of, n: 0, acct: t.acct, ids: [], first: t.date, last: t.date, source: 'count' };
+    o.ids.push(t.id); if (t.date < o.first) o.first = t.date; if (t.date >= o.last) { o.last = t.date; o.n = Math.max(o.n, io.n); } else o.n = Math.max(o.n, io.n);
+  }
+  for (const o of Object.values(out)) {
+    o.remaining = Math.max(0, o.of - o.n); o.end = addMonths(ym(o.last), o.remaining);
+    const gap = monthList(ym(o.last), cur).length - 1;
+    o.status = o.remaining === 0 ? 'completed' : gap >= 2 ? 'missing' : 'active';
+    o.outstanding = r2(o.amount * o.remaining);
+  }
+  // fixed monthly payments in instalment categories, without a printed count
+  const rec = recurring(entries(txs, { cats: DEFAULT_CATS }).list.filter(e => e.flow === 'exp'));
+  for (const r of rec) if (r.freq === 'monthly' && r.fixed && (['debt', 'prop_inst'].includes(r.cat) || /install?ment|قسط|اقساط|valu|souhoola|sympl|halan|حالا/i.test(r.name))) {
+    const key = 'r:' + r.key + ':' + cents(r.amount); if (Object.values(out).some(o => o.ids.some(id => r.ids.includes(id)))) continue;
+    const gap = monthList(ym(r.last), cur).length - 1;
+    out[key] = { key, name: r.name, amount: r.amount, of: null, n: r.n, remaining: null, end: null, acct: '', ids: r.ids, first: null, last: r.last, source: 'repeat', status: gap >= 2 ? 'missing' : 'active', outstanding: null };
+  }
+  // what the user told us wins: remaining count, end month, finished or not
+  for (const o of Object.values(out)) { const k = kn[o.key]; if (!k) { o.ask = o.remaining === null || o.status === 'missing'; continue; }
+    if (k.status) o.status = k.status; if (k.remaining !== undefined && k.remaining !== null && k.remaining !== '') { o.remaining = +k.remaining; o.end = addMonths(ym(o.last || today), o.remaining); o.outstanding = r2(o.amount * o.remaining); }
+    if (k.end) o.end = k.end; o.confirmed = true; o.ask = false; }
+  // manual entries (e.g. Halan plans told in the draft)
+  for (const k of known || []) if (k.manual && !out[k.key]) out[k.key] = { ...k, source: 'you', outstanding: k.remaining ? r2(k.amount * k.remaining) : null };
+  return Object.values(out).sort((a, b) => (b.status === 'active') - (a.status === 'active') || b.amount - a.amount);
+}
+// what instalments will cost each coming month (active and missing-but-not-ended ones, until their end)
+const installmentLoad = (list, month) => r2(sum((list || []).filter(i => i.status !== 'completed' && i.status !== 'discontinued' && (!i.end || month <= i.end)).map(i => i.amount)));
+
+/* ---------- my inputs (salary, returns, expenses…) with the dates they apply from ---------- */
+// an input: {id, key, label, kind: income|expense|saving|commitment, amount, from, to, permanent, history: [...]}
+function activeInput(inputs, key, date) { return (inputs || []).filter(i => i.key === key && (!i.from || i.from <= date) && (!i.to || i.to >= date)).sort((a, b) => (b.from || '').localeCompare(a.from || ''))[0] || null; }
+// a new value for an existing input closes the old one the day before and keeps it as history
+function setInput(inputs, change, today) {
+  const list = (inputs || []).map(i => ({ ...i })), from = change.from || today;
+  const old = list.find(i => i.key === change.key && (!i.to || i.to >= from) && (!i.from || i.from < from + 'z'));
+  if (old && change.permanent !== false) old.to = addDays(from, -1);
+  if (old && change.permanent === false) { list.push({ id: change.id, key: change.key, label: change.label || old.label, kind: change.kind || old.kind, amount: change.amount, from, to: change.to || from, permanent: false, temp: true, note: change.note || '' }); return list; }
+  list.push({ id: change.id, key: change.key, label: change.label || (old && old.label) || change.key, kind: change.kind || (old && old.kind) || 'income', amount: change.amount, from, to: null, permanent: true, note: change.note || '', replaced: old ? old.id : null });
+  return list;
+}
+
+/* ---------- a new balance against the last one ---------- */
+// difference = new − (last balance + transactions recorded since); explained when the recorded transactions account
+// for it. An unexplained change is never taken as income or spending: it becomes a question.
+function balanceChange(prev, next, txs) {
+  if (!prev || typeof prev.balance !== 'number') return { first: true, diff: null, explained: null, unexplained: null };
+  const between = (txs || []).filter(t => validDate(t.date) && typeof t.amount === 'number' && t.date > prev.date && t.date <= next.date);
+  const recorded = r2(sum(between.map(t => t.amount))), diff = r2(next.balance - prev.balance), un = r2(diff - recorded);
+  return { first: false, diff, recorded, n: between.length, unexplained: Math.abs(un) < EPS ? 0 : un, ids: between.map(t => t.id) };
+}
+
+/* ---------- financial health ---------- */
+function health(o) {
+  const out = [], inc = +o.income || 0, sp = +o.spending || 0, ess = +o.essential || 0;
+  const liq = ess > 0 ? r2((+o.cash || 0) / ess) : null, dti = inc > 0 ? r2((+o.installments || 0) / inc * 100) : null, util = o.cardLimit > 0 ? r2((+o.cardOwed || 0) / o.cardLimit * 100) : null, rate = inc > 0 ? r2((inc - sp) / inc * 100) : null;
+  const grade = (v, good, ok, higherBetter) => v === null ? null : (higherBetter ? (v >= good ? 'good' : v >= ok ? 'fair' : 'weak') : (v <= good ? 'good' : v <= ok ? 'fair' : 'weak'));
+  out.push({ k: 'liquidity', label: 'Cash cover', v: liq, unit: 'months of essential costs', g: grade(liq, 6, 3, true) });
+  out.push({ k: 'dti', label: 'Instalments vs income', v: dti, unit: '%', g: grade(dti, 20, 35, false) });
+  out.push({ k: 'util', label: 'Credit card used', v: util, unit: '% of the limit', g: grade(util, 30, 60, false) });
+  out.push({ k: 'save', label: 'Savings rate', v: rate, unit: '%', g: grade(rate, 20, 5, true) });
+  const pts = { good: 2, fair: 1, weak: 0 }, known = out.filter(x => x.g);
+  return { items: out, score: known.length ? Math.round(sum(known.map(x => pts[x.g])) / (known.length * 2) * 100) : null };
+}
+
+/* ---------- purchasing goals: how and when to buy each thing ---------- */
+const nf = v => Number(r2(v)).toLocaleString('en-US', { maximumFractionDigits: 2 });
+const mf = m => { const [y, mo] = m.split('-'); return ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][+mo - 1] + ' ' + y; };
+// items: [{id, name, price, priority 1–3, wantBy, focus}], money: {cash (free now, after the safety reserve), capacity
+// (what can be saved each month after spending, instalments and other goals), card: {available, terms, months},
+// halan: {available, terms, months}}. Items are funded in order: focused ones first, then priority, then date.
+function planPurchases(items, money, today, o = {}) {
+  const cur = ym(today), list = (items || []).filter(i => !i.done && +i.price > 0);
+  const focusIds = new Set(list.filter(i => i.focus).map(i => i.id)), useFocus = o.focus && focusIds.size;
+  const order = list.slice().sort((a, b) => (useFocus ? (focusIds.has(b.id) - focusIds.has(a.id)) : 0) || (+a.priority || 2) - (+b.priority || 2) || (a.wantBy || '9999').localeCompare(b.wantBy || '9999') || +a.price - +b.price);
+  let cash = Math.max(0, +money.cash || 0); const cap = Math.max(0, +money.capacity || 0);
+  const res = {}; const need = {};
+  for (const it of order) { const fromCash = Math.min(cash, +it.price); cash = r2(cash - fromCash); need[it.id] = r2(+it.price - fromCash); res[it.id] = { id: it.id, fromCash: r2(fromCash) }; }
+  // monthly savings: dated items get what they need to be on time, in order, while it lasts; the rest share what is
+  // left; month by month, when an item is bought its share moves on to the next one in order
+  const simulate = (left, capacity, firstMinus) => {
+    const alloc = {}, required = {}; let pool = capacity;
+    for (const it of left.filter(i => i.wantBy)) { const m = Math.max(1, monthList(cur, ym(it.wantBy)).length - 1), req = Math.ceil(need[it.id] / m * 100 - 1e-9) / 100; /* rounded up: never a cent short */ const a = Math.min(req, pool); alloc[it.id] = r2(a); pool = r2(pool - a); required[it.id] = req; }
+    const undated = left.filter(i => !i.wantBy); for (const it of undated) alloc[it.id] = undated.length ? r2(pool / undated.length) : 0;
+    if (!undated.length && pool > 0 && left.length) { const first = left.find(i => alloc[i.id] < need[i.id]); if (first) alloc[first.id] = r2(alloc[first.id] + pool); }
+    const saved = Object.fromEntries(left.map(i => [i.id, 0])), done = {};
+    for (let k = 0; k < 600 && left.some(i => !done[i.id]); k++) {
+      const m = addMonths(cur, k + 1); let spare = 0, cut = k === 0 ? firstMinus : 0;
+      for (const it of left) { if (done[it.id]) { spare += alloc[it.id] || 0; continue; } let a = alloc[it.id] || 0; if (cut > 0) { const c = Math.min(cut, a); a -= c; cut -= c; } saved[it.id] += a; }
+      for (const it of left) { if (done[it.id]) continue; if (spare > 0) { const t = Math.min(spare, need[it.id] - saved[it.id]); if (t > 0) { saved[it.id] += t; spare -= t; } } if (saved[it.id] >= need[it.id] - 0.011) done[it.id] = m; }
+      if (capacity <= 0) break;
+    }
+    return { alloc, done, required };
+  };
+  let S = simulate(order.filter(i => need[i.id] > 0), cap, 0), alloc = S.alloc, done = S.done;
+  for (const id in S.required) res[id].required = S.required[id];
+  // all items together: each one uses up card limit, Halan limit and repayment room before the next is judged
+  const card = money.card || {}, halan = money.halan || {};
+  let cardLeft = +card.available || 0, halanLeft = +halan.available || 0, payRoom = cap, planRoom = cap;
+  const out = order.map(it => {
+    const r = res[it.id], price = +it.price, months = need[it.id] > 0 ? (done[it.id] ? monthList(cur, done[it.id]).length - 1 : null) : 0;
+    const cardFull = price <= cardLeft && need[it.id] <= payRoom + EPS;           // pay the card back at the next due date
+    const cardPlan = card.terms && price <= cardLeft ? financeQuote(price, card.terms, card.terms.months || card.months || 12) : null;
+    const halanQ = halan.terms && price <= halanLeft ? financeQuote(price, halan.terms, halan.terms.months || halan.months || 12) : null;
+    const fits = q => q && q.monthly <= planRoom + EPS;
+    let rec, why;
+    if (need[it.id] <= 0) { rec = 'cash'; why = 'You can pay it now from money you have, keeping your safety reserve.'; }
+    else if (cardFull) { rec = 'card_full'; why = `Pay with the card and clear it at the next due date (${r.fromCash ? nf(r.fromCash) + ' from cash and ' : ''}${nf(need[it.id])} from next month’s savings) — no interest.`; }
+    else if (it.wantBy && months !== null && done[it.id] && done[it.id] <= ym(it.wantBy)) { rec = 'save'; why = `Saving ${nf(alloc[it.id] || 0)} a month gets you there by ${mf(done[it.id])} — before ${mf(ym(it.wantBy))}, without any interest.`; }
+    else {
+      const opts = [fits(cardPlan) && { k: 'card_plan', q: cardPlan }, fits(halanQ) && { k: 'halan', q: halanQ }].filter(Boolean).sort((a, b) => a.q.cost - b.q.cost);
+      if (it.wantBy && opts.length) { rec = opts[0].k; why = `Saving alone reaches it ${done[it.id] ? 'in ' + mf(done[it.id]) : 'too late'}; ${opts[0].k === 'halan' ? 'Halan' : 'card'} instalments of ${nf(opts[0].q.monthly)} a month for ${opts[0].q.months} months fit what you save each month (extra cost ${nf(opts[0].q.cost)}).`; }
+      else if (done[it.id]) { rec = 'save'; why = `Save ${nf(alloc[it.id] || 0)} a month: affordable in ${mf(done[it.id])}.`; }
+      else if (opts.length) { rec = opts[0].k; why = `Instalments fit your monthly savings (extra cost ${nf(opts[0].q.cost)}).`; }
+      else { rec = 'not_yet'; why = cap > 0 ? 'Not affordable within 50 years at your current savings.' : 'Nothing is left to save each month at the moment — see Budget for what to cut.'; }
+    }
+    if (rec === 'card_full') { cardLeft -= price; payRoom -= need[it.id]; }
+    if (rec === 'card_plan') { cardLeft -= price; planRoom -= cardPlan.monthly; payRoom -= cardPlan.monthly; }
+    if (rec === 'halan') { halanLeft -= price; planRoom -= halanQ.monthly; payRoom -= halanQ.monthly; }
+    const now = ['cash', 'card_full', 'card_plan', 'halan'].includes(rec);
+    if (now) r.required = null;
+    return { ...it, price, fromCash: r.fromCash, need: need[it.id], monthly: now && rec !== 'cash' ? (rec === 'card_full' ? need[it.id] : (rec === 'halan' ? halanQ : cardPlan).monthly) : alloc[it.id] || 0, buyNow: now, required: r.required || null, ready: now ? cur : need[it.id] <= 0 ? cur : done[it.id] || null, months, late: !now && !!(it.wantBy && (need[it.id] > 0) && (!done[it.id] || done[it.id] > ym(it.wantBy))),
+      options: { cash: need[it.id] <= 0, cardFull, cardPlan, halan: halanQ, cardAvailable: +card.available || 0, halanAvailable: +halan.available || 0 }, rec, why };
+  });
+  // items bought now (card, instalments) leave less to save each month; savings are planned again for the rest
+  const saving = out.filter(i => i.rec === 'save' || i.rec === 'not_yet');
+  if (saving.length && out.some(i => i.buyNow && i.rec !== 'cash')) {
+    const planMonthly = sum(out.filter(i => i.rec === 'card_plan' || i.rec === 'halan').map(i => i.monthly)), cardRepay = sum(out.filter(i => i.rec === 'card_full').map(i => i.need));
+    const S2 = simulate(saving, Math.max(0, cap - planMonthly), cardRepay);
+    for (const i of saving) { i.monthly = S2.alloc[i.id] || 0; i.required = S2.required[i.id] || i.required; i.ready = S2.done[i.id] || null; i.late = !!(i.wantBy && (!i.ready || i.ready > ym(i.wantBy))); i.months = i.ready ? monthList(cur, i.ready).length - 1 : null;
+      if (i.ready) { i.rec = 'save'; i.why = `Save ${nf(i.monthly)} a month${i.wantBy ? (i.late ? ` — ready ${mf(i.ready)}, after ${mf(ym(i.wantBy))}` : ` — ready ${mf(i.ready)}, before ${mf(ym(i.wantBy))}`) : `: affordable in ${mf(i.ready)}`} (after what already goes to the card and instalments).`; } }
+  }
+  const totalNeed = r2(sum(out.map(i => i.need)));
+  return { items: out, total: r2(sum(out.map(i => i.price))), fromCash: r2(sum(out.map(i => i.fromCash))), monthly: r2(sum(out.filter(i => i.rec !== 'card_full').map(i => i.monthly))), cardRepay: r2(sum(out.filter(i => i.rec === 'card_full').map(i => i.need))), required: r2(sum(out.filter(i => i.required).map(i => i.required))), capacity: cap, cashLeft: r2(cash), allBy: out.every(i => i.ready) ? out.map(i => i.ready).sort().pop() : null, late: out.filter(i => i.late).map(i => i.id), totalNeed };
+}
+
 /* ---------- backup ---------- */
 function validateBackup(o) {
   const errors = [];
@@ -4937,8 +5226,8 @@ function validateBackup(o) {
 }
 
 return { EPS, r2, norm, AR, CURRENCIES, validDate, dnum, addDays, spanDays, ym, addMonths, monthList, dim, monthEnd, parseDate, dateOrder, parseNum, cleanDesc, payeeKey,
-  detectBank, looksLikeCard, last4, DEFAULT_CATS, catMap, classify, learnRule, refundOf, pairMoves, CODE_CAT, detectGrid, rowsFromGrid, rowsFromText, chainBest, statementCheck, matchImport, importCounts, similar, overlaps, fp, quant, median, entries, analyze, series,
-  recurring, incomeBase, STRATEGY, budgetPlan, monthControl, unusual, SCEN, monthFactor, simulate, sensitivity, shiftDate, allocate, thirdParty, holdingReturns, propertyShare, rentForecast, cardOwed, position, monthsTo, forecast, goalPlan, reconcile, validateBackup };
+  detectBank, looksLikeCard, last4, DEFAULT_CATS, catMap, classify, learnRule, refundOf, pairMoves, CODE_CAT, detectGrid, rowsFromGrid, rowsFromText, rowsFromLayout, statementFacts, instOf, chainBest, statementCheck, matchImport, importCounts, similar, overlaps, fp, quant, median, entries, analyze, series,
+  recurring, incomeBase, STRATEGY, budgetPlan, monthControl, unusual, SCEN, monthFactor, simulate, sensitivity, shiftDate, allocate, thirdParty, holdingReturns, propertyShare, rentForecast, cardOwed, position, monthsTo, forecast, goalPlan, reconcile, validateBackup, financeQuote, detectInstallments, installmentLoad, activeInput, setInput, balanceChange, health, planPurchases };
 })();
 if (typeof module !== 'undefined') module.exports = FIN;
 
@@ -5114,6 +5403,7 @@ function delDaily(id) { St.daily.delete(id); if (St.mode === 'db') delDoc(St.ref
 const mergeLayout = l => ({ off: {}, offv: {}, size: {}, ...(l || {}) });
 // further collections used by feature files: document register, time log, lessons, recycle bin, learned preferences
 const COLS = ['docreg', 'time', 'lessons', 'trash', 'prefs'];
+St.colsLoaded = new Set();
 St.cols = Object.fromEntries(COLS.map(n => [n, new Map()]));
 const colList = n => [...St.cols[n].values()];
 function colPut(n, d) { d.updatedAt = nowISO(); St.cols[n].set(d.id, d); if (St.mode === 'db') writeDoc(St.refs.cols[n].doc(d.id), d); else saveLocal(); }
@@ -5164,7 +5454,8 @@ async function initStore() {
     St.refs.daily.onSnapshot(s => { St.daily = snapMap(St.refs.daily, s); scheduleRender(); }, fail);
     St.refs.layout.onSnapshot(d => { St.layout = mergeLayout(snapDoc(St.refs.layout, d)); scheduleRender(); }, fail);
     St.refs.cols = {};
-    for (const n of COLS) { St.refs.cols[n] = base.collection(n); St.refs.cols[n].onSnapshot(s => { St.cols[n] = snapMap(St.refs.cols[n], s); scheduleRender(); }, fail); }
+    // St.colsLoaded: collections whose saved documents have arrived (nothing may be written over them before that)
+    for (const n of COLS) { St.refs.cols[n] = base.collection(n); St.refs.cols[n].onSnapshot(s => { St.cols[n] = snapMap(St.refs.cols[n], s); St.colsLoaded.add(n); scheduleRender(); }, fail); }
   } else {
     St.mode = 'local';
     try {
@@ -7157,7 +7448,7 @@ function dayModel(D) {
   Object.values(lanes).forEach(l => l.sort(order));
   const entries = [...St.daily.values()].filter(a => a.date === D).sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || ''));
   const manager = all.filter(t => t.status !== 'done' && isFromManager(t)).sort((a, b) => (a.deadline || '9').localeCompare(b.deadline || '9'));
-  const suggest = isToday ? all.filter(t => t.status !== 'done' && !items.has(t.id) && isMine(t) && t.status !== 'waiting' && ((t.deadline && t.deadline <= E.addDays(today, 1)) || t.priority === 'critical' || isFromManager(t))).sort(order.bind(null)).slice(0, 8) : [];
+  const suggest = isToday ? all.filter(t => t.status !== 'done' && !items.has(t.id) && isMine(t) && t.status !== 'waiting' && ((t.deadline && t.deadline <= E.addDays(today, 1)) || t.priority === 'critical' || isFromManager(t))).sort((x, y) => order({ t: x }, { t: y })).slice(0, 8) : [];
   return { isToday, items, lanes, achievements: entries.filter(a => a.kind === 'achievement'), notes: entries.filter(a => a.kind === 'note'), manager, suggest };
 }
 function dayHistory() {
@@ -13079,7 +13370,7 @@ const FIN_DEF = () => ({
   alloc: [{ name: 'Savings & investments', pct: 50 }, { name: 'Financial goals', pct: 30 }, { name: 'Lifestyle', pct: 20 }], emergencyMonths: 3, keepOriginals: true, rent: { scenario: { delay: 0, rentCut: 0, vacancy: 0, costUp: 0 }, horizon: 24 },
 });
 const finP = () => { const p = { ...FIN_DEF(), ...(St.cols.prefs.get('finance') || {}) }; p.sim = { ...FIN_DEF().sim, ...(p.sim || {}) }; p.rent = { ...FIN_DEF().rent, ...(p.rent || {}) }; return p; };
-const finSave = mut => { const p = clone(finP()); mut(p); colPut('prefs', { ...p, id: 'finance' }); };
+const finSave = mut => { if (St.mode === 'db' && St.colsLoaded && !St.colsLoaded.has('prefs')) { toast('Still loading your saved settings — try again in a moment.', { err: true }); return; } const p = clone(finP()); mut(p); colPut('prefs', { ...p, id: 'finance' }); };
 const finCats = () => finP().cats || FIN.DEFAULT_CATS;
 const finCat = id => finCats().find(c => c.id === id) || null;
 const finAcct = id => finP().accounts.find(a => a.id === id) || null;
@@ -13189,6 +13480,7 @@ function finNotices(an) {
   if (an.noRate && an.noRate.length) out.push(`${an.noRate.map(x => `${x.n} transaction${x.n === 1 ? '' : 's'} in ${x.cur}`).join(', ')} ${an.noRate.reduce((s, x) => s + x.n, 0) === 1 ? 'is' : 'are'} left out of these totals: no exchange rate to ${finP().base} was given. <button class="btn sm" data-act="fin-sec" data-s="settings">Add a rate</button>`);
   if (an.incomplete && an.incomplete.length) out.push(`${an.incomplete.length} transaction${an.incomplete.length === 1 ? ' has' : 's have'} no readable date, amount or direction and ${an.incomplete.length === 1 ? 'is' : 'are'} not counted. <button class="btn sm" data-act="fin-ledger-status" data-v="incomplete">Fix them</button>`);
   if (an.totals && an.totals.gaps && an.totals.gaps.length) out.push(`No statement covers ${an.totals.gaps.length > 4 ? an.totals.gaps.length + ' months' : an.totals.gaps.map(fmon).join(', ')} — those months are shown as missing, not as zero.`);
+  const nq = typeof finQuestions === 'function' ? finQuestions().length : 0; if (nq) out.push(`${nq} question${nq === 1 ? '' : 's'} for you (unclear deposits, balance changes, instalments). <button class="btn sm" data-act="fin-sec" data-s="update">Answer</button>`);
   const rv = finTx().filter(t => t.review).length; if (rv) out.push(`${rv} transaction${rv === 1 ? '' : 's'} to check (unsure category or possible repeat). <button class="btn sm" data-act="fin-ledger-status" data-v="review">Review</button>`);
   const prob = colList('finbatch').filter(b => !b.undone).reduce((s, b) => s + (b.pending || []).filter(r => r.done === 'auto-same').length, 0); if (prob) out.push(`${prob} imported line${prob === 1 ? ' was' : 's were'} skipped as probable repeats of recorded transactions. <button class="btn sm" data-act="fin-sec" data-s="import">See them</button>`);
   const pend = colList('finbatch').reduce((s, b) => s + (b.pending || []).filter(r => !r.done).length, 0); if (pend) out.push(`${pend} imported line${pend === 1 ? '' : 's'} held for your decision (might already be recorded). <button class="btn sm" data-act="fin-sec" data-s="import">Decide</button>`);
@@ -13206,7 +13498,7 @@ function finBars(rows, o = {}) {
   const hi = niceMax(Math.max(...rows.map(r => Math.max(r.a || 0, r.b || 0, r.net || 0)))), lo = Math.min(0, ...rows.map(r => r.net || 0)), loN = lo < 0 ? -niceMax(-lo) : 0;
   const y = v => T + ih * (hi - v) / (hi - loN), bw = Math.max(2, Math.min(26, iw / rows.length / 2.6)), step = iw / rows.length;
   const ticks = [0, 1, 2, 3, 4].map(i => loN + (hi - loN) * i / 4);
-  const every = Math.ceil(rows.length / 12);
+  const every = Math.ceil(rows.length / Math.max(2, Math.min(12, Math.floor(iw / 50))));
   let s = `<svg class="fin-chart" viewBox="0 0 ${W} ${H}" data-key="${esc(o.title || '')}" data-w="${W}" role="img" aria-label="${esc(o.title || 'Chart')}">`;
   for (const t of ticks) s += `<line class="grid" x1="${L}" x2="${W - R}" y1="${y(t)}" y2="${y(t)}"/><text class="ax" x="${L - 6}" y="${y(t) + 4}" text-anchor="end">${fshort(t)}</text>`;
   s += `<line class="zero" x1="${L}" x2="${W - R}" y1="${y(0)}" y2="${y(0)}"/>`;
@@ -13240,7 +13532,7 @@ function finLines(series, o = {}) {
     s += seg(false) + seg(true);
     for (const p of se.pts) if (p.v !== null && p.v !== undefined) s += `<circle class="pt ${se.cls || 's' + (si + 1)} ${p.est ? 'est' : ''}" cx="${x(p.k)}" cy="${y(p.v)}" r="${keys.length > 40 ? 2 : 3.5}"><title>${esc(se.name)} · ${esc(p.label || p.k)}: ${o.pct ? fpct(p.v) : fm(p.v)}${p.est ? ' (estimate)' : ''}</title></circle>`;
   });
-  const every = Math.ceil(keys.length / 12);
+  const every = Math.ceil(keys.length / Math.max(2, Math.min(12, Math.floor(iw / 50))));
   keys.forEach((k, i) => { if (i % every === 0) s += `<text class="ax" x="${x(k)}" y="${H - 10}" text-anchor="middle">${esc(o.label ? o.label(k) : k)}</text>`; });
   s += '</svg>';
   return `<div class="fin-legend">${series.map((se, i) => `<span><i class="k ${se.cls || 's' + (i + 1)} line"></i>${esc(se.name)}</span>`).join('')}${series.some(se => se.pts.some(p => p.est)) ? '<span><i class="k line est"></i>Estimate</span>' : ''}</div>` + s;
@@ -13277,6 +13569,10 @@ FIN_VIEW.dash = () => {
     finKpi('Budget left this month', plan.totalBudget ? fkc(plan.totalBudget - plan.rows.filter(r => r.budget !== null).reduce((s, r) => s + r.spent, 0)) : '—', plan.totalBudget ? `of ${fk(plan.totalBudget)} budgeted` : '<button class="btn sm" data-act="fin-sec" data-s="budget">Set budgets</button>'),
     finKpi('Disposable this month', fkc(r2(curM.inc - curM.exp - committedLeft)), `income − spending so far − ${fk(committedLeft)} still due`, { est: true }),
     finKpi('Account balances', own.assets.filter(x => x.kind === 'bank' && x.verified).map(x => fk(x.amount, x.currency)).join(' + ') || '—', own.assets.some(x => x.kind === 'bank' && x.verified) ? 'latest statement balances — bank-confirmed' : 'no statement balance yet', { act: 'fin-sec', data: { s: 'accounts' } }),
+    ...(() => { const n = finNow(); return [finKpi('Free cash now', fk(n.free), `${n.cashKnown} of ${n.cashAccts} accounts known · after others’ money and a ${fk(n.reserve)} reserve`, { act: 'fin-sec', data: { s: 'update' } }),
+      finKpi('Available credit', n.card && n.card.available !== null && n.card.available !== undefined ? fk(n.card.available) : '—', n.card && n.card.limit ? `card limit ${fk(n.card.limit)}${n.halan && n.halan.available ? ` · Halan ${fk(n.halan.available)}` : ''}` : 'no card figure yet', { act: 'fin-sec', data: { s: 'credit' } }),
+      finKpi('Instalments a month', fk(n.instMonthly), `${n.inst.filter(i => i.status === 'active' || i.status === 'missing').length} running`, { act: 'fin-sec', data: { s: 'credit' } }),
+      finKpi('Financial health', n.health.score === null ? '—' : n.health.score + '/100', n.health.items.filter(x => x.g).map(x => `${x.label} ${x.g}`).join(' · '), { act: 'fin-sec', data: { s: 'update' } })]; })(),
     finKpi('Put into savings', fk(t.save), 'savings and investment moves out of my accounts, net'),
     finKpi('Savings rate', fpct(t.rate), '(income − expenses) ÷ income'),
     finKpi('Highest spending month', t.peakExp ? fk(t.peakExp.exp) : '—', t.peakExp ? fmon(t.peakExp.m) : '', t.peakExp ? { act: 'fin-drill', data: { kind: 'month', k: t.peakExp.m } } : {}),
@@ -13492,10 +13788,12 @@ document.addEventListener('input', e => { if (e.target && e.target.id === 'fin-q
 // charts are drawn at the width they get, so their text stays at its size on any screen
 HOOKS.afterRender.push(() => {
   if (UI.view !== 'finance') return;
-  let again = false; const now = Date.now(); FIN_W._n = now - (FIN_W._t || 0) < 1500 ? (FIN_W._n || 0) + 1 : 0; FIN_W._t = now;
-  if (FIN_W._n > 3) return;   // never chase a size in a loop
+  // only redraws this hook asked for count towards the limit, so it never chases a size in a loop
+  FIN_W._chain = FIN_W._self ? (FIN_W._chain || 0) + 1 : 0; FIN_W._self = false;
+  if (FIN_W._chain > 3) return;
+  let again = false;
   document.querySelectorAll('.fin-chart[data-key]:not([data-key=""])').forEach(svg => { const w = Math.round(svg.getBoundingClientRect().width); if (w > 120 && Math.abs(w - +svg.dataset.w) > 24) { FIN_W[svg.dataset.key] = Math.max(300, w); again = true; } });
-  if (again) scheduleRender();
+  if (again) { FIN_W._self = true; scheduleRender(); }
   const cur = document.querySelector('.fin-nav [aria-current="page"]'); if (cur && cur.scrollIntoView && document.querySelector('.fin-nav').scrollWidth > document.querySelector('.fin-nav').clientWidth) cur.scrollIntoView({ block: 'nearest', inline: 'nearest' });
 });
 // a test hook
@@ -13510,6 +13808,19 @@ window.__FIN = { tx: () => finTx(), an: o => finAn(o || {}), prefs: () => finP()
 // printed; the same checks as for any statement then apply, so a misread number shows up as a balance that does not
 // add up. Lines that might be repeats are skipped (never counted twice) and listed with one click to add them.
 const FIN_EXT = { csv: 'sheet', txt: 'sheet', tsv: 'sheet', xlsx: 'sheet', xls: 'sheet', xlsm: 'sheet', ods: 'sheet', pdf: 'pdf', png: 'image', jpg: 'image', jpeg: 'image', webp: 'image', gif: 'image' };
+// a PDF with the position of every piece of text, so table columns can be told apart (see FIN.rowsFromLayout)
+async function finPdfLayout(bytes) {
+  const pdfjs = await E.need('pdf');
+  const doc = await pdfjs.getDocument({ data: bytes.slice(0), isEvalSupported: false, disableFontFace: true, useSystemFonts: false, verbosity: 0 }).promise;
+  const pages = [];
+  for (let p = 1; p <= Math.min(doc.numPages, 80); p++) {
+    const tc = await (await doc.getPage(p)).getTextContent(), rows = [];
+    for (const it of tc.items) { if (!it.str || !it.str.trim()) continue; const y = it.transform[5]; let r = rows.find(r => Math.abs(r.y - y) <= 2.5); if (!r) rows.push(r = { y, items: [] }); r.items.push({ x: it.transform[4], w: it.width || 0, s: it.str }); }
+    rows.sort((a, b) => b.y - a.y); rows.forEach(r => r.items.sort((a, b) => a.x - b.x)); pages.push(rows);
+  }
+  return pages;
+}
+const FIN_READER = 2;   // bumped when statements are read better: older imports can be read again from their originals
 async function finHash(bytes) { try { const d = await crypto.subtle.digest('SHA-256', bytes); return [...new Uint8Array(d)].map(b => b.toString(16).padStart(2, '0')).join(''); } catch { return ''; } }
 function finGuessAcct(meta, fileName) {
   const accts = finP().accounts, num = (meta.account || '').replace(/\D/g, '');
@@ -13537,7 +13848,10 @@ async function finReadFile(f) {
       it.text = r.text || ''; it.pages = r.pages || 1;
       const textPages = (r.pages || 1) - (r.scannedPages || []).length;
       if (!textPages) { it.state = 'needs-ai'; it.why = 'This PDF is a scan (pictures of pages, no text), so it cannot be read on this device.'; return it; }
-      it.meta0 = FIN.rowsFromText(it.text).meta;
+      // by column positions when the PDF keeps its columns apart, else line by line — whichever reads more lines fully
+      try { it.layout = await finPdfLayout(bytes); const L = FIN.rowsFromLayout(it.layout), T = FIN.rowsFromText(it.text); const good = rs => rs.filter(r => r.date && r.amount !== null && !r.flags.includes('direction_unknown')).length;
+        if (L.found && good(L.rows) && good(L.rows) >= good(T.rows)) { it.useLayout = true; it.meta0 = L.meta; } } catch {}
+      if (!it.useLayout) it.meta0 = FIN.rowsFromText(it.text).meta;
     } else { it.state = 'needs-ai'; it.why = 'A photo of a statement can only be read by Claude.'; return it; }
   } catch (e) { it.state = 'error'; it.err = 'Could not read the file: ' + (e.message || e); return it; }
   it.acct = finGuessAcct(it.meta0 || {}, f.name);
@@ -13574,7 +13888,8 @@ function finPickAcct(it, kind) {
     return { a, sc, why };
   }).sort((x, y) => y.sc - x.sc);
   const same = scored.filter(x => x.a.kind === kind && (!cur || x.a.currency === cur));
-  if (same.length === 1 && scored[0].a === same[0].a && scored[0].sc >= 0 && !num && !bank) scored[0].sc += 2;
+  // the only account of this kind (and currency) that has no number yet takes a statement that brings one
+  if (same.length === 1 && scored[0].a === same[0].a && scored[0].sc >= 0 && (!num || !same[0].a.number) && !(bank && same[0].a.bank && FIN.norm(bank) !== FIN.norm(same[0].a.bank))) { scored[0].sc += 2; scored[0].why.push('your only ' + (kind === 'credit_card' ? 'card' : 'account of this kind')); }
   const best = scored[0];
   if (best && best.sc >= 2) { it.acct = best.a.id; it.newAcct = null; it.acctWhy = best.why.join(', ') || 'the only account of this kind'; }
   else {
@@ -13591,13 +13906,14 @@ function finParse(it) {
   const card = a.kind === 'credit_card';
   let rd;
   if (it.grid) rd = FIN.rowsFromGrid(it.grid, it.det, { card });
+  else if (it.useLayout) rd = FIN.rowsFromLayout(it.layout, { card, currency: (a.currency || finP().base) });
   else if (it.ai) rd = FIN.rowsFromGrid(it.ai.grid, FIN.detectGrid(it.ai.grid), { card });
   else rd = FIN.rowsFromText(it.text || '', { card });
   if (it.ai) { rd.meta = { ...rd.meta, ...it.ai.meta }; rd.rows.forEach((r, i) => { r.flags.push('read_by_claude'); if (it.ai.unclear[i]) r.flags.push('unclear'); }); }
   it.rows = rd.rows; it.skipped = rd.skipped; it.meta = { ...(it.meta0 || {}), ...rd.meta };
   it.check = FIN.statementCheck(it.rows, it.meta);
   // the statement's own period when it prints one, else the dates of its rows
-  let per = { from: it.check.from, to: it.check.to };
+  let per = { from: it.check.from, to: it.meta.statementDate && it.meta.statementDate >= (it.check.to || '') ? it.meta.statementDate : it.check.to };
   if (it.meta.periodText) { const o = FIN.dateOrder(it.meta.periodText); const a1 = FIN.parseDate(it.meta.periodText[0], o), b1 = FIN.parseDate(it.meta.periodText[1], o); if (a1 && a1.iso && b1 && b1.iso && a1.iso <= b1.iso) per = { from: a1.iso, to: b1.iso }; }
   it.period = per;
   finMatch(it);
@@ -13671,6 +13987,7 @@ function finCommit(it, auto) {
     if (dir && typeof amount === 'number') { amount = dir === 'in' ? Math.abs(amount) : -Math.abs(amount); const k = flags.indexOf('direction_unknown'); if (k >= 0) flags.splice(k, 1); }
     const c = it.cats[i] ? { cat: it.cats[i], src: 'manual', review: false } : r.cls || { cat: amount > 0 ? 'other_inc' : 'other_exp', review: true };
     return { id: E.uid('tx'), acct, date: r.date, desc: r.desc, amount: typeof amount === 'number' ? amount : null, currency: r.currency || a.currency, balance: r.balance, ref: r.ref || '', cat: c.cat, sub: c.sub || '', catSrc: it.cats[i] ? 'manual' : c.src, party: c.party || '', holding: c.holding || '',
+      ...(r.inst ? { inst: r.inst } : {}), ...(r.orig ? { orig: r.orig } : {}), ...(r.date2 && r.date2 !== r.date ? { dates: [r.date2] } : {}),
       review: !!(incomplete || c.review || flags.some(f => ['balance_mismatch', 'unclear', 'read_by_claude', 'no_year'].includes(f))), flags, src: src(r), createdAt: at, hist: [{ at, f: 'created', from: null, to: it.name, why: it.method === 'claude' ? 'imported (read by Claude)' : 'imported' }] };
   };
   it.rows.forEach((r, i) => {
@@ -13699,8 +14016,16 @@ function finCommit(it, auto) {
     for (const [x, y] of [[A, B], [B, A]]) { if (x.catSrc === 'manual' || (finCat(x.cat) || {}).kind === 'third') continue; if (x.cat !== FIN.CODE_CAT[pr.code]) finHist(x, 'cat', x.cat, FIN.CODE_CAT[pr.code], 'other side found in ' + ((finAcct(y.acct) || {}).name || 'another account')); x.cat = FIN.CODE_CAT[pr.code]; x.catSrc = 'pair'; x.pair = y.id; x.review = false; }
   }
   const counts = { reviewed: it.rows.length, added: add.filter(t => FIN.validDate(t.date) && typeof t.amount === 'number').length, dup: it.rows.filter((r, i) => finRowDecision(it, i) === 'same').length, updated: it.rows.filter((r, i) => finRowDecision(it, i) === 'update').length, held: pending.filter(x => !x.done).length, probable: pending.filter(x => x.done === 'auto-same').length, incomplete: add.filter(t => !FIN.validDate(t.date) || typeof t.amount !== 'number').length, skippedByYou: userSkipped.length, notTransactions: (it.skipped || []).length };
-  finWrite([...add, ...[...ch.values()].map(t => ({ ...t, updatedAt: at }))]);
-  const batch = { id: bid, file: it.name, size: it.size, hash: it.hash, kind: it.kind, method: it.method, acct, from: it.period.from, to: it.period.to, opening: it.check.opening, closing: it.check.closing, diff: it.check.diff, mismatches: it.check.mismatches, counts, at, sheet: it.sheet || '',
+  // entries made from a balance change are replaced by the statement that covers their dates
+  const synth = finTx().filter(t => t.acct === acct && (t.flags || []).includes('from_balance') && it.period.from && t.date >= it.period.from && t.date <= (it.period.to || t.date)).map(t => t.id);
+  if (synth.length) finLog('replaced by a statement', { ids: synth, file: it.name });
+  finWrite([...add, ...[...ch.values()].map(t => ({ ...t, updatedAt: at }))], synth);
+  const facts = { limit: it.meta.limit, minDue: it.meta.minDue, dueDate: it.meta.dueDate, statementDate: it.meta.statementDate, available: it.meta.available };
+  for (const k of Object.keys(facts)) if (facts[k] === undefined || facts[k] === null) delete facts[k];
+  finSave(q => { const ac = q.accounts.find(x => x.id === acct); if (!ac) return; if (!ac.number && it.meta.account) { ac.number = String(it.meta.account).slice(-14); if (ac.preset && ac.name === 'Credit card') ac.name = `Credit card ••${FIN.last4(ac.number)}`; }
+    if (facts.limit && !ac.limitSet) ac.limit = facts.limit;
+    const sd = facts.statementDate || it.period.to; if (sd && (!ac.stmt || sd >= ac.stmt.date)) ac.stmt = { date: sd, closing: it.check.closing, ...facts, file: it.name }; });
+  const batch = { id: bid, reader: FIN_READER, ...facts, file: it.name, size: it.size, hash: it.hash, kind: it.kind, method: it.method, acct, from: it.period.from, to: it.period.to, opening: it.check.opening, closing: it.check.closing, diff: it.check.diff, mismatches: it.check.mismatches, counts, at, sheet: it.sheet || '',
     // every line and what happened to it, so a skipped repeat is as traceable as an added one
     lines: it.rows.slice(0, 3000).map((r, i) => { const d = finRowDecision(it, i), t = add.find(x => x.src && x.src.r === r.r); return { r: r.r, act: d, id: t ? t.id : r.match || null }; }), skipped: [...(it.skipped || []), ...userSkipped].slice(0, 500), pending, seenBefore: (it.seen || []).map(b => b.id) };
   colPut('finbatch', batch);
@@ -13711,6 +14036,31 @@ function finCommit(it, auto) {
   if (!auto) { UI.fin.imp.files.splice(UI.fin.imp.cur, 1); UI.fin.imp.cur = 0; }
   render();
   return { batch: bid, counts, acct };
+}
+// statements imported with an older reader, read again from their stored originals (the transactions they made are
+// replaced; the old import stays in the history as replaced)
+async function finReread(ids) {
+  const bs = ids.map(id => St.cols.finbatch.get(id)).filter(b => b && b.asset && !b.undone);
+  if (!bs.length) return;
+  UI.fin.sec = 'import'; UI.fin.rereading = true; render();
+  const oldAccts = new Set(bs.map(b => b.acct)), files = [];
+  for (const b of bs) {
+    try {
+      const bytes = await afBytes({ id: b.asset, wrapped: b.wrapped });
+      const made = finTx().filter(t => t.src && t.src.b === b.id);
+      finLog('read again', { batch: b.id, file: b.file, replaced: made.map(t => t.id) });
+      finWrite([], made.map(t => t.id)); colPut('finbatch', { ...b, undone: nowISO(), replacedBy: 'a new reading' });
+      files.push({ name: b.file, arrayBuffer: async () => bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength), kind: FIN.looksLikeCard(b.file) ? 'credit_card' : null });
+    } catch (e) { toast(`${b.file}: the original could not be opened.`, { err: true }); }
+  }
+  // oldest statement first, so balances and instalment counts build up in order
+  files.sort((a, b) => { const A = bs.find(x => x.file === a.name), B = bs.find(x => x.file === b.name); return (A.from || '').localeCompare(B.from || ''); });
+  const kind = bs.some(b => (finAcct(b.acct) || {}).kind === 'credit_card') ? 'credit_card' : null;
+  await finAuto(files, kind);
+  // accounts the old imports created and that are now empty
+  const used = new Set(finTx().map(t => t.acct));
+  finSave(q => { q.accounts = q.accounts.filter(a => !(oldAccts.has(a.id) && !used.has(a.id) && !a.preset)); });
+  UI.fin.rereading = false; render(); toast(`${files.length} statement${files.length === 1 ? '' : 's'} read again.`);
 }
 // a line held for review: decide later
 function finResolve(bid, idx, how) {
@@ -13749,6 +14099,7 @@ FIN_VIEW.import = () => {
   const prob = batches.filter(b => !b.undone).flatMap(b => (b.pending || []).map((x, i) => ({ b, x, i })).filter(o => o.x.done === 'auto-same'));
   const kind = UI.fin.kind || 'current', Q = UI.fin.queue || [];
   return `${rep ? `<div class="callout fin-report"><b>Imported ${esc(rep.file)}</b><div class="fin-chips">${finChip('Lines reviewed', rep.counts.reviewed)}${finChip('Added', rep.counts.added, 'ok')}${finChip('Already recorded — skipped', rep.counts.dup)}${finChip('Updated with corrections', rep.counts.updated)}${finChip('Held for your decision', rep.counts.held, rep.counts.held ? 'warn' : '')}${finChip('Kept as incomplete', rep.counts.incomplete, rep.counts.incomplete ? 'warn' : '')}${rep.counts.skippedByYou ? finChip('Left out by you', rep.counts.skippedByYou) : ''}</div><button class="icon-btn" data-act="fin-report-x" aria-label="Close">${I.x}</button></div>` : ''}
+  ${(() => { const old = batches.filter(b => !b.undone && (b.reader || 1) < FIN_READER && b.asset); return old.length ? `<div class="callout fin-reread"><b>${old.length} statement${old.length === 1 ? '' : 's'} were read with an older reader</b> that could mix up the Debit and Credit columns of PDF statements and put each file in its own account. They can be read again from the originals kept here — the transactions are replaced and everything else stays. <button class="btn primary sm" data-act="fin-reread" ${UI.fin.rereading ? 'disabled' : ''}>${UI.fin.rereading ? 'Reading…' : 'Read them again now'}</button></div>` : ''; })()}
   ${it ? finReviewHTML(it, I0) : ''}
   <section class="card fin-card fin-drop">
     <h2>Add statements</h2>
@@ -13851,7 +14202,7 @@ async function finAuto(files, kind) {
         if (it.state !== 'ready') { q.state = 'error'; q.msg = 'Claude could not read it.'; render(); continue; }
       }
       if (it.state === 'error') { q.state = 'error'; q.msg = it.err; render(); continue; }
-      finPickAcct(it, kind);
+      finPickAcct(it, f.kind || kind);
       if (!it.rows.length) { q.state = 'error'; q.msg = 'No transaction lines were found in this file.'; render(); continue; }
       it.auto = true;
       if (finP().reviewFirst) { UI.fin.imp = UI.fin.imp || { files: [], cur: 0 }; it.auto = false; UI.fin.imp.files.push(it); q.state = 'review'; render(); continue; }
@@ -13884,6 +14235,7 @@ Object.assign(ACT, {
   'fin-kind': el => { UI.fin.kind = el.dataset.k; render(); },
   'fin-queue-x': () => { UI.fin.queue = []; render(); },
   'fin-batch': el => openDrawer('finbatch', el.dataset.b),
+  'fin-reread': () => finReread(colList('finbatch').filter(b => !b.undone && (b.reader || 1) < FIN_READER && b.asset).map(b => b.id)),
   'fin-resolve': el => finResolve(el.dataset.b, +el.dataset.i, el.dataset.how),
   'fin-undo-import': el => finUndoImport(el.dataset.b),
   'fin-orig': async (el, e) => { e && e.preventDefault && e.preventDefault(); const b = St.cols.finbatch.get(el.dataset.b); if (!b) return; try { const bytes = await afBytes({ id: b.asset, wrapped: true }); offerFile(b.file, new Blob([bytes])); } catch { toast('The original could not be opened.', { err: true }); } },
@@ -14036,9 +14388,11 @@ function finMonthActions(mc, plan) {
 /* --- income growth --- */
 function finSimInput() {
   const p = finP(), all = finAll(), ib = FIN.incomeBase(all, finToday()), s = p.sim, done = finDone(all, 6);
-  const base = s.base !== '' && s.base !== null && s.base !== undefined && s.baseSrc === 'manual' ? +s.base : ib.salary !== null ? ib.salary : s.base !== '' ? +s.base : null;
+  // your income inputs (Update my position) come first, then the salary in the statements
+  const hasIn = (p.inputs || []).some(i => i.kind === 'income' && (!i.to || i.to >= finToday()) && (!i.from || i.from <= finToday()));
+  const base = s.base !== '' && s.base !== null && s.base !== undefined && s.baseSrc === 'manual' ? +s.base : hasIn ? finNow().income : ib.salary !== null ? ib.salary : s.base !== '' ? +s.base : null;
   const expMed = finMedian(done.map(b => b.exp)), netMed = finMedian(done.map(b => b.net));
-  return { ...s, base, baseFrom: s.baseSrc === 'manual' && s.base !== '' ? 'entered by you' : ib.salary !== null ? (ib.verified ? 'your verified salary' : 'your salary (not verified)') : s.base !== '' ? 'entered by you' : '', expenses: s.expenses !== '' ? +s.expenses : expMed || 0, expFrom: s.expenses !== '' ? 'entered by you' : `median of the last ${done.length} complete months`,
+  return { ...s, base, baseFrom: s.baseSrc === 'manual' && s.base !== '' ? 'entered by you' : hasIn ? 'your income inputs' : ib.salary !== null ? (ib.verified ? 'your verified salary' : 'your salary (not verified)') : s.base !== '' ? 'entered by you' : '', expenses: s.expenses !== '' ? +s.expenses : expMed || 0, expFrom: s.expenses !== '' ? 'entered by you' : `median of the last ${done.length} complete months`,
     baseSave: s.baseSave !== undefined && s.baseSave !== '' ? +s.baseSave : Math.max(0, netMed || 0), horizon: +s.horizon || 12, scenarios: s.scenarios || undefined };
 }
 function finSimRun() { const si = finSimInput(); if (si.base === null || !(si.changes || []).length) return null; return FIN.simulate(si, { today: finToday() }); }
@@ -14074,7 +14428,7 @@ FIN_VIEW.sim = () => {
       <td><select class="input sm" data-chg="fin-ch" data-i="${i}" data-k="status">${[['confirmed', 'Confirmed'], ['probable', 'Probable'], ['speculative', 'Speculative']].map(([k, l]) => `<option value="${k}" ${(c.status || 'confirmed') === k ? 'selected' : ''}>${l}</option>`).join('')}</select></td>
       <td><button class="icon-btn" data-act="fin-ch-del" data-i="${i}" aria-label="Remove">${I.x}</button></td></tr>`).join('')}</tbody></table></div>` : '<p class="small muted">None yet.</p>'}
     <button class="btn sm" data-act="fin-ch-add">${I.plus} Income change</button>
-    <details class="fin-scen"><summary class="small">Scenario assumptions</summary><table class="tbl"><thead><tr><th>Scenario</th><th>Confirmed counts</th><th>Probable counts</th><th>Speculative counts</th><th>Unconfirmed changes start later by</th></tr></thead><tbody>${SC.map(([k, l]) => `<tr><td>${l}</td>${['confirmed', 'probable', 'speculative'].map(st => `<td><input class="input num sm" data-chg="fin-scen" data-s="${k}" data-k="${st}" value="${sc[k][st]}" inputmode="decimal">%</td>`).join('')}<td><input class="input num sm" data-chg="fin-scen" data-s="${k}" data-k="delay" value="${sc[k].delay}" type="number" min="0"> months</td></tr>`).join('')}</tbody></table></details>
+    <details class="fin-scen"><summary class="small">Scenario assumptions</summary><div class="tbl-wrap"><table class="tbl"><thead><tr><th>Scenario</th><th>Confirmed counts</th><th>Probable counts</th><th>Speculative counts</th><th>Unconfirmed changes start later by</th></tr></thead><tbody>${SC.map(([k, l]) => `<tr><td>${l}</td>${['confirmed', 'probable', 'speculative'].map(st => `<td><input class="input num sm" data-chg="fin-scen" data-s="${k}" data-k="${st}" value="${sc[k][st]}" inputmode="decimal">%</td>`).join('')}<td><input class="input num sm" data-chg="fin-scen" data-s="${k}" data-k="delay" value="${sc[k].delay}" type="number" min="0"> months</td></tr>`).join('')}</tbody></table></div></details>
   </section>
   ${!res ? '<p class="muted">Enter your current monthly income to see projections.</p>' : `
   <section class="card fin-card"><h2>Results over ${si.horizon} months ${finEst}</h2>
@@ -14144,7 +14498,7 @@ FIN_VIEW.forecast = () => {
   const props = p.holdings.filter(h => h.kind === 'property' && (!h.owner || h.owner === 'me'));
   const rentRows = FIN.rentForecast(props, { today, horizon: H, scenario: {} }), rent = finRentEGP(rentRows);
   const incomeRows = Array.from({ length: H }, (_, i) => { const sr = sxF && sxF.scenarios.expected.rows; const m = FIN.addMonths(today.slice(0, 7), i + 1); const s = sr && sr.find(r => r.m === m); const r = rentRows[i]; return { income: si.base === null ? null : FIN.r2((s ? s.income : si.base) + (rent.rate ? r.net * rent.rate : 0)) }; });
-  const fc = FIN.forecast(all, { cats: finCats(), today, horizon: H, income: si.base, incomeRows: si.base === null ? null : incomeRows, balance: bal, inflation: si.inflation });
+  const fc = FIN.forecast(all, { cats: finCats(), today, horizon: H, income: si.base, incomeRows: si.base === null ? null : incomeRows, balance: bal, inflation: si.inflation, installments: finNow().inst });
   const goals = finGoals();
   const histCum = []; let c = 0; for (const b of finDone(all, 12)) { c += b.net; histCum.push({ k: b.m, v: FIN.r2(c), label: fmon(b.m) }); }
   const fcCum = fc.rows.filter(r => r.cum !== null).map(r => ({ k: r.m, v: FIN.r2(c + r.cum), est: true, label: fmon(r.m) }));
@@ -14267,7 +14621,10 @@ function finLiab(h) {
 function finPosition() {
   const p = finP(), tx = finTx();
   const holdings = p.holdings.map(h => h.kind === 'liability' ? { ...h, remaining: finLiab(h).remaining } : h);
-  return FIN.position({ base: p.base, rates: p.rates, accounts: p.accounts, recon: finRecon(), thirdParty: FIN.thirdParty(tx, p.parties), parties: p.parties, holdings, txs: tx });
+  // a balance you gave that is newer than the last statement is the confirmed one
+  const recon = finRecon();
+  for (const a of p.accounts) { const l = finLatest(a); if (l.source === 'you') { const b = typeof l.balance === 'number' ? l.balance : typeof l.owed === 'number' ? -l.owed : null; if (b !== null) recon[a.id] = { ...recon[a.id], confirmed: { balance: b, date: l.date } }; } }
+  return FIN.position({ base: p.base, rates: p.rates, accounts: p.accounts, recon, thirdParty: FIN.thirdParty(tx, p.parties), parties: p.parties, holdings, txs: tx });
 }
 const finPartyName = id => id === 'me' || !id ? 'Me' : (finP().parties.find(x => x.id === id) || { name: id }).name;
 
@@ -14483,6 +14840,441 @@ Object.assign(CHG, {
   'fin-flag': el => { finSave(p => { p[el.dataset.k] = el.checked; }); render(); },
   'fin-restore': el => { const f = el.files && el.files[0]; el.value = ''; if (!f) return; f.text().then(t => { let d = null; try { d = JSON.parse(t); } catch {} UI.fin.restore = { name: f.name, data: d, v: FIN.validateBackup(d) }; render(); }); },
 });
+
+/* ===== features/46-finance-life.js ===== */
+/* ---------- Money: my accounts now, updates in plain words or screenshots, card / Halan / instalments, purchases ---------- */
+// One state (finNow) feeds every page: the latest balance of each account (a balance you give today beats an older
+// statement; older ones stay as history), money held for others taken out, what is still paid in instalments, what
+// comes in each month (your inputs, with the dates they apply from), and what is left to save. Updates written in
+// plain words or shown in screenshots are read by Claude into proposed changes; nothing applies before you see the
+// preview, and anything unclear becomes a question instead of a guess.
+addCols('finbal');
+FIN_SECS.splice(1, 0, ['update', 'Update my position']);
+FIN_SECS.splice(FIN_SECS.findIndex(s => s[0] === 'forecast') + 1, 0, ['buy', 'Purchase goals'], ['credit', 'Card, Halan & instalments']);
+Object.assign(FIN_ICON, { update: '✍️', buy: '🛍️', credit: '💳' });
+FIN_AKINDS.splice(3, 0, ['bnpl', 'Instalment financing (Halan)']);
+
+/* --- your five accounts, set up once from what you told me --- */
+function finEnsurePresets() {
+  // only once the saved settings are here: writing before that would replace them
+  if (St.mode === 'viewer' || (St.mode === 'db' && !St.colsLoaded.has('prefs'))) return;
+  const p = finP(); if (p.presetsV1) return;
+  finSave(q => {
+    const has = (pred) => q.accounts.find(pred);
+    const add = a => q.accounts.push({ id: E.uid('ac'), currency: 'EGP', owner: 'me', holder: 'me', bank: '', preset: true, createdAt: nowISO(), ...a });
+    if (!has(a => FIN.last4(a.number) === '0012')) add({ name: 'Primary account ••0012', kind: 'current', number: '0012', role: 'salary', note: 'Your main account: salary and other money in.' });
+    if (!has(a => FIN.last4(a.number) === '0013')) add({ name: 'Savings account ••0013', kind: 'savings', number: '0013', note: 'Saving and moving money.' });
+    const card = has(a => a.kind === 'credit_card');
+    if (!card) add({ name: 'Credit card', kind: 'credit_card', number: '', limit: 50400, limitSet: true, terms: { method: 'none', months: 12 }, note: 'Limit EGP 50,400 when nothing is used.' });
+    else { card.limit = card.limit || 50400; card.preset = true; }
+    if (!has(a => a.kind === 'bnpl')) add({ name: 'Halan', kind: 'bnpl', number: '', limit: null, terms: { method: 'flat', rate: '', months: 12 }, note: 'Instalment financing with interest.' });
+    // the CIB investment held in your mother's account: yours by ownership, hers by name
+    // everything else you described before (Ahmed, the certificate, the box, the offices), once, if missing
+    const tpl = typeof finTemplate === 'function' ? finTemplate() : { parties: [], holdings: [] };
+    if (!q.templateAdded) { for (const x of tpl.parties) if (!q.parties.find(y => y.id === x.id)) q.parties.push(x); for (const h of tpl.holdings) if (!q.holdings.find(y => y.id === h.id)) q.holdings.push(h); q.templateAdded = true; }
+    const mom = q.holdings.find(h => h.id === 'mom'); if (mom) Object.assign(mom, { name: 'CIB investment (in my mother’s account)', bank: 'CIB', custodian: 'my mother', owner: 'me', principal: mom.principal || 1380000, rate: mom.rate || 17.25, myShareMonthly: mom.myShareMonthly || 1300, allocTo: mom.allocTo || 'inst' });
+    q.presetsV1 = true;
+  });
+}
+HOOKS.ready.push(() => setTimeout(finEnsurePresets, 800));
+HOOKS.beforeRender.push(() => { if (UI.view === 'finance' && St.ready && !finP().presetsV1) setTimeout(finEnsurePresets, 0); });
+
+/* --- balances you give (dated snapshots, kept as history) --- */
+const finSnaps = () => colList('finbal').flatMap(d => d.snaps || []);
+function finAddSnaps(list) {
+  const byM = {}; for (const s of list) (byM[s.date.slice(0, 7)] = byM[s.date.slice(0, 7)] || []).push(s);
+  for (const [m, ss] of Object.entries(byM)) { const id = 'b-' + m, d = clone(St.cols.finbal.get(id) || { id, snaps: [] });
+    for (const s of ss) { const same = d.snaps.find(x => x.acct === s.acct && x.date === s.date && x.balance === s.balance && x.available === s.available && x.outstanding === s.outstanding); if (!same) d.snaps.push(s); }
+    colPut('finbal', d); }
+}
+// the latest known figure for an account: your newest balance, or the latest statement — whichever is newer
+function finLatest(a) {
+  const tx = finTx(), snaps = finSnaps().filter(s => s.acct === a.id).sort((x, y) => x.date.localeCompare(y.date) || (x.at || '').localeCompare(y.at || ''));
+  const snap = snaps[snaps.length - 1], out = { date: null, source: null };
+  const rec = FIN.reconcile(a, tx, colList('finbatch').filter(b => !b.undone));
+  const st = rec.confirmed ? { date: rec.confirmed.date, balance: rec.confirmed.balance } : null;
+  const fromStmt = a.stmt && typeof a.stmt.closing === 'number' && (!st || a.stmt.date >= st.date) ? { date: a.stmt.date, balance: a.stmt.closing } : st;
+  if (snap && (!fromStmt || snap.date >= fromStmt.date)) Object.assign(out, { date: snap.date, balance: snap.balance, available: snap.available, outstanding: snap.outstanding, source: 'you' });
+  else if (fromStmt) Object.assign(out, { date: fromStmt.date, balance: fromStmt.balance, source: 'statement' });
+  if (a.kind === 'credit_card' || a.kind === 'bnpl') {
+    const owed = out.outstanding !== undefined && out.outstanding !== null ? +out.outstanding : typeof out.balance === 'number' ? Math.max(0, -out.balance) : null;
+    out.owed = owed; out.limit = a.limit || (a.stmt && a.stmt.limit) || null;
+    out.available = out.available !== undefined && out.available !== null ? +out.available : out.limit && owed !== null ? FIN.r2(out.limit - owed) : null;
+  }
+  return out;
+}
+
+/* --- the one state every page uses --- */
+function finNow() {
+  const p = finP(), today = finToday(), cur = today.slice(0, 7), key = JSON.stringify([FS.key, (St.cols.prefs.get('finance') || {}).updatedAt, colList('finbal').map(d => d.updatedAt).join(), today]);
+  if (finNow.k === key) return finNow.v;
+  const tx = finTx(), all = finAll(), done = all.months.filter(b => b.covered && b.m < cur).slice(-6);
+  const accts = p.accounts.map(a => ({ a, l: finLatest(a) }));
+  const personal = accts.filter(x => ['current', 'savings', 'cash'].includes(x.a.kind) && (!x.a.owner || x.a.owner === 'me'));
+  const cashKnown = personal.filter(x => typeof x.l.balance === 'number'), cash = FIN.r2(cashKnown.reduce((s, x) => s + x.l.balance, 0));
+  const held = FIN.r2(FIN.thirdParty(tx, p.parties).reduce((s, x) => s + Math.max(0, x.held), 0));
+  const card = accts.find(x => x.a.kind === 'credit_card'), halan = accts.find(x => x.a.kind === 'bnpl');
+  const inst = FIN.detectInstallments(tx, today, p.installments), instMonthly = FIN.installmentLoad(inst, cur);
+  // income: your inputs when you gave them, otherwise what the statements show (salary + other repeating income)
+  const ins = (p.inputs || []).filter(i => i.kind === 'income' && (!i.from || i.from <= today) && (!i.to || i.to >= today));
+  const ib = FIN.incomeBase(all, today), mom = p.holdings.find(h => h.id === 'mom');
+  let income, incomeBasis;
+  if (ins.length) { income = FIN.r2(ins.reduce((s, i) => s + (+i.amount || 0), 0)); incomeBasis = ins.map(i => `${i.label} ${fm(+i.amount)}`).join(' + '); }
+  else { income = FIN.r2((ib.salary || 0) + ib.otherRecurringMonthly); incomeBasis = ib.salary !== null ? `salary ${fm(ib.salary)} (${ib.verified ? 'verified' : 'not verified'}) from the statements` : 'no salary found yet'; }
+  if (mom && +mom.myShareMonthly && !ins.some(i => i.key === 'cib_share') && !tx.some(t => t.holding === 'mom' && t.amount > 0)) { income = FIN.r2(income + +mom.myShareMonthly); incomeBasis += ` + CIB share ${fm(+mom.myShareMonthly)}`; }
+  const expIn = FIN.activeInput(p.inputs, 'expenses', today);
+  const spending = expIn ? +expIn.amount : FIN.median(done.map(b => b.exp)) || 0;
+  const essential = FIN.median(done.map(b => Object.entries(b.byCat).filter(([k]) => (finCat(k) || {}).prio === 'essential').reduce((s, [, v]) => s + v, 0))) || 0;
+  const goalsMonthly = FIN.r2(FIN.goalPlan(p.goals || [], 0, today).reduce((s, g) => s + (+g.monthly || (g.required || 0)), 0));
+  const reserve = FIN.r2(essential * (+p.emergencyMonths || 3));
+  const capacity = FIN.r2(Math.max(0, income - spending - goalsMonthly));
+  const free = FIN.r2(Math.max(0, cash - held - reserve));
+  const v = { today, accts, cash, cashKnown: cashKnown.length, cashAccts: personal.length, held, free, reserve, essential, income, incomeBasis, spending: FIN.r2(spending), spendBasis: expIn ? 'your input' : `median of the last ${done.length} complete months`, goalsMonthly, capacity,
+    card: card ? { a: card.a, ...card.l, terms: card.a.terms || {} } : null, halan: halan ? { a: halan.a, ...halan.l, terms: halan.a.terms || {} } : null, inst, instMonthly,
+    health: FIN.health({ income, spending, essential, cash: Math.max(0, cash - held), installments: instMonthly, cardOwed: card ? card.l.owed : null, cardLimit: card ? card.l.limit : null }) };
+  finNow.k = key; finNow.v = v; return v;
+}
+
+/* --- questions: anything unclear is asked, never guessed --- */
+function finQuestions() {
+  const p = finP(), out = [], today = finToday(), tx = finTx();
+  for (const q of p.questions || []) if (!q.answered) out.push(q);
+  // deposits whose owner or purpose is not clear (not salary, returns, refunds, own transfers, held money)
+  const from = FIN.addDays(today, -120);
+  for (const t of tx) if (t.amount >= 1000 && t.date >= from && !t.asked && t.catSrc !== 'manual' && ['other_inc', 'transfer'].includes(t.cat) && !t.pair) out.push({ id: 'dep:' + t.id, kind: 'deposit', tx: t.id, text: `${fm(t.amount)} came into ${esc((finAcct(t.acct) || {}).name || '')} on ${fday(t.date)} (“${FIN.cleanDesc(t.desc || '')}”). Whose money is it?` });
+  // instalments whose count is unknown or that stopped appearing
+  for (const i of finNow().inst) if (i.ask) out.push({ id: 'inst:' + i.key, kind: 'inst', key: i.key, text: i.status === 'missing' ? `“${i.name}” (${fm(i.amount)} a month) has not appeared since ${fday(i.last)}. Is it still being paid?` : `“${i.name}” is paid every month (${fm(i.amount)}). Is it an instalment, and how many payments are left?` });
+  return out;
+}
+function finAnswer(id, how, extra = {}) {
+  const p = finP();
+  if (id.startsWith('dep:')) {
+    const t = clone(FS.by.get(id.slice(4))); if (!t) return;
+    const map = { income: extra.cat || 'other_inc', own: 'transfer', invest: 'interest', theirs: 'held' };
+    finHist(t, 'cat', t.cat, map[how], 'you said: ' + { income: 'my income', own: 'from my own account', invest: 'investment return', theirs: 'someone else’s money' }[how]);
+    t.cat = map[how]; t.catSrc = 'manual'; t.asked = true; t.review = false;
+    if (how === 'theirs') { let pid = extra.party; if (!pid && extra.name) { pid = E.uid('pt'); finSave(q => { q.parties.push({ id: pid, name: extra.name, match: '' }); }); } t.party = pid || ''; }
+    finWrite([t]); finLog('classified a deposit', { id: t.id, as: how });
+  } else if (id.startsWith('inst:')) {
+    const key = id.slice(5);
+    finSave(q => { q.installments = (q.installments || []).filter(k => k.key !== key); q.installments.push({ key, status: how === 'ended' ? 'completed' : how === 'stopped' ? 'discontinued' : 'active', remaining: extra.remaining === '' || extra.remaining === undefined ? null : +extra.remaining, end: extra.end || null, at: nowISO() }); });
+  } else {
+    finSave(q => { const x = (q.questions || []).find(z => z.id === id); if (x) Object.assign(x, { answered: nowISO(), answer: how, ...extra }); q.questions = (q.questions || []).filter(z => !z.answered || z.answered > FIN.addDays(finToday(), -60)); });
+    const x = (p.questions || []).find(z => z.id === id);
+    if (x && x.kind === 'balance' && ['spend', 'income', 'theirs'].includes(how)) {
+      const amt = x.diff, a = finAcct(x.acct);
+      const t = { id: E.uid('tx'), acct: x.acct, date: x.date, desc: how === 'spend' ? 'Spending seen in the balance' : how === 'income' ? 'Money in seen in the balance' : 'Someone else’s money (balance)', amount: amt, currency: (a || {}).currency, cat: how === 'spend' ? (extra.cat || 'other_exp') : how === 'income' ? 'other_inc' : 'held', party: how === 'theirs' ? (extra.party || '') : '', catSrc: 'manual', flags: ['from_balance'], manual: true, src: { f: '', manual: true }, createdAt: nowISO(), hist: [{ at: nowISO(), f: 'created', to: 'from a balance update', why: 'you explained a balance change' }] };
+      finWrite([t]);
+    }
+  }
+  render();
+}
+
+/* --- Claude reads your words and screenshots into proposed changes --- */
+function finDraftContext() {
+  const p = finP(), n = finNow(), today = finToday(), from = FIN.addDays(today, -90);
+  return {
+    today, baseCurrency: p.base,
+    accounts: n.accts.map(x => ({ id: x.a.id, name: x.a.name, kind: x.a.kind, number: x.a.number || '', limit: x.a.limit || null, holder: x.a.holder || 'me', last: { balance: x.l.balance ?? null, available: x.l.available ?? null, outstanding: x.l.owed ?? null, date: x.l.date } })),
+    holdings: p.holdings.filter(h => h.kind !== 'property').map(h => ({ id: h.id, name: h.name, principal: h.principal || null, myShareMonthly: h.myShareMonthly || null, rate: h.rate || null, owner: h.owner || 'me', heldBy: h.custodian || 'me' })),
+    inputs: (p.inputs || []).filter(i => !i.to || i.to >= today).map(i => ({ key: i.key, label: i.label, kind: i.kind, amount: i.amount, from: i.from })),
+    statementIncome: { salary: FIN.incomeBase(finAll(), today).salary },
+    installments: n.inst.map(i => ({ key: i.key, name: i.name, amount: i.amount, remaining: i.remaining, end: i.end, status: i.status })),
+    recentDeposits: finTx().filter(t => t.amount > 0 && t.date >= from && t.cat !== 'held').slice(-60).map(t => ({ txId: t.id, date: t.date, amount: t.amount, account: t.acct, desc: FIN.cleanDesc(t.desc || '') })),
+    people: p.parties.map(x => ({ id: x.id, name: x.name })), purchaseGoals: (p.buys || []).map(b => ({ id: b.id, name: b.name, price: b.price })),
+  };
+}
+const FIN_DRAFT_PROMPT = ctx => `You update a personal finance tool from its owner's message and screenshots of banking apps. Today is ${ctx.today}; amounts are in ${ctx.baseCurrency} unless shown otherwise.
+CURRENT RECORDS: ${JSON.stringify(ctx)}
+Read the message and every screenshot. Return JSON only:
+{"balances":[{"account":"id from accounts or null","newAccount":null or {"name":"","kind":"current|savings|credit_card|bnpl|investment","number":""},"date":"YYYY-MM-DD","balance":number or null,"available":number or null,"outstanding":number or null,"limit":number or null,"evidence":"which sentence or screenshot"}],
+"holdings":[{"id":"id from holdings","principal":number or null,"myShareMonthly":number or null,"rate":number or null,"evidence":""}],
+"inputs":[{"key":"existing key when it updates one (e.g. salary), else a new snake_case key","label":"","kind":"income|expense|saving|commitment","amount":number,"from":"YYYY-MM-DD","permanent":true or false,"evidence":""}],
+"thirdParty":[{"txId":"id from recentDeposits or null","amount":number,"date":"YYYY-MM-DD","account":"id or null","person":"name or ''","note":""}],
+"installments":[{"key":"existing key or null","name":"","amount":number,"remaining":number or null,"endMonth":"YYYY-MM or null","status":"active|completed|discontinued"}],
+"terms":[{"account":"id","method":"flat|reducing|none","rate":number or null,"months":number or null,"feePct":number or null,"feeFixed":number or null,"conditions":""}],
+"goals":[{"name":"","price":number,"priority":1-3,"wantBy":"YYYY-MM-DD or null"}],
+"questions":[{"text":"a short question to the owner","about":""}]}
+Rules: take only what the message or screenshots actually state — never invent or estimate a value. A new value for something already recorded (salary, a return, an expense, a balance) uses that record's key/id: it replaces it from its date; a temporary change has "permanent": false. Resolve "today"/"yesterday"/month names to dates from today's date. Identify the account of each screenshot from its number, name or app (CIB, Halan, the card ••). Credit card: "outstanding" is what is owed, "available" what can still be spent. When the owner says money in their account belongs to someone else, put it in thirdParty and match it to a recentDeposits txId when the amount and date fit. If anything is unclear, incomplete or contradictory (which account, whether a change is permanent, whose money), do not guess: add a question. Empty lists when nothing applies.`;
+async function finDraftRead() {
+  const D = UI.fin.draft2 = UI.fin.draft2 || { text: '', files: [] };
+  if (!St.sample) return toast('Reading by Claude is not available in this view.', { err: true });
+  if (!D.text.trim() && !D.files.length) return toast('Write something or add a screenshot.', { err: true });
+  D.busy = true; D.preview = null; render();
+  try {
+    const ctx = finDraftContext(), lim = St.limits && St.limits.images, images = [];
+    for (const f of D.files.slice(0, lim ? lim.maxCount || 10 : 0)) { const r = await E.extract({ name: f.name, bytes: f.bytes }, { vision: true, maxImageBytes: lim ? lim.maxInputBytes : 0, maxPageImages: 4 }); for (const im of r.images || []) if (im.blob) images.push(im.blob); }
+    const res = await St.sample.json(FIN_DRAFT_PROMPT(ctx) + '\n\nOWNER’S MESSAGE:\n' + (D.text || '(only screenshots)') + (D.answers ? '\n\nANSWERS TO YOUR EARLIER QUESTIONS:\n' + D.answers : ''), { modelTier: 'default', ...(images.length ? { images } : {}) });
+    D.preview = finDraftCheck(res || {}); D.includes = {};
+  } catch (e) { toast('Could not read it: ' + (e.message || e.code || e), { err: true }); }
+  D.busy = false; render();
+}
+// what Claude proposed, checked against the records: unknown accounts, impossible numbers and dates become questions
+function finDraftCheck(r) {
+  const p = finP(), today = finToday(), out = { balances: [], holdings: [], inputs: [], thirdParty: [], installments: [], terms: [], goals: [], questions: [] };
+  const num = v => v === null || v === undefined || v === '' ? null : typeof v === 'number' ? v : (FIN.parseNum(v) || {}).n ?? null;
+  const day = v => FIN.validDate(v) ? v : today;
+  for (const b of r.balances || []) {
+    const a = b.account && finAcct(b.account);
+    if (!a && !(b.newAccount && b.newAccount.name)) { out.questions.push({ text: `Which account is this balance for${b.evidence ? ` (${b.evidence})` : ''}?`, about: 'balance' }); continue; }
+    const v = { account: a ? a.id : null, newAccount: a ? null : b.newAccount, date: day(b.date), balance: num(b.balance), available: num(b.available), outstanding: num(b.outstanding), limit: num(b.limit), evidence: b.evidence || '' };
+    if (v.balance === null && v.available === null && v.outstanding === null && v.limit === null) continue;
+    if (a && v.balance !== null) { const prev = finLatest(a); v.prev = prev; v.change = FIN.balanceChange(prev.date ? { balance: prev.balance, date: prev.date } : null, { balance: v.balance, date: v.date }, finTx().filter(t => t.acct === a.id)); }
+    out.balances.push(v);
+  }
+  for (const h of r.holdings || []) { const x = p.holdings.find(z => z.id === h.id); if (x) out.holdings.push({ id: x.id, name: x.name, principal: num(h.principal), myShareMonthly: num(h.myShareMonthly), rate: num(h.rate), prev: { principal: x.principal, myShareMonthly: x.myShareMonthly, rate: x.rate }, evidence: h.evidence || '' }); }
+  for (const i of r.inputs || []) { const amount = num(i.amount); if (amount === null || !i.key) continue; const prev = FIN.activeInput(p.inputs, i.key, today); out.inputs.push({ key: String(i.key).toLowerCase().replace(/[^a-z0-9_]+/g, '_'), label: i.label || (prev && prev.label) || i.key, kind: ['income', 'expense', 'saving', 'commitment'].includes(i.kind) ? i.kind : (prev && prev.kind) || 'income', amount, from: day(i.from), permanent: i.permanent !== false, prev, evidence: i.evidence || '' }); }
+  for (const t of r.thirdParty || []) {
+    let tx = t.txId && FS.by.get(t.txId);
+    if (!tx) { const amt = num(t.amount), d = day(t.date); const c = finTx().filter(x => x.amount > 0 && amt !== null && Math.abs(x.amount - amt) < 0.01 && Math.abs(FIN.dnum(x.date) - FIN.dnum(d)) <= 3 && (!t.account || x.acct === t.account)); if (c.length === 1) tx = c[0]; else { out.questions.push({ text: c.length ? `${c.length} deposits of ${fm(amt)} around ${fday(d)} — which one belongs to ${t.person || 'someone else'}?` : `No deposit of ${fm(amt)} around ${fday(d)} is recorded yet. Add the statement, or tell me the account and date.`, about: 'third party' }); continue; } }
+    out.thirdParty.push({ txId: tx.id, tx, person: t.person || '', note: t.note || '' });
+  }
+  for (const i of r.installments || []) { const amount = num(i.amount); if (!i.name && !i.key) continue; out.installments.push({ key: i.key || null, name: i.name || '', amount, remaining: num(i.remaining), end: /^\d{4}-\d{2}$/.test(i.endMonth || '') ? i.endMonth : null, status: ['active', 'completed', 'discontinued'].includes(i.status) ? i.status : 'active' }); }
+  for (const t of r.terms || []) { const a = finAcct(t.account); if (a) out.terms.push({ account: a.id, name: a.name, method: ['flat', 'reducing', 'none'].includes(t.method) ? t.method : (a.terms || {}).method || 'flat', rate: num(t.rate), months: num(t.months), feePct: num(t.feePct), feeFixed: num(t.feeFixed), conditions: t.conditions || '' }); }
+  for (const g of r.goals || []) { const price = num(g.price); if (g.name && price) out.goals.push({ name: g.name, price, priority: [1, 2, 3].includes(+g.priority) ? +g.priority : 2, wantBy: FIN.validDate(g.wantBy) ? g.wantBy : '' }); }
+  for (const q of r.questions || []) if (q && q.text) out.questions.push({ text: String(q.text).slice(0, 400), about: q.about || '' });
+  return out;
+}
+function finDraftApply() {
+  const D = UI.fin.draft2, P = D && D.preview; if (!P) return;
+  const inc = (k, i) => !(D.includes && D.includes[k + i] === false), at = nowISO(), done = [];
+  const snaps = [];
+  P.balances.forEach((b, i) => {
+    if (!inc('b', i)) return; let acct = b.account;
+    if (!acct && b.newAccount) { acct = E.uid('ac'); finSave(q => { q.accounts.push({ id: acct, name: b.newAccount.name, kind: b.newAccount.kind || 'current', number: b.newAccount.number || '', currency: finP().base, owner: 'me', holder: 'me', createdAt: at }); }); }
+    if (b.limit !== null) finSave(q => { const a = q.accounts.find(x => x.id === acct); if (a) { a.limit = b.limit; a.limitSet = true; } });
+    if (b.balance !== null || b.available !== null || b.outstanding !== null) snaps.push({ id: E.uid('bl'), acct, date: b.date, balance: b.balance, available: b.available, outstanding: b.outstanding, source: 'draft', note: b.evidence, at });
+    if (b.change && b.change.unexplained) finSave(q => { (q.questions = q.questions || []).push({ id: E.uid('q'), kind: 'balance', acct, date: b.date, diff: b.change.unexplained, at, text: `${(finAcct(acct) || {}).name}: ${fm(Math.abs(b.change.unexplained))} ${b.change.unexplained < 0 ? 'left' : 'came into'} the account by ${fday(b.date)} that no statement shows yet. What was it?` }); });
+    done.push(`balance of ${(finAcct(acct) || { name: b.newAccount && b.newAccount.name }).name}`);
+  });
+  if (snaps.length) finAddSnaps(snaps);
+  finSave(q => {
+    P.holdings.forEach((h, i) => { if (!inc('h', i)) return; const x = q.holdings.find(z => z.id === h.id); if (!x) return; x.history = [...(x.history || []), { at, principal: x.principal, myShareMonthly: x.myShareMonthly, rate: x.rate }]; for (const k of ['principal', 'myShareMonthly', 'rate']) if (h[k] !== null) x[k] = h[k]; done.push(x.name); });
+    P.inputs.forEach((x, i) => { if (!inc('i', i)) return; q.inputs = FIN.setInput(q.inputs || [], { id: E.uid('in'), key: x.key, label: x.label, kind: x.kind, amount: x.amount, from: x.from, permanent: x.permanent }, finToday()); done.push(x.label); });
+    P.installments.forEach((x, i) => { if (!inc('n', i)) return; const key = x.key || 'm:' + FIN.payeeKey(x.name); q.installments = (q.installments || []).filter(k => k.key !== key); q.installments.push({ key, name: x.name, amount: x.amount, remaining: x.remaining, end: x.end, status: x.status, manual: !x.key, last: finToday(), at }); done.push('instalment ' + x.name); });
+    P.terms.forEach((t, i) => { if (!inc('t', i)) return; const a = q.accounts.find(z => z.id === t.account); if (!a) return; a.terms = { ...(a.terms || {}), ...Object.fromEntries(Object.entries({ method: t.method, rate: t.rate, months: t.months, feePct: t.feePct, feeFixed: t.feeFixed, conditions: t.conditions }).filter(([, v]) => v !== null && v !== '')) }; done.push('terms of ' + a.name); });
+    P.goals.forEach((g, i) => { if (!inc('g', i)) return; q.buys = [...(q.buys || []), { id: E.uid('by'), ...g, at }]; done.push('goal ' + g.name); });
+    P.questions.forEach(x => { (q.questions = q.questions || []).push({ id: E.uid('q'), kind: 'draft', text: x.text, about: x.about, at }); });
+    q.drafts = [...(q.drafts || []), { at, text: D.text.slice(0, 2000), files: D.files.map(f => f.name), applied: done }].slice(-30);
+  });
+  const ch = []; P.thirdParty.forEach((t, i) => { if (!inc('p', i)) return; const x = clone(FS.by.get(t.txId)); if (!x) return; let pid = (finP().parties.find(z => FIN.norm(z.name) === FIN.norm(t.person)) || {}).id; if (!pid && t.person) { pid = E.uid('pt'); finSave(q => { q.parties.push({ id: pid, name: t.person, match: '' }); }); } finHist(x, 'cat', x.cat, 'held', 'you said it belongs to ' + (t.person || 'someone else')); x.cat = 'held'; x.party = pid || ''; x.catSrc = 'manual'; x.asked = true; x.note = [x.note, t.note].filter(Boolean).join(' · '); ch.push(x); done.push('someone else’s money ' + fm(x.amount)); });
+  if (ch.length) finWrite(ch);
+  finLog('position update', { applied: done });
+  UI.fin.draft2 = { text: '', files: [], lastApplied: done }; render(); toast(done.length ? `Updated: ${done.join(', ')}.` : 'Nothing to change.');
+}
+
+/* --- the Update page --- */
+FIN_VIEW.update = () => {
+  const p = finP(), n = finNow(), D = UI.fin.draft2 = UI.fin.draft2 || { text: '', files: [] }, Q = finQuestions();
+  return `<div class="fin-grid2 fin-upd">
+  <section class="card fin-card"><h2>Tell me what changed</h2>
+    <p class="small muted">Write it as you would say it — balances, a new salary, a return, an expense, a Halan plan, money that isn’t yours — and add screenshots from your banking apps. Claude reads them; you see every change before it is saved, and anything unclear comes back as a question.</p>
+    <textarea class="input autogrow fin-draft" id="fin-draft" placeholder="e.g. My salary is now 36,000 from November. Primary account balance today 21,000. The 10,000 that came in on the 28th belongs to my cousin Ali; I’ll send it back next week.">${esc(D.text)}</textarea>
+    <div class="row"><label class="btn sm">📎 Add screenshots<input type="file" multiple accept="image/*,.pdf" data-chg="fin-draft-files" hidden></label>${D.files.map((f, i) => `<span class="fin-tag">${esc(f.name)} <button class="icon-btn" data-act="fin-draft-file-x" data-i="${i}" aria-label="Remove">${I.x}</button></span>`).join('')}<span class="spacer"></span><button class="btn primary" data-act="fin-draft-read" ${D.busy ? 'disabled' : ''}>${D.busy ? 'Reading…' : 'Understand and preview'}</button></div>
+    ${D.lastApplied && D.lastApplied.length ? `<p class="small fin-pos">✓ Updated: ${esc(D.lastApplied.join(', '))}</p>` : ''}
+    ${D.preview ? finDraftPreviewHTML(D) : ''}
+  </section>
+  <section class="card fin-card"><h2>Questions for you${Q.length ? ` (${Q.length})` : ''}</h2>${Q.length ? `<div class="fin-qs">${Q.slice(0, 20).map(finQuestionHTML).join('')}</div>` : '<p class="small muted">Nothing unclear right now.</p>'}</section>
+  </div>
+  ${finDailyHTML(n)}
+  <section class="card fin-card"><h2>What I use for planning</h2>
+    <div class="fin-kpis">${finKpi('Income a month', fk(n.income), esc(n.incomeBasis))}${finKpi('Usual spending a month', fk(n.spending), esc(n.spendBasis))}${finKpi('Instalments a month', fk(n.instMonthly), `${n.inst.filter(i => i.status === 'active' || i.status === 'missing').length} active`, { act: 'fin-sec', data: { s: 'credit' } })}${finKpi('Left to save a month', fk(n.capacity), `income − spending${n.goalsMonthly ? ` − goals ${fk(n.goalsMonthly)}` : ''}`, { est: true })}${finKpi('Free cash now', fk(n.free), `${fk(n.cash)} in your accounts${n.held ? ` − ${fk(n.held)} others’ money` : ''} − ${fk(n.reserve)} safety reserve`)}${finKpi('Financial health', n.health.score === null ? '—' : n.health.score + '/100', n.health.items.filter(x => x.g).map(x => `${x.label}: ${x.g}`).join(' · '))}</div>
+    <details><summary class="small">Your inputs and their history</summary>${(p.inputs || []).length ? `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>What</th><th class="num">Amount</th><th>From</th><th>Until</th><th></th></tr></thead><tbody>${p.inputs.slice().sort((a, b) => a.key.localeCompare(b.key) || (b.from || '').localeCompare(a.from || '')).map(i => `<tr class="${i.to && i.to < finToday() ? 'muted' : ''}"><td>${esc(i.label)} <small class="muted">${esc(i.kind)}${i.temp ? ' · temporary' : ''}</small></td><td class="num">${fm(+i.amount)}</td><td>${fday(i.from)}</td><td>${i.to ? fday(i.to) : 'now'}</td><td><button class="icon-btn" data-act="fin-input-del" data-id="${esc(i.id)}" aria-label="Remove">${I.x}</button></td></tr>`).join('')}</tbody></table></div>` : '<p class="small muted">None yet — the statements are used. Write e.g. “my salary is 30,000”.</p>'}</details>
+    <details><summary class="small">Earlier updates</summary><ul class="small fin-list">${(p.drafts || []).slice().reverse().map(d => `<li><span class="muted">${fmtDateTime(d.at)}</span> — ${esc(d.text.slice(0, 160))}${d.files.length ? ` <span class="muted">(${d.files.length} screenshot${d.files.length === 1 ? '' : 's'})</span>` : ''} → ${esc(d.applied.join(', ') || 'nothing')}</li>`).join('') || '<li class="muted">None yet.</li>'}</ul></details>
+  </section>`;
+};
+function finDraftPreviewHTML(D) {
+  const P = D.preview, chk = (k, i) => `<input type="checkbox" data-chg="fin-draft-inc" data-k="${k}${i}" ${D.includes && D.includes[k + i] === false ? '' : 'checked'}>`;
+  const total = P.balances.length + P.holdings.length + P.inputs.length + P.thirdParty.length + P.installments.length + P.terms.length + P.goals.length;
+  const rows = [];
+  P.balances.forEach((b, i) => { const a = b.account && finAcct(b.account); const prev = b.prev || {}; rows.push(`<tr><td>${chk('b', i)}</td><td>Balance</td><td><b>${esc(a ? a.name : (b.newAccount || {}).name + ' (new account)')}</b><br><small class="muted">${esc(b.evidence)}</small></td><td class="num">${prev.date ? `${fm(prev.balance)}<br><small class="muted">${fday(prev.date)}</small>` : '—'}</td><td class="num">${b.balance !== null ? fm(b.balance) : ''}${b.available !== null ? `<br><small>available ${fm(b.available)}</small>` : ''}${b.outstanding !== null ? `<br><small>owed ${fm(b.outstanding)}</small>` : ''}${b.limit !== null ? `<br><small>limit ${fm(b.limit)}</small>` : ''}<br><small class="muted">${fday(b.date)}</small></td><td class="small">${b.change && !b.change.first ? `${fmc(b.change.diff)} · ${b.change.n} recorded transaction${b.change.n === 1 ? '' : 's'} explain ${fm(b.change.recorded)}${b.change.unexplained ? ` · <b class="fin-neg">${fm(b.change.unexplained)} unexplained — you will be asked</b>` : ' ✓'}` : 'first balance for this account'}</td></tr>`); });
+  P.holdings.forEach((h, i) => rows.push(`<tr><td>${chk('h', i)}</td><td>Holding</td><td><b>${esc(h.name)}</b></td><td class="num small">${['principal', 'myShareMonthly', 'rate'].filter(k => h[k] !== null).map(k => `${k}: ${h.prev[k] ?? '—'}`).join('<br>')}</td><td class="num small">${['principal', 'myShareMonthly', 'rate'].filter(k => h[k] !== null).map(k => `${k}: ${h[k]}`).join('<br>')}</td><td class="small">${esc(h.evidence)}</td></tr>`));
+  P.inputs.forEach((x, i) => rows.push(`<tr><td>${chk('i', i)}</td><td>${esc(x.kind)}</td><td><b>${esc(x.label)}</b>${x.prev ? '' : ' <span class="fin-tag">new</span>'}<br><small class="muted">${esc(x.evidence)}</small></td><td class="num">${x.prev ? fm(+x.prev.amount) : '—'}</td><td class="num">${fm(x.amount)}<br><small class="muted">from ${fday(x.from)}${x.permanent ? '' : ' · temporary'}</small></td><td class="small">${x.prev ? 'replaces the current value from that date; the old one is kept as history' : 'added'}</td></tr>`));
+  P.thirdParty.forEach((t, i) => rows.push(`<tr><td>${chk('p', i)}</td><td>Not your money</td><td><b>${fm(t.tx.amount)}</b> on ${fday(t.tx.date)} · ${esc(FIN.cleanDesc(t.tx.desc || ''))}</td><td>${esc((finCat(t.tx.cat) || {}).name || '')}</td><td>held for ${esc(t.person || 'someone else')}</td><td class="small">left out of your income, savings and net worth</td></tr>`));
+  P.installments.forEach((x, i) => rows.push(`<tr><td>${chk('n', i)}</td><td>Instalment</td><td><b>${esc(x.name)}</b></td><td></td><td class="num">${x.amount !== null ? fm(x.amount) + ' / month' : ''}${x.remaining !== null ? `<br><small>${x.remaining} left</small>` : ''}${x.end ? `<br><small>until ${fmon(x.end)}</small>` : ''}</td><td class="small">${esc(x.status)}</td></tr>`));
+  P.terms.forEach((t, i) => rows.push(`<tr><td>${chk('t', i)}</td><td>Terms</td><td><b>${esc(t.name)}</b></td><td></td><td class="small">${esc([t.method, t.rate !== null ? t.rate + '%' : '', t.months ? t.months + ' months' : '', t.feePct ? 'fee ' + t.feePct + '%' : '', t.feeFixed ? 'fee ' + t.feeFixed : ''].filter(Boolean).join(' · '))}</td><td class="small">${esc(t.conditions)}</td></tr>`));
+  P.goals.forEach((g, i) => rows.push(`<tr><td>${chk('g', i)}</td><td>Purchase goal</td><td><b>${esc(g.name)}</b></td><td></td><td class="num">${fm(g.price)}${g.wantBy ? `<br><small>by ${fday(g.wantBy)}</small>` : ''}</td><td class="small">priority ${g.priority}</td></tr>`));
+  const unchanged = finP().accounts.filter(a => !P.balances.some(b => b.account === a.id));
+  return `<div class="fin-preview"><h3>Preview — nothing is saved yet</h3>
+    ${total ? `<div class="tbl-wrap"><table class="tbl"><thead><tr><th></th><th>Type</th><th>What</th><th class="num">Now</th><th class="num">New</th><th>Effect</th></tr></thead><tbody>${rows.join('')}</tbody></table></div>` : '<p class="small">No changes found in what you wrote.</p>'}
+    ${unchanged.length ? `<p class="small muted">Left as they are: ${unchanged.map(a => esc(a.name)).join(', ')}.</p>` : ''}
+    ${P.questions.length ? `<div class="fin-note">❓ ${P.questions.map(q => esc(q.text)).join('<br>❓ ')}<br><small>Answer below and press “Understand” again, or apply the rest now.</small><textarea class="input" id="fin-draft-ans" placeholder="Your answers">${esc(D.answers || '')}</textarea></div>` : ''}
+    <div class="row end"><button class="btn ghost" data-act="fin-draft-x">Discard</button>${total ? `<button class="btn primary" data-act="fin-draft-apply">Apply ${total} change${total === 1 ? '' : 's'}</button>` : ''}</div></div>`;
+}
+function finQuestionHTML(q) {
+  const p = finP(), id = esc(q.id);
+  if (q.kind === 'deposit') return `<div class="fin-q-item"><p>${q.text}</p><div class="row"><button class="btn sm" data-act="fin-ans" data-id="${id}" data-how="income">My income</button><button class="btn sm" data-act="fin-ans" data-id="${id}" data-how="own">From my own account</button><button class="btn sm" data-act="fin-ans" data-id="${id}" data-how="invest">Investment return</button><select class="input sm" data-chg="fin-ans-party" data-id="${id}"><option value="">Someone else’s money…</option>${p.parties.map(x => `<option value="${esc(x.id)}">${esc(x.name)}</option>`).join('')}<option value="__new">Another person…</option></select></div></div>`;
+  if (q.kind === 'inst') return `<div class="fin-q-item"><p>${esc(q.text)}</p><div class="row"><label class="small">payments left <input class="input num sm" id="qa-${id}" inputmode="numeric"></label><button class="btn sm" data-act="fin-ans" data-id="${id}" data-how="active">Still active</button><button class="btn sm" data-act="fin-ans" data-id="${id}" data-how="ended">Finished</button><button class="btn sm ghost" data-act="fin-ans" data-id="${id}" data-how="stopped">Stopped / cancelled</button></div></div>`;
+  if (q.kind === 'balance') return `<div class="fin-q-item"><p>${esc(q.text)}</p><div class="row">${q.diff < 0 ? `<select class="input sm" id="qc-${id}">${finCatOptions('other_exp', ['expense'])}</select><button class="btn sm" data-act="fin-ans" data-id="${id}" data-how="spend">Spending</button>` : `<button class="btn sm" data-act="fin-ans" data-id="${id}" data-how="income">My income</button>`}<button class="btn sm" data-act="fin-ans" data-id="${id}" data-how="own">Moved between my accounts</button><button class="btn sm" data-act="fin-ans" data-id="${id}" data-how="theirs">Someone else’s money</button><button class="btn sm ghost" data-act="fin-ans" data-id="${id}" data-how="later">It will be in a statement</button></div></div>`;
+  return `<div class="fin-q-item"><p>${esc(q.text)}</p><div class="row"><button class="btn sm" data-act="fin-ans-draft" data-id="${id}">Answer in the box above</button><button class="btn sm ghost" data-act="fin-ans" data-id="${id}" data-how="dismiss">Not needed</button></div></div>`;
+}
+
+/* --- daily balances, account by account --- */
+function finDailyHTML(n) {
+  const p = finP(), U = UI.fin.daily = UI.fin.daily || { date: finToday(), v: {} };
+  const rows = n.accts.filter(x => ['current', 'savings', 'credit_card', 'bnpl', 'cash', 'investment'].includes(x.a.kind));
+  const mom = p.holdings.find(h => h.id === 'mom');
+  const field = (id, k, ph) => `<input class="input num sm" data-chg="fin-daily" data-id="${esc(id)}" data-k="${k}" value="${esc((U.v[id] || {})[k] ?? '')}" placeholder="${esc(ph ?? '')}" inputmode="decimal">`;
+  return `<section class="card fin-card"><div class="row"><h2>Today’s balances</h2><span class="spacer"></span><label class="small">as of <input class="input sm" type="date" data-chg="fin-daily-date" value="${esc(U.date)}"></label></div>
+    <p class="small muted">Fill in only the accounts you checked — the others stay as they are. Each new figure is compared with the last one and with the transactions recorded since.</p>
+    <div class="tbl-wrap"><table class="tbl fin-daily"><thead><tr><th>Account</th><th class="num">Last known</th><th>New balance</th><th></th></tr></thead><tbody>
+    ${rows.map(({ a, l }) => `<tr><td><b>${esc(a.name)}</b>${a.holder && a.holder !== 'me' ? `<br><small class="muted">in ${esc(a.holder)}’s name</small>` : ''}</td>
+      <td class="num">${a.kind === 'credit_card' || a.kind === 'bnpl' ? `${l.owed !== null && l.owed !== undefined ? `owed ${fm(l.owed)}` : '—'}${l.available !== null && l.available !== undefined ? `<br><small>available ${fm(l.available)}${l.limit ? ` of ${fm(l.limit)}` : ''}</small>` : ''}` : typeof l.balance === 'number' ? fm(l.balance) : '—'}<br><small class="muted">${l.date ? `${fday(l.date)} · ${l.source === 'you' ? 'you' : 'statement'}` : 'never'}</small></td>
+      <td>${a.kind === 'credit_card' || a.kind === 'bnpl' ? `<div class="row">${field(a.id, 'outstanding', 'owed')}${field(a.id, 'available', 'available')}</div>` : field(a.id, 'balance', typeof l.balance === 'number' ? l.balance : '')}</td>
+      <td class="small">${finBalTrend(a.id)}</td></tr>`).join('')}
+    ${mom ? `<tr><td><b>${esc(mom.name)}</b><br><small class="muted">your money: ${fm(+mom.principal || 0)} · in your mother’s name</small></td><td class="num">${fm(+mom.principal || 0)}<br><small class="muted">principal</small></td><td>${field('h:mom', 'balance', 'principal')}</td><td></td></tr>` : ''}
+    </tbody></table></div>
+    <div class="row end"><button class="btn primary" data-act="fin-daily-check">Check the changes</button></div>
+    ${U.preview ? finDailyPreviewHTML(U) : ''}
+    ${finBalHistoryHTML()}
+  </section>`;
+}
+function finBalTrend(acct) { const s = finSnaps().filter(x => x.acct === acct).sort((a, b) => a.date.localeCompare(b.date)).slice(-2); if (s.length < 2 || typeof s[0].balance !== 'number' || typeof s[1].balance !== 'number') return ''; const d = FIN.r2(s[1].balance - s[0].balance); return `${d >= 0 ? '▲' : '▼'} ${fm(Math.abs(d))} since ${fday(s[0].date)}`; }
+function finDailyCheck() {
+  const U = UI.fin.daily, n = finNow(), out = [];
+  for (const [id, v] of Object.entries(U.v || {})) {
+    const num = k => v[k] === '' || v[k] === undefined ? null : (FIN.parseNum(v[k]) || {}).n ?? null;
+    if (id === 'h:mom') { const b = num('balance'); if (b !== null) out.push({ id, name: (finP().holdings.find(h => h.id === 'mom') || {}).name, balance: b, holding: true }); continue; }
+    const x = n.accts.find(z => z.a.id === id); if (!x) continue;
+    const r = { id, name: x.a.name, kind: x.a.kind, balance: num('balance'), available: num('available'), outstanding: num('outstanding'), prev: x.l };
+    if (r.balance === null && r.available === null && r.outstanding === null) continue;
+    const newBal = r.balance !== null ? r.balance : r.outstanding !== null ? -r.outstanding : null;
+    if (newBal !== null) r.change = FIN.balanceChange(x.l.date && typeof (x.l.balance ?? (x.l.owed !== undefined && x.l.owed !== null ? -x.l.owed : null)) === 'number' ? { balance: x.l.balance ?? -x.l.owed, date: x.l.date } : null, { balance: newBal, date: U.date }, finTx().filter(t => t.acct === id));
+    out.push(r);
+  }
+  // an unexplained drop in one account matched by the same rise in another: money moved between your accounts
+  for (const a of out) for (const b of out) if (a !== b && a.change && b.change && a.change.unexplained && b.change.unexplained && Math.abs(a.change.unexplained + b.change.unexplained) < 0.01) { a.transfer = b.name; }
+  U.preview = out; render();
+}
+function finDailyPreviewHTML(U) {
+  const P = U.preview; if (!P.length) return '<p class="small muted">Nothing filled in.</p>';
+  const cls = r => { const c = r.change; if (!c || c.first) return 'first balance recorded'; if (!c.unexplained) return c.n ? `matches ${c.n} recorded transaction${c.n === 1 ? '' : 's'} ✓` : 'no change'; if (r.transfer) return `moved to/from ${esc(r.transfer)} (between your accounts)`; return c.unexplained < 0 ? `${fm(-c.unexplained)} not in any statement: spending, a withdrawal or a transfer? — you will be asked` : `${fm(c.unexplained)} not in any statement: income, a deposit, a transfer or someone else’s money? — you will be asked`; };
+  const left = finNow().accts.filter(x => !P.some(r => r.id === x.a.id)).map(x => x.a.name);
+  return `<div class="fin-preview"><h3>Check before saving</h3><div class="tbl-wrap"><table class="tbl"><thead><tr><th>Account</th><th class="num">Previous</th><th class="num">New</th><th class="num">Difference</th><th>What it looks like</th></tr></thead><tbody>
+    ${P.map(r => `<tr><td>${esc(r.name)}</td><td class="num">${r.holding ? '' : r.prev && r.prev.date ? `${fm(r.prev.balance ?? (r.prev.owed !== undefined ? -r.prev.owed : null))}<br><small class="muted">${fday(r.prev.date)}</small>` : '—'}</td><td class="num">${r.balance !== null ? fm(r.balance) : ''}${r.outstanding !== null && r.outstanding !== undefined ? `owed ${fm(r.outstanding)}` : ''}${r.available !== null && r.available !== undefined ? `<br><small>available ${fm(r.available)}</small>` : ''}</td><td class="num">${r.change && !r.change.first ? fmc(r.change.diff) : ''}</td><td class="small">${r.holding ? 'principal updated' : cls(r)}</td></tr>`).join('')}</tbody></table></div>
+    ${left.length ? `<p class="small muted">Unchanged: ${left.map(esc).join(', ')}.</p>` : ''}
+    <div class="row end"><button class="btn ghost" data-act="fin-daily-x">Cancel</button><button class="btn primary" data-act="fin-daily-save">Save these balances</button></div></div>`;
+}
+function finDailySave() {
+  const U = UI.fin.daily, at = nowISO(), snaps = [], qs = [];
+  for (const r of U.preview || []) {
+    if (r.holding) { finSave(q => { const h = q.holdings.find(x => x.id === 'mom'); if (h) { h.history = [...(h.history || []), { at, principal: h.principal }]; h.principal = r.balance; } }); continue; }
+    snaps.push({ id: E.uid('bl'), acct: r.id, date: U.date, balance: r.balance, available: r.available, outstanding: r.outstanding, source: 'daily', at });
+    if (r.change && r.change.unexplained && !r.transfer) qs.push({ id: E.uid('q'), kind: 'balance', acct: r.id, date: U.date, diff: r.change.unexplained, at, text: `${r.name}: ${fm(Math.abs(r.change.unexplained))} ${r.change.unexplained < 0 ? 'left' : 'came into'} the account by ${fday(U.date)} that no statement shows yet. What was it?` });
+  }
+  if (snaps.length) finAddSnaps(snaps);
+  if (qs.length) finSave(q => { q.questions = [...(q.questions || []), ...qs]; });
+  finLog('balances updated', { n: snaps.length });
+  UI.fin.daily = { date: finToday(), v: {} }; render(); toast(`${snaps.length} balance${snaps.length === 1 ? '' : 's'} saved${qs.length ? ` · ${qs.length} question${qs.length === 1 ? '' : 's'} for you` : ''}.`);
+}
+// balances over time and between two dates
+function finBalHistoryHTML() {
+  const p = finP(), H = UI.fin.hist = UI.fin.hist || { a: '', b: '' };
+  const at = (acct, d) => { const s = finSnaps().filter(x => x.acct === acct && x.date <= d && typeof x.balance === 'number').sort((x, y) => x.date.localeCompare(y.date)).pop(); const t = finTx().filter(x => x.acct === acct && typeof x.balance === 'number' && x.date <= d).sort((x, y) => x.date.localeCompare(y.date)).pop(); const c = [s && { date: s.date, v: s.balance }, t && { date: t.date, v: t.balance }].filter(Boolean).sort((x, y) => x.date.localeCompare(y.date)).pop(); return c || null; };
+  const snaps = finSnaps().slice().sort((a, b) => b.date.localeCompare(a.date) || (b.at || '').localeCompare(a.at || '')).slice(0, 40);
+  return `<details class="fin-hist-d"><summary class="small">Balance history and comparing two dates</summary>
+    <div class="row"><label class="small">from <input class="input sm" type="date" data-chg="fin-hist" data-k="a" value="${esc(H.a)}"></label><label class="small">to <input class="input sm" type="date" data-chg="fin-hist" data-k="b" value="${esc(H.b)}"></label></div>
+    ${H.a && H.b ? `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Account</th><th class="num">${fday(H.a)}</th><th class="num">${fday(H.b)}</th><th class="num">Change</th></tr></thead><tbody>${p.accounts.map(a => { const x = at(a.id, H.a), y = at(a.id, H.b); return `<tr><td>${esc(a.name)}</td><td class="num">${x ? fm(x.v) : '—'}</td><td class="num">${y ? fm(y.v) : '—'}</td><td class="num">${x && y ? fmc(y.v - x.v) : '—'}</td></tr>`; }).join('')}</tbody></table></div>` : ''}
+    <ul class="small fin-list">${snaps.map(s => `<li>${fday(s.date)} · ${esc((finAcct(s.acct) || { name: s.acct === 'h:mom' ? 'CIB investment' : s.acct }).name)}: ${typeof s.balance === 'number' ? fm(s.balance) : ''}${typeof s.outstanding === 'number' ? ` owed ${fm(s.outstanding)}` : ''}${typeof s.available === 'number' ? ` · available ${fm(s.available)}` : ''} <span class="muted">(${esc(s.source)})</span></li>`).join('') || '<li class="muted">No balances given yet.</li>'}</ul></details>`;
+}
+
+/* --- card, Halan and instalments --- */
+FIN_VIEW.credit = () => {
+  const n = finNow(), p = finP(), cur = finToday().slice(0, 7);
+  const facc = (x, title) => { if (!x) return ''; const a = x.a, t = a.terms || {}, i = p.accounts.findIndex(z => z.id === a.id), util = x.limit && x.owed !== null && x.owed !== undefined ? FIN.r2(x.owed / x.limit * 100) : null;
+    const tf = (k, l, o = {}) => `<label class="field"><span class="label">${l}</span><input class="input ${o.num ? 'num' : ''}" data-chg="fin-terms" data-i="${i}" data-k="${k}" value="${esc(t[k] ?? '')}" ${o.num ? 'inputmode="decimal"' : ''} placeholder="${esc(o.ph || '')}"></label>`;
+    return `<section class="card fin-card"><h2>${FIN.norm(a.name).startsWith(FIN.norm(title)) ? esc(a.name) : `${esc(title)} — ${esc(a.name)}`}</h2>
+      <div class="fin-kpis">${finKpi('Limit', x.limit ? fk(x.limit) : '—', a.kind === 'credit_card' ? 'when nothing is used' : 'financing you can use')}${finKpi('Owed now', x.owed !== null && x.owed !== undefined ? fk(x.owed) : '—', x.date ? `${fday(x.date)} · ${x.source === 'you' ? 'you' : 'statement'}` : 'no figure yet')}${finKpi('Available now', x.available !== null && x.available !== undefined ? fk(x.available) : '—', 'never assumed to be the full limit')}${util !== null ? finKpi('Used', fpct(util), util > 60 ? 'high — keep it under about a third' : util > 30 ? 'moderate' : 'low') : ''}${a.stmt && a.stmt.dueDate ? finKpi('Next payment', a.stmt.minDue ? `${fk(a.stmt.minDue)} minimum` : '—', `due ${fday(a.stmt.dueDate)} · statement of ${fday(a.stmt.date)}`) : ''}</div>
+      <div class="fin-form-g"><label class="field"><span class="label">Limit</span><input class="input num" data-chg="fin-limit" data-i="${i}" value="${esc(a.limit ?? '')}" inputmode="decimal"></label>
+        <label class="field"><span class="label">How interest is charged</span><select class="input" data-chg="fin-terms" data-i="${i}" data-k="method"><option value="none" ${t.method === 'none' ? 'selected' : ''}>No interest (0%)</option><option value="flat" ${t.method === 'flat' ? 'selected' : ''}>Flat % a month</option><option value="reducing" ${t.method === 'reducing' ? 'selected' : ''}>% a year on balance</option></select></label>
+        ${tf('rate', t.method === 'reducing' ? 'Rate % a year' : 'Rate % a month', { num: 1 })}${tf('months', 'Usual months', { num: 1 })}${tf('feePct', 'Fees % of the price', { num: 1 })}${tf('feeFixed', 'Fixed fees', { num: 1 })}</div><div class="fin-form-g">${tf('conditions', 'Repayment conditions', { ph: 'e.g. 3, 6, 12 or 24 months; early repayment fee' }).replace('class="field"', 'class="field fin-wide"')}</div>
+      ${(() => { const q = FIN.financeQuote(10000, t, +t.months || 12); return `<p class="small">Example: <b>${fm(10000)}</b> over ${q.months} months → <b>${fm(q.monthly)}</b> a month, interest ${fm(q.interest)}, fees ${fm(q.fees)}, total <b>${fm(q.total)}</b>.${x.available ? ` You can finance up to <b>${fm(x.available)}</b> now.` : ''}</p>`; })()}
+    </section>`; };
+  const inst = n.inst, ln = Array.from({ length: 12 }, (_, k) => { const m = FIN.addMonths(cur, k); return { k: m, label: fmon(m), short: fmtDate(m + '-15', { month: 'short' }), a: 0, b: FIN.installmentLoad(inst, m) }; });
+  return `${facc(n.card, 'Credit card')}${facc(n.halan, 'Halan')}
+    <section class="card fin-card"><h2>Instalments</h2><p class="small muted">Found in your statements — “06 OF 12” lines are counted by the bank; other fixed monthly payments are asked about. A payment missing for a month or two is still counted until you say it ended.</p>
+    ${inst.length ? `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>What</th><th class="num">A month</th><th>Paid</th><th class="num">Left</th><th>Ends</th><th class="num">Still to pay</th><th>Status</th><th></th></tr></thead><tbody>${inst.map(i => `<tr><td>${esc(i.name)}<br><small class="muted">${i.source === 'count' ? 'counted on the statement' : i.source === 'you' ? 'you told me' : 'repeats every month'}</small></td><td class="num">${fm(i.amount)}</td><td>${i.of ? `${i.n} of ${i.of}` : i.n ? `${i.n} seen` : ''}</td><td class="num">${i.remaining ?? '?'}</td><td>${i.end ? fmon(i.end) : '?'}</td><td class="num">${i.outstanding !== null && i.outstanding !== undefined ? fm(i.outstanding) : '?'}</td>
+      <td>${{ active: '<span class="fin-tag ok">active</span>', missing: '<span class="fin-tag warn">not seen lately</span>', completed: '<span class="fin-tag">finished</span>', discontinued: '<span class="fin-tag">stopped</span>' }[i.status] || esc(i.status)}</td><td class="nowrap"><input class="input num sm" id="il-${esc(i.key)}" placeholder="left" inputmode="numeric" aria-label="Payments left"><button class="btn sm ghost" data-act="fin-inst-set" data-key="${esc(i.key)}">Set</button><button class="btn sm ghost" data-act="fin-ans" data-id="inst:${esc(i.key)}" data-how="ended">Finished</button></td></tr>`).join('')}
+      <tr class="fin-total"><td>Total this month</td><td class="num">${fm(n.instMonthly)}</td><td colspan="3"></td><td class="num">${fm(inst.reduce((s, i) => s + (i.status !== 'completed' && i.outstanding ? i.outstanding : 0), 0))}</td><td colspan="2"></td></tr></tbody></table></div>
+      <h3>Instalments in the coming months ${finEst}</h3>${finBars(ln, { la: '', lb: 'Instalments', title: 'Instalments by month' })}` : '<p class="small muted">None found yet.</p>'}</section>`;
+};
+
+/* --- purchase goals: one plan for everything you want to buy --- */
+function finBuyPlan() {
+  const p = finP(), n = finNow(), today = finToday();
+  const cardT = n.card ? { available: n.card.available || 0, terms: n.card.terms && n.card.terms.method ? n.card.terms : null } : {}, halT = n.halan ? { available: n.halan.available || 0, terms: n.halan.terms && n.halan.terms.method && (n.halan.terms.method === 'none' || +n.halan.terms.rate) ? n.halan.terms : null } : {};
+  return FIN.planPurchases(p.buys || [], { cash: n.free, capacity: n.capacity, card: cardT, halan: halT }, today, { focus: !!p.buyFocus });
+}
+const FIN_REC = { cash: ['Buy now with cash', 's3'], card_full: ['Card now, pay it in full', 's1'], card_plan: ['Card instalments', 's1'], halan: ['Halan instalments', 's2'], save: ['Save first', 's3'], not_yet: ['Not affordable yet', 'muted'] };
+FIN_VIEW.buy = () => {
+  const p = finP(), n = finNow(), plan = finBuyPlan(), focus = !!p.buyFocus;
+  const items = plan.items, E0 = UI.fin.buyEdit;
+  return `<section class="card fin-card"><div class="row"><h2>Purchase goals</h2><span class="spacer"></span><div class="seg" role="group" aria-label="Plan for"><button data-act="fin-buy-focus" data-v="0" aria-pressed="${!focus}">All goals</button><button data-act="fin-buy-focus" data-v="1" aria-pressed="${focus}">Focus first</button></div></div>
+    <div class="fin-kpis">${finKpi('Total to buy', fk(plan.total), `${items.length} item${items.length === 1 ? '' : 's'}`)}${finKpi('From cash now', fk(plan.fromCash), `free cash ${fk(n.free)} (after a ${fk(n.reserve)} safety reserve${n.held ? ' and others’ money' : ''})`)}${finKpi('Saving a month', fk(plan.monthly), `of ${fk(n.capacity)} you can save${plan.cardRepay ? ` · plus ${fk(plan.cardRepay)} once to clear the card` : ''}${n.goalsMonthly ? ` · after ${fk(n.goalsMonthly)} for your other goals` : ''}`, { est: true })}${finKpi('Everything bought by', plan.allBy ? fmon(plan.allBy) : '—', plan.late.length ? `${plan.late.length} later than you want` : 'on your dates', { est: true, cls: plan.late.length ? 'bad' : '' })}${finKpi('Card available', n.card && n.card.available !== null && n.card.available !== undefined ? fk(n.card.available) : '—', n.card && n.card.limit ? `of ${fk(n.card.limit)}` : '')}${finKpi('Halan available', n.halan && n.halan.available !== null && n.halan.available !== undefined ? fk(n.halan.available) : '—', n.halan && (n.halan.available === null || n.halan.available === undefined) ? 'give what the Halan app shows (Update my position)' : n.halan && n.halan.terms && n.halan.terms.rate ? `${n.halan.terms.rate}% ${n.halan.terms.method === 'reducing' ? 'a year' : 'a month'}` : 'add its terms', { act: 'fin-sec', data: { s: n.halan && (n.halan.available === null || n.halan.available === undefined) ? 'update' : 'credit' } })}</div>
+    ${items.length ? finBuyMap(plan, n) : '<p class="small muted">No purchase goals yet — add one below, or write it in “Update my position” (e.g. “I want a laptop for 40,000 by March”).</p>'}
+    ${plan.late.length || n.capacity <= 0 ? `<div class="fin-note bad">${n.capacity <= 0 ? 'Nothing is left to save each month after your usual spending, instalments and other goals — purchases can only come from free cash or financing. ' : ''}${plan.late.length ? `Later than you want: ${items.filter(i => i.late).map(i => `<b>${esc(i.name)}</b> (${i.ready ? fmon(i.ready) : 'not reached'} instead of ${fmon(i.wantBy.slice(0, 7))})`).join(', ')}. Options: move the date, focus on it first, or use instalments if they fit.` : ''}</div>` : ''}
+  </section>
+  ${items.length ? `<section class="card fin-card"><h2>Each item</h2><div class="tbl-wrap"><table class="tbl fin-buy"><thead><tr><th>Item</th><th class="num">Price</th><th>Best way</th><th class="num">Cash now</th><th class="num">Save a month</th><th>Ready</th><th>Card</th><th>Halan</th><th></th></tr></thead><tbody>${items.map(it => { const o = it.options; return `<tr class="${it.late ? 'fin-short' : ''}"><td><label class="check"><input type="checkbox" data-chg="fin-buy-f" data-id="${esc(it.id)}" ${it.focus ? 'checked' : ''} aria-label="Focus"> <b>${esc(it.name)}</b></label><br><small class="muted">priority ${it.priority || 2}${it.wantBy ? ` · wanted by ${fday(it.wantBy)}` : ''}</small></td><td class="num">${fm(it.price)}</td><td><span class="fin-tag ${it.rec === 'not_yet' ? 'crit' : 'ok'}">${FIN_REC[it.rec][0]}</span><br><small>${esc(it.why)}</small></td><td class="num">${fm(it.fromCash)}</td><td class="num">${it.monthly ? fm(it.monthly) : '—'}${it.required ? `<br><small class="muted">needs ${fm(it.required)}</small>` : ''}</td><td>${it.ready ? fmon(it.ready) : 'not reached'}</td>
+    <td class="small">${o.cardFull ? 'pay in full ✓' : it.price <= o.cardAvailable ? 'fits the limit' : 'over the available limit'}${o.cardPlan ? `<br>${fm(o.cardPlan.monthly)} × ${o.cardPlan.months}, total ${fm(o.cardPlan.total)}` : ''}</td><td class="small">${o.halan ? `${fm(o.halan.monthly)} × ${o.halan.months}<br>total ${fm(o.halan.total)} (cost ${fm(o.halan.cost)})` : it.price <= o.halanAvailable ? 'add Halan’s terms' : 'over what Halan allows'}</td><td class="nowrap"><button class="btn sm ghost" data-act="fin-buy-edit" data-id="${esc(it.id)}">Edit</button><button class="btn sm ghost" data-act="fin-buy-done" data-id="${esc(it.id)}">Bought</button></td></tr>`; }).join('')}</tbody></table></div></section>` : ''}
+  <section class="card fin-card"><h2>${E0 && E0 !== 'new' ? 'Edit goal' : 'Add a purchase goal'}</h2>${(() => { const g = E0 && E0 !== 'new' ? (p.buys || []).find(b => b.id === E0) || {} : {}; return `<div class="fin-form-g"><label class="field"><span class="label">What</span><input class="input" id="by-name" value="${esc(g.name || '')}"></label><label class="field"><span class="label">Price</span><input class="input num" id="by-price" value="${esc(g.price || '')}" inputmode="decimal"></label><label class="field"><span class="label">Priority</span><select class="input" id="by-prio">${[[1, 'High'], [2, 'Normal'], [3, 'Low']].map(([v, l]) => `<option value="${v}" ${(+g.priority || 2) === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label><label class="field"><span class="label">Wanted by (optional)</span><input class="input" type="date" id="by-date" value="${esc(g.wantBy || '')}"></label></div><div class="row end">${E0 && E0 !== 'new' ? `<button class="btn danger" data-act="fin-buy-del" data-id="${esc(E0)}">Delete</button><button class="btn ghost" data-act="fin-buy-cancel">Cancel</button>` : ''}<button class="btn primary" data-act="fin-buy-save">${E0 && E0 !== 'new' ? 'Save' : 'Add'}</button></div>`; })()}
+    <p class="small muted">Free cash keeps a safety reserve of ${p.emergencyMonths || 3} months of essential costs (${fm(n.reserve)}); monthly savings come from your income minus usual spending, instalments and your other goals (Forecast & goals). Instalment costs use the terms under “Card, Halan & instalments”.</p></section>
+  ${(p.buys || []).some(b => b.done) ? `<details class="card fin-card"><summary>Bought (${p.buys.filter(b => b.done).length})</summary><ul class="fin-list">${p.buys.filter(b => b.done).map(b => `<li>${esc(b.name)} — ${fm(+b.price)} · ${fday(b.done)}</li>`).join('')}</ul></details>` : ''}`;
+};
+// the map: where the money comes from on the left, each item on the right, joined by how it is best paid
+function finBuyMap(plan, n) {
+  const W = FIN_W['Purchase map'] || 760, items = plan.items, rowH = 64, H = Math.max(4, items.length) * rowH + 30;
+  const src = [['cash', 'Cash now', fm(n.free)], ['save', 'Monthly savings', fm(n.capacity) + ' / month'], ['card', 'Credit card', n.card && n.card.available !== null && n.card.available !== undefined ? fm(n.card.available) + ' available' : '—'], ['halan', 'Halan', n.halan && n.halan.available !== null && n.halan.available !== undefined ? fm(n.halan.available) + ' available' : '—']];
+  const sx = 12, sw = Math.min(210, W * 0.3), ix = W - Math.min(330, W * 0.48) - 8, iw = W - ix - 8, sy = i => 15 + i * (H - 30) / 4 + 6, iy = i => 15 + i * rowH;
+  // text is cut to the box it sits in (about 0.58 of the font size per character), so nothing runs into its neighbour on a phone
+  const fit = (t, px, size) => { t = String(t); const n = Math.max(3, Math.floor(px / (size * 0.58))); return t.length > n ? t.slice(0, n - 1).trimEnd() + '…' : t; };
+  const from = it => it.rec === 'cash' ? [0] : it.rec === 'save' ? (it.fromCash ? [0, 1] : [1]) : it.rec === 'card_full' || it.rec === 'card_plan' ? (it.fromCash ? [0, 2] : [2]) : it.rec === 'halan' ? [3] : [];
+  let s = `<svg class="fin-chart fin-map" viewBox="0 0 ${W} ${H}" data-key="Purchase map" data-w="${W}" role="img" aria-label="Purchase map">`;
+  items.forEach((it, i) => from(it).forEach(k => { const y1 = sy(k) + 22, y2 = iy(i) + 26, x1 = sx + sw, x2 = ix; s += `<path class="fin-link ${FIN_REC[it.rec][1]}" d="M${x1},${y1} C${(x1 + x2) / 2},${y1} ${(x1 + x2) / 2},${y2} ${x2},${y2}"/>`; }));
+  src.forEach(([k, l, v], i) => { s += `<g class="fin-src"><rect x="${sx}" y="${sy(i)}" width="${sw}" height="44" rx="10"/><text x="${sx + 12}" y="${sy(i) + 19}" class="t1">${esc(fit(l, sw - 20, 13))}</text><text x="${sx + 12}" y="${sy(i) + 36}" class="t2">${esc(fit(v, sw - 20, 11.5))}</text><title>${esc(l)}: ${esc(v)}</title></g>`; });
+  items.forEach((it, i) => { const y = iy(i), price = fm(it.price, null, { dec: 0 }), pw = price.length * 13 * 0.58, sub = `${FIN_REC[it.rec][0]}${it.ready ? ' · ' + fmon(it.ready) : ''}${it.monthly ? ' · ' + fm(it.monthly, null, { dec: 0 }) + '/mo' : ''}`; s += `<g class="fin-item ${it.focus ? 'focus' : ''} ${it.late ? 'late' : ''}" data-act="fin-buy-edit" data-id="${esc(it.id)}" tabindex="0"><rect x="${ix}" y="${y}" width="${iw}" height="52" rx="10"/><text x="${ix + 12}" y="${y + 20}" class="t1">${esc(fit(it.name + (it.focus ? ' ★' : ''), iw - 36 - pw, 13))}</text><text x="${ix + iw - 12}" y="${y + 20}" class="t1" text-anchor="end">${esc(price)}</text><text x="${ix + 12}" y="${y + 39}" class="t2">${esc(fit(sub, iw - 24, 11.5))}</text><title>${esc(it.name)} — ${esc(it.why)}</title></g>`; });
+  s += '</svg>';
+  // a timeline of when each item becomes affordable
+  const months = [...new Set(items.map(i => i.ready).filter(Boolean))].sort();
+  return s + (months.length ? `<div class="fin-tl">${months.map(m => `<div class="fin-tl-m"><b>${fmon(m)}</b>${items.filter(i => i.ready === m).map(i => `<span class="fin-tag ${i.late ? 'crit' : 'ok'}">${esc(i.name)}</span>`).join('')}</div>`).join('')}</div>` : '');
+}
+
+/* --- actions --- */
+Object.assign(ACT, {
+  'fin-draft-read': () => { const D = UI.fin.draft2; D.text = ($('#fin-draft') || {}).value || D.text; const a = $('#fin-draft-ans'); if (a) D.answers = a.value; finDraftRead(); },
+  'fin-draft-apply': () => finDraftApply(),
+  'fin-draft-x': () => { UI.fin.draft2.preview = null; render(); },
+  'fin-draft-file-x': el => { UI.fin.draft2.files.splice(+el.dataset.i, 1); render(); },
+  'fin-ans': el => { const id = el.dataset.id, how = el.dataset.how; if (how === 'later' || how === 'dismiss' || how === 'own') { if (id.startsWith('dep:')) return finAnswer(id, how); finSave(q => { const x = (q.questions || []).find(z => z.id === id); if (x) Object.assign(x, { answered: nowISO(), answer: how }); }); return render(); }
+    const extra = {}; const c = $('#qc-' + id); if (c) extra.cat = c.value; const r = $('#qa-' + id); if (r) extra.remaining = r.value; finAnswer(id, how, extra); },
+  'fin-ans-draft': el => { const q = (finP().questions || []).find(x => x.id === el.dataset.id); const t = $('#fin-draft'); if (t && q) { t.value = (t.value ? t.value + '\n' : '') + q.text + ' → '; t.focus(); } },
+  'fin-daily-check': () => finDailyCheck(),
+  'fin-daily-save': () => finDailySave(),
+  'fin-daily-x': () => { UI.fin.daily.preview = null; render(); },
+  'fin-input-del': el => { if (!confirm('Remove this input? (Its history goes with it.)')) return; finSave(q => { q.inputs = (q.inputs || []).filter(i => i.id !== el.dataset.id); }); render(); },
+  'fin-inst-set': el => { const v = ($('#il-' + el.dataset.key) || {}).value; if (v === '' || v === undefined) return toast('Enter how many payments are left.', { err: true }); finAnswer('inst:' + el.dataset.key, 'active', { remaining: v }); },
+  'fin-buy-focus': el => { finSave(q => { q.buyFocus = el.dataset.v === '1'; }); render(); },
+  'fin-buy-edit': el => { UI.fin.buyEdit = el.dataset.id; UI.fin.sec = 'buy'; render(); const n = $('#by-name'); if (n) n.scrollIntoView({ block: 'center' }); },
+  'fin-buy-cancel': () => { UI.fin.buyEdit = null; render(); },
+  'fin-buy-save': () => { const name = (($('#by-name') || {}).value || '').trim(), price = (FIN.parseNum(($('#by-price') || {}).value || '') || {}).n; if (!name || !(price > 0)) return toast('Enter what and its price.', { err: true });
+    const g = { name, price: Math.abs(price), priority: +($('#by-prio') || {}).value || 2, wantBy: ($('#by-date') || {}).value || '' }, id = UI.fin.buyEdit && UI.fin.buyEdit !== 'new' ? UI.fin.buyEdit : null;
+    finSave(q => { q.buys = q.buys || []; if (id) Object.assign(q.buys.find(b => b.id === id) || {}, g); else q.buys.push({ id: E.uid('by'), ...g, at: nowISO() }); }); UI.fin.buyEdit = null; render(); },
+  'fin-buy-del': el => { if (!confirm('Delete this purchase goal?')) return; finSave(q => { q.buys = (q.buys || []).filter(b => b.id !== el.dataset.id); }); UI.fin.buyEdit = null; render(); },
+  'fin-buy-done': el => { finSave(q => { const b = (q.buys || []).find(x => x.id === el.dataset.id); if (b) b.done = finToday(); }); render(); toast('Marked as bought — the plan moves on to the next item.'); },
+});
+Object.assign(CHG, {
+  'fin-draft-files': async el => { const fs = [...(el.files || [])]; el.value = ''; const D = UI.fin.draft2 = UI.fin.draft2 || { text: '', files: [] }; D.text = ($('#fin-draft') || {}).value || D.text; for (const f of fs) D.files.push({ name: f.name, bytes: new Uint8Array(await f.arrayBuffer()) }); render(); },
+  'fin-draft-inc': el => { const D = UI.fin.draft2; D.includes = D.includes || {}; D.includes[el.dataset.k] = el.checked; },
+  'fin-ans-party': el => { const v = el.value; if (!v) return; if (v === '__new') { const name = prompt('Whose money is it?'); if (name) finAnswer(el.dataset.id, 'theirs', { name }); } else finAnswer(el.dataset.id, 'theirs', { party: v }); },
+  'fin-daily': el => { const U = UI.fin.daily; U.v[el.dataset.id] = { ...(U.v[el.dataset.id] || {}), [el.dataset.k]: el.value }; U.preview = null; },
+  'fin-daily-date': el => { UI.fin.daily.date = el.value || finToday(); UI.fin.daily.preview = null; render(); },
+  'fin-hist': el => { UI.fin.hist[el.dataset.k] = el.value; render(); },
+  'fin-terms': el => { finSave(q => { const a = q.accounts[+el.dataset.i]; if (!a) return; a.terms = { ...(a.terms || {}), [el.dataset.k]: ['rate', 'months', 'feePct', 'feeFixed'].includes(el.dataset.k) ? finNum(el.value) : el.value }; }); render(); },
+  'fin-limit': el => { finSave(q => { const a = q.accounts[+el.dataset.i]; if (a) { a.limit = finNum(el.value); a.limitSet = true; } }); render(); },
+  'fin-buy-f': el => { finSave(q => { const b = (q.buys || []).find(x => x.id === el.dataset.id); if (b) b.focus = el.checked; if (el.checked) q.buyFocus = true; }); render(); },
+});
+// keep the draft text while typing (the page redraws on other changes)
+document.addEventListener('input', e => { if (e.target && e.target.id === 'fin-draft' && UI.fin.draft2) UI.fin.draft2.text = e.target.value; });
+Object.assign(window.__FIN, { now: () => finNow(), questions: () => finQuestions(), buy: () => finBuyPlan(), latest: id => finLatest(finAcct(id)) });
 
 /* ---------- boot ---------- */
 const startView = (location.hash || '').replace('#', '');

@@ -3883,6 +3883,7 @@ function delDaily(id) { St.daily.delete(id); if (St.mode === 'db') delDoc(St.ref
 const mergeLayout = l => ({ off: {}, offv: {}, size: {}, ...(l || {}) });
 // further collections used by feature files: document register, time log, lessons, recycle bin, learned preferences
 const COLS = ['docreg', 'time', 'lessons', 'trash', 'prefs'];
+St.colsLoaded = new Set();
 St.cols = Object.fromEntries(COLS.map(n => [n, new Map()]));
 const colList = n => [...St.cols[n].values()];
 function colPut(n, d) { d.updatedAt = nowISO(); St.cols[n].set(d.id, d); if (St.mode === 'db') writeDoc(St.refs.cols[n].doc(d.id), d); else saveLocal(); }
@@ -3933,7 +3934,8 @@ async function initStore() {
     St.refs.daily.onSnapshot(s => { St.daily = snapMap(St.refs.daily, s); scheduleRender(); }, fail);
     St.refs.layout.onSnapshot(d => { St.layout = mergeLayout(snapDoc(St.refs.layout, d)); scheduleRender(); }, fail);
     St.refs.cols = {};
-    for (const n of COLS) { St.refs.cols[n] = base.collection(n); St.refs.cols[n].onSnapshot(s => { St.cols[n] = snapMap(St.refs.cols[n], s); scheduleRender(); }, fail); }
+    // St.colsLoaded: collections whose saved documents have arrived (nothing may be written over them before that)
+    for (const n of COLS) { St.refs.cols[n] = base.collection(n); St.refs.cols[n].onSnapshot(s => { St.cols[n] = snapMap(St.refs.cols[n], s); St.colsLoaded.add(n); scheduleRender(); }, fail); }
   } else {
     St.mode = 'local';
     try {
@@ -5926,7 +5928,7 @@ function dayModel(D) {
   Object.values(lanes).forEach(l => l.sort(order));
   const entries = [...St.daily.values()].filter(a => a.date === D).sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || ''));
   const manager = all.filter(t => t.status !== 'done' && isFromManager(t)).sort((a, b) => (a.deadline || '9').localeCompare(b.deadline || '9'));
-  const suggest = isToday ? all.filter(t => t.status !== 'done' && !items.has(t.id) && isMine(t) && t.status !== 'waiting' && ((t.deadline && t.deadline <= E.addDays(today, 1)) || t.priority === 'critical' || isFromManager(t))).sort(order.bind(null)).slice(0, 8) : [];
+  const suggest = isToday ? all.filter(t => t.status !== 'done' && !items.has(t.id) && isMine(t) && t.status !== 'waiting' && ((t.deadline && t.deadline <= E.addDays(today, 1)) || t.priority === 'critical' || isFromManager(t))).sort((x, y) => order({ t: x }, { t: y })).slice(0, 8) : [];
   return { isToday, items, lanes, achievements: entries.filter(a => a.kind === 'achievement'), notes: entries.filter(a => a.kind === 'note'), manager, suggest };
 }
 function dayHistory() {

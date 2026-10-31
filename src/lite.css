@@ -80,7 +80,8 @@ main { padding-top: 26px; }
 .toasts { bottom: calc(16px + env(safe-area-inset-bottom, 0px)) !important; }
 main { padding-bottom: 40px !important; }
 @media (max-width: 1120px) { .rail .brand-sub, .rail .rail-foot { display: none !important; } .rail .nav { padding: 9px 10px; } }
-@media (max-width: 760px) {
+/* icons only once the labels no longer fit (7 tabs need about 900px) */
+@media (max-width: 920px) {
   .rail { gap: 2px; padding-block: 8px; padding-left: max(12px, env(safe-area-inset-left, 0px)); padding-right: max(12px, env(safe-area-inset-right, 0px)); }
   .rail .brand { padding-right: 10px; margin-right: 4px; gap: 8px; }
   .rail .brand-name { font-size: 15px; }
@@ -89,6 +90,7 @@ main { padding-bottom: 40px !important; }
   .rail .nav .count { font-size: 10.5px; min-width: 18px; padding: 0 5px; margin-left: 2px; }
   .rail .nav[aria-current="page"]::after { left: 8px; right: 8px; bottom: -8px; }
 }
+@media (max-width: 920px) { .rail .nav .site-ic { font-size: 19px; line-height: 1; } }
 @media (max-width: 420px) { .rail .brand-name { display: none; } .rail .brand { border-right: 0; padding-right: 0; } }
 
 /* ---------- sheets, buttons, fields ---------- */

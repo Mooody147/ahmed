@@ -13,7 +13,7 @@ const FIN_DEF = () => ({
   alloc: [{ name: 'Savings & investments', pct: 50 }, { name: 'Financial goals', pct: 30 }, { name: 'Lifestyle', pct: 20 }], emergencyMonths: 3, keepOriginals: true, rent: { scenario: { delay: 0, rentCut: 0, vacancy: 0, costUp: 0 }, horizon: 24 },
 });
 const finP = () => { const p = { ...FIN_DEF(), ...(St.cols.prefs.get('finance') || {}) }; p.sim = { ...FIN_DEF().sim, ...(p.sim || {}) }; p.rent = { ...FIN_DEF().rent, ...(p.rent || {}) }; return p; };
-const finSave = mut => { const p = clone(finP()); mut(p); colPut('prefs', { ...p, id: 'finance' }); };
+const finSave = mut => { if (St.mode === 'db' && St.colsLoaded && !St.colsLoaded.has('prefs')) { toast('Still loading your saved settings — try again in a moment.', { err: true }); return; } const p = clone(finP()); mut(p); colPut('prefs', { ...p, id: 'finance' }); };
 const finCats = () => finP().cats || FIN.DEFAULT_CATS;
 const finCat = id => finCats().find(c => c.id === id) || null;
 const finAcct = id => finP().accounts.find(a => a.id === id) || null;
@@ -123,6 +123,7 @@ function finNotices(an) {
   if (an.noRate && an.noRate.length) out.push(`${an.noRate.map(x => `${x.n} transaction${x.n === 1 ? '' : 's'} in ${x.cur}`).join(', ')} ${an.noRate.reduce((s, x) => s + x.n, 0) === 1 ? 'is' : 'are'} left out of these totals: no exchange rate to ${finP().base} was given. <button class="btn sm" data-act="fin-sec" data-s="settings">Add a rate</button>`);
   if (an.incomplete && an.incomplete.length) out.push(`${an.incomplete.length} transaction${an.incomplete.length === 1 ? ' has' : 's have'} no readable date, amount or direction and ${an.incomplete.length === 1 ? 'is' : 'are'} not counted. <button class="btn sm" data-act="fin-ledger-status" data-v="incomplete">Fix them</button>`);
   if (an.totals && an.totals.gaps && an.totals.gaps.length) out.push(`No statement covers ${an.totals.gaps.length > 4 ? an.totals.gaps.length + ' months' : an.totals.gaps.map(fmon).join(', ')} — those months are shown as missing, not as zero.`);
+  const nq = typeof finQuestions === 'function' ? finQuestions().length : 0; if (nq) out.push(`${nq} question${nq === 1 ? '' : 's'} for you (unclear deposits, balance changes, instalments). <button class="btn sm" data-act="fin-sec" data-s="update">Answer</button>`);
   const rv = finTx().filter(t => t.review).length; if (rv) out.push(`${rv} transaction${rv === 1 ? '' : 's'} to check (unsure category or possible repeat). <button class="btn sm" data-act="fin-ledger-status" data-v="review">Review</button>`);
   const prob = colList('finbatch').filter(b => !b.undone).reduce((s, b) => s + (b.pending || []).filter(r => r.done === 'auto-same').length, 0); if (prob) out.push(`${prob} imported line${prob === 1 ? ' was' : 's were'} skipped as probable repeats of recorded transactions. <button class="btn sm" data-act="fin-sec" data-s="import">See them</button>`);
   const pend = colList('finbatch').reduce((s, b) => s + (b.pending || []).filter(r => !r.done).length, 0); if (pend) out.push(`${pend} imported line${pend === 1 ? '' : 's'} held for your decision (might already be recorded). <button class="btn sm" data-act="fin-sec" data-s="import">Decide</button>`);
@@ -140,7 +141,7 @@ function finBars(rows, o = {}) {
   const hi = niceMax(Math.max(...rows.map(r => Math.max(r.a || 0, r.b || 0, r.net || 0)))), lo = Math.min(0, ...rows.map(r => r.net || 0)), loN = lo < 0 ? -niceMax(-lo) : 0;
   const y = v => T + ih * (hi - v) / (hi - loN), bw = Math.max(2, Math.min(26, iw / rows.length / 2.6)), step = iw / rows.length;
   const ticks = [0, 1, 2, 3, 4].map(i => loN + (hi - loN) * i / 4);
-  const every = Math.ceil(rows.length / 12);
+  const every = Math.ceil(rows.length / Math.max(2, Math.min(12, Math.floor(iw / 50))));
   let s = `<svg class="fin-chart" viewBox="0 0 ${W} ${H}" data-key="${esc(o.title || '')}" data-w="${W}" role="img" aria-label="${esc(o.title || 'Chart')}">`;
   for (const t of ticks) s += `<line class="grid" x1="${L}" x2="${W - R}" y1="${y(t)}" y2="${y(t)}"/><text class="ax" x="${L - 6}" y="${y(t) + 4}" text-anchor="end">${fshort(t)}</text>`;
   s += `<line class="zero" x1="${L}" x2="${W - R}" y1="${y(0)}" y2="${y(0)}"/>`;
@@ -174,7 +175,7 @@ function finLines(series, o = {}) {
     s += seg(false) + seg(true);
     for (const p of se.pts) if (p.v !== null && p.v !== undefined) s += `<circle class="pt ${se.cls || 's' + (si + 1)} ${p.est ? 'est' : ''}" cx="${x(p.k)}" cy="${y(p.v)}" r="${keys.length > 40 ? 2 : 3.5}"><title>${esc(se.name)} · ${esc(p.label || p.k)}: ${o.pct ? fpct(p.v) : fm(p.v)}${p.est ? ' (estimate)' : ''}</title></circle>`;
   });
-  const every = Math.ceil(keys.length / 12);
+  const every = Math.ceil(keys.length / Math.max(2, Math.min(12, Math.floor(iw / 50))));
   keys.forEach((k, i) => { if (i % every === 0) s += `<text class="ax" x="${x(k)}" y="${H - 10}" text-anchor="middle">${esc(o.label ? o.label(k) : k)}</text>`; });
   s += '</svg>';
   return `<div class="fin-legend">${series.map((se, i) => `<span><i class="k ${se.cls || 's' + (i + 1)} line"></i>${esc(se.name)}</span>`).join('')}${series.some(se => se.pts.some(p => p.est)) ? '<span><i class="k line est"></i>Estimate</span>' : ''}</div>` + s;
@@ -211,6 +212,10 @@ FIN_VIEW.dash = () => {
     finKpi('Budget left this month', plan.totalBudget ? fkc(plan.totalBudget - plan.rows.filter(r => r.budget !== null).reduce((s, r) => s + r.spent, 0)) : '—', plan.totalBudget ? `of ${fk(plan.totalBudget)} budgeted` : '<button class="btn sm" data-act="fin-sec" data-s="budget">Set budgets</button>'),
     finKpi('Disposable this month', fkc(r2(curM.inc - curM.exp - committedLeft)), `income − spending so far − ${fk(committedLeft)} still due`, { est: true }),
     finKpi('Account balances', own.assets.filter(x => x.kind === 'bank' && x.verified).map(x => fk(x.amount, x.currency)).join(' + ') || '—', own.assets.some(x => x.kind === 'bank' && x.verified) ? 'latest statement balances — bank-confirmed' : 'no statement balance yet', { act: 'fin-sec', data: { s: 'accounts' } }),
+    ...(() => { const n = finNow(); return [finKpi('Free cash now', fk(n.free), `${n.cashKnown} of ${n.cashAccts} accounts known · after others’ money and a ${fk(n.reserve)} reserve`, { act: 'fin-sec', data: { s: 'update' } }),
+      finKpi('Available credit', n.card && n.card.available !== null && n.card.available !== undefined ? fk(n.card.available) : '—', n.card && n.card.limit ? `card limit ${fk(n.card.limit)}${n.halan && n.halan.available ? ` · Halan ${fk(n.halan.available)}` : ''}` : 'no card figure yet', { act: 'fin-sec', data: { s: 'credit' } }),
+      finKpi('Instalments a month', fk(n.instMonthly), `${n.inst.filter(i => i.status === 'active' || i.status === 'missing').length} running`, { act: 'fin-sec', data: { s: 'credit' } }),
+      finKpi('Financial health', n.health.score === null ? '—' : n.health.score + '/100', n.health.items.filter(x => x.g).map(x => `${x.label} ${x.g}`).join(' · '), { act: 'fin-sec', data: { s: 'update' } })]; })(),
     finKpi('Put into savings', fk(t.save), 'savings and investment moves out of my accounts, net'),
     finKpi('Savings rate', fpct(t.rate), '(income − expenses) ÷ income'),
     finKpi('Highest spending month', t.peakExp ? fk(t.peakExp.exp) : '—', t.peakExp ? fmon(t.peakExp.m) : '', t.peakExp ? { act: 'fin-drill', data: { kind: 'month', k: t.peakExp.m } } : {}),
@@ -426,10 +431,12 @@ document.addEventListener('input', e => { if (e.target && e.target.id === 'fin-q
 // charts are drawn at the width they get, so their text stays at its size on any screen
 HOOKS.afterRender.push(() => {
   if (UI.view !== 'finance') return;
-  let again = false; const now = Date.now(); FIN_W._n = now - (FIN_W._t || 0) < 1500 ? (FIN_W._n || 0) + 1 : 0; FIN_W._t = now;
-  if (FIN_W._n > 3) return;   // never chase a size in a loop
+  // only redraws this hook asked for count towards the limit, so it never chases a size in a loop
+  FIN_W._chain = FIN_W._self ? (FIN_W._chain || 0) + 1 : 0; FIN_W._self = false;
+  if (FIN_W._chain > 3) return;
+  let again = false;
   document.querySelectorAll('.fin-chart[data-key]:not([data-key=""])').forEach(svg => { const w = Math.round(svg.getBoundingClientRect().width); if (w > 120 && Math.abs(w - +svg.dataset.w) > 24) { FIN_W[svg.dataset.key] = Math.max(300, w); again = true; } });
-  if (again) scheduleRender();
+  if (again) { FIN_W._self = true; scheduleRender(); }
   const cur = document.querySelector('.fin-nav [aria-current="page"]'); if (cur && cur.scrollIntoView && document.querySelector('.fin-nav').scrollWidth > document.querySelector('.fin-nav').clientWidth) cur.scrollIntoView({ block: 'nearest', inline: 'nearest' });
 });
 // a test hook

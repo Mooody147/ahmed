@@ -113,8 +113,8 @@ const BUILTIN = [
   ['savings', 0, /savings|certificate|time deposit|شهاده|شهادات|ادخار|وديعه/],
   ['invest', 0, /invest|brokerage|securities|mutual fund|صندوق استثمار|استثمار|بورصه/],
   ['principal', -1, /principal|loan repayment|سداد اصل/],
-  ['debt', -1, /install?ment|\bemi\b|loan|valu\b|souhoola|sympl|aman\b|forsa|قسط|اقساط|تقسيط|قرض/],
   ['fees', -1, /\bfees?\b|charges?|commission|stamp duty|annual fee|عموله|رسوم|مصاريف|ضريبه دمغه|دمغه/],
+  ['debt', -1, /install?ment|\bemi\b|loan|valu\b|souhoola|sympl|aman\b|forsa|قسط|اقساط|تقسيط|قرض/],
   ['groceries', -1, /carrefour|spinneys|hyper|kazyon|oscar|seoudi|gourmet|metro market|grocery|supermarket|market|panda|lulu|breadfast|rabbit|بقاله|سوبر ?ماركت|خضار|هايبر/],
   ['dining', -1, /talabat|elmenus|mcdonald|kfc|starbucks|cafe|coffee|costa|cilantro|restaurant|pizza|burger|hardee|domino|مطعم|كافيه|قهوه/],
   ['transport', -1, /uber|careem|didi|indrive|swvl|fuel|petrol|benzin|gas station|wataniya|chillout|total ?energies|mobil\b|emarat|parking|toll|metro|بنزين|وقود|موقف|كارته/],
@@ -212,6 +212,83 @@ function statementMeta(lines) {
   const per = /(?:from|period|من|الفتره)[^0-9]{0,20}(\d{1,4}[-/.]\d{1,2}[-/.]\d{1,4}|\d{1,2}\s+[A-Za-z؀-ۿ]{3,}\.?\s+\d{2,4})\s*(?:to|until|-|–|الى|إلى|حتى)\s*(\d{1,4}[-/.]\d{1,2}[-/.]\d{1,4}|\d{1,2}\s+[A-Za-z؀-ۿ]{3,}\.?\s+\d{2,4})/i.exec(AR(text));
   return { currency: cur && cur[1] ? cur[0] : '', account: acct ? acct[1].replace(/\s+/g, '').slice(-14) : '', periodText: per ? [per[1], per[2]] : null };
 }
+// facts a statement prints with a label ("Opening Balance 1000.00 Closing Balance 2380.00", "Credit Limit 50400")
+function statementFacts(text) {
+  const t = AR(text || '').replace(/\s+/g, ' ');
+  const num = re => { const m = re.exec(t); if (!m) return null; const n = parseNum(m[1]); return n ? n.n : null; };
+  const date = re => { const m = re.exec(t); return m ? (parseDate(m[1]) || {}).iso || null : null; };
+  const N = '(\\(?-?[\\d,]+(?:\\.\\d+)?\\)?(?:\\s?(?:CR|DR))?)', D = '(\\d{1,2}[\\s\\-/.]+[A-Za-z]{3,}\\.?[\\s\\-/.,]+\\d{2,4}|\\d{1,4}[-/.]\\d{1,2}[-/.]\\d{1,4})';
+  const f = {
+    opening: num(new RegExp('(?:opening|previous|last statement) balance\\s*:?\\s*(?:EGP|USD|EUR)?\\s*' + N, 'i')), closing: num(new RegExp('(?:closing|current|new|statement) balance\\s*:?\\s*(?:EGP|USD|EUR)?\\s*' + N, 'i')),
+    totalCredit: num(new RegExp('total (?:of )?credits?\\s*:?\\s*' + N, 'i')), totalDebit: num(new RegExp('total (?:of )?debits?\\s*:?\\s*' + N, 'i')),
+    limit: num(new RegExp('credit limit\\s*:?\\s*(?:EGP)?\\s*' + N, 'i')), available: num(new RegExp('available (?:credit|limit|balance)\\s*:?\\s*(?:EGP)?\\s*' + N, 'i')), minDue: num(new RegExp('minimum (?:payment|amount)(?: due)?\\s*:?\\s*(?:EGP)?\\s*' + N, 'i')),
+    dueDate: date(new RegExp('(?:payment )?due date\\s*:?\\s*' + D, 'i')), statementDate: date(new RegExp('statement date\\s*:?\\s*' + D, 'i')),
+  };
+  for (const k of Object.keys(f)) if (f[k] === null) delete f[k];
+  return f;
+}
+// card installments printed on the line: "SHOP ONE 06 OF 12" → paid 6 of 12
+const instOf = desc => { const m = /\b(\d{1,2})\s?(?:OF|\/|من)\s?(\d{1,2})\b/i.exec(AR(desc || '')); if (!m) return null; const n = +m[1], of = +m[2]; return n >= 1 && of >= 2 && n <= of && of <= 120 ? { n, of } : null; };
+
+// a PDF read with the position of every piece of text: rows (top to bottom) of items {x, w, s}. The header row tells
+// where the Debit / Credit / Balance / Amount columns are; each number goes to the column it sits under, so a payment
+// and a purchase of the same amount are never confused (a flat text reading loses that)
+const COLW = { debit: /^(debit|debits|withdrawals?|money out|مدين|سحب|خصم)$/i, credit: /^(credit|credits|deposits?|money in|دائن|ايداع|إيداع)$/i, balance: /^(balance|running balance|الرصيد|رصيد)$/i, amount: /^(amount|المبلغ|transaction amount)$/i,
+  posting: /^(posting|posting amount|billed amount|amount in egp|المبلغ بالجنيه)$/i, orig: /^(original|original currency|original amount)$/i,
+  skip: /^(auth|auth code|currency|reference|ref\.?|value date|cheque|التاريخ)$/i, desc: /^(description|details|narrative|particulars|البيان|الوصف)$/i, date: /^(transaction date|date|posting date|value date|التاريخ)$/i };
+function rowsFromLayout(pages, o = {}) {
+  const rows = [], skipped = [], allText = [];
+  let cols = null, descX = null, prev = null, headerSeen = false, firstAmtX = Infinity;
+  const isNum = s => /^\(?-?[\d,]+(?:\.\d+)?\)?(?:\s?(?:CR|DR))?$/i.test(AR(s).trim());
+  pages.forEach((page, pi) => page.forEach((row, ri) => {
+    const items = row.items.filter(i => String(i.s).trim()), line = items.map(i => i.s).join(' ').trim();
+    if (!line) return;
+    if (!headerSeen) allText.push(line);
+    // a header row: at least a debit and a credit column, or an amount column, with a description column
+    const roles = items.map(i => { const s = String(i.s).trim(); for (const k of ['debit', 'credit', 'balance', 'posting', 'orig', 'amount', 'desc', 'skip']) if (COLW[k].test(s)) return { k, x: i.x + (i.w || 0) / 2, l: i.x, r: i.x + (i.w || 0) }; return null; }).filter(Boolean);
+    if (roles.some(r => r.k === 'debit') && roles.some(r => r.k === 'credit') || (roles.some(r => r.k === 'amount') && roles.some(r => r.k === 'desc'))) {
+      cols = roles.filter(r => r.k !== 'desc'); const d = roles.find(r => r.k === 'desc'); descX = d ? d.l : descX; headerSeen = true; prev = null;
+      firstAmtX = Math.min(...cols.filter(c => ['debit', 'credit', 'amount', 'balance'].includes(c.k)).map(c => c.l)); return;
+    }
+    if (!cols) return;
+    if (/^page\s*(no\.?)?\s*\d+|^continued|^صفحة/i.test(line)) return;
+    if (/^currency\b|^amount\b/i.test(line) && items.length <= 3) return;   // second line of a two-line header
+    // the left part: dates; the middle: description; numbers sit under the amount columns
+    // what is right of the amount columns (currency codes, posting amounts, auth codes) is never description
+    const left = items.filter(i => descX !== null ? i.x < descX - 2 : false), mid = items.filter(i => (descX === null || i.x >= descX - 2) && i.x + (i.w || 0) / 2 < firstAmtX - 12);
+    const origCur = (items.find(i => /^[A-Z]{3}$/.test(String(i.s).trim()) && i.x + (i.w || 0) / 2 >= firstAmtX - 12) || {}).s || '';
+    const nums = items.filter(i => i.x + (i.w || 0) / 2 >= firstAmtX - 12 && isNum(i.s)).map(i => { const c = i.x + (i.w || 0) / 2, r = i.x + (i.w || 0); let best = null, bd = 1e9; for (const col of cols) { const dd = Math.min(Math.abs(col.x - c), Math.abs(col.r - r), Math.abs(col.l - i.x)); if (dd < bd) { bd = dd; best = col; } } return { col: best, v: parseNum(i.s) }; });
+    const dateTxt = left.map(i => i.s).join(' ');
+    const dates = [...AR(dateTxt).matchAll(/(\d{1,2}[\s\-/.]+[A-Za-z؀-ۿ]{3,}\.?[\s\-/.,]+\d{2,4}|\d{1,4}[-/.]\d{1,2}[-/.]\d{1,4})/g)].map(m => parseDate(m[1], o.order || 'dmy')).filter(d => d && d.iso);
+    const desc = mid.map(i => i.s).join(' ').replace(/\s+/g, ' ').trim();
+    const amt = k => { const n = nums.find(x => x.col && x.col.k === k); return n && n.v ? n.v : null; };
+    const d = amt('debit'), c = amt('credit'), a = amt('amount'), b = amt('balance');
+    if (!dates.length) {
+      if (isTotalLine(line)) { skipped.push({ r: `p${pi + 1}·${ri + 1}`, raw: line.slice(0, 300), why: 'statement total or balance line' }); return; }
+      if (prev && desc && !nums.length) { prev.desc = (prev.desc + ' ' + desc).trim(); prev.raw = (prev.raw + ' ⏎ ' + line).slice(0, 600); }
+      return;
+    }
+    let amount = null; const flags = [];
+    // a foreign purchase: the debit/credit column shows the original amount; what was charged is the posting amount
+    const post = amt('posting'), home = o.currency || 'EGP', orig = origCur && origCur !== home && post ? { amount: Math.abs((d || c || a || { n: 0 }).n), cur: origCur } : null;
+    if (d || c) amount = r2((c ? Math.abs(c.n) : 0) - (d ? Math.abs(d.n) : 0));
+    if (orig && amount !== null) amount = r2(Math.sign(amount) * Math.abs(post.n));
+    else if (a) { amount = a.mark ? a.mark * Math.abs(a.n) : a.n; if (!a.mark && a.n > 0) flags.push('direction_unknown'); }
+    if (amount === null) flags.push('no_amount');
+    if (!desc) flags.push('no_description');
+    const bal = b ? (b.mark ? b.mark * Math.abs(b.n) : b.n) : null;
+    const r = { r: `p${pi + 1}·${ri + 1}`, raw: line.slice(0, 400), date: dates[0].iso, date2: dates[1] ? dates[1].iso : null, desc, amount: amount === null ? null : r2(amount), balance: bal === null ? null : r2(bal), currency: '', ref: '', flags };
+    const inst = instOf(desc); if (inst) r.inst = inst;
+    if (orig) { r.orig = orig; r.desc = (desc + ` (${orig.amount} ${orig.cur})`).trim(); }
+    rows.push(r); prev = r;
+  }));
+  const facts = statementFacts(allText.join(' \n ')), meta = { ...statementMeta(allText), ...facts, opening: facts.opening ?? null, closing: facts.closing ?? null, layout: !!cols };
+  if (facts.statementDate && !meta.periodText) meta.statementDate = facts.statementDate;
+  // a card statement prints what is owed as a positive balance: the ledger counts owed money as negative
+  if (o.card) { if (typeof meta.opening === 'number') meta.opening = -meta.opening; if (typeof meta.closing === 'number') meta.closing = -meta.closing; meta.signed = true; }
+  return { rows: cols ? chainBest(rows, meta, o.card) : [], skipped, meta, found: !!cols };
+}
+
 // a spreadsheet or CSV laid out as a grid: find the header row and what each column holds
 function detectGrid(grid) {
   grid = (grid || []).map(r => (r || []).map(c => (c === null || c === undefined ? '' : c)));
@@ -334,6 +411,12 @@ function rowsFromText(text, o = {}) {
     if (!desc) flags.push('no_description');
     rows.push({ r: i + 1, raw: line.slice(0, 400), date: dt && dt.iso || null, desc, amount: amount === null ? null : r2(amount), balance: balance === null ? null : r2(balance), currency: '', ref: '', flags });
   });
+  const facts = statementFacts(lines.slice(0, 40).join(' \n '));
+  if (facts.opening !== undefined) meta.opening = o.card ? -facts.opening : facts.opening;
+  if (facts.closing !== undefined) meta.closing = o.card ? -facts.closing : facts.closing;
+  if (o.card && (facts.opening !== undefined || facts.closing !== undefined)) meta.signed = true;
+  Object.assign(meta, { limit: facts.limit, minDue: facts.minDue, dueDate: facts.dueDate, statementDate: facts.statementDate, available: facts.available });
+  rows.forEach(r => { const i = instOf(r.desc); if (i) r.inst = i; });
   return { rows: chainBest(rows, meta, o.card), skipped, meta, order, year };
 }
 // the running balance decides a direction the statement did not print and catches misread amounts
@@ -364,11 +447,13 @@ function chain(rows, opening) {
 function chainBest(rows, meta, card) {
   const copy = flip => rows.map(r => ({ ...r, flags: r.flags.slice(), balance: r.balance === null || r.balance === undefined ? r.balance : flip ? -r.balance : r.balance }));
   const bad = rs => rs.filter(r => r.flags.includes('balance_mismatch') || r.flags.includes('direction_unknown')).length;
-  const a = chain(copy(false), meta.opening), withBal = rows.filter(r => typeof r.balance === 'number').length;
+  // meta.signed: the opening/closing were already turned to the ledger's sign (owed = negative)
+  const op = typeof meta.opening === 'number' ? meta.opening * (meta.signed ? -1 : 1) : meta.opening;
+  const a = chain(copy(false), op), withBal = rows.filter(r => typeof r.balance === 'number').length;
   if (!withBal || (!bad(a) && !card)) return a;
-  const b = chain(copy(true), typeof meta.opening === 'number' ? -meta.opening : meta.opening);
+  const b = chain(copy(true), typeof op === 'number' ? -op : op);
   // when both readings add up, a card account takes "the balance is what I owe"
-  if (bad(b) < bad(a) || (card && bad(b) <= bad(a))) { meta.balanceFlipped = true; if (typeof meta.opening === 'number') meta.opening = -meta.opening; if (typeof meta.closing === 'number') meta.closing = -meta.closing; return b; }
+  if (bad(b) < bad(a) || (card && bad(b) <= bad(a))) { meta.balanceFlipped = true; if (!meta.signed) { if (typeof meta.opening === 'number') meta.opening = -meta.opening; if (typeof meta.closing === 'number') meta.closing = -meta.closing; } return b; }
   return a;
 }
 // what a statement said about itself and what the rows add up to
@@ -764,13 +849,15 @@ function forecast(an, o) {
   const cur = ym(o.today), done = an.months.filter(b => b.covered && b.m < cur).slice(-6), H = Math.max(1, Math.min(36, +o.horizon || 12));
   const cats = catMap(o.cats), byCat = {};
   for (const c of Object.values(cats)) if (c.kind === 'expense') { const v = done.map(b => b.byCat[c.id] || 0); if (v.some(x => x)) byCat[c.id] = r2(median(v)); }
+  // instalments: today's are inside the medians; each month gets the ones still running then
+  const instNow = o.installments ? installmentLoad(o.installments, cur) : 0;
   const expBase = r2(sum(Object.values(byCat)));
   const incBase = o.income !== undefined && o.income !== null ? +o.income : null;
   const extra = o.incomeRows || null, infl = +o.inflation || 0;
   const rows = [];
   let bal = o.balance === null || o.balance === undefined ? null : +o.balance, cum = 0;
   for (let i = 0; i < H; i++) {
-    const m = addMonths(cur, i + 1), inc = extra && extra[i] ? extra[i].income : incBase, ex = r2(expBase * Math.pow(1 + infl / 100, (i + 1) / 12));
+    const m = addMonths(cur, i + 1), inc = extra && extra[i] ? extra[i].income : incBase, ex = r2(Math.max(0, expBase - instNow) * Math.pow(1 + infl / 100, (i + 1) / 12) + (o.installments ? installmentLoad(o.installments, m) : 0));
     const net = inc === null ? null : r2(inc - ex);
     if (net !== null) cum = r2(cum + net);
     if (bal !== null && net !== null) bal = r2(bal + net);
@@ -917,6 +1004,166 @@ function position(o) {
   return { assets, liabilities, third, insideMine, perCurrency, net: missing.length ? null : r2(total), missingRates: missing, base, notes, estimated: assets.some(a => !a.verified) || liabilities.some(l => !l.verified) };
 }
 
+
+/* ---------- financing: credit card and Halan ---------- */
+// terms: {method: 'flat' (a monthly rate on the full price, as instalment shops quote it) | 'reducing' (a yearly rate
+// on what is still owed) | 'none' (0% instalments), rate (% a month for flat, % a year for reducing), feePct (% of the
+// price, paid at the start), feeFixed, months}
+function financeQuote(price, terms, months) {
+  price = +price || 0; months = Math.max(1, +months || +(terms && terms.months) || 1); const t = terms || {};
+  const rate = +t.rate || 0, fees = r2(price * (+t.feePct || 0) / 100 + (+t.feeFixed || 0));
+  let interest = 0, monthly;
+  if (t.method === 'reducing' && rate > 0) { const r = rate / 12 / 100; monthly = price * r / (1 - Math.pow(1 + r, -months)); interest = monthly * months - price; }
+  else if (t.method === 'flat' && rate > 0) { interest = price * rate / 100 * months; monthly = (price + interest) / months; }
+  else monthly = price / months;
+  return { price, months, monthly: r2(monthly), interest: r2(interest), fees, total: r2(price + interest + fees), cost: r2(interest + fees), method: t.method || 'none', rate };
+}
+
+/* ---------- instalments: what I still pay every month ---------- */
+// from the statements: lines that say "06 OF 12" (the bank counts them), and fixed payments that repeat every month
+// in instalment-like categories (count unknown — the user is asked). An instalment missing for a month or two is
+// never taken as finished: it stays expected until the count says so or the user confirms it ended.
+function detectInstallments(txs, today, known) {
+  const cur = ym(today), out = {}, kn = Object.fromEntries((known || []).map(k => [k.key, k]));
+  const base = d => payeeKey(String(d || '').replace(/\b\d{1,2}\s?(?:OF|\/|من)\s?\d{1,2}\b/ig, ' '));
+  for (const t of txs) {
+    if (!validDate(t.date) || typeof t.amount !== 'number' || t.amount >= 0) continue;
+    const io = t.inst || instOf(t.desc); if (!io) continue;
+    const key = 'i:' + base(t.desc) + ':' + cents(Math.abs(t.amount)) + ':' + io.of;
+    const o = out[key] = out[key] || { key, name: cleanDesc(String(t.desc).replace(/\b\d{1,2}\s?(?:OF|\/|من)\s?\d{1,2}\b/ig, ' ')), amount: r2(-t.amount), of: io.of, n: 0, acct: t.acct, ids: [], first: t.date, last: t.date, source: 'count' };
+    o.ids.push(t.id); if (t.date < o.first) o.first = t.date; if (t.date >= o.last) { o.last = t.date; o.n = Math.max(o.n, io.n); } else o.n = Math.max(o.n, io.n);
+  }
+  for (const o of Object.values(out)) {
+    o.remaining = Math.max(0, o.of - o.n); o.end = addMonths(ym(o.last), o.remaining);
+    const gap = monthList(ym(o.last), cur).length - 1;
+    o.status = o.remaining === 0 ? 'completed' : gap >= 2 ? 'missing' : 'active';
+    o.outstanding = r2(o.amount * o.remaining);
+  }
+  // fixed monthly payments in instalment categories, without a printed count
+  const rec = recurring(entries(txs, { cats: DEFAULT_CATS }).list.filter(e => e.flow === 'exp'));
+  for (const r of rec) if (r.freq === 'monthly' && r.fixed && (['debt', 'prop_inst'].includes(r.cat) || /install?ment|قسط|اقساط|valu|souhoola|sympl|halan|حالا/i.test(r.name))) {
+    const key = 'r:' + r.key + ':' + cents(r.amount); if (Object.values(out).some(o => o.ids.some(id => r.ids.includes(id)))) continue;
+    const gap = monthList(ym(r.last), cur).length - 1;
+    out[key] = { key, name: r.name, amount: r.amount, of: null, n: r.n, remaining: null, end: null, acct: '', ids: r.ids, first: null, last: r.last, source: 'repeat', status: gap >= 2 ? 'missing' : 'active', outstanding: null };
+  }
+  // what the user told us wins: remaining count, end month, finished or not
+  for (const o of Object.values(out)) { const k = kn[o.key]; if (!k) { o.ask = o.remaining === null || o.status === 'missing'; continue; }
+    if (k.status) o.status = k.status; if (k.remaining !== undefined && k.remaining !== null && k.remaining !== '') { o.remaining = +k.remaining; o.end = addMonths(ym(o.last || today), o.remaining); o.outstanding = r2(o.amount * o.remaining); }
+    if (k.end) o.end = k.end; o.confirmed = true; o.ask = false; }
+  // manual entries (e.g. Halan plans told in the draft)
+  for (const k of known || []) if (k.manual && !out[k.key]) out[k.key] = { ...k, source: 'you', outstanding: k.remaining ? r2(k.amount * k.remaining) : null };
+  return Object.values(out).sort((a, b) => (b.status === 'active') - (a.status === 'active') || b.amount - a.amount);
+}
+// what instalments will cost each coming month (active and missing-but-not-ended ones, until their end)
+const installmentLoad = (list, month) => r2(sum((list || []).filter(i => i.status !== 'completed' && i.status !== 'discontinued' && (!i.end || month <= i.end)).map(i => i.amount)));
+
+/* ---------- my inputs (salary, returns, expenses…) with the dates they apply from ---------- */
+// an input: {id, key, label, kind: income|expense|saving|commitment, amount, from, to, permanent, history: [...]}
+function activeInput(inputs, key, date) { return (inputs || []).filter(i => i.key === key && (!i.from || i.from <= date) && (!i.to || i.to >= date)).sort((a, b) => (b.from || '').localeCompare(a.from || ''))[0] || null; }
+// a new value for an existing input closes the old one the day before and keeps it as history
+function setInput(inputs, change, today) {
+  const list = (inputs || []).map(i => ({ ...i })), from = change.from || today;
+  const old = list.find(i => i.key === change.key && (!i.to || i.to >= from) && (!i.from || i.from < from + 'z'));
+  if (old && change.permanent !== false) old.to = addDays(from, -1);
+  if (old && change.permanent === false) { list.push({ id: change.id, key: change.key, label: change.label || old.label, kind: change.kind || old.kind, amount: change.amount, from, to: change.to || from, permanent: false, temp: true, note: change.note || '' }); return list; }
+  list.push({ id: change.id, key: change.key, label: change.label || (old && old.label) || change.key, kind: change.kind || (old && old.kind) || 'income', amount: change.amount, from, to: null, permanent: true, note: change.note || '', replaced: old ? old.id : null });
+  return list;
+}
+
+/* ---------- a new balance against the last one ---------- */
+// difference = new − (last balance + transactions recorded since); explained when the recorded transactions account
+// for it. An unexplained change is never taken as income or spending: it becomes a question.
+function balanceChange(prev, next, txs) {
+  if (!prev || typeof prev.balance !== 'number') return { first: true, diff: null, explained: null, unexplained: null };
+  const between = (txs || []).filter(t => validDate(t.date) && typeof t.amount === 'number' && t.date > prev.date && t.date <= next.date);
+  const recorded = r2(sum(between.map(t => t.amount))), diff = r2(next.balance - prev.balance), un = r2(diff - recorded);
+  return { first: false, diff, recorded, n: between.length, unexplained: Math.abs(un) < EPS ? 0 : un, ids: between.map(t => t.id) };
+}
+
+/* ---------- financial health ---------- */
+function health(o) {
+  const out = [], inc = +o.income || 0, sp = +o.spending || 0, ess = +o.essential || 0;
+  const liq = ess > 0 ? r2((+o.cash || 0) / ess) : null, dti = inc > 0 ? r2((+o.installments || 0) / inc * 100) : null, util = o.cardLimit > 0 ? r2((+o.cardOwed || 0) / o.cardLimit * 100) : null, rate = inc > 0 ? r2((inc - sp) / inc * 100) : null;
+  const grade = (v, good, ok, higherBetter) => v === null ? null : (higherBetter ? (v >= good ? 'good' : v >= ok ? 'fair' : 'weak') : (v <= good ? 'good' : v <= ok ? 'fair' : 'weak'));
+  out.push({ k: 'liquidity', label: 'Cash cover', v: liq, unit: 'months of essential costs', g: grade(liq, 6, 3, true) });
+  out.push({ k: 'dti', label: 'Instalments vs income', v: dti, unit: '%', g: grade(dti, 20, 35, false) });
+  out.push({ k: 'util', label: 'Credit card used', v: util, unit: '% of the limit', g: grade(util, 30, 60, false) });
+  out.push({ k: 'save', label: 'Savings rate', v: rate, unit: '%', g: grade(rate, 20, 5, true) });
+  const pts = { good: 2, fair: 1, weak: 0 }, known = out.filter(x => x.g);
+  return { items: out, score: known.length ? Math.round(sum(known.map(x => pts[x.g])) / (known.length * 2) * 100) : null };
+}
+
+/* ---------- purchasing goals: how and when to buy each thing ---------- */
+const nf = v => Number(r2(v)).toLocaleString('en-US', { maximumFractionDigits: 2 });
+const mf = m => { const [y, mo] = m.split('-'); return ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][+mo - 1] + ' ' + y; };
+// items: [{id, name, price, priority 1–3, wantBy, focus}], money: {cash (free now, after the safety reserve), capacity
+// (what can be saved each month after spending, instalments and other goals), card: {available, terms, months},
+// halan: {available, terms, months}}. Items are funded in order: focused ones first, then priority, then date.
+function planPurchases(items, money, today, o = {}) {
+  const cur = ym(today), list = (items || []).filter(i => !i.done && +i.price > 0);
+  const focusIds = new Set(list.filter(i => i.focus).map(i => i.id)), useFocus = o.focus && focusIds.size;
+  const order = list.slice().sort((a, b) => (useFocus ? (focusIds.has(b.id) - focusIds.has(a.id)) : 0) || (+a.priority || 2) - (+b.priority || 2) || (a.wantBy || '9999').localeCompare(b.wantBy || '9999') || +a.price - +b.price);
+  let cash = Math.max(0, +money.cash || 0); const cap = Math.max(0, +money.capacity || 0);
+  const res = {}; const need = {};
+  for (const it of order) { const fromCash = Math.min(cash, +it.price); cash = r2(cash - fromCash); need[it.id] = r2(+it.price - fromCash); res[it.id] = { id: it.id, fromCash: r2(fromCash) }; }
+  // monthly savings: dated items get what they need to be on time, in order, while it lasts; the rest share what is
+  // left; month by month, when an item is bought its share moves on to the next one in order
+  const simulate = (left, capacity, firstMinus) => {
+    const alloc = {}, required = {}; let pool = capacity;
+    for (const it of left.filter(i => i.wantBy)) { const m = Math.max(1, monthList(cur, ym(it.wantBy)).length - 1), req = Math.ceil(need[it.id] / m * 100 - 1e-9) / 100; /* rounded up: never a cent short */ const a = Math.min(req, pool); alloc[it.id] = r2(a); pool = r2(pool - a); required[it.id] = req; }
+    const undated = left.filter(i => !i.wantBy); for (const it of undated) alloc[it.id] = undated.length ? r2(pool / undated.length) : 0;
+    if (!undated.length && pool > 0 && left.length) { const first = left.find(i => alloc[i.id] < need[i.id]); if (first) alloc[first.id] = r2(alloc[first.id] + pool); }
+    const saved = Object.fromEntries(left.map(i => [i.id, 0])), done = {};
+    for (let k = 0; k < 600 && left.some(i => !done[i.id]); k++) {
+      const m = addMonths(cur, k + 1); let spare = 0, cut = k === 0 ? firstMinus : 0;
+      for (const it of left) { if (done[it.id]) { spare += alloc[it.id] || 0; continue; } let a = alloc[it.id] || 0; if (cut > 0) { const c = Math.min(cut, a); a -= c; cut -= c; } saved[it.id] += a; }
+      for (const it of left) { if (done[it.id]) continue; if (spare > 0) { const t = Math.min(spare, need[it.id] - saved[it.id]); if (t > 0) { saved[it.id] += t; spare -= t; } } if (saved[it.id] >= need[it.id] - 0.011) done[it.id] = m; }
+      if (capacity <= 0) break;
+    }
+    return { alloc, done, required };
+  };
+  let S = simulate(order.filter(i => need[i.id] > 0), cap, 0), alloc = S.alloc, done = S.done;
+  for (const id in S.required) res[id].required = S.required[id];
+  // all items together: each one uses up card limit, Halan limit and repayment room before the next is judged
+  const card = money.card || {}, halan = money.halan || {};
+  let cardLeft = +card.available || 0, halanLeft = +halan.available || 0, payRoom = cap, planRoom = cap;
+  const out = order.map(it => {
+    const r = res[it.id], price = +it.price, months = need[it.id] > 0 ? (done[it.id] ? monthList(cur, done[it.id]).length - 1 : null) : 0;
+    const cardFull = price <= cardLeft && need[it.id] <= payRoom + EPS;           // pay the card back at the next due date
+    const cardPlan = card.terms && price <= cardLeft ? financeQuote(price, card.terms, card.terms.months || card.months || 12) : null;
+    const halanQ = halan.terms && price <= halanLeft ? financeQuote(price, halan.terms, halan.terms.months || halan.months || 12) : null;
+    const fits = q => q && q.monthly <= planRoom + EPS;
+    let rec, why;
+    if (need[it.id] <= 0) { rec = 'cash'; why = 'You can pay it now from money you have, keeping your safety reserve.'; }
+    else if (cardFull) { rec = 'card_full'; why = `Pay with the card and clear it at the next due date (${r.fromCash ? nf(r.fromCash) + ' from cash and ' : ''}${nf(need[it.id])} from next month’s savings) — no interest.`; }
+    else if (it.wantBy && months !== null && done[it.id] && done[it.id] <= ym(it.wantBy)) { rec = 'save'; why = `Saving ${nf(alloc[it.id] || 0)} a month gets you there by ${mf(done[it.id])} — before ${mf(ym(it.wantBy))}, without any interest.`; }
+    else {
+      const opts = [fits(cardPlan) && { k: 'card_plan', q: cardPlan }, fits(halanQ) && { k: 'halan', q: halanQ }].filter(Boolean).sort((a, b) => a.q.cost - b.q.cost);
+      if (it.wantBy && opts.length) { rec = opts[0].k; why = `Saving alone reaches it ${done[it.id] ? 'in ' + mf(done[it.id]) : 'too late'}; ${opts[0].k === 'halan' ? 'Halan' : 'card'} instalments of ${nf(opts[0].q.monthly)} a month for ${opts[0].q.months} months fit what you save each month (extra cost ${nf(opts[0].q.cost)}).`; }
+      else if (done[it.id]) { rec = 'save'; why = `Save ${nf(alloc[it.id] || 0)} a month: affordable in ${mf(done[it.id])}.`; }
+      else if (opts.length) { rec = opts[0].k; why = `Instalments fit your monthly savings (extra cost ${nf(opts[0].q.cost)}).`; }
+      else { rec = 'not_yet'; why = cap > 0 ? 'Not affordable within 50 years at your current savings.' : 'Nothing is left to save each month at the moment — see Budget for what to cut.'; }
+    }
+    if (rec === 'card_full') { cardLeft -= price; payRoom -= need[it.id]; }
+    if (rec === 'card_plan') { cardLeft -= price; planRoom -= cardPlan.monthly; payRoom -= cardPlan.monthly; }
+    if (rec === 'halan') { halanLeft -= price; planRoom -= halanQ.monthly; payRoom -= halanQ.monthly; }
+    const now = ['cash', 'card_full', 'card_plan', 'halan'].includes(rec);
+    if (now) r.required = null;
+    return { ...it, price, fromCash: r.fromCash, need: need[it.id], monthly: now && rec !== 'cash' ? (rec === 'card_full' ? need[it.id] : (rec === 'halan' ? halanQ : cardPlan).monthly) : alloc[it.id] || 0, buyNow: now, required: r.required || null, ready: now ? cur : need[it.id] <= 0 ? cur : done[it.id] || null, months, late: !now && !!(it.wantBy && (need[it.id] > 0) && (!done[it.id] || done[it.id] > ym(it.wantBy))),
+      options: { cash: need[it.id] <= 0, cardFull, cardPlan, halan: halanQ, cardAvailable: +card.available || 0, halanAvailable: +halan.available || 0 }, rec, why };
+  });
+  // items bought now (card, instalments) leave less to save each month; savings are planned again for the rest
+  const saving = out.filter(i => i.rec === 'save' || i.rec === 'not_yet');
+  if (saving.length && out.some(i => i.buyNow && i.rec !== 'cash')) {
+    const planMonthly = sum(out.filter(i => i.rec === 'card_plan' || i.rec === 'halan').map(i => i.monthly)), cardRepay = sum(out.filter(i => i.rec === 'card_full').map(i => i.need));
+    const S2 = simulate(saving, Math.max(0, cap - planMonthly), cardRepay);
+    for (const i of saving) { i.monthly = S2.alloc[i.id] || 0; i.required = S2.required[i.id] || i.required; i.ready = S2.done[i.id] || null; i.late = !!(i.wantBy && (!i.ready || i.ready > ym(i.wantBy))); i.months = i.ready ? monthList(cur, i.ready).length - 1 : null;
+      if (i.ready) { i.rec = 'save'; i.why = `Save ${nf(i.monthly)} a month${i.wantBy ? (i.late ? ` — ready ${mf(i.ready)}, after ${mf(ym(i.wantBy))}` : ` — ready ${mf(i.ready)}, before ${mf(ym(i.wantBy))}`) : `: affordable in ${mf(i.ready)}`} (after what already goes to the card and instalments).`; } }
+  }
+  const totalNeed = r2(sum(out.map(i => i.need)));
+  return { items: out, total: r2(sum(out.map(i => i.price))), fromCash: r2(sum(out.map(i => i.fromCash))), monthly: r2(sum(out.filter(i => i.rec !== 'card_full').map(i => i.monthly))), cardRepay: r2(sum(out.filter(i => i.rec === 'card_full').map(i => i.need))), required: r2(sum(out.filter(i => i.required).map(i => i.required))), capacity: cap, cashLeft: r2(cash), allBy: out.every(i => i.ready) ? out.map(i => i.ready).sort().pop() : null, late: out.filter(i => i.late).map(i => i.id), totalNeed };
+}
+
 /* ---------- backup ---------- */
 function validateBackup(o) {
   const errors = [];
@@ -930,7 +1177,7 @@ function validateBackup(o) {
 }
 
 return { EPS, r2, norm, AR, CURRENCIES, validDate, dnum, addDays, spanDays, ym, addMonths, monthList, dim, monthEnd, parseDate, dateOrder, parseNum, cleanDesc, payeeKey,
-  detectBank, looksLikeCard, last4, DEFAULT_CATS, catMap, classify, learnRule, refundOf, pairMoves, CODE_CAT, detectGrid, rowsFromGrid, rowsFromText, chainBest, statementCheck, matchImport, importCounts, similar, overlaps, fp, quant, median, entries, analyze, series,
-  recurring, incomeBase, STRATEGY, budgetPlan, monthControl, unusual, SCEN, monthFactor, simulate, sensitivity, shiftDate, allocate, thirdParty, holdingReturns, propertyShare, rentForecast, cardOwed, position, monthsTo, forecast, goalPlan, reconcile, validateBackup };
+  detectBank, looksLikeCard, last4, DEFAULT_CATS, catMap, classify, learnRule, refundOf, pairMoves, CODE_CAT, detectGrid, rowsFromGrid, rowsFromText, rowsFromLayout, statementFacts, instOf, chainBest, statementCheck, matchImport, importCounts, similar, overlaps, fp, quant, median, entries, analyze, series,
+  recurring, incomeBase, STRATEGY, budgetPlan, monthControl, unusual, SCEN, monthFactor, simulate, sensitivity, shiftDate, allocate, thirdParty, holdingReturns, propertyShare, rentForecast, cardOwed, position, monthsTo, forecast, goalPlan, reconcile, validateBackup, financeQuote, detectInstallments, installmentLoad, activeInput, setInput, balanceChange, health, planPurchases };
 })();
 if (typeof module !== 'undefined') module.exports = FIN;

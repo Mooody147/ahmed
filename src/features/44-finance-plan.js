@@ -141,9 +141,11 @@ function finMonthActions(mc, plan) {
 /* --- income growth --- */
 function finSimInput() {
   const p = finP(), all = finAll(), ib = FIN.incomeBase(all, finToday()), s = p.sim, done = finDone(all, 6);
-  const base = s.base !== '' && s.base !== null && s.base !== undefined && s.baseSrc === 'manual' ? +s.base : ib.salary !== null ? ib.salary : s.base !== '' ? +s.base : null;
+  // your income inputs (Update my position) come first, then the salary in the statements
+  const hasIn = (p.inputs || []).some(i => i.kind === 'income' && (!i.to || i.to >= finToday()) && (!i.from || i.from <= finToday()));
+  const base = s.base !== '' && s.base !== null && s.base !== undefined && s.baseSrc === 'manual' ? +s.base : hasIn ? finNow().income : ib.salary !== null ? ib.salary : s.base !== '' ? +s.base : null;
   const expMed = finMedian(done.map(b => b.exp)), netMed = finMedian(done.map(b => b.net));
-  return { ...s, base, baseFrom: s.baseSrc === 'manual' && s.base !== '' ? 'entered by you' : ib.salary !== null ? (ib.verified ? 'your verified salary' : 'your salary (not verified)') : s.base !== '' ? 'entered by you' : '', expenses: s.expenses !== '' ? +s.expenses : expMed || 0, expFrom: s.expenses !== '' ? 'entered by you' : `median of the last ${done.length} complete months`,
+  return { ...s, base, baseFrom: s.baseSrc === 'manual' && s.base !== '' ? 'entered by you' : hasIn ? 'your income inputs' : ib.salary !== null ? (ib.verified ? 'your verified salary' : 'your salary (not verified)') : s.base !== '' ? 'entered by you' : '', expenses: s.expenses !== '' ? +s.expenses : expMed || 0, expFrom: s.expenses !== '' ? 'entered by you' : `median of the last ${done.length} complete months`,
     baseSave: s.baseSave !== undefined && s.baseSave !== '' ? +s.baseSave : Math.max(0, netMed || 0), horizon: +s.horizon || 12, scenarios: s.scenarios || undefined };
 }
 function finSimRun() { const si = finSimInput(); if (si.base === null || !(si.changes || []).length) return null; return FIN.simulate(si, { today: finToday() }); }
@@ -179,7 +181,7 @@ FIN_VIEW.sim = () => {
       <td><select class="input sm" data-chg="fin-ch" data-i="${i}" data-k="status">${[['confirmed', 'Confirmed'], ['probable', 'Probable'], ['speculative', 'Speculative']].map(([k, l]) => `<option value="${k}" ${(c.status || 'confirmed') === k ? 'selected' : ''}>${l}</option>`).join('')}</select></td>
       <td><button class="icon-btn" data-act="fin-ch-del" data-i="${i}" aria-label="Remove">${I.x}</button></td></tr>`).join('')}</tbody></table></div>` : '<p class="small muted">None yet.</p>'}
     <button class="btn sm" data-act="fin-ch-add">${I.plus} Income change</button>
-    <details class="fin-scen"><summary class="small">Scenario assumptions</summary><table class="tbl"><thead><tr><th>Scenario</th><th>Confirmed counts</th><th>Probable counts</th><th>Speculative counts</th><th>Unconfirmed changes start later by</th></tr></thead><tbody>${SC.map(([k, l]) => `<tr><td>${l}</td>${['confirmed', 'probable', 'speculative'].map(st => `<td><input class="input num sm" data-chg="fin-scen" data-s="${k}" data-k="${st}" value="${sc[k][st]}" inputmode="decimal">%</td>`).join('')}<td><input class="input num sm" data-chg="fin-scen" data-s="${k}" data-k="delay" value="${sc[k].delay}" type="number" min="0"> months</td></tr>`).join('')}</tbody></table></details>
+    <details class="fin-scen"><summary class="small">Scenario assumptions</summary><div class="tbl-wrap"><table class="tbl"><thead><tr><th>Scenario</th><th>Confirmed counts</th><th>Probable counts</th><th>Speculative counts</th><th>Unconfirmed changes start later by</th></tr></thead><tbody>${SC.map(([k, l]) => `<tr><td>${l}</td>${['confirmed', 'probable', 'speculative'].map(st => `<td><input class="input num sm" data-chg="fin-scen" data-s="${k}" data-k="${st}" value="${sc[k][st]}" inputmode="decimal">%</td>`).join('')}<td><input class="input num sm" data-chg="fin-scen" data-s="${k}" data-k="delay" value="${sc[k].delay}" type="number" min="0"> months</td></tr>`).join('')}</tbody></table></div></details>
   </section>
   ${!res ? '<p class="muted">Enter your current monthly income to see projections.</p>' : `
   <section class="card fin-card"><h2>Results over ${si.horizon} months ${finEst}</h2>
@@ -249,7 +251,7 @@ FIN_VIEW.forecast = () => {
   const props = p.holdings.filter(h => h.kind === 'property' && (!h.owner || h.owner === 'me'));
   const rentRows = FIN.rentForecast(props, { today, horizon: H, scenario: {} }), rent = finRentEGP(rentRows);
   const incomeRows = Array.from({ length: H }, (_, i) => { const sr = sxF && sxF.scenarios.expected.rows; const m = FIN.addMonths(today.slice(0, 7), i + 1); const s = sr && sr.find(r => r.m === m); const r = rentRows[i]; return { income: si.base === null ? null : FIN.r2((s ? s.income : si.base) + (rent.rate ? r.net * rent.rate : 0)) }; });
-  const fc = FIN.forecast(all, { cats: finCats(), today, horizon: H, income: si.base, incomeRows: si.base === null ? null : incomeRows, balance: bal, inflation: si.inflation });
+  const fc = FIN.forecast(all, { cats: finCats(), today, horizon: H, income: si.base, incomeRows: si.base === null ? null : incomeRows, balance: bal, inflation: si.inflation, installments: finNow().inst });
   const goals = finGoals();
   const histCum = []; let c = 0; for (const b of finDone(all, 12)) { c += b.net; histCum.push({ k: b.m, v: FIN.r2(c), label: fmon(b.m) }); }
   const fcCum = fc.rows.filter(r => r.cum !== null).map(r => ({ k: r.m, v: FIN.r2(c + r.cum), est: true, label: fmon(r.m) }));

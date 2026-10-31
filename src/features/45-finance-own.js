@@ -12,7 +12,10 @@ function finLiab(h) {
 function finPosition() {
   const p = finP(), tx = finTx();
   const holdings = p.holdings.map(h => h.kind === 'liability' ? { ...h, remaining: finLiab(h).remaining } : h);
-  return FIN.position({ base: p.base, rates: p.rates, accounts: p.accounts, recon: finRecon(), thirdParty: FIN.thirdParty(tx, p.parties), parties: p.parties, holdings, txs: tx });
+  // a balance you gave that is newer than the last statement is the confirmed one
+  const recon = finRecon();
+  for (const a of p.accounts) { const l = finLatest(a); if (l.source === 'you') { const b = typeof l.balance === 'number' ? l.balance : typeof l.owed === 'number' ? -l.owed : null; if (b !== null) recon[a.id] = { ...recon[a.id], confirmed: { balance: b, date: l.date } }; } }
+  return FIN.position({ base: p.base, rates: p.rates, accounts: p.accounts, recon, thirdParty: FIN.thirdParty(tx, p.parties), parties: p.parties, holdings, txs: tx });
 }
 const finPartyName = id => id === 'me' || !id ? 'Me' : (finP().parties.find(x => x.id === id) || { name: id }).name;
 

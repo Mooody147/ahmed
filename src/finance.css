@@ -17,7 +17,9 @@
 .fin-note { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; padding: 8px 12px; border-radius: 10px; background: var(--warn-soft); color: var(--ink); font-size: 13px; }
 .fin-note.bad { background: var(--crit-soft); }
 .fin-banner { padding: 10px 14px; border-radius: 12px; background: var(--med-soft); margin-bottom: 12px; font-size: 13.5px; }
-.fin-card { margin-bottom: 14px; display: grid; gap: 10px; align-content: start; }
+.fin-card { margin-bottom: 14px; display: grid; gap: 10px; align-content: start; grid-template-columns: minmax(0, 1fr); min-width: 0; }
+.fin-card > * { min-width: 0; }
+.fin-party .row > .small { overflow-wrap: anywhere; }
 .fin-card h2 { font-size: 17px; }
 .fin-card h3 { font-size: 14px; margin-top: 6px; }
 .fin-grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
@@ -151,3 +153,41 @@ html.phone-mode .fin { padding-bottom: 90px; }
 .fin-q-h { display: flex; justify-content: space-between; gap: 10px; overflow-wrap: anywhere; }
 .fin-q.error, .fin-q.needs-ai { border-color: var(--crit); background: color-mix(in srgb, var(--crit-soft) 40%, transparent); }
 .fin-q.done { border-color: color-mix(in srgb, var(--ok) 45%, var(--line)); }
+/* update my position */
+.fin-draft { min-height: 110px; width: 100%; }
+.fin-preview { display: grid; gap: 8px; padding: 12px; border: 1px dashed var(--accent); border-radius: 12px; background: color-mix(in srgb, var(--accent-soft) 35%, transparent); }
+.fin-preview h3 { margin: 0; }
+.fin-qs { display: grid; gap: 8px; }
+.fin-q-item { padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; display: grid; gap: 6px; }
+.fin-q-item p { margin: 0; font-size: 13.5px; }
+.fin-q-item .row { flex-wrap: wrap; gap: 6px; }
+.fin-daily td { vertical-align: middle; }
+.fin-daily .row { flex-wrap: wrap; gap: 4px; }
+.fin-hist-d summary { cursor: pointer; }
+/* purchase map */
+.fin-map .fin-src rect { fill: var(--sunken); stroke: var(--line); }
+.fin-map .fin-item rect { fill: var(--surface); stroke: var(--line); cursor: pointer; }
+.fin-map .fin-item:hover rect, .fin-map .fin-item:focus rect { stroke: var(--accent); stroke-width: 2; }
+.fin-map .fin-item.focus rect { stroke: var(--accent); stroke-width: 2; }
+.fin-map .fin-item.late rect { stroke: var(--crit); }
+.fin-map .t1 { fill: var(--ink); font-size: 13px; font-weight: 600; font-family: var(--f-body); }
+.fin-map .t2 { fill: var(--ink-2); font-size: 11.5px; font-family: var(--f-body); }
+.fin-chart .fin-link { fill: none; stroke-width: 2.5; opacity: .75; }
+.fin-link.s1 { stroke: var(--fin-s1); } .fin-link.s2 { stroke: var(--fin-s2); } .fin-link.s3 { stroke: var(--fin-s3); } .fin-link.muted { stroke: var(--ink-3); stroke-dasharray: 4 4; }
+.fin-tl { display: flex; gap: 8px; overflow-x: auto; padding: 6px 0; }
+.fin-tl-m { flex: none; display: grid; gap: 4px; align-content: start; padding: 8px 10px; border-left: 3px solid var(--accent); background: var(--sunken); border-radius: 0 10px 10px 0; min-width: 120px; }
+.fin-buy td { vertical-align: top; }
+.fin-reread { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; }
+.fin-form-g .fin-wide { grid-column: 1 / -1; }
+/* purchase table on a phone: one block per item instead of nine columns scrolled sideways */
+@media (max-width: 640px) {
+  .tbl.fin-buy thead { display: none; }
+  .tbl.fin-buy, .tbl.fin-buy tbody, .tbl.fin-buy tr { display: block; width: 100%; }
+  .tbl.fin-buy tr { border-bottom: 1px solid var(--line-2); padding: 8px 0; display: grid; grid-template-columns: 1fr 1fr; gap: 4px 12px; }
+  .tbl.fin-buy td, .tbl.fin-buy td.num { display: block; border: 0; padding: 0; text-align: left !important; white-space: normal; }
+  .tbl.fin-buy td:nth-child(1), .tbl.fin-buy td:nth-child(3), .tbl.fin-buy td:last-child { grid-column: 1 / -1; }
+  .tbl.fin-buy td:nth-child(n+2):not(:last-child)::before { display: block; font-size: 11px; color: var(--ink-3); text-transform: uppercase; letter-spacing: .06em; }
+  .tbl.fin-buy td:nth-child(2)::before { content: "Price"; } .tbl.fin-buy td:nth-child(3)::before { content: "Best way"; }
+  .tbl.fin-buy td:nth-child(4)::before { content: "Cash now"; } .tbl.fin-buy td:nth-child(5)::before { content: "Save a month"; }
+  .tbl.fin-buy td:nth-child(6)::before { content: "Ready"; } .tbl.fin-buy td:nth-child(7)::before { content: "Card"; } .tbl.fin-buy td:nth-child(8)::before { content: "Halan"; }
+}

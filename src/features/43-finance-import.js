@@ -6,6 +6,19 @@
 // printed; the same checks as for any statement then apply, so a misread number shows up as a balance that does not
 // add up. Lines that might be repeats are skipped (never counted twice) and listed with one click to add them.
 const FIN_EXT = { csv: 'sheet', txt: 'sheet', tsv: 'sheet', xlsx: 'sheet', xls: 'sheet', xlsm: 'sheet', ods: 'sheet', pdf: 'pdf', png: 'image', jpg: 'image', jpeg: 'image', webp: 'image', gif: 'image' };
+// a PDF with the position of every piece of text, so table columns can be told apart (see FIN.rowsFromLayout)
+async function finPdfLayout(bytes) {
+  const pdfjs = await E.need('pdf');
+  const doc = await pdfjs.getDocument({ data: bytes.slice(0), isEvalSupported: false, disableFontFace: true, useSystemFonts: false, verbosity: 0 }).promise;
+  const pages = [];
+  for (let p = 1; p <= Math.min(doc.numPages, 80); p++) {
+    const tc = await (await doc.getPage(p)).getTextContent(), rows = [];
+    for (const it of tc.items) { if (!it.str || !it.str.trim()) continue; const y = it.transform[5]; let r = rows.find(r => Math.abs(r.y - y) <= 2.5); if (!r) rows.push(r = { y, items: [] }); r.items.push({ x: it.transform[4], w: it.width || 0, s: it.str }); }
+    rows.sort((a, b) => b.y - a.y); rows.forEach(r => r.items.sort((a, b) => a.x - b.x)); pages.push(rows);
+  }
+  return pages;
+}
+const FIN_READER = 2;   // bumped when statements are read better: older imports can be read again from their originals
 async function finHash(bytes) { try { const d = await crypto.subtle.digest('SHA-256', bytes); return [...new Uint8Array(d)].map(b => b.toString(16).padStart(2, '0')).join(''); } catch { return ''; } }
 function finGuessAcct(meta, fileName) {
   const accts = finP().accounts, num = (meta.account || '').replace(/\D/g, '');
@@ -33,7 +46,10 @@ async function finReadFile(f) {
       it.text = r.text || ''; it.pages = r.pages || 1;
       const textPages = (r.pages || 1) - (r.scannedPages || []).length;
       if (!textPages) { it.state = 'needs-ai'; it.why = 'This PDF is a scan (pictures of pages, no text), so it cannot be read on this device.'; return it; }
-      it.meta0 = FIN.rowsFromText(it.text).meta;
+      // by column positions when the PDF keeps its columns apart, else line by line — whichever reads more lines fully
+      try { it.layout = await finPdfLayout(bytes); const L = FIN.rowsFromLayout(it.layout), T = FIN.rowsFromText(it.text); const good = rs => rs.filter(r => r.date && r.amount !== null && !r.flags.includes('direction_unknown')).length;
+        if (L.found && good(L.rows) && good(L.rows) >= good(T.rows)) { it.useLayout = true; it.meta0 = L.meta; } } catch {}
+      if (!it.useLayout) it.meta0 = FIN.rowsFromText(it.text).meta;
     } else { it.state = 'needs-ai'; it.why = 'A photo of a statement can only be read by Claude.'; return it; }
   } catch (e) { it.state = 'error'; it.err = 'Could not read the file: ' + (e.message || e); return it; }
   it.acct = finGuessAcct(it.meta0 || {}, f.name);
@@ -70,7 +86,8 @@ function finPickAcct(it, kind) {
     return { a, sc, why };
   }).sort((x, y) => y.sc - x.sc);
   const same = scored.filter(x => x.a.kind === kind && (!cur || x.a.currency === cur));
-  if (same.length === 1 && scored[0].a === same[0].a && scored[0].sc >= 0 && !num && !bank) scored[0].sc += 2;
+  // the only account of this kind (and currency) that has no number yet takes a statement that brings one
+  if (same.length === 1 && scored[0].a === same[0].a && scored[0].sc >= 0 && (!num || !same[0].a.number) && !(bank && same[0].a.bank && FIN.norm(bank) !== FIN.norm(same[0].a.bank))) { scored[0].sc += 2; scored[0].why.push('your only ' + (kind === 'credit_card' ? 'card' : 'account of this kind')); }
   const best = scored[0];
   if (best && best.sc >= 2) { it.acct = best.a.id; it.newAcct = null; it.acctWhy = best.why.join(', ') || 'the only account of this kind'; }
   else {
@@ -87,13 +104,14 @@ function finParse(it) {
   const card = a.kind === 'credit_card';
   let rd;
   if (it.grid) rd = FIN.rowsFromGrid(it.grid, it.det, { card });
+  else if (it.useLayout) rd = FIN.rowsFromLayout(it.layout, { card, currency: (a.currency || finP().base) });
   else if (it.ai) rd = FIN.rowsFromGrid(it.ai.grid, FIN.detectGrid(it.ai.grid), { card });
   else rd = FIN.rowsFromText(it.text || '', { card });
   if (it.ai) { rd.meta = { ...rd.meta, ...it.ai.meta }; rd.rows.forEach((r, i) => { r.flags.push('read_by_claude'); if (it.ai.unclear[i]) r.flags.push('unclear'); }); }
   it.rows = rd.rows; it.skipped = rd.skipped; it.meta = { ...(it.meta0 || {}), ...rd.meta };
   it.check = FIN.statementCheck(it.rows, it.meta);
   // the statement's own period when it prints one, else the dates of its rows
-  let per = { from: it.check.from, to: it.check.to };
+  let per = { from: it.check.from, to: it.meta.statementDate && it.meta.statementDate >= (it.check.to || '') ? it.meta.statementDate : it.check.to };
   if (it.meta.periodText) { const o = FIN.dateOrder(it.meta.periodText); const a1 = FIN.parseDate(it.meta.periodText[0], o), b1 = FIN.parseDate(it.meta.periodText[1], o); if (a1 && a1.iso && b1 && b1.iso && a1.iso <= b1.iso) per = { from: a1.iso, to: b1.iso }; }
   it.period = per;
   finMatch(it);
@@ -167,6 +185,7 @@ function finCommit(it, auto) {
     if (dir && typeof amount === 'number') { amount = dir === 'in' ? Math.abs(amount) : -Math.abs(amount); const k = flags.indexOf('direction_unknown'); if (k >= 0) flags.splice(k, 1); }
     const c = it.cats[i] ? { cat: it.cats[i], src: 'manual', review: false } : r.cls || { cat: amount > 0 ? 'other_inc' : 'other_exp', review: true };
     return { id: E.uid('tx'), acct, date: r.date, desc: r.desc, amount: typeof amount === 'number' ? amount : null, currency: r.currency || a.currency, balance: r.balance, ref: r.ref || '', cat: c.cat, sub: c.sub || '', catSrc: it.cats[i] ? 'manual' : c.src, party: c.party || '', holding: c.holding || '',
+      ...(r.inst ? { inst: r.inst } : {}), ...(r.orig ? { orig: r.orig } : {}), ...(r.date2 && r.date2 !== r.date ? { dates: [r.date2] } : {}),
       review: !!(incomplete || c.review || flags.some(f => ['balance_mismatch', 'unclear', 'read_by_claude', 'no_year'].includes(f))), flags, src: src(r), createdAt: at, hist: [{ at, f: 'created', from: null, to: it.name, why: it.method === 'claude' ? 'imported (read by Claude)' : 'imported' }] };
   };
   it.rows.forEach((r, i) => {
@@ -195,8 +214,16 @@ function finCommit(it, auto) {
     for (const [x, y] of [[A, B], [B, A]]) { if (x.catSrc === 'manual' || (finCat(x.cat) || {}).kind === 'third') continue; if (x.cat !== FIN.CODE_CAT[pr.code]) finHist(x, 'cat', x.cat, FIN.CODE_CAT[pr.code], 'other side found in ' + ((finAcct(y.acct) || {}).name || 'another account')); x.cat = FIN.CODE_CAT[pr.code]; x.catSrc = 'pair'; x.pair = y.id; x.review = false; }
   }
   const counts = { reviewed: it.rows.length, added: add.filter(t => FIN.validDate(t.date) && typeof t.amount === 'number').length, dup: it.rows.filter((r, i) => finRowDecision(it, i) === 'same').length, updated: it.rows.filter((r, i) => finRowDecision(it, i) === 'update').length, held: pending.filter(x => !x.done).length, probable: pending.filter(x => x.done === 'auto-same').length, incomplete: add.filter(t => !FIN.validDate(t.date) || typeof t.amount !== 'number').length, skippedByYou: userSkipped.length, notTransactions: (it.skipped || []).length };
-  finWrite([...add, ...[...ch.values()].map(t => ({ ...t, updatedAt: at }))]);
-  const batch = { id: bid, file: it.name, size: it.size, hash: it.hash, kind: it.kind, method: it.method, acct, from: it.period.from, to: it.period.to, opening: it.check.opening, closing: it.check.closing, diff: it.check.diff, mismatches: it.check.mismatches, counts, at, sheet: it.sheet || '',
+  // entries made from a balance change are replaced by the statement that covers their dates
+  const synth = finTx().filter(t => t.acct === acct && (t.flags || []).includes('from_balance') && it.period.from && t.date >= it.period.from && t.date <= (it.period.to || t.date)).map(t => t.id);
+  if (synth.length) finLog('replaced by a statement', { ids: synth, file: it.name });
+  finWrite([...add, ...[...ch.values()].map(t => ({ ...t, updatedAt: at }))], synth);
+  const facts = { limit: it.meta.limit, minDue: it.meta.minDue, dueDate: it.meta.dueDate, statementDate: it.meta.statementDate, available: it.meta.available };
+  for (const k of Object.keys(facts)) if (facts[k] === undefined || facts[k] === null) delete facts[k];
+  finSave(q => { const ac = q.accounts.find(x => x.id === acct); if (!ac) return; if (!ac.number && it.meta.account) { ac.number = String(it.meta.account).slice(-14); if (ac.preset && ac.name === 'Credit card') ac.name = `Credit card ••${FIN.last4(ac.number)}`; }
+    if (facts.limit && !ac.limitSet) ac.limit = facts.limit;
+    const sd = facts.statementDate || it.period.to; if (sd && (!ac.stmt || sd >= ac.stmt.date)) ac.stmt = { date: sd, closing: it.check.closing, ...facts, file: it.name }; });
+  const batch = { id: bid, reader: FIN_READER, ...facts, file: it.name, size: it.size, hash: it.hash, kind: it.kind, method: it.method, acct, from: it.period.from, to: it.period.to, opening: it.check.opening, closing: it.check.closing, diff: it.check.diff, mismatches: it.check.mismatches, counts, at, sheet: it.sheet || '',
     // every line and what happened to it, so a skipped repeat is as traceable as an added one
     lines: it.rows.slice(0, 3000).map((r, i) => { const d = finRowDecision(it, i), t = add.find(x => x.src && x.src.r === r.r); return { r: r.r, act: d, id: t ? t.id : r.match || null }; }), skipped: [...(it.skipped || []), ...userSkipped].slice(0, 500), pending, seenBefore: (it.seen || []).map(b => b.id) };
   colPut('finbatch', batch);
@@ -207,6 +234,31 @@ function finCommit(it, auto) {
   if (!auto) { UI.fin.imp.files.splice(UI.fin.imp.cur, 1); UI.fin.imp.cur = 0; }
   render();
   return { batch: bid, counts, acct };
+}
+// statements imported with an older reader, read again from their stored originals (the transactions they made are
+// replaced; the old import stays in the history as replaced)
+async function finReread(ids) {
+  const bs = ids.map(id => St.cols.finbatch.get(id)).filter(b => b && b.asset && !b.undone);
+  if (!bs.length) return;
+  UI.fin.sec = 'import'; UI.fin.rereading = true; render();
+  const oldAccts = new Set(bs.map(b => b.acct)), files = [];
+  for (const b of bs) {
+    try {
+      const bytes = await afBytes({ id: b.asset, wrapped: b.wrapped });
+      const made = finTx().filter(t => t.src && t.src.b === b.id);
+      finLog('read again', { batch: b.id, file: b.file, replaced: made.map(t => t.id) });
+      finWrite([], made.map(t => t.id)); colPut('finbatch', { ...b, undone: nowISO(), replacedBy: 'a new reading' });
+      files.push({ name: b.file, arrayBuffer: async () => bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength), kind: FIN.looksLikeCard(b.file) ? 'credit_card' : null });
+    } catch (e) { toast(`${b.file}: the original could not be opened.`, { err: true }); }
+  }
+  // oldest statement first, so balances and instalment counts build up in order
+  files.sort((a, b) => { const A = bs.find(x => x.file === a.name), B = bs.find(x => x.file === b.name); return (A.from || '').localeCompare(B.from || ''); });
+  const kind = bs.some(b => (finAcct(b.acct) || {}).kind === 'credit_card') ? 'credit_card' : null;
+  await finAuto(files, kind);
+  // accounts the old imports created and that are now empty
+  const used = new Set(finTx().map(t => t.acct));
+  finSave(q => { q.accounts = q.accounts.filter(a => !(oldAccts.has(a.id) && !used.has(a.id) && !a.preset)); });
+  UI.fin.rereading = false; render(); toast(`${files.length} statement${files.length === 1 ? '' : 's'} read again.`);
 }
 // a line held for review: decide later
 function finResolve(bid, idx, how) {
@@ -245,6 +297,7 @@ FIN_VIEW.import = () => {
   const prob = batches.filter(b => !b.undone).flatMap(b => (b.pending || []).map((x, i) => ({ b, x, i })).filter(o => o.x.done === 'auto-same'));
   const kind = UI.fin.kind || 'current', Q = UI.fin.queue || [];
   return `${rep ? `<div class="callout fin-report"><b>Imported ${esc(rep.file)}</b><div class="fin-chips">${finChip('Lines reviewed', rep.counts.reviewed)}${finChip('Added', rep.counts.added, 'ok')}${finChip('Already recorded — skipped', rep.counts.dup)}${finChip('Updated with corrections', rep.counts.updated)}${finChip('Held for your decision', rep.counts.held, rep.counts.held ? 'warn' : '')}${finChip('Kept as incomplete', rep.counts.incomplete, rep.counts.incomplete ? 'warn' : '')}${rep.counts.skippedByYou ? finChip('Left out by you', rep.counts.skippedByYou) : ''}</div><button class="icon-btn" data-act="fin-report-x" aria-label="Close">${I.x}</button></div>` : ''}
+  ${(() => { const old = batches.filter(b => !b.undone && (b.reader || 1) < FIN_READER && b.asset); return old.length ? `<div class="callout fin-reread"><b>${old.length} statement${old.length === 1 ? '' : 's'} were read with an older reader</b> that could mix up the Debit and Credit columns of PDF statements and put each file in its own account. They can be read again from the originals kept here — the transactions are replaced and everything else stays. <button class="btn primary sm" data-act="fin-reread" ${UI.fin.rereading ? 'disabled' : ''}>${UI.fin.rereading ? 'Reading…' : 'Read them again now'}</button></div>` : ''; })()}
   ${it ? finReviewHTML(it, I0) : ''}
   <section class="card fin-card fin-drop">
     <h2>Add statements</h2>
@@ -347,7 +400,7 @@ async function finAuto(files, kind) {
         if (it.state !== 'ready') { q.state = 'error'; q.msg = 'Claude could not read it.'; render(); continue; }
       }
       if (it.state === 'error') { q.state = 'error'; q.msg = it.err; render(); continue; }
-      finPickAcct(it, kind);
+      finPickAcct(it, f.kind || kind);
       if (!it.rows.length) { q.state = 'error'; q.msg = 'No transaction lines were found in this file.'; render(); continue; }
       it.auto = true;
       if (finP().reviewFirst) { UI.fin.imp = UI.fin.imp || { files: [], cur: 0 }; it.auto = false; UI.fin.imp.files.push(it); q.state = 'review'; render(); continue; }
@@ -380,6 +433,7 @@ Object.assign(ACT, {
   'fin-kind': el => { UI.fin.kind = el.dataset.k; render(); },
   'fin-queue-x': () => { UI.fin.queue = []; render(); },
   'fin-batch': el => openDrawer('finbatch', el.dataset.b),
+  'fin-reread': () => finReread(colList('finbatch').filter(b => !b.undone && (b.reader || 1) < FIN_READER && b.asset).map(b => b.id)),
   'fin-resolve': el => finResolve(el.dataset.b, +el.dataset.i, el.dataset.how),
   'fin-undo-import': el => finUndoImport(el.dataset.b),
   'fin-orig': async (el, e) => { e && e.preventDefault && e.preventDefault(); const b = St.cols.finbatch.get(el.dataset.b); if (!b) return; try { const bytes = await afBytes({ id: b.asset, wrapped: true }); offerFile(b.file, new Blob([bytes])); } catch { toast('The original could not be opened.', { err: true }); } },

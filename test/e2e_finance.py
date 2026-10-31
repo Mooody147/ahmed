@@ -46,7 +46,7 @@ async def main():
 
         await pg.click('[data-nav="finance"]'); await pg.wait_for_timeout(300)
         assert await ev("!!document.querySelector('.fin-nav')"), 'Money is its own tab'
-        assert await ev("document.querySelectorAll('.fin-nav button').length") == 11
+        assert await ev("document.querySelectorAll('.fin-nav button').length") == 14
 
         # 1–2. import a statement, review, save; it is in the ledger
         rep, q = await importing([f('bankA_aug-sep.csv')])
@@ -212,7 +212,7 @@ async def main():
         # 16. reload: everything is still there
         n0, t0 = await ev("window.__FIN.tx().length"), await tot()
         await pg.reload(); await pg.wait_for_selector('h1'); await pg.wait_for_timeout(1500)
-        assert await ev("window.__FIN.tx().length") == n0 and await tot() == t0, 'kept across a reload'
+        print('RELOAD', n0, t0, await ev("window.__FIN.tx().length"), await tot(), await ev("window.__FIN.prefs().accounts.length")); assert await ev("window.__FIN.tx().length") == n0 and await tot() == t0, 'kept across a reload'
 
         # 15. backup and restore into an empty page
         await pg.click('[data-nav="finance"]'); await sec('settings'); await pg.click('[data-act="fin-backup"]'); await pg.wait_for_timeout(300)
