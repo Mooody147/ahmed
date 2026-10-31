@@ -5,7 +5,7 @@
 // plain words or shown in screenshots are read by Claude into proposed changes; nothing applies before you see the
 // preview, and anything unclear becomes a question instead of a guess.
 addCols('finbal');
-FIN_SECS.splice(1, 0, ['update', 'Update my position']);
+FIN_SECS.splice(1, 0, ['update', 'Balances & history']);
 FIN_SECS.splice(FIN_SECS.findIndex(s => s[0] === 'forecast') + 1, 0, ['buy', 'Purchase goals'], ['credit', 'Card, Halan & instalments']);
 Object.assign(FIN_ICON, { update: '✍️', buy: '🛍️', credit: '💳' });
 FIN_AKINDS.splice(3, 0, ['bnpl', 'Instalment financing (Halan)']);
@@ -191,9 +191,10 @@ function finDraftCheck(r) {
   for (const q of r.questions || []) if (q && q.text) out.questions.push({ text: String(q.text).slice(0, 400), about: q.about || '' });
   return out;
 }
-function finDraftApply() {
-  const D = UI.fin.draft2, P = D && D.preview; if (!P) return;
-  const inc = (k, i) => !(D.includes && D.includes[k + i] === false), at = nowISO(), done = [];
+// applies what Claude read; from the talk box (P given) everything is applied at once and the list of changes returned
+function finDraftApply(P0, src) {
+  const D = UI.fin.draft2 || {}, P = P0 || D.preview; if (!P) return [];
+  const inc = (k, i) => P0 ? true : !(D.includes && D.includes[k + i] === false), at = nowISO(), done = [];
   const snaps = [];
   P.balances.forEach((b, i) => {
     if (!inc('b', i)) return; let acct = b.account;
@@ -210,28 +211,25 @@ function finDraftApply() {
     P.installments.forEach((x, i) => { if (!inc('n', i)) return; const key = x.key || 'm:' + FIN.payeeKey(x.name); q.installments = (q.installments || []).filter(k => k.key !== key); q.installments.push({ key, name: x.name, amount: x.amount, remaining: x.remaining, end: x.end, status: x.status, manual: !x.key, last: finToday(), at }); done.push('instalment ' + x.name); });
     P.terms.forEach((t, i) => { if (!inc('t', i)) return; const a = q.accounts.find(z => z.id === t.account); if (!a) return; a.terms = { ...(a.terms || {}), ...Object.fromEntries(Object.entries({ method: t.method, rate: t.rate, months: t.months, feePct: t.feePct, feeFixed: t.feeFixed, conditions: t.conditions }).filter(([, v]) => v !== null && v !== '')) }; done.push('terms of ' + a.name); });
     P.goals.forEach((g, i) => { if (!inc('g', i)) return; q.buys = [...(q.buys || []), { id: E.uid('by'), ...g, at }]; done.push('goal ' + g.name); });
-    P.questions.forEach(x => { (q.questions = q.questions || []).push({ id: E.uid('q'), kind: 'draft', text: x.text, about: x.about, at }); });
-    q.drafts = [...(q.drafts || []), { at, text: D.text.slice(0, 2000), files: D.files.map(f => f.name), applied: done }].slice(-30);
+    if (!P0) P.questions.forEach(x => { (q.questions = q.questions || []).push({ id: E.uid('q'), kind: 'draft', text: x.text, about: x.about, at }); });
+    q.drafts = [...(q.drafts || []), { at, text: String((src || D).text || '').slice(0, 2000), files: ((src || D).files || []).map(f => f.name), applied: done }].slice(-30);
   });
   const ch = []; P.thirdParty.forEach((t, i) => { if (!inc('p', i)) return; const x = clone(FS.by.get(t.txId)); if (!x) return; let pid = (finP().parties.find(z => FIN.norm(z.name) === FIN.norm(t.person)) || {}).id; if (!pid && t.person) { pid = E.uid('pt'); finSave(q => { q.parties.push({ id: pid, name: t.person, match: '' }); }); } finHist(x, 'cat', x.cat, 'held', 'you said it belongs to ' + (t.person || 'someone else')); x.cat = 'held'; x.party = pid || ''; x.catSrc = 'manual'; x.asked = true; x.note = [x.note, t.note].filter(Boolean).join(' · '); ch.push(x); done.push('someone else’s money ' + fm(x.amount)); });
   if (ch.length) finWrite(ch);
   finLog('position update', { applied: done });
+  if (P0) return done;
   UI.fin.draft2 = { text: '', files: [], lastApplied: done }; render(); toast(done.length ? `Updated: ${done.join(', ')}.` : 'Nothing to change.');
+  return done;
 }
 
 /* --- the Update page --- */
 FIN_VIEW.update = () => {
   const p = finP(), n = finNow(), D = UI.fin.draft2 = UI.fin.draft2 || { text: '', files: [] }, Q = finQuestions();
-  return `<div class="fin-grid2 fin-upd">
-  <section class="card fin-card"><h2>Tell me what changed</h2>
-    <p class="small muted">Write it as you would say it — balances, a new salary, a return, an expense, a Halan plan, money that isn’t yours — and add screenshots from your banking apps. Claude reads them; you see every change before it is saved, and anything unclear comes back as a question.</p>
-    <textarea class="input autogrow fin-draft" id="fin-draft" placeholder="e.g. My salary is now 36,000 from November. Primary account balance today 21,000. The 10,000 that came in on the 28th belongs to my cousin Ali; I’ll send it back next week.">${esc(D.text)}</textarea>
-    <div class="row"><label class="btn sm">📎 Add screenshots<input type="file" multiple accept="image/*,.pdf" data-chg="fin-draft-files" hidden></label>${D.files.map((f, i) => `<span class="fin-tag">${esc(f.name)} <button class="icon-btn" data-act="fin-draft-file-x" data-i="${i}" aria-label="Remove">${I.x}</button></span>`).join('')}<span class="spacer"></span><button class="btn primary" data-act="fin-draft-read" ${D.busy ? 'disabled' : ''}>${D.busy ? 'Reading…' : 'Understand and preview'}</button></div>
-    ${D.lastApplied && D.lastApplied.length ? `<p class="small fin-pos">✓ Updated: ${esc(D.lastApplied.join(', '))}</p>` : ''}
-    ${D.preview ? finDraftPreviewHTML(D) : ''}
-  </section>
-  <section class="card fin-card"><h2>Questions for you${Q.length ? ` (${Q.length})` : ''}</h2>${Q.length ? `<div class="fin-qs">${Q.slice(0, 20).map(finQuestionHTML).join('')}</div>` : '<p class="small muted">Nothing unclear right now.</p>'}</section>
-  </div>
+  const auto = p.autoFix !== false, log = (typeof finAutoLog === 'function' ? finAutoLog() : []).slice().reverse();
+  return `${auto ? `<section class="card fin-card"><h2>Sorted by Claude${log.length ? ` (${log.length})` : ''}</h2>
+    <p class="small muted">Anything unclear — a deposit nobody explained, a repeated payment, a balance that moved, a line that could not be read — is decided by Claude straight away, so nothing waits for you. Each decision is listed here; tell the canvas if one is wrong and it is changed.</p>
+    ${log.length ? `<div class="tbl-wrap"><table class="tbl fin-autolog"><thead><tr><th>When</th><th>What</th><th>Decided</th><th>Why</th><th></th></tr></thead><tbody>${log.slice(0, 60).map(x => `<tr><td class="nowrap small">${fmtDateTime(x.at)}</td><td>${esc(x.label)}</td><td><b>${esc(x.how)}</b>${x.by === 'rule' ? ' <span class="fin-tag">rule</span>' : ''}</td><td class="small">${esc(x.why || '')}</td><td>${x.sec ? `<button class="btn sm ghost" data-act="fin-sec" data-s="${esc(x.sec)}">Open</button>` : ''}</td></tr>`).join('')}</tbody></table></div>` : '<p class="small muted">Nothing needed deciding yet.</p>'}</section>`
+    : `<section class="card fin-card"><h2>Questions for you${Q.length ? ` (${Q.length})` : ''}</h2>${Q.length ? `<div class="fin-qs">${Q.slice(0, 20).map(finQuestionHTML).join('')}</div>` : '<p class="small muted">Nothing unclear right now.</p>'}</section>`}
   ${finDailyHTML(n)}
   <section class="card fin-card"><h2>What I use for planning</h2>
     <div class="fin-kpis">${finKpi('Income a month', fk(n.income), esc(n.incomeBasis))}${finKpi('Usual spending a month', fk(n.spending), esc(n.spendBasis))}${finKpi('Instalments a month', fk(n.instMonthly), `${n.inst.filter(i => i.status === 'active' || i.status === 'missing').length} active`, { act: 'fin-sec', data: { s: 'credit' } })}${finKpi('Left to save a month', fk(n.capacity), `income − spending${n.goalsMonthly ? ` − goals ${fk(n.goalsMonthly)}` : ''}`, { est: true })}${finKpi('Free cash now', fk(n.free), `${fk(n.cash)} in your accounts${n.held ? ` − ${fk(n.held)} others’ money` : ''} − ${fk(n.reserve)} safety reserve`)}${finKpi('Financial health', n.health.score === null ? '—' : n.health.score + '/100', n.health.items.filter(x => x.g).map(x => `${x.label}: ${x.g}`).join(' · '))}</div>
@@ -280,7 +278,7 @@ function finDailyHTML(n) {
       <td class="small">${finBalTrend(a.id)}</td></tr>`).join('')}
     ${mom ? `<tr><td><b>${esc(mom.name)}</b><br><small class="muted">your money: ${fm(+mom.principal || 0)} · in your mother’s name</small></td><td class="num">${fm(+mom.principal || 0)}<br><small class="muted">principal</small></td><td>${field('h:mom', 'balance', 'principal')}</td><td></td></tr>` : ''}
     </tbody></table></div>
-    <div class="row end"><button class="btn primary" data-act="fin-daily-check">Check the changes</button></div>
+    <div class="row end"><button class="btn primary" data-act="fin-daily-check">${p.autoFix !== false ? 'Save balances' : 'Check the changes'}</button></div>
     ${U.preview ? finDailyPreviewHTML(U) : ''}
     ${finBalHistoryHTML()}
   </section>`;
@@ -366,8 +364,8 @@ FIN_VIEW.buy = () => {
   const p = finP(), n = finNow(), plan = finBuyPlan(), focus = !!p.buyFocus;
   const items = plan.items, E0 = UI.fin.buyEdit;
   return `<section class="card fin-card"><div class="row"><h2>Purchase goals</h2><span class="spacer"></span><div class="seg" role="group" aria-label="Plan for"><button data-act="fin-buy-focus" data-v="0" aria-pressed="${!focus}">All goals</button><button data-act="fin-buy-focus" data-v="1" aria-pressed="${focus}">Focus first</button></div></div>
-    <div class="fin-kpis">${finKpi('Total to buy', fk(plan.total), `${items.length} item${items.length === 1 ? '' : 's'}`)}${finKpi('From cash now', fk(plan.fromCash), `free cash ${fk(n.free)} (after a ${fk(n.reserve)} safety reserve${n.held ? ' and others’ money' : ''})`)}${finKpi('Saving a month', fk(plan.monthly), `of ${fk(n.capacity)} you can save${plan.cardRepay ? ` · plus ${fk(plan.cardRepay)} once to clear the card` : ''}${n.goalsMonthly ? ` · after ${fk(n.goalsMonthly)} for your other goals` : ''}`, { est: true })}${finKpi('Everything bought by', plan.allBy ? fmon(plan.allBy) : '—', plan.late.length ? `${plan.late.length} later than you want` : 'on your dates', { est: true, cls: plan.late.length ? 'bad' : '' })}${finKpi('Card available', n.card && n.card.available !== null && n.card.available !== undefined ? fk(n.card.available) : '—', n.card && n.card.limit ? `of ${fk(n.card.limit)}` : '')}${finKpi('Halan available', n.halan && n.halan.available !== null && n.halan.available !== undefined ? fk(n.halan.available) : '—', n.halan && (n.halan.available === null || n.halan.available === undefined) ? 'give what the Halan app shows (Update my position)' : n.halan && n.halan.terms && n.halan.terms.rate ? `${n.halan.terms.rate}% ${n.halan.terms.method === 'reducing' ? 'a year' : 'a month'}` : 'add its terms', { act: 'fin-sec', data: { s: n.halan && (n.halan.available === null || n.halan.available === undefined) ? 'update' : 'credit' } })}</div>
-    ${items.length ? finBuyMap(plan, n) : '<p class="small muted">No purchase goals yet — add one below, or write it in “Update my position” (e.g. “I want a laptop for 40,000 by March”).</p>'}
+    <div class="fin-kpis">${finKpi('Total to buy', fk(plan.total), `${items.length} item${items.length === 1 ? '' : 's'}`)}${finKpi('From cash now', fk(plan.fromCash), `free cash ${fk(n.free)} (after a ${fk(n.reserve)} safety reserve${n.held ? ' and others’ money' : ''})`)}${finKpi('Saving a month', fk(plan.monthly), `of ${fk(n.capacity)} you can save${plan.cardRepay ? ` · plus ${fk(plan.cardRepay)} once to clear the card` : ''}${n.goalsMonthly ? ` · after ${fk(n.goalsMonthly)} for your other goals` : ''}`, { est: true })}${finKpi('Everything bought by', plan.allBy ? fmon(plan.allBy) : '—', plan.late.length ? `${plan.late.length} later than you want` : 'on your dates', { est: true, cls: plan.late.length ? 'bad' : '' })}${finKpi('Card available', n.card && n.card.available !== null && n.card.available !== undefined ? fk(n.card.available) : '—', n.card && n.card.limit ? `of ${fk(n.card.limit)}` : '')}${finKpi('Halan available', n.halan && n.halan.available !== null && n.halan.available !== undefined ? fk(n.halan.available) : '—', n.halan && (n.halan.available === null || n.halan.available === undefined) ? 'tell the canvas what the Halan app shows' : n.halan && n.halan.terms && n.halan.terms.rate ? `${n.halan.terms.rate}% ${n.halan.terms.method === 'reducing' ? 'a year' : 'a month'}` : 'add its terms', { act: 'fin-sec', data: { s: n.halan && (n.halan.available === null || n.halan.available === undefined) ? 'update' : 'credit' } })}</div>
+    ${items.length ? finBuyMap(plan, n) : '<p class="small muted">No purchase goals yet — add one below, or tell the canvas below (e.g. “I want a laptop for 40,000 by March”).</p>'}
     ${plan.late.length || n.capacity <= 0 ? `<div class="fin-note bad">${n.capacity <= 0 ? 'Nothing is left to save each month after your usual spending, instalments and other goals — purchases can only come from free cash or financing. ' : ''}${plan.late.length ? `Later than you want: ${items.filter(i => i.late).map(i => `<b>${esc(i.name)}</b> (${i.ready ? fmon(i.ready) : 'not reached'} instead of ${fmon(i.wantBy.slice(0, 7))})`).join(', ')}. Options: move the date, focus on it first, or use instalments if they fit.` : ''}</div>` : ''}
   </section>
   ${items.length ? `<section class="card fin-card"><h2>Each item</h2><div class="tbl-wrap"><table class="tbl fin-buy"><thead><tr><th>Item</th><th class="num">Price</th><th>Best way</th><th class="num">Cash now</th><th class="num">Save a month</th><th>Ready</th><th>Card</th><th>Halan</th><th></th></tr></thead><tbody>${items.map(it => { const o = it.options; return `<tr class="${it.late ? 'fin-short' : ''}"><td><label class="check"><input type="checkbox" data-chg="fin-buy-f" data-id="${esc(it.id)}" ${it.focus ? 'checked' : ''} aria-label="Focus"> <b>${esc(it.name)}</b></label><br><small class="muted">priority ${it.priority || 2}${it.wantBy ? ` · wanted by ${fday(it.wantBy)}` : ''}</small></td><td class="num">${fm(it.price)}</td><td><span class="fin-tag ${it.rec === 'not_yet' ? 'crit' : 'ok'}">${FIN_REC[it.rec][0]}</span><br><small>${esc(it.why)}</small></td><td class="num">${fm(it.fromCash)}</td><td class="num">${it.monthly ? fm(it.monthly) : '—'}${it.required ? `<br><small class="muted">needs ${fm(it.required)}</small>` : ''}</td><td>${it.ready ? fmon(it.ready) : 'not reached'}</td>
@@ -406,7 +404,7 @@ Object.assign(ACT, {
   'fin-daily-check': () => finDailyCheck(),
   'fin-daily-save': () => finDailySave(),
   'fin-daily-x': () => { UI.fin.daily.preview = null; render(); },
-  'fin-input-del': el => { if (!confirm('Remove this input? (Its history goes with it.)')) return; finSave(q => { q.inputs = (q.inputs || []).filter(i => i.id !== el.dataset.id); }); render(); },
+  'fin-input-del': el => { if (!finAsk('Remove this input? (Its history goes with it.)')) return; finSave(q => { q.inputs = (q.inputs || []).filter(i => i.id !== el.dataset.id); }); render(); },
   'fin-inst-set': el => { const v = ($('#il-' + el.dataset.key) || {}).value; if (v === '' || v === undefined) return toast('Enter how many payments are left.', { err: true }); finAnswer('inst:' + el.dataset.key, 'active', { remaining: v }); },
   'fin-buy-focus': el => { finSave(q => { q.buyFocus = el.dataset.v === '1'; }); render(); },
   'fin-buy-edit': el => { UI.fin.buyEdit = el.dataset.id; UI.fin.sec = 'buy'; render(); const n = $('#by-name'); if (n) n.scrollIntoView({ block: 'center' }); },
@@ -414,7 +412,7 @@ Object.assign(ACT, {
   'fin-buy-save': () => { const name = (($('#by-name') || {}).value || '').trim(), price = (FIN.parseNum(($('#by-price') || {}).value || '') || {}).n; if (!name || !(price > 0)) return toast('Enter what and its price.', { err: true });
     const g = { name, price: Math.abs(price), priority: +($('#by-prio') || {}).value || 2, wantBy: ($('#by-date') || {}).value || '' }, id = UI.fin.buyEdit && UI.fin.buyEdit !== 'new' ? UI.fin.buyEdit : null;
     finSave(q => { q.buys = q.buys || []; if (id) Object.assign(q.buys.find(b => b.id === id) || {}, g); else q.buys.push({ id: E.uid('by'), ...g, at: nowISO() }); }); UI.fin.buyEdit = null; render(); },
-  'fin-buy-del': el => { if (!confirm('Delete this purchase goal?')) return; finSave(q => { q.buys = (q.buys || []).filter(b => b.id !== el.dataset.id); }); UI.fin.buyEdit = null; render(); },
+  'fin-buy-del': el => { if (!finAsk('Delete this purchase goal?')) return; finSave(q => { q.buys = (q.buys || []).filter(b => b.id !== el.dataset.id); }); UI.fin.buyEdit = null; render(); },
   'fin-buy-done': el => { finSave(q => { const b = (q.buys || []).find(x => x.id === el.dataset.id); if (b) b.done = finToday(); }); render(); toast('Marked as bought — the plan moves on to the next item.'); },
 });
 Object.assign(CHG, {

@@ -26,7 +26,7 @@ async def main():
         pg = await cx.new_page(); ev = pg.evaluate
         pg.on('pageerror', lambda e: errors.append('PAGEERROR ' + str(e)))
         await pg.route('**/*', route); await pg.goto('https://app.test/'); await pg.wait_for_selector('h1'); await pg.wait_for_timeout(1200)
-        sec = lambda s: pg.click(f'.fin-nav [data-s="{s}"]')
+        sec = lambda s: ev(f"window.__FIN.open('{s}')")
         async def tot(): return await ev("(() => { const t = window.__FIN.an({ from: null, to: null, acctIds: null, catIds: null }).totals; return [t.inc, t.exp, t.net]; })()")
         async def nw(): return await ev("window.__FIN.pos().net")
         # adding statements: you only say what kind of account they are from; nothing else is asked
@@ -45,9 +45,10 @@ async def main():
         acc = lambda name: ev(f"window.__FIN.prefs().accounts.find(a => a.name === '{name}').id")
 
         await pg.click('[data-nav="finance"]'); await pg.wait_for_timeout(300)
-        assert await ev("!!document.querySelector('.fin-nav')"), 'Money is its own tab'
-        assert await ev("document.querySelectorAll('.fin-nav button').length") == 15, 'the canvas and the 14 sections'
-        assert await ev("document.querySelectorAll('.fin-sec').length") == 14 and await ev("!!document.getElementById('fin-s-map')"), 'every section on one page, the canvas first'
+        assert await ev("!!document.getElementById('fin-cv-vp')"), 'Money is its own tab: the canvas'
+        # this test checks the questions and reviews you answer yourself: Claude's automatic sorting is turned off
+        await sec('settings'); await pg.wait_for_timeout(200); await pg.click('[data-chg="fin-flag"][data-k="autoFix"]'); await pg.wait_for_timeout(300)
+        assert await ev("window.__FIN.prefs().autoFix") is False
 
         # 1–2. import a statement, review, save; it is in the ledger
         rep, q = await importing([f('bankA_aug-sep.csv')])
@@ -113,17 +114,17 @@ async def main():
         assert '3,800' in row and '950' in row and '36%' in row, row
         # a chart month opens its transactions
         await sec('dash'); await pg.wait_for_timeout(300)
-        await ev("document.querySelector('#fin-s-dash .fin-chart .hit[data-k=\"2026-09\"]').dispatchEvent(new MouseEvent('click', { bubbles: true }))"); await pg.wait_for_selector('#drawer .fin-mini')
+        await ev("document.querySelector('#fin-panel .fin-chart .hit[data-k=\"2026-09\"]').dispatchEvent(new MouseEvent('click', { bubbles: true }))"); await pg.wait_for_selector('#drawer .fin-mini')
         n = await ev("document.querySelectorAll('#drawer .fin-mini-r').length"); print('SEPTEMBER DRILL', n); assert n == 6
         await pg.click('[data-act="close-drawer"] >> nth=0'); await pg.wait_for_timeout(200)
 
         # 8. a filter changes every number together
-        k0 = await ev("document.querySelector('#fin-s-dash .fin-kpi').textContent")
+        k0 = await ev("document.querySelector('#fin-panel .fin-kpi').textContent")
         acctA = await acc('Bank of Test current account ••3004')
         await pg.select_option('[data-chg="fin-f"][data-k="acct"]', acctA); await pg.wait_for_timeout(300)
         exA = await ev("window.__FIN.an().totals.exp"); print('BANK A EXPENSES', exA)
         assert exA == 10560 - 5000 - 300 - 150 - 400, 'card and bank B left out'
-        kpi = await ev("[...document.querySelectorAll('#fin-s-dash .fin-kpi')].find(k => k.textContent.startsWith('Total expenses')).textContent"); assert '4,710' in kpi, kpi
+        kpi = await ev("[...document.querySelectorAll('#fin-panel .fin-kpi')].find(k => k.textContent.startsWith('Total expenses')).textContent"); assert '4,710' in kpi, kpi
         await pg.click('[data-act="fin-f-reset"]'); await pg.wait_for_timeout(200)
 
         # 9. a transaction entered by hand updates the analysis (and 10. budgets)
@@ -148,7 +149,7 @@ async def main():
         first = next(r for r in ex['rows'] if r['m'] == nm.strftime('%Y-%m'))
         print('SIM', ex['current'], ex['projected'], first['recurInc'])
         assert ex['current'] == 30000 and ex['projected'] == 33000 and abs(first['recurInc'] - round(3000 * (dim - 14) / dim, 2)) < 0.01, 'partial first month'
-        res = await ev("document.querySelector('#fin-s-sim .fin-card .fin-tbl').textContent"); assert '33,000' in res
+        res = await ev("document.querySelector('#fin-panel .fin-card .fin-tbl').textContent"); assert '33,000' in res
         await pg.click('[data-act="fin-ch-add"]'); await pg.wait_for_timeout(200)
         await pg.fill('[data-chg="fin-ch"][data-i="1"][data-k="value"]', '5'); await pg.press('[data-chg="fin-ch"][data-i="1"][data-k="value"]', 'Tab'); await pg.wait_for_timeout(200)
         await pg.fill('[data-chg="fin-ch"][data-i="1"][data-k="date"]', (nm + datetime.timedelta(days=62)).replace(day=1).isoformat()); await pg.wait_for_timeout(200)
@@ -160,11 +161,11 @@ async def main():
         await sec('forecast'); await pg.click('[data-act="fin-goal-add"][data-k="emergency"]'); await pg.wait_for_timeout(200)
         await pg.fill('[data-chg="fin-goal"][data-i="0"][data-k="target"]', '2000000'); await pg.press('[data-chg="fin-goal"][data-i="0"][data-k="target"]', 'Tab'); await pg.wait_for_timeout(300)
         await sec('sim'); await pg.wait_for_timeout(300)
-        g1 = await ev("[...document.querySelectorAll('#fin-s-sim .fin-card li')].find(l => l.textContent.startsWith('Emergency fund:')).textContent")
+        g1 = await ev("[...document.querySelectorAll('#fin-panel .fin-card li')].find(l => l.textContent.startsWith('Emergency fund:')).textContent")
         await pg.fill('[data-chg="fin-alloc"][data-i="1"][data-k="pct"]', '40'); await pg.press('[data-chg="fin-alloc"][data-i="1"][data-k="pct"]', 'Tab'); await pg.wait_for_timeout(300)
         assert 'must be 100%' in await pg.text_content('.fin-alloc') and await ev("!!document.body.textContent.includes('Results are hidden until the shares add up')")
         await pg.fill('[data-chg="fin-alloc"][data-i="0"][data-k="pct"]', '40'); await pg.press('[data-chg="fin-alloc"][data-i="0"][data-k="pct"]', 'Tab'); await pg.wait_for_timeout(300)
-        g2 = await ev("[...document.querySelectorAll('#fin-s-sim .fin-card li')].find(l => l.textContent.startsWith('Emergency fund:')).textContent")
+        g2 = await ev("[...document.querySelectorAll('#fin-panel .fin-card li')].find(l => l.textContent.startsWith('Emergency fund:')).textContent")
         print('GOAL', g1, '|', g2); assert g1 != g2, 'a bigger goals share brings the goal closer'
 
         # an export from another source with other wording: the likely repeat is skipped (never counted twice) and listed
@@ -206,7 +207,7 @@ async def main():
 
         # 17. forecasts are labelled
         await sec('forecast'); await pg.wait_for_timeout(300)
-        assert 'Forecasts are estimates' in await pg.text_content('#fin-s-forecast .fin-banner') and await ev("document.querySelectorAll('#fin-s-forecast .fin-tbl .fin-est').length") >= 12
+        assert 'Forecasts are estimates' in await pg.text_content('#fin-panel .fin-banner') and await ev("document.querySelectorAll('#fin-panel .fin-tbl .fin-est').length") >= 12
         await pg.screenshot(path=os.path.join(HERE, 'shots', 'finance-forecast.png'), full_page=True)
         await sec('dash'); await pg.wait_for_timeout(300); await pg.screenshot(path=os.path.join(HERE, 'shots', 'finance-dash.png'), full_page=True)
 
@@ -221,7 +222,7 @@ async def main():
         bk = os.path.join(FX, 'backup.json'); open(bk, 'w').write(data)
         cx2 = await b.new_context(viewport={'width': 1400, 'height': 1000}); p2 = await cx2.new_page(); await p2.route('**/*', route)
         await p2.goto('https://app.test/'); await p2.wait_for_selector('h1'); await p2.wait_for_timeout(1200)
-        await p2.click('[data-nav="finance"]'); await p2.click('.fin-nav [data-s="settings"]'); await p2.set_input_files('input[data-chg="fin-restore"]', bk); await p2.wait_for_selector('[data-act="fin-restore-go"]')
+        await p2.click('[data-nav="finance"]'); await p2.evaluate("window.__FIN.open('settings')"); await p2.wait_for_timeout(300); await p2.set_input_files('input[data-chg="fin-restore"]', bk); await p2.wait_for_selector('[data-act="fin-restore-go"]')
         p2.on('dialog', lambda d: asyncio.ensure_future(d.accept()))
         await p2.click('[data-act="fin-restore-go"][data-how="replace"]'); await p2.wait_for_timeout(800)
         t2 = await p2.evaluate("(() => { const t = window.__FIN.an({ from: null, to: null, acctIds: null, catIds: null }).totals; return [t.inc, t.exp, t.net]; })()")
@@ -229,8 +230,9 @@ async def main():
         assert await p2.evaluate("window.__FIN.tx().length") == n0 and t2 == t0
 
         # the phone layout reaches Money from More
+        await pg.keyboard.press('Escape'); await pg.wait_for_timeout(200)
         await pg.set_viewport_size({'width': 390, 'height': 844}); await pg.wait_for_timeout(600)
-        await pg.click('.ph-tab[data-k="more"]'); await pg.click('[data-act="ph-nav"][data-view="finance"]'); await pg.wait_for_selector('.fin-nav')
+        await pg.click('.ph-tab[data-k="more"]'); await pg.click('[data-act="ph-nav"][data-view="finance"]'); await pg.wait_for_selector('#fin-cv-vp')
         assert await ev("document.documentElement.scrollWidth <= innerWidth + 1"), 'no sideways scrolling on a phone'
         await pg.screenshot(path=os.path.join(HERE, 'shots', 'finance-phone.png'))
         bad = [e for e in errors if 'PAGEERROR' in e]; assert not bad, bad

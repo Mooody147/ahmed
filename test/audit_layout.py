@@ -1,6 +1,6 @@
-"""Layout audit of the Money page (canvas + every section on one page) at desktop, laptop, tablet and phone widths,
-with data — no sideways scrolling, no text drawn over other text (chart labels included), no text cut off by its box,
-canvas cards never on top of each other, every jump lands its section under the bar, no page errors.
+"""Layout audit of the Money canvas at desktop, laptop, tablet and phone widths, with data: the canvas with its talk
+box, and every part opened from it as a panel — no sideways scrolling, no text drawn over other text (chart labels
+included), no text cut off by its box, canvas cards never on top of each other, no page errors.
 Usage: python3 test/audit_layout.py  (prints the problems found; exit 1 when there are any)"""
 import asyncio, os, sys, subprocess, json
 os.environ['AR_PAGE'] = 'action-register-lite.html'
@@ -21,7 +21,8 @@ CHECK = r"""() => {
   }
   const vis = el => { const s = getComputedStyle(el); if (s.visibility === 'hidden' || s.display === 'none' || +s.opacity === 0) return false; const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0; };
   // text boxes: elements that hold text themselves
-  const texts = [...main.querySelectorAll('*')].filter(el => !el.closest('svg') && !el.closest('#fin-cv-vp') && !el.closest('.fin-nav') && [...el.childNodes].some(n => n.nodeType === 3 && n.textContent.trim()) && vis(el) && !el.closest('details:not([open]) > :not(summary)'));
+  const pan = document.getElementById('fin-panel'), full = pan && getComputedStyle(pan).position === 'fixed';
+  const texts = [...(full ? pan : main).querySelectorAll('*')].filter(el => !el.closest('svg') && !el.closest('#fin-cv-vp') && (full || !el.closest('#fin-panel') || !!pan) && !el.closest('.sr') && [...el.childNodes].some(n => n.nodeType === 3 && n.textContent.trim()) && vis(el) && !el.closest('details:not([open]) > :not(summary)'));
   // text inside a scroll box only counts where the box shows it
   const clipOf = el => { let c = null; for (let p = el.parentElement; p && p !== main; p = p.parentElement) { const s = getComputedStyle(p); if (/(auto|scroll|hidden)/.test(s.overflowY + s.overflowX)) { const r = p.getBoundingClientRect(); c = c ? { left: Math.max(c.left, r.left), top: Math.max(c.top, r.top), right: Math.min(c.right, r.right), bottom: Math.min(c.bottom, r.bottom) } : { left: r.left, top: r.top, right: r.right, bottom: r.bottom }; } } return c; };
   const boxes = texts.map(el => { const rg = document.createRange(); rg.selectNodeContents(el); const c = clipOf(el); const rs = [...rg.getClientRects()].map(r => c ? { left: Math.max(r.left, c.left), top: Math.max(r.top, c.top), right: Math.min(r.right, c.right), bottom: Math.min(r.bottom, c.bottom) } : r).map(r => ({ ...r, left: r.left, top: r.top, right: r.right, bottom: r.bottom, width: r.right - r.left, height: r.bottom - r.top })).filter(r => r.width > 1 && r.height > 1); return { el, rs }; });
@@ -49,12 +50,11 @@ CHECK = r"""() => {
 async def main():
     async with async_playwright() as p:
         b = await p.chromium.launch(); cx = await b.new_context(viewport={'width': 1400, 'height': 950}); pg = await cx.new_page(); ev = pg.evaluate
-        await pg.emulate_media(reduced_motion='reduce')  # jumps happen at once, so where they land can be measured
         pg.on('pageerror', lambda e: errors.append('PAGEERROR ' + str(e)))
         await pg.route('**/*', route); await pg.goto('https://app.test/'); await pg.wait_for_selector('h1'); await pg.wait_for_timeout(1500)
         await pg.click('[data-nav="finance"]'); await pg.wait_for_timeout(500)
         async def imp(files, kind):
-            await pg.click('.fin-nav [data-s="import"]'); await pg.click(f'[data-act="fin-kind"][data-k="{kind}"]'); await pg.set_input_files('input[data-chg="fin-files"]', files)
+            await ev("window.__FIN.open('import')"); await pg.wait_for_timeout(200); await pg.click(f'[data-act="fin-kind"][data-k="{kind}"]'); await pg.set_input_files('input[data-chg="fin-files"]', files)
             for _ in range(100):
                 if await ev(f"(window.__AR.UI.fin.queue || []).length >= {len(files)} && window.__AR.UI.fin.queue.slice(0, {len(files)}).every(q => ['done', 'error'].includes(q.state))"): break
                 await pg.wait_for_timeout(200)
@@ -62,29 +62,29 @@ async def main():
         await imp([f('CARD_AUG.pdf'), f('CARD_SEP.pdf')], 'credit_card'); await pg.wait_for_timeout(300)
         await imp([f('primary_0012.csv'), f('bankA_aug-nov.csv')], 'current'); await pg.wait_for_timeout(300)
         await ev("""() => { const UI = window.__AR.UI; }""")
-        await pg.click('.fin-nav [data-s="buy"]')
+        await ev("window.__FIN.open('buy')"); await pg.wait_for_timeout(300)
         for name, price in [('Laptop with a long descriptive name for testing', '40000'), ('Phone', '15000'), ('Sofa', '120000')]:
             await pg.fill('#by-name', name); await pg.fill('#by-price', price); await pg.click('[data-act="fin-buy-save"]'); await pg.wait_for_timeout(200)
         problems = {}
         for w, h in WIDTHS:
             await pg.set_viewport_size({'width': w, 'height': h}); await pg.wait_for_timeout(600)
-            if w < 600 and await ev("!document.querySelector('.fin-nav')"):
+            if w < 600 and await ev("!document.getElementById('fin-cv-vp')"):
                 await pg.click('.ph-tab[data-k="more"]'); await pg.click('[data-act="ph-nav"][data-view="finance"]'); await pg.wait_for_timeout(400)
-            await ev("document.querySelectorAll('#main details').forEach(d => d.open = true)"); await pg.wait_for_timeout(200)
+            await ev("window.__FIN.open('map')"); await pg.wait_for_timeout(300)
             for d in ('v', 'h'):
                 await pg.click(f'[data-act="fin-cv-dir"][data-v="{d}"]'); await pg.wait_for_timeout(400)
-                await ev("document.querySelectorAll('#main details').forEach(d => d.open = true)"); await pg.wait_for_timeout(150)
                 found = await ev(CHECK)
                 if found: problems[f'{w}px canvas {d}'] = found
             await pg.click('[data-act="fin-cv-dir"][data-v="v"]'); await pg.wait_for_timeout(400)
-            if w in (1400, 390): await pg.locator('#fin-s-map').screenshot(path=os.path.join(HERE, 'shots', f'audit-{w}-canvas.png'))
-            # every jump puts its section right under the bar, and the bar marks it
-            for s in ['map'] + SECS:
-                await ev(f"document.querySelector('.fin-nav [data-s=\"{s}\"]').click()"); await pg.wait_for_timeout(120)
-                pos = await ev(f"(() => {{ const nav = document.querySelector('.fin-nav').getBoundingClientRect(), el = document.getElementById('fin-s-{s}').getBoundingClientRect(), atEnd = innerHeight + scrollY >= document.documentElement.scrollHeight - 4; return [Math.round(el.top - nav.bottom), atEnd, document.querySelector('.fin-nav [aria-current=page]').dataset.s]; }})()")
-                if not (0 <= pos[0] <= 40 or (pos[1] and pos[0] > 0)): problems.setdefault(f'{w}px jumps', []).append(f'{s}: section starts {pos[0]}px below the bar')
-                if pos[2] != s and not pos[1]: problems.setdefault(f'{w}px jumps', []).append(f'{s}: the bar marks {pos[2]}')
+            if w in (1400, 390): await pg.screenshot(path=os.path.join(HERE, 'shots', f'audit-{w}-canvas.png'))
+            # every part, opened from the canvas as a panel
+            for s in SECS:
+                await ev(f"window.__FIN.open('{s}')"); await pg.wait_for_timeout(450)
+                await ev("document.querySelectorAll('#fin-panel details').forEach(d => d.open = true)"); await pg.wait_for_timeout(150)
+                found = await ev(CHECK)
+                if found: problems[f'{w}px {s}'] = found
                 if w in (1400, 390) and s in ('dash', 'buy', 'update', 'credit', 'import'): await pg.screenshot(path=os.path.join(HERE, 'shots', f'audit-{w}-{s}.png'))
+            await ev("window.__FIN.open('map')"); await pg.wait_for_timeout(200)
         for k, v in problems.items(): print(f'== {k}'); [print('   ', x) for x in v[:12]]
         bad = [e for e in errors if 'PAGEERROR' in e]
         print('PAGE ERRORS', bad[:5]); print('AUDIT', 'CLEAN' if not problems and not bad else f'{sum(len(v) for v in problems.values())} problems')

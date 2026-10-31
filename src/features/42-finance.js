@@ -89,20 +89,7 @@ const FIN_ICON = { dash: '📊', import: '🏦', ledger: '📒', exp: '🧾', in
 const FIN_SECS = [['dash', 'Dashboard'], ['import', 'Import statements'], ['ledger', 'Transactions'], ['exp', 'Expense analytics'], ['inc', 'Income & position'], ['budget', 'Budget & control'], ['sim', 'Income growth'], ['forecast', 'Forecast & goals'], ['accounts', 'Accounts & reconciliation'], ['own', 'Ownership & others’ money'], ['settings', 'Settings & backup']];
 const FIN_VIEW = {};   // section → html (filled by the Money feature files)
 
-VIEW_FN.finance = () => {
-  // one page: the canvas first, then every section one under another; the bar jumps to them and follows the scroll
-  const p = finP(), cur = UI.fin.spy || 'map';
-  return `<div class="wrap fin fin-one">
-  <div class="page-head"><div><h1>Money</h1><div class="sub">Your bank and card statements in one ledger, every number traced to its transactions. Your own money is kept apart from money you hold for others, and actual figures apart from forecasts.</div></div>
-    <div class="row"><button class="btn" data-act="fin-new-tx">${I.plus} Transaction</button><button class="btn primary" data-act="fin-sec" data-s="import">🏦 Import statement</button></div></div>
-  <nav class="fin-nav" aria-label="Money sections">${[['map', 'Canvas'], ...FIN_SECS].map(([k, l]) => `<button data-act="fin-sec" data-s="${k}" aria-current="${cur === k ? 'page' : 'false'}"><span aria-hidden="true">${FIN_ICON[k] || ''}</span>${l}</button>`).join('')}</nav>
-  ${!p.accounts.length ? `<div class="callout"><b>Start here:</b> import a bank or card statement — the account is created from it — or <button class="btn sm" data-act="fin-sec" data-s="accounts">add your accounts</button> first.</div>` : ''}
-  ${typeof finCvHTML === 'function' ? finCvHTML() : ''}
-  ${FIN_SECS.map(([k, l]) => `<section class="fin-sec" id="fin-s-${k}" aria-labelledby="fin-h-${k}"><h2 class="fin-sec-h" id="fin-h-${k}"><span aria-hidden="true">${FIN_ICON[k] || ''}</span>${l}</h2>
-    ${k === 'dash' ? finFilterBar() + '<p class="small muted fin-f-note">These filters apply to the Dashboard, Transactions, Expense analytics and Income sections.</p>' : ''}
-    ${(FIN_VIEW[k] || (() => ''))()}</section>`).join('')}
-</div>`;
-};
+// the Money view itself is the canvas (47-finance-canvas.js)
 
 /* --- filters: dates, account, category — every section below them uses the same ones --- */
 function finFilterBar() {
@@ -122,6 +109,8 @@ function finCatOptions(sel, kinds) {
 }
 // warnings that change how to read the numbers
 function finNotices(an) {
+  // with automatic sorting on, nothing waits for you: Claude settles these and lists what it decided
+  if (finP().autoFix !== false) return '';
   const out = [];
   if (an.noRate && an.noRate.length) out.push(`${an.noRate.map(x => `${x.n} transaction${x.n === 1 ? '' : 's'} in ${x.cur}`).join(', ')} ${an.noRate.reduce((s, x) => s + x.n, 0) === 1 ? 'is' : 'are'} left out of these totals: no exchange rate to ${finP().base} was given. <button class="btn sm" data-act="fin-sec" data-s="settings">Add a rate</button>`);
   if (an.incomplete && an.incomplete.length) out.push(`${an.incomplete.length} transaction${an.incomplete.length === 1 ? ' has' : 's have'} no readable date, amount or direction and ${an.incomplete.length === 1 ? 'is' : 'are'} not counted. <button class="btn sm" data-act="fin-ledger-status" data-v="incomplete">Fix them</button>`);
@@ -415,13 +404,13 @@ Object.assign(ACT, {
   'fin-edit': el => { UI.fin.draft = null; openDrawer('fintx', el.dataset.id); },
   'fin-new-tx': () => { if (!finP().accounts.length) { UI.fin.jump = UI.fin.sec = 'accounts'; go('finance'); toast('Add an account first.'); return; } UI.fin.draft = null; openDrawer('fintx', 'new'); },
   'fin-save-tx': el => finSaveTx(el.dataset.id),
-  'fin-del': el => { const t = FS.by.get(el.dataset.id); if (!t || !confirm('Delete this transaction? It is removed from every total; the deletion is kept in the log.')) return; finLog('deleted', { ids: [t.id], tx: [t] }); finWrite([], [t.id]); closeDrawer(); render(); toast('Deleted.'); },
+  'fin-del': el => { const t = FS.by.get(el.dataset.id); if (!t || !finAsk('Delete this transaction? It is removed from every total; the deletion is kept in the log.')) return; finLog('deleted', { ids: [t.id], tx: [t] }); finWrite([], [t.id]); closeDrawer(); render(); toast('Deleted.'); },
   'fin-export': el => finExport(el.dataset.f),
   'fin-sel-none': () => { UI.fin.sel.clear(); render(); },
   'fin-bulk-cat': () => { const c = ($('#fin-bulk-cat') || {}).value; if (!c) return toast('Choose a category.', { err: true }); finBulkCat([...UI.fin.sel], c, 'bulk change'); UI.fin.sel.clear(); render(); },
   'fin-bulk-party': () => { const pid = ($('#fin-bulk-party') || {}).value; if (!pid) return; const ch = [...UI.fin.sel].map(id => FS.by.get(id)).filter(Boolean).map(o => { const t = clone(o); finHist(t, 'party', t.party || '', pid, 'bulk change'); t.party = pid; t.cat = 'held'; t.catSrc = 'manual'; return t; }); finWrite(ch); finLog('assigned to a person', { ids: ch.map(t => t.id), party: pid }); UI.fin.sel.clear(); render(); toast(`${ch.length} marked as money of ${(finP().parties.find(x => x.id === pid) || {}).name}.`); },
   'fin-bulk-ok': () => { const ch = [...UI.fin.sel].map(id => FS.by.get(id)).filter(t => t && t.review).map(o => { const t = clone(o); finHist(t, 'review', true, false, 'checked'); t.review = false; return t; }); finWrite(ch); UI.fin.sel.clear(); render(); toast(`${ch.length} marked as checked.`); },
-  'fin-bulk-del': () => { const ids = [...UI.fin.sel]; if (!ids.length || !confirm(`Delete ${ids.length} transaction${ids.length === 1 ? '' : 's'}? The deletion is kept in the log.`)) return; finLog('deleted', { ids, tx: ids.map(id => FS.by.get(id)).filter(Boolean) }); finWrite([], ids); UI.fin.sel.clear(); render(); toast(`${ids.length} deleted.`); },
+  'fin-bulk-del': () => { const ids = [...UI.fin.sel]; if (!ids.length || !finAsk(`Delete ${ids.length} transaction${ids.length === 1 ? '' : 's'}? The deletion is kept in the log.`)) return; finLog('deleted', { ids, tx: ids.map(id => FS.by.get(id)).filter(Boolean) }); finWrite([], ids); UI.fin.sel.clear(); render(); toast(`${ids.length} deleted.`); },
 });
 Object.assign(CHG, {
   'fin-f': el => { UI.fin.f[el.dataset.k] = el.value; UI.fin.l.page = 0; render(); },

@@ -61,7 +61,8 @@ async function finReadFile(f) {
 // already recorded there or its opening balance continues that account; otherwise a new account
 function finPickAcct(it, kind) {
   const p = finP(), meta = it.meta0 || {}, head = [it.name, it.text ? it.text.slice(0, 3000) : '', it.grid ? it.grid.slice(0, 12).map(r => r.join(' ')).join(' ') : '', meta.account || ''].join(' \n ');
-  kind = kind || (FIN.looksLikeCard(head) || /card|visa|master/i.test(it.name) ? 'credit_card' : 'current');
+  // a card statement shows card facts (limit, minimum payment, card number); a bank line that mentions a card payment does not count
+  kind = kind || (/minimum (?:payment|amount|due)|credit limit|card (?:number|no\.?)\s*:?|available (?:credit|limit)|الحد الأدنى|حد الائتمان|رقم البطاقة/i.test(head) || /card|visa|master/i.test(it.name) ? 'credit_card' : 'current');
   const bank = FIN.detectBank(head) || FIN.detectBank(it.name), num = FIN.last4(meta.account), cur = meta.currency || '';
   // a first reading with this kind of account, to compare its lines
   it.acct = ''; it.newAcct = { kind, currency: cur || p.base, bank, name: '' }; finParse(it);
@@ -237,10 +238,10 @@ function finCommit(it, auto) {
 }
 // statements imported with an older reader, read again from their stored originals (the transactions they made are
 // replaced; the old import stays in the history as replaced)
-async function finReread(ids) {
+async function finReread(ids, quiet) {
   const bs = ids.map(id => St.cols.finbatch.get(id)).filter(b => b && b.asset && !b.undone);
   if (!bs.length) return;
-  UI.fin.jump = UI.fin.sec = 'import'; UI.fin.rereading = true; render();
+  if (!quiet) UI.fin.jump = UI.fin.sec = 'import'; UI.fin.rereading = true; render();
   const oldAccts = new Set(bs.map(b => b.acct)), files = [];
   for (const b of bs) {
     try {
@@ -282,7 +283,7 @@ function finResolve(bid, idx, how) {
 function finUndoImport(bid) {
   const b = St.cols.finbatch.get(bid); if (!b) return;
   const made = finTx().filter(t => t.src && t.src.b === bid), touched = finTx().filter(t => (t.srcs || []).some(s => s.b === bid));
-  if (!confirm(`Undo the import of ${b.file}? ${made.length} transaction${made.length === 1 ? '' : 's'} it added will be removed (corrections it made stay in their history).`)) return;
+  if (!finAsk(`Undo the import of ${b.file}? ${made.length} transaction${made.length === 1 ? '' : 's'} it added will be removed (corrections it made stay in their history).`)) return;
   finLog('import undone', { batch: bid, file: b.file, tx: made });
   finWrite(touched.map(o => { const t = clone(o); t.srcs = (t.srcs || []).filter(s => s.b !== bid); return t; }), made.map(t => t.id));
   colPut('finbatch', { ...b, undone: nowISO() });
@@ -297,7 +298,7 @@ FIN_VIEW.import = () => {
   const prob = batches.filter(b => !b.undone).flatMap(b => (b.pending || []).map((x, i) => ({ b, x, i })).filter(o => o.x.done === 'auto-same'));
   const kind = UI.fin.kind || 'current', Q = UI.fin.queue || [];
   return `${rep ? `<div class="callout fin-report"><b>Imported ${esc(rep.file)}</b><div class="fin-chips">${finChip('Lines reviewed', rep.counts.reviewed)}${finChip('Added', rep.counts.added, 'ok')}${finChip('Already recorded — skipped', rep.counts.dup)}${finChip('Updated with corrections', rep.counts.updated)}${finChip('Held for your decision', rep.counts.held, rep.counts.held ? 'warn' : '')}${finChip('Kept as incomplete', rep.counts.incomplete, rep.counts.incomplete ? 'warn' : '')}${rep.counts.skippedByYou ? finChip('Left out by you', rep.counts.skippedByYou) : ''}</div><button class="icon-btn" data-act="fin-report-x" aria-label="Close">${I.x}</button></div>` : ''}
-  ${(() => { const old = batches.filter(b => !b.undone && (b.reader || 1) < FIN_READER && b.asset); return old.length ? `<div class="callout fin-reread"><b>${old.length} statement${old.length === 1 ? '' : 's'} were read with an older reader</b> that could mix up the Debit and Credit columns of PDF statements and put each file in its own account. They can be read again from the originals kept here — the transactions are replaced and everything else stays. <button class="btn primary sm" data-act="fin-reread" ${UI.fin.rereading ? 'disabled' : ''}>${UI.fin.rereading ? 'Reading…' : 'Read them again now'}</button></div>` : ''; })()}
+  ${(() => { const old = batches.filter(b => !b.undone && (b.reader || 1) < FIN_READER && b.asset); return old.length && finP().autoFix === false ? `<div class="callout fin-reread"><b>${old.length} statement${old.length === 1 ? '' : 's'} were read with an older reader</b> that could mix up the Debit and Credit columns of PDF statements and put each file in its own account. They can be read again from the originals kept here — the transactions are replaced and everything else stays. <button class="btn primary sm" data-act="fin-reread" ${UI.fin.rereading ? 'disabled' : ''}>${UI.fin.rereading ? 'Reading…' : 'Read them again now'}</button></div>` : ''; })()}
   ${it ? finReviewHTML(it, I0) : ''}
   <section class="card fin-card fin-drop">
     <h2>Add statements</h2>
@@ -439,5 +440,5 @@ Object.assign(ACT, {
   'fin-orig': async (el, e) => { e && e.preventDefault && e.preventDefault(); const b = St.cols.finbatch.get(el.dataset.b); if (!b) return; try { const bytes = await afBytes({ id: b.asset, wrapped: true }); offerFile(b.file, new Blob([bytes])); } catch { toast('The original could not be opened.', { err: true }); } },
 });
 // statements dropped anywhere on the Money tab go to the importer (the To-do importer keeps its own drop)
-document.addEventListener('drop', e => { if (UI.view !== 'finance' || !e.dataTransfer || !e.dataTransfer.files.length) return; e.preventDefault(); e.stopImmediatePropagation(); UI.fin.jump = UI.fin.sec = 'import'; finAuto([...e.dataTransfer.files], UI.fin.kind || 'current'); }, true);
+document.addEventListener('drop', e => { if (UI.view !== 'finance' || !e.dataTransfer || !e.dataTransfer.files.length) return; e.preventDefault(); e.stopImmediatePropagation(); if (typeof finTalkAdd === 'function') { finTalkAdd([...e.dataTransfer.files]); finTalkSend(); return; } UI.fin.jump = UI.fin.sec = 'import'; finAuto([...e.dataTransfer.files], UI.fin.kind || 'current'); }, true);
 document.addEventListener('dragenter', e => { if (UI.view === 'finance') e.stopImmediatePropagation(); }, true);
