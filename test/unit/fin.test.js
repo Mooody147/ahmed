@@ -300,6 +300,8 @@ eq([sens.raise.length, sens.delay.length, sens.save.map(x => x.share)], [5, 4, [
 yes(sens.delay[0].cumIncr > sens.delay[3].cumIncr, 'a later raise adds less');
 
 eq(F.refundOf({ id: 'x', desc: 'REFUND CARREFOUR MAADI', date: '2026-09-05', amount: 200 }, [{ id: 'g', desc: 'POS CARREFOUR MAADI 4455', date: '2026-09-03', amount: -1500, cat: 'groceries' }, { id: 'n', desc: 'NETFLIX', date: '2026-09-04', amount: -250, cat: 'subs' }]), 'groceries', 'a refund reverses the earlier purchase from the same shop');
+eq([F.detectBank('Commercial International Bank — Account statement'), F.detectBank('البنك الأهلي المصري كشف حساب'), F.detectBank('Bank of Test — Statement of account'), F.detectBank('QNB Alahli card statement'), F.detectBank('Statement of account')], ['CIB', 'NBE', 'Bank of Test', 'QNB', ''], 'the bank from the heading');
+eq([F.looksLikeCard('Card statement Card number: 4111'), F.looksLikeCard('Statement of account')], [true, false], 'a card statement recognised');
 /* 15. backups */
 eq(F.validateBackup({ app: 'action-register-money', tx: [{ id: 'a', acct: 'A' }], prefs: {} }).ok, true, 'a backup is accepted');
 eq(F.validateBackup({ tx: 'x' }).ok, false, 'a damaged file is refused');

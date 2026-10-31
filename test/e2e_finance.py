@@ -29,43 +29,46 @@ async def main():
         sec = lambda s: pg.click(f'.fin-nav [data-s="{s}"]')
         async def tot(): return await ev("(() => { const t = window.__FIN.an({ from: null, to: null, acctIds: null, catIds: null }).totals; return [t.inc, t.exp, t.net]; })()")
         async def nw(): return await ev("window.__FIN.pos().net")
-        async def importing(files, acct=None, new=None, kind=None, decide=None):
-            await sec('import'); await pg.set_input_files('input[data-chg="fin-files"]', files); await pg.wait_for_selector('[data-act="fin-commit"]', timeout=20000)
-            if acct: await pg.select_option('[data-chg="fin-imp-acct"]', label=acct); await pg.wait_for_timeout(200)
-            if new:
-                if await ev("document.querySelector('[data-chg=\"fin-imp-acct\"]').value") != '': await pg.select_option('[data-chg="fin-imp-acct"]', value=''); await pg.wait_for_timeout(200)
-                await pg.fill('[data-chg="fin-na"][data-k="name"]', new); await pg.press('[data-chg="fin-na"][data-k="name"]', 'Tab'); await pg.wait_for_timeout(150)
-                if kind: await pg.select_option('[data-chg="fin-na"][data-k="kind"]', kind); await pg.wait_for_timeout(200)
-            chips = await ev("[...document.querySelectorAll('.fin-rev').length ? document.querySelectorAll('.fin-card .fin-chips .fin-chip') : []].map(c => c.textContent.trim())")
-            if decide:
-                for i, how in decide.items(): await pg.select_option(f'[data-chg="fin-decide"][data-i="{i}"]', how); await pg.wait_for_timeout(150)
-            await pg.click('[data-act="fin-commit"]'); await pg.wait_for_selector('.fin-report'); await pg.wait_for_timeout(300)
-            rep = await ev("window.__AR.UI.fin.report.counts"); return chips, rep
+        # adding statements: you only say what kind of account they are from; nothing else is asked
+        async def importing(files, kind='current'):
+            await sec('import'); await pg.click(f'[data-act="fin-kind"][data-k="{kind}"]'); await pg.wait_for_timeout(100)
+            n0 = await ev("(window.__AR.UI.fin.queue || []).length")
+            await pg.set_input_files('input[data-chg="fin-files"]', files)
+            for _ in range(150):
+                st = await ev(f"(window.__AR.UI.fin.queue || []).slice(0, (window.__AR.UI.fin.queue || []).length - {n0}).map(q => q.state)")
+                if len(st) == len(files) and all(x in ('done', 'error', 'needs-ai') for x in st): break
+                await pg.wait_for_timeout(200)
+            assert not await ev("!!document.querySelector('[data-act=\"fin-commit\"]')"), 'no review step'
+            q = await ev("window.__AR.UI.fin.queue[0]"); assert q['state'] == 'done', q
+            q['acctName'] = await ev(f"window.__FIN.prefs().accounts.find(a => a.id === '{q['acct']}').name")
+            return q['counts'], q
+        acc = lambda name: ev(f"window.__FIN.prefs().accounts.find(a => a.name === '{name}').id")
 
         await pg.click('[data-nav="finance"]'); await pg.wait_for_timeout(300)
         assert await ev("!!document.querySelector('.fin-nav')"), 'Money is its own tab'
         assert await ev("document.querySelectorAll('.fin-nav button').length") == 11
-        # the people and holdings you described (Ahmed, certificate, mother's deposit, the box, the offices)
-        await sec('own'); await pg.click('[data-act="fin-template"]'); await pg.wait_for_timeout(300)
-        assert await ev("window.__FIN.prefs().holdings.length") == 6 and await ev("window.__FIN.prefs().parties[0].id") == 'ahmed'
 
         # 1–2. import a statement, review, save; it is in the ledger
-        chips, rep = await importing([f('bankA_aug-sep.csv')], new='Bank A current')
-        print('IMPORT 1', chips, rep)
-        assert rep == {'reviewed': 16, 'added': 15, 'dup': 0, 'updated': 0, 'held': 0, 'incomplete': 1, 'skippedByYou': 0, 'notTransactions': 2}, rep
+        rep, q = await importing([f('bankA_aug-sep.csv')])
+        print('IMPORT 1', q['acctName'], rep)
+        assert rep == {'reviewed': 16, 'added': 15, 'dup': 0, 'updated': 0, 'held': 0, 'probable': 0, 'incomplete': 1, 'skippedByYou': 0, 'notTransactions': 2}, rep
+        assert q['acctName'] == 'Bank of Test current account ••3004' and q['created'], 'the account made from the statement: bank, kind and number'
+        # the people and holdings you described are added on the first import (Ahmed, certificate, deposit, box, offices)
+        assert await ev("window.__FIN.prefs().holdings.length") == 6 and await ev("window.__FIN.prefs().parties[0].id") == 'ahmed'
         await sec('ledger'); await pg.wait_for_timeout(200)
         assert await ev("document.querySelectorAll('.fin-ledger tbody tr').length") == 16, 'every line in the ledger, the unreadable one flagged'
         assert await ev("document.querySelectorAll('.fin-ledger tr.fin-incomplete').length") == 1
         before = await tot(); print('TOTALS 1', before)
 
         # 3. the exact same statement again: nothing added (idempotent)
-        chips, rep = await importing([f('bankA_aug-sep (copy).csv')])
-        print('IMPORT 2 (same)', rep)
+        rep, q = await importing([f('bankA_aug-sep (copy).csv')])
+        print('IMPORT 2 (same)', q['acctName'], q['why'], rep)
+        assert not q.get('created') and q['acctName'] == 'Bank of Test current account ••3004', 'found the same account by itself'
         assert rep['added'] == 0 and rep['dup'] == 16 and rep['updated'] == 0 and rep['incomplete'] == 0, rep
         assert await tot() == before, 'income and expenses unchanged'
         assert await ev("window.__FIN.tx().length") == 16
         # the final acceptance test: the statement plus two more months, one line corrected
-        chips, rep = await importing([f('bankA_aug-nov.csv')])
+        rep, q = await importing([f('bankA_aug-nov.csv')])
         print('IMPORT 3 (expanded)', rep)
         assert rep['added'] == 5 and rep['updated'] == 1 and rep['dup'] == 15 and rep['held'] == 0, rep
         assert await ev("window.__FIN.tx().length") == 21
@@ -76,8 +79,9 @@ async def main():
         assert all(l['act'] == 'same' and l['id'] for l in copy['lines']), 'every skipped line of the copy points to the transaction it repeats'
 
         # 4. more accounts: bank B (Excel) and the card (PDF)
-        chips, rep = await importing([f('bankB_aug-sep.xlsx')], new='Bank B current'); print('IMPORT B', rep); assert rep['added'] == 3
-        chips, rep = await importing([f('card_aug.pdf')], new='Visa card', kind='credit_card'); print('IMPORT CARD', rep); assert rep['added'] == 3
+        rep, q = await importing([f('bankB_aug-sep.xlsx')]); print('IMPORT B', q['acctName'], rep); assert rep['added'] == 3 and q['created'] and q['acctName'] == 'Current account ••5566', 'another account: a new one'
+        rep, q = await importing([f('card_aug.pdf')], kind='credit_card'); print('IMPORT CARD', q['acctName'], rep); assert rep['added'] == 3 and q['acctName'] == 'Credit card ••7788'
+        assert await ev("window.__FIN.prefs().accounts.find(a => a.name === 'Credit card ••7788').kind") == 'credit_card'
         # 5. categories
         cats = await ev("Object.fromEntries(window.__FIN.tx().map(t => [t.ref || t.desc, t.cat]))")
         print('CATS', cats)
@@ -114,7 +118,7 @@ async def main():
 
         # 8. a filter changes every number together
         k0 = await ev("document.querySelector('.fin-kpi').textContent")
-        acctA = await ev("window.__FIN.prefs().accounts.find(a => a.name === 'Bank A current').id")
+        acctA = await acc('Bank of Test current account ••3004')
         await pg.select_option('[data-chg="fin-f"][data-k="acct"]', acctA); await pg.wait_for_timeout(300)
         exA = await ev("window.__FIN.an().totals.exp"); print('BANK A EXPENSES', exA)
         assert exA == 10560 - 5000 - 300 - 150 - 400, 'card and bank B left out'
@@ -162,21 +166,19 @@ async def main():
         g2 = await ev("[...document.querySelectorAll('.fin-card li')].find(l => l.textContent.startsWith('Emergency fund:')).textContent")
         print('GOAL', g1, '|', g2); assert g1 != g2, 'a bigger goals share brings the goal closer'
 
-        # a line from another source that may be a repeat is held, not added; you decide
-        acctB = await ev("window.__FIN.prefs().accounts.find(a => a.name === 'Bank B current').id")
-        chips, rep = await importing([f('bankB_export.csv')], acct='Bank B current · EGP')
-        print('OTHER SOURCE', rep); assert rep['held'] == 1 and rep['added'] == 1, rep
-        await sec('import'); await pg.wait_for_timeout(200)
-        await pg.click('[data-act="fin-resolve"][data-how="same"]'); await pg.wait_for_timeout(300)
+        # an export from another source with other wording: the likely repeat is skipped (never counted twice) and listed
+        rep, q = await importing([f('bankB_export.csv')])
+        print('OTHER SOURCE', q['acctName'], q['why'], rep); assert q['acctName'] == 'Current account ••5566' and rep['probable'] == 1 and rep['added'] == 1 and rep['held'] == 0, rep
         assert await ev("window.__FIN.tx().filter(t => /uber/i.test(t.desc)).length") == 1, 'the Uber ride is still once'
-        # a photo needs Claude, and only when you ask
-        await pg.set_input_files('input[data-chg="fin-files"]', [f('statement_photo.png')]); await pg.wait_for_selector('[data-act="fin-read-ai"]')
+        await sec('import'); await pg.wait_for_timeout(200)
+        assert 'Skipped as probable repeats (1)' in await pg.text_content('#main')
+        await pg.click('[data-act="fin-resolve"][data-how="same"]'); await pg.wait_for_timeout(300)
+        assert 'Skipped as probable repeats' not in await pg.text_content('#main'), 'confirmed: gone from the list'
+        # a photo: Claude reads it by itself, and it goes to the right account by its number
+        rep, q = await importing([f('statement_photo.png')])
         stmt = "window.__prompts.filter(p => /^You are reading a bank or credit-card statement/.test(p.prompt))"
-        assert await ev(stmt + ".length") == 0, 'nothing about the statement is sent before you press the button'
-        await pg.click('[data-act="fin-read-ai"]'); await pg.wait_for_selector('[data-act="fin-commit"]', timeout=10000)
         assert await ev(stmt + ".length") == 1 and await ev(stmt + "[0].images") == 1, 'one request, with the photo'
-        await pg.select_option('[data-chg="fin-imp-acct"]', label='Bank B current · EGP'); await pg.wait_for_timeout(200)
-        await pg.click('[data-act="fin-commit"]'); await pg.wait_for_selector('.fin-report')
+        print('PHOTO', q['acctName'], rep); assert q['acctName'] == 'Current account ••5566' and rep['added'] == 1
         ai = await ev("window.__FIN.tx().find(t => /SEOUDI/.test(t.desc))"); assert ai and ai['review'] and 'read_by_claude' in ai['flags'], 'read by Claude: flagged to check'
 
         # 14. missing data, other currencies, accounts without balances

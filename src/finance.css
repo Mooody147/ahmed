@@ -141,3 +141,13 @@ tr.fin-short td { background: color-mix(in srgb, var(--crit-soft) 55%, transpare
   .fin-form .grid2 { grid-template-columns: minmax(0, 1fr); }
 }
 html.phone-mode .fin { padding-bottom: 90px; }
+/* adding statements */
+.fin-kinds { display: flex; flex-wrap: wrap; gap: 6px; }
+.fin-kinds button { border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 12px; padding: 10px 14px; font: inherit; font-weight: 600; cursor: pointer; }
+.fin-kinds button:hover { border-color: var(--accent); }
+.fin-kinds button[aria-checked="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.fin-queue { display: grid; gap: 8px; }
+.fin-q { display: grid; gap: 6px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; }
+.fin-q-h { display: flex; justify-content: space-between; gap: 10px; overflow-wrap: anywhere; }
+.fin-q.error, .fin-q.needs-ai { border-color: var(--crit); background: color-mix(in srgb, var(--crit-soft) 40%, transparent); }
+.fin-q.done { border-color: color-mix(in srgb, var(--ok) 45%, var(--line)); }

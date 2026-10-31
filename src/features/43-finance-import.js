@@ -1,8 +1,10 @@
-/* ---------- Money: importing statements (CSV, Excel, PDF, photos) — reviewed before anything is saved ---------- */
-// CSV, Excel and PDFs with text are read on this device. Photos and scanned PDFs can only be read by Claude: that
-// sends the page images (or the PDF's text) to Claude, so it runs only when you press "Read with Claude" for
-// that file. Claude copies what is printed; the same rules as for any statement then check it (dates, amounts,
-// running balance), so a misread number shows up as a balance that does not add up.
+/* ---------- Money: importing statements (CSV, Excel, PDF, photos) ---------- */
+// You say only what kind of account the statements come from. The rest is worked out: the bank, the account (by its
+// number, and by whether the lines and the running balance continue an account already here), the currency, the
+// period, the columns, the categories, and which lines are already recorded. CSV, Excel and PDFs with text are read
+// on this device; photos and scanned PDFs are read by Claude (Settings can ask first instead). Claude copies what is
+// printed; the same checks as for any statement then apply, so a misread number shows up as a balance that does not
+// add up. Lines that might be repeats are skipped (never counted twice) and listed with one click to add them.
 const FIN_EXT = { csv: 'sheet', txt: 'sheet', tsv: 'sheet', xlsx: 'sheet', xls: 'sheet', xlsm: 'sheet', ods: 'sheet', pdf: 'pdf', png: 'image', jpg: 'image', jpeg: 'image', webp: 'image', gif: 'image' };
 async function finHash(bytes) { try { const d = await crypto.subtle.digest('SHA-256', bytes); return [...new Uint8Array(d)].map(b => b.toString(16).padStart(2, '0')).join(''); } catch { return ''; } }
 function finGuessAcct(meta, fileName) {
@@ -39,6 +41,46 @@ async function finReadFile(f) {
   if (!it.rows.length && it.kind === 'pdf') { it.state = 'needs-ai'; it.why = 'No transaction lines were recognised in this PDF’s text.'; }
   return it;
 }
+// which account a statement belongs to: its number decides; otherwise the bank, and whether its lines are
+// already recorded there or its opening balance continues that account; otherwise a new account
+function finPickAcct(it, kind) {
+  const p = finP(), meta = it.meta0 || {}, head = [it.name, it.text ? it.text.slice(0, 3000) : '', it.grid ? it.grid.slice(0, 12).map(r => r.join(' ')).join(' ') : '', meta.account || ''].join(' \n ');
+  kind = kind || (FIN.looksLikeCard(head) || /card|visa|master/i.test(it.name) ? 'credit_card' : 'current');
+  const bank = FIN.detectBank(head) || FIN.detectBank(it.name), num = FIN.last4(meta.account), cur = meta.currency || '';
+  // a first reading with this kind of account, to compare its lines
+  it.acct = ''; it.newAcct = { kind, currency: cur || p.base, bank, name: '' }; finParse(it);
+  const scored = p.accounts.map(a => {
+    let sc = 0; const why = [];
+    if (num && a.number) { if (FIN.last4(a.number) === num) { sc += 10; why.push('same account number'); } else sc -= 100; }
+    if (a.kind !== kind) sc -= 3;
+    if (cur && a.currency && a.currency !== cur) sc -= 100;
+    if (bank && a.bank) { if (FIN.norm(a.bank) === FIN.norm(bank)) { sc += 3; why.push('same bank'); } else sc -= 5; }
+    const own = finTx().filter(t => t.acct === a.id && FIN.validDate(t.date)), ds = own.map(t => t.date).sort();
+    if (ds.length) {
+      const inRange = it.rows.filter(r => r.date && r.amount !== null && r.date >= ds[0] && r.date <= ds[ds.length - 1]);
+      if (inRange.length) {
+        const m = FIN.matchImport(inRange.map(r => ({ ...r, flags: r.flags.slice() })), own, a.id), hit = m.filter(r => r.act === 'dup' || r.act === 'update').length + 0.5 * m.filter(r => r.act === 'review').length;
+        if (hit / inRange.length >= 0.5) { sc += 6; why.push('its lines are already recorded there'); } else if (inRange.length >= 3 && hit / inRange.length <= 0.1) sc -= 8;
+      }
+      // the opening balance continues the account's last balance before this period
+      const first = it.rows.find(r => r.date && typeof r.balance === 'number' && typeof r.amount === 'number');
+      const before = own.filter(t => typeof t.balance === 'number' && first && t.date <= first.date).sort((x, y) => x.date.localeCompare(y.date)).pop();
+      if (first && before && Math.abs(FIN.r2(first.balance - first.amount) - before.balance) < 0.005) { sc += 4; why.push('its balance carries on from there'); }
+    }
+    return { a, sc, why };
+  }).sort((x, y) => y.sc - x.sc);
+  const same = scored.filter(x => x.a.kind === kind && (!cur || x.a.currency === cur));
+  if (same.length === 1 && scored[0].a === same[0].a && scored[0].sc >= 0 && !num && !bank) scored[0].sc += 2;
+  const best = scored[0];
+  if (best && best.sc >= 2) { it.acct = best.a.id; it.newAcct = null; it.acctWhy = best.why.join(', ') || 'the only account of this kind'; }
+  else {
+    const label = { current: 'current account', savings: 'savings account', credit_card: 'credit card', investment: 'investment account', loan: 'loan', cash: 'cash' }[kind] || 'account';
+    let name = `${bank ? bank + ' ' : ''}${label}${num ? ' ••' + num : ''}`; name = name[0].toUpperCase() + name.slice(1);
+    let n = 2, base0 = name; while (p.accounts.some(a => a.name === name)) name = `${base0} ${n++}`;
+    it.newAcct = { name, bank, kind, currency: cur || p.base }; it.acctWhy = 'new account';
+  }
+  finParse(it);
+}
 // read (again) with the chosen account and column mapping, then match against the ledger
 function finParse(it) {
   const a = finAcct(it.acct) || (it.newAcct ? { kind: it.newAcct.kind, currency: it.newAcct.currency } : {});
@@ -69,9 +111,9 @@ const FIN_AI_PROMPT = `You are reading a bank or credit-card statement. Copy ONL
 Return JSON: {"account": account number as printed or null, "currency": 3-letter code or null, "periodFrom": date as printed or null, "periodTo": date as printed or null, "opening": opening balance as printed or null, "closing": closing balance as printed or null,
 "rows": [{"date": "as printed", "description": "as printed", "debit": "as printed or null", "credit": "as printed or null", "amount": "as printed or null (only when the statement has a single amount column)", "balance": "as printed or null", "ref": "as printed or null", "unclear": true or false}]}
 Rules: one entry per transaction line, in printed order; keep numbers exactly as printed (with their commas, minus signs, brackets, CR/DR); if any part of a line cannot be read with certainty, put null for that part and set "unclear": true; do not list opening/closing/total lines as rows; do not translate. Reply with the JSON only.`;
-async function finReadAI(it) {
+async function finReadAI(it, auto) {
   if (!St.sample) { toast('Reading by Claude is not available in this view.', { err: true }); return; }
-  it.busy = true; render();
+  it.busy = true; if (!auto) render();
   try {
     let res;
     if (it.kind === 'pdf' && it.text && it.text.replace(/\[Page \d+\]|\(no text layer on this page\)|\s/g, '').length > 80) {
@@ -90,24 +132,25 @@ async function finReadAI(it) {
     const pn = v => { const n = FIN.parseNum(v ?? ''); return n ? n.n : null; };
     it.ai = { grid, unclear: rows.map(x => !!x.unclear), meta: { account: res.account || '', currency: /^[A-Z]{3}$/.test(res.currency || '') ? res.currency : '', opening: pn(res.opening), closing: pn(res.closing), periodText: res.periodFrom && res.periodTo ? [res.periodFrom, res.periodTo] : null } };
     it.meta0 = it.ai.meta; it.method = 'claude'; it.state = 'ready';
-    if (!it.acct) it.acct = finGuessAcct(it.ai.meta, it.name);
-    finParse(it);
+    if (!auto) { if (!it.acct) it.acct = finGuessAcct(it.ai.meta, it.name); finParse(it); }
   } catch (e) { toast('Claude could not read it: ' + (e.message || e.code || e), { err: true }); }
-  it.busy = false; render();
+  it.busy = false; if (!auto) render();
 }
 
 /* --- saving what the review decided --- */
 const FIN_ROW_LABEL = { new: 'New', dup: 'Already recorded', update: 'Update', review: 'Check', incomplete: 'Incomplete' };
 const FIN_FLAG = { no_date: 'no readable date', no_year: 'date without a year', no_amount: 'no readable amount', direction_unknown: 'in or out not shown', balance_mismatch: 'running balance does not add up', no_description: 'no description', both_sides: 'debit and credit both filled', read_by_claude: 'read by Claude', unclear: 'Claude was unsure' };
+// without a review, a line that might be a repeat is skipped (listed, one click adds it): never counted twice
 function finRowDecision(it, i) {
   const r = it.rows[i], d = it.decide[i];
+  if (it.auto && r.act === 'review') return 'auto-same';
   if (r.act === 'new') return it.keep[i] === false ? 'skip' : 'new';
   if (r.act === 'incomplete') return it.keep[i] === false ? 'skip' : 'incomplete';
   if (r.act === 'update') return it.keep[i] === false ? 'same' : 'update';
   if (r.act === 'review') return d || 'hold';
   return 'same';
 }
-function finCommit(it) {
+function finCommit(it, auto) {
   const p = finP();
   let acct = it.acct;
   if (!acct) {
@@ -131,7 +174,7 @@ function finCommit(it) {
     if (d === 'skip') { userSkipped.push({ r: r.r, raw: r.raw, why: 'left out by you in the review' }); return; }
     if (d === 'new') { add.push(mkNew(r, i)); return; }
     if (d === 'incomplete') { add.push(mkNew(r, i, true)); return; }
-    if (d === 'hold') { pending.push({ i, r: r.r, raw: r.raw, date: r.date, desc: r.desc, amount: r.amount, balance: r.balance, ref: r.ref, currency: r.currency, match: r.match, why: r.why, conflicts: r.conflicts, flags: r.flags }); return; }
+    if (d === 'hold' || d === 'auto-same') { pending.push({ i, r: r.r, raw: r.raw, date: r.date, desc: r.desc, amount: r.amount, balance: r.balance, ref: r.ref, currency: r.currency, match: r.match, why: r.why, conflicts: r.conflicts, flags: r.flags, ...(d === 'auto-same' ? { done: 'auto-same', at } : {}) }); return; }
     const t = r.match && touch(r.match); if (!t) return;
     if (d === 'update') {
       for (const c of [...(r.changes || []), ...(r.conflicts || [])]) {
@@ -151,22 +194,24 @@ function finCommit(it) {
     const A = add.find(t => t.id === pr.a) || touch(pr.a), B = add.find(t => t.id === pr.b) || touch(pr.b); if (!A || !B) continue;
     for (const [x, y] of [[A, B], [B, A]]) { if (x.catSrc === 'manual' || (finCat(x.cat) || {}).kind === 'third') continue; if (x.cat !== FIN.CODE_CAT[pr.code]) finHist(x, 'cat', x.cat, FIN.CODE_CAT[pr.code], 'other side found in ' + ((finAcct(y.acct) || {}).name || 'another account')); x.cat = FIN.CODE_CAT[pr.code]; x.catSrc = 'pair'; x.pair = y.id; x.review = false; }
   }
-  const counts = { reviewed: it.rows.length, added: add.filter(t => FIN.validDate(t.date) && typeof t.amount === 'number').length, dup: it.rows.filter((r, i) => finRowDecision(it, i) === 'same').length, updated: it.rows.filter((r, i) => finRowDecision(it, i) === 'update').length, held: pending.length, incomplete: add.filter(t => !FIN.validDate(t.date) || typeof t.amount !== 'number').length, skippedByYou: userSkipped.length, notTransactions: (it.skipped || []).length };
+  const counts = { reviewed: it.rows.length, added: add.filter(t => FIN.validDate(t.date) && typeof t.amount === 'number').length, dup: it.rows.filter((r, i) => finRowDecision(it, i) === 'same').length, updated: it.rows.filter((r, i) => finRowDecision(it, i) === 'update').length, held: pending.filter(x => !x.done).length, probable: pending.filter(x => x.done === 'auto-same').length, incomplete: add.filter(t => !FIN.validDate(t.date) || typeof t.amount !== 'number').length, skippedByYou: userSkipped.length, notTransactions: (it.skipped || []).length };
   finWrite([...add, ...[...ch.values()].map(t => ({ ...t, updatedAt: at }))]);
   const batch = { id: bid, file: it.name, size: it.size, hash: it.hash, kind: it.kind, method: it.method, acct, from: it.period.from, to: it.period.to, opening: it.check.opening, closing: it.check.closing, diff: it.check.diff, mismatches: it.check.mismatches, counts, at, sheet: it.sheet || '',
     // every line and what happened to it, so a skipped repeat is as traceable as an added one
     lines: it.rows.slice(0, 3000).map((r, i) => { const d = finRowDecision(it, i), t = add.find(x => x.src && x.src.r === r.r); return { r: r.r, act: d, id: t ? t.id : r.match || null }; }), skipped: [...(it.skipped || []), ...userSkipped].slice(0, 500), pending, seenBefore: (it.seen || []).map(b => b.id) };
   colPut('finbatch', batch);
   finLog('import', { batch: bid, file: it.name, counts });
-  UI.fin.report = { file: it.name, counts, acct };
+  UI.fin.report = auto ? null : { file: it.name, counts, acct };
   // keep the original statement with its import (private to you while this page is private)
   if (p.keepOriginals && St.assets && typeof afStore === 'function') afStore(it.name, it.bytes).then(r => { const b = St.cols.finbatch.get(bid); if (b) colPut('finbatch', { ...b, asset: r.id, wrapped: r.wrapped }); }).catch(e => { const b = St.cols.finbatch.get(bid); if (b) colPut('finbatch', { ...b, assetError: e && e.code === 'too_large' ? 'over 20 MB' : 'could not be stored' }); });
-  UI.fin.imp.files.splice(UI.fin.imp.cur, 1); UI.fin.imp.cur = 0;
+  if (!auto) { UI.fin.imp.files.splice(UI.fin.imp.cur, 1); UI.fin.imp.cur = 0; }
   render();
+  return { batch: bid, counts, acct };
 }
 // a line held for review: decide later
 function finResolve(bid, idx, how) {
-  const b = clone(St.cols.finbatch.get(bid)); if (!b) return; const pr = b.pending[idx]; if (!pr || pr.done) return;
+  const b = clone(St.cols.finbatch.get(bid)); if (!b) return; const pr = b.pending[idx]; if (!pr || (pr.done && pr.done !== 'auto-same')) return;
+  if (pr.done === 'auto-same') { b.counts.probable = Math.max(0, (b.counts.probable || 0) - 1); if (how === 'same') { b.pending[idx] = { ...pr, done: 'same', at: nowISO() }; b.counts.dup++; colPut('finbatch', b); render(); return; } }
   const at = nowISO(), r = { ...pr, raw: pr.raw }, src = { b: bid, f: b.file, r: pr.r, raw: pr.raw, h: b.hash };
   if (how === 'new') {
     const p = finP(), c = FIN.classify({ desc: pr.desc, amount: pr.amount || 0 }, { rules: p.rules, cats: finCats(), parties: p.parties, holdings: p.holdings });
@@ -197,21 +242,46 @@ FIN_VIEW.import = () => {
   const I0 = UI.fin.imp = UI.fin.imp || { files: [], cur: 0 }, it = I0.files[I0.cur], rep = UI.fin.report;
   const batches = colList('finbatch').sort((a, b) => b.at.localeCompare(a.at));
   const pend = batches.flatMap(b => (b.pending || []).map((x, i) => ({ b, x, i })).filter(o => !o.x.done));
+  const prob = batches.filter(b => !b.undone).flatMap(b => (b.pending || []).map((x, i) => ({ b, x, i })).filter(o => o.x.done === 'auto-same'));
+  const kind = UI.fin.kind || 'current', Q = UI.fin.queue || [];
   return `${rep ? `<div class="callout fin-report"><b>Imported ${esc(rep.file)}</b><div class="fin-chips">${finChip('Lines reviewed', rep.counts.reviewed)}${finChip('Added', rep.counts.added, 'ok')}${finChip('Already recorded — skipped', rep.counts.dup)}${finChip('Updated with corrections', rep.counts.updated)}${finChip('Held for your decision', rep.counts.held, rep.counts.held ? 'warn' : '')}${finChip('Kept as incomplete', rep.counts.incomplete, rep.counts.incomplete ? 'warn' : '')}${rep.counts.skippedByYou ? finChip('Left out by you', rep.counts.skippedByYou) : ''}</div><button class="icon-btn" data-act="fin-report-x" aria-label="Close">${I.x}</button></div>` : ''}
-  ${it ? finReviewHTML(it, I0) : `<section class="card fin-card fin-drop">
-    <h2>Import bank and card statements</h2>
-    <p class="small muted">CSV, Excel and PDF statements with text are read on this device. Each line is compared with what is already recorded: a statement imported twice, or a longer one that repeats earlier months, adds only the transactions that are new. You see every line before anything is saved.</p>
-    <label class="btn primary">Choose statement files<input type="file" multiple accept=".csv,.txt,.tsv,.xlsx,.xls,.xlsm,.ods,.pdf,.png,.jpg,.jpeg,.webp" data-chg="fin-files" hidden></label>
-    <button class="btn ghost" data-act="fin-new-tx">Or add a transaction by hand</button>
-  </section>`}
+  ${it ? finReviewHTML(it, I0) : ''}
+  <section class="card fin-card fin-drop">
+    <h2>Add statements</h2>
+    <p class="small">Say what kind of account they come from, then add the files — that is all. The bank, the account, the currency, the period, the columns, the categories and the lines already recorded are worked out for you, and everything is saved straight away.</p>
+    <div class="fin-kinds" role="radiogroup" aria-label="Kind of account">${FIN_AKINDS.filter(([k]) => k !== 'cash').map(([k, l]) => `<button role="radio" aria-checked="${kind === k}" data-act="fin-kind" data-k="${k}">${{ current: '🏦', savings: '💰', credit_card: '💳', investment: '📈', loan: '🧾' }[k]} ${l}</button>`).join('')}</div>
+    <div class="row"><label class="btn primary">Add ${esc((FIN_AKINDS.find(x => x[0] === kind) || [, 'statement'])[1].toLowerCase())} statements<input type="file" multiple accept=".csv,.txt,.tsv,.xlsx,.xls,.xlsm,.ods,.pdf,.png,.jpg,.jpeg,.webp" data-chg="fin-files" hidden></label><span class="small muted">or drop them anywhere on this page · CSV, Excel, PDF or photos</span></div>
+  </section>
+  ${Q.length ? `<section class="card fin-card"><div class="row"><h2>Just added</h2><span class="spacer"></span><button class="btn sm ghost" data-act="fin-queue-x">Clear</button></div><div class="fin-queue">${Q.map(q => finQueueHTML(q)).join('')}</div></section>` : ''}
   ${pend.length ? `<section class="card fin-card"><h2>Held for your decision (${pend.length})</h2><p class="small muted">These lines might already be recorded. Nothing is added until you choose.</p>
     <div class="tbl-wrap"><table class="tbl"><thead><tr><th>Statement</th><th>Line</th><th>Date</th><th>Description</th><th class="num">Amount</th><th>Why</th><th>Recorded one</th><th></th></tr></thead><tbody>${pend.map(({ b, x, i }) => { const m = x.match && FS.by.get(x.match); return `<tr><td class="small">${esc(b.file)}</td><td>${x.r}</td><td class="nowrap">${fday(x.date)}</td><td>${esc(x.desc)}</td><td class="num">${fmc(x.amount)}</td><td class="small">${esc(x.why)}</td><td class="small">${m ? `<button class="linkish" data-act="fin-edit" data-id="${esc(m.id)}">${fday(m.date)} · ${esc(FIN.cleanDesc(m.desc))} · ${fm(m.amount)}</button>` : '—'}</td>
       <td class="nowrap"><button class="btn sm" data-act="fin-resolve" data-b="${esc(b.id)}" data-i="${i}" data-how="same">Same one — skip</button>${(x.conflicts || []).length ? `<button class="btn sm" data-act="fin-resolve" data-b="${esc(b.id)}" data-i="${i}" data-how="update">Correct the recorded one</button>` : ''}<button class="btn sm" data-act="fin-resolve" data-b="${esc(b.id)}" data-i="${i}" data-how="new">A separate transaction</button></td></tr>`; }).join('')}</tbody></table></div></section>` : ''}
+  ${prob.length ? `<section class="card fin-card"><h2>Skipped as probable repeats (${prob.length})</h2><p class="small muted">These lines look like transactions already recorded (same amount and date, or the same reference), so they were not counted again. If one is really a separate transaction, add it.</p>
+    <div class="tbl-wrap"><table class="tbl"><thead><tr><th>Statement</th><th>Date</th><th>Description</th><th class="num">Amount</th><th>Already recorded</th><th></th></tr></thead><tbody>${prob.map(({ b, x, i }) => { const m = x.match && FS.by.get(x.match); return `<tr><td class="small">${esc(b.file)} · line ${x.r}</td><td class="nowrap">${fday(x.date)}</td><td>${esc(x.desc)}<br><small class="muted">${esc(x.why)}</small></td><td class="num">${fmc(x.amount)}</td><td class="small">${m ? `<button class="linkish" data-act="fin-edit" data-id="${esc(m.id)}">${fday(m.date)} · ${esc(FIN.cleanDesc(m.desc))} · ${fm(m.amount)}</button>` : '—'}</td>
+      <td class="nowrap"><button class="btn sm" data-act="fin-resolve" data-b="${esc(b.id)}" data-i="${i}" data-how="new">Add it</button><button class="btn sm ghost" data-act="fin-resolve" data-b="${esc(b.id)}" data-i="${i}" data-how="same">Yes, a repeat</button></td></tr>`; }).join('')}</tbody></table></div></section>` : ''}
   <section class="card fin-card"><h2>Imported statements</h2>${batches.length ? `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Imported</th><th>File</th><th>Account</th><th>Period</th><th class="num">Lines</th><th class="num">Added</th><th class="num">Skipped</th><th class="num">Updated</th><th class="num">Held</th><th>Statement check</th><th></th></tr></thead><tbody>
     ${batches.map(b => `<tr class="${b.undone ? 'muted' : ''}"><td class="nowrap small">${fmtDateTime(b.at)}</td><td>${esc(b.file)}${b.method === 'claude' ? ' <span class="fin-tag">read by Claude</span>' : ''}${b.seenBefore && b.seenBefore.length ? ' <span class="fin-tag">same file as before</span>' : ''}</td><td>${esc((finAcct(b.acct) || {}).name || '')}</td><td class="nowrap small">${fday(b.from)} – ${fday(b.to)}</td>
-      <td class="num">${b.counts.reviewed}</td><td class="num">${b.counts.added}</td><td class="num">${b.counts.dup}</td><td class="num">${b.counts.updated}</td><td class="num">${b.counts.held || 0}</td>
+      <td class="num">${b.counts.reviewed}</td><td class="num">${b.counts.added}</td><td class="num">${b.counts.dup + (b.counts.probable || 0)}</td><td class="num">${b.counts.updated}</td><td class="num">${b.counts.held || 0}</td>
       <td class="small">${typeof b.diff === 'number' ? (Math.abs(b.diff) < 0.005 ? '✓ opening + lines = closing' : `⚠️ off by ${fm(b.diff)}`) : 'no opening/closing printed'}${b.mismatches ? ` · ${b.mismatches} balance mismatch${b.mismatches === 1 ? '' : 'es'}` : ''}</td>
-      <td class="nowrap">${b.asset ? `<a class="btn sm ghost" href="${esc(typeof afUrl === 'function' ? afUrl(b.asset) : '')}" target="_blank" rel="noopener" ${b.wrapped ? `data-act="fin-orig" data-b="${esc(b.id)}"` : ''}>Original</a>` : ''}${b.undone ? 'undone' : `<button class="btn sm ghost" data-act="fin-undo-import" data-b="${esc(b.id)}">Undo</button>`}</td></tr>`).join('')}</tbody></table></div>` : '<p class="muted small">None yet.</p>'}</section>`;
+      <td class="nowrap">${b.asset ? `<a class="btn sm ghost" href="${esc(typeof afUrl === 'function' ? afUrl(b.asset) : '')}" target="_blank" rel="noopener" ${b.wrapped ? `data-act="fin-orig" data-b="${esc(b.id)}"` : ''}>Original</a>` : ''}<button class="btn sm ghost" data-act="fin-batch" data-b="${esc(b.id)}">Lines</button>${b.undone ? 'undone' : `<button class="btn sm ghost" data-act="fin-undo-import" data-b="${esc(b.id)}">Undo</button>`}</td></tr>`).join('')}</tbody></table></div>` : '<p class="muted small">None yet.</p>'}</section>`;
+};
+function finQueueHTML(q) {
+  const a = q.acct && finAcct(q.acct), c = q.counts;
+  const st = { reading: '⏳ Reading…', claude: '⏳ Claude is reading the pages…', done: '✓', error: '⚠️', 'needs-ai': '⚠️', review: '👀 Waiting for your check above' }[q.state] || '';
+  return `<div class="fin-q ${q.state}"><div class="fin-q-h"><b>${esc(q.name)}</b><span>${st}</span></div>
+    ${q.state === 'done' ? `<div class="small">${q.created ? 'New account' : 'Account'}: <b>${esc(a ? a.name : '')}</b>${a ? ` · ${esc(a.currency)}` : ''}${q.why && !q.created ? ` <span class="muted">(${esc(q.why)})</span>` : ''}${q.method === 'claude' ? ' · <span class="fin-tag">read by Claude</span>' : ''}</div>
+      <div class="fin-chips">${finChip('lines', c.reviewed)}${finChip('added', c.added, 'ok')}${finChip('already recorded — skipped', c.dup)}${c.updated ? finChip('updated', c.updated) : ''}${c.probable ? finChip('probable repeats — skipped', c.probable, 'warn') : ''}${c.incomplete ? finChip('unreadable — kept, not counted', c.incomplete, 'warn') : ''}</div>
+      ${q.check && typeof q.check.diff === 'number' && Math.abs(q.check.diff) >= 0.005 ? `<div class="small fin-neg">The statement’s opening balance and lines do not add up to its closing balance (off by ${fm(q.check.diff)}): a line may be missing from the file.</div>` : ''}
+      <div class="row"><button class="btn sm ghost" data-act="fin-batch" data-b="${esc(q.batch)}">Every line</button><button class="btn sm ghost" data-act="fin-undo-import" data-b="${esc(q.batch)}">Undo</button></div>` : q.msg ? `<div class="small">${esc(q.msg)}</div>` : ''}</div>`;
+}
+// one import, line by line: what each line became
+DRAWER_FN.finbatch = dr => {
+  const b = St.cols.finbatch.get(dr.id); if (!b) return null;
+  const L = { new: 'added', incomplete: 'kept as unreadable', same: 'already recorded — skipped', update: 'updated the recorded one', 'auto-same': 'probable repeat — skipped', hold: 'held', skip: 'left out' };
+  return `<div class="drawer-h"><h2>${esc(b.file)}</h2><button class="icon-btn" data-act="close-drawer" aria-label="Close">${I.x}</button></div>
+    <div class="drawer-b"><p class="small muted">${fmtDateTime(b.at)} · ${esc((finAcct(b.acct) || {}).name || '')} · ${fday(b.from)} – ${fday(b.to)}</p>
+    <div class="fin-mini">${(b.lines || []).map(l => { const t = l.id && FS.by.get(l.id); return `<button class="fin-mini-r" ${t ? `data-act="fin-edit" data-id="${esc(t.id)}"` : 'disabled'}><span class="muted small">line ${l.r}</span><span>${t ? esc(FIN.cleanDesc(t.desc || '')) : '—'}<small class="muted"> · ${esc(L[l.act] || l.act)}</small></span>${t && typeof t.amount === 'number' ? fmc(t.amount, t.currency) : ''}</button>`; }).join('')}</div>
+    ${(b.skipped || []).length ? `<details class="small"><summary>${b.skipped.length} line${b.skipped.length === 1 ? '' : 's'} that are not transactions</summary><ul>${b.skipped.map(x => `<li>line ${x.r}: <span class="mono">${esc(x.raw)}</span> — ${esc(x.why)}</li>`).join('')}</ul></details>` : ''}</div>`;
 };
 const finChip = (l, n, cls = '') => `<span class="fin-chip ${cls}"><b class="num">${n}</b> ${esc(l)}</span>`;
 function finReviewHTML(it, I0) {
@@ -260,12 +330,40 @@ function finReviewRow(it, r, i) {
 }
 const FIN_AKINDS = [['current', 'Current account'], ['savings', 'Savings account'], ['credit_card', 'Credit card'], ['cash', 'Cash'], ['investment', 'Investment account'], ['loan', 'Loan']];
 
+// add statements without any question: read, choose the account, match, save — one file after another
+async function finAuto(files, kind) {
+  const p0 = finP();
+  if (!p0.holdings.length && !p0.parties.length && !p0.templateAdded && typeof finTemplate === 'function') {
+    const t = finTemplate(); finSave(p => { p.parties = t.parties; p.holdings = t.holdings; p.templateAdded = true; }); toast('Added the people and holdings you described (Ahmed, the certificate, the deposits, the offices) — marked “not verified”.');
+  }
+  UI.fin.queue = UI.fin.queue || [];
+  for (const f of files) {
+    const q = { id: E.uid('q'), name: f.name, state: 'reading' }; UI.fin.queue.unshift(q); render();
+    try {
+      const it = await finReadFile(f);
+      if (it.state === 'needs-ai') {
+        if (finP().autoAI === false || !St.sample) { q.state = 'needs-ai'; q.msg = it.why; UI.fin.imp = UI.fin.imp || { files: [], cur: 0 }; UI.fin.imp.files.push(it); render(); continue; }
+        q.state = 'claude'; render(); await finReadAI(it, true);
+        if (it.state !== 'ready') { q.state = 'error'; q.msg = 'Claude could not read it.'; render(); continue; }
+      }
+      if (it.state === 'error') { q.state = 'error'; q.msg = it.err; render(); continue; }
+      finPickAcct(it, kind);
+      if (!it.rows.length) { q.state = 'error'; q.msg = 'No transaction lines were found in this file.'; render(); continue; }
+      it.auto = true;
+      if (finP().reviewFirst) { UI.fin.imp = UI.fin.imp || { files: [], cur: 0 }; it.auto = false; UI.fin.imp.files.push(it); q.state = 'review'; render(); continue; }
+      if (!it.acct) { const n = it.newAcct; const id = E.uid('ac'); finSave(pp => { pp.accounts.push({ id, name: n.name, bank: n.bank || '', kind: n.kind, currency: n.currency, number: (it.meta.account || '').slice(-14), owner: 'me', holder: 'me', createdAt: nowISO() }); }); it.acct = id; it.newAcct = null; q.created = true; finParse(it); it.auto = true; }
+      const r = finCommit(it, true);
+      Object.assign(q, { state: 'done', counts: r.counts, acct: r.acct, batch: r.batch, why: it.acctWhy, method: it.method, check: it.check });
+    } catch (e) { q.state = 'error'; q.msg = 'Could not import it: ' + (e.message || e); }
+    render();
+  }
+}
 async function finAddFiles(list) {
   const I0 = UI.fin.imp = UI.fin.imp || { files: [], cur: 0 }; UI.fin.report = null;
   for (const f of list) { const it = await finReadFile(f); I0.files.push(it); render(); }
 }
 Object.assign(CHG, {
-  'fin-files': el => { const fs = [...(el.files || [])]; el.value = ''; if (fs.length) finAddFiles(fs).catch(e => toast('Could not read: ' + (e.message || e), { err: true })); },
+  'fin-files': el => { const fs = [...(el.files || [])]; el.value = ''; if (fs.length) finAuto(fs, UI.fin.kind || 'current').catch(e => toast('Could not read: ' + (e.message || e), { err: true })); },
   'fin-imp-acct': el => { const it = UI.fin.imp.files[UI.fin.imp.cur]; it.acct = el.value; if (!it.acct && !it.newAcct) it.newAcct = { name: '', bank: '', kind: /card|visa|master/i.test(it.name) ? 'credit_card' : 'current', currency: it.meta.currency || finP().base }; finParse(it); render(); },
   'fin-na': el => { const it = UI.fin.imp.files[UI.fin.imp.cur]; it.newAcct = { ...(it.newAcct || { name: '', bank: '', kind: 'current', currency: it.meta.currency || finP().base }), [el.dataset.k]: el.value }; if (el.dataset.k === 'kind') finParse(it); render(); },
   'fin-map': el => { const it = UI.fin.imp.files[UI.fin.imp.cur], k = el.dataset.k; if (k === 'order') it.det.order = el.value; else if (k === 'header') { it.det.header = Math.max(-1, +el.value - 1); it.det.headerCells = it.det.header >= 0 ? it.grid[it.det.header].map(String) : []; } else it.det.map[k] = +el.value; it.det.guessed = false; finParse(it); render(); },
@@ -279,10 +377,13 @@ Object.assign(ACT, {
   'fin-commit': () => finCommit(UI.fin.imp.files[UI.fin.imp.cur]),
   'fin-imp-cancel': () => { UI.fin.imp.files.splice(UI.fin.imp.cur, 1); UI.fin.imp.cur = 0; render(); },
   'fin-report-x': () => { UI.fin.report = null; render(); },
+  'fin-kind': el => { UI.fin.kind = el.dataset.k; render(); },
+  'fin-queue-x': () => { UI.fin.queue = []; render(); },
+  'fin-batch': el => openDrawer('finbatch', el.dataset.b),
   'fin-resolve': el => finResolve(el.dataset.b, +el.dataset.i, el.dataset.how),
   'fin-undo-import': el => finUndoImport(el.dataset.b),
   'fin-orig': async (el, e) => { e && e.preventDefault && e.preventDefault(); const b = St.cols.finbatch.get(el.dataset.b); if (!b) return; try { const bytes = await afBytes({ id: b.asset, wrapped: true }); offerFile(b.file, new Blob([bytes])); } catch { toast('The original could not be opened.', { err: true }); } },
 });
 // statements dropped anywhere on the Money tab go to the importer (the To-do importer keeps its own drop)
-document.addEventListener('drop', e => { if (UI.view !== 'finance' || !e.dataTransfer || !e.dataTransfer.files.length) return; e.preventDefault(); e.stopImmediatePropagation(); UI.fin.sec = 'import'; finAddFiles([...e.dataTransfer.files]); }, true);
+document.addEventListener('drop', e => { if (UI.view !== 'finance' || !e.dataTransfer || !e.dataTransfer.files.length) return; e.preventDefault(); e.stopImmediatePropagation(); UI.fin.sec = 'import'; finAuto([...e.dataTransfer.files], UI.fin.kind || 'current'); }, true);
 document.addEventListener('dragenter', e => { if (UI.view === 'finance') e.stopImmediatePropagation(); }, true);

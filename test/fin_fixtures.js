@@ -37,10 +37,10 @@ const Ax = A.map(r => r[2] === 'R104' ? [r[0], 'NETFLIX.COM SUBSCRIPTION', ...r.
 fs.writeFileSync(path.join(dir, 'bankA_aug-nov.csv'), csv([...head('01/08/2026 to 30/11/2026'), ...Ax, ...more, ['', 'Closing balance', '', '', '', '162,690.00']]));
 // Bank B as an Excel workbook
 const wb = XLSX.utils.book_new();
-XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['Account statement — A/C 5566'], [], ['Txn Date', 'Narration', 'Withdrawal', 'Deposit', 'Closing Balance'],
+XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['Account statement — A/C 7005566'], [], ['Txn Date', 'Narration', 'Withdrawal', 'Deposit', 'Closing Balance'],
   ['16/08/2026', 'INCOMING TRANSFER FROM A/C 1002003004', '', 10000, 10000], ['20/08/2026', 'UBER TRIP', 150, '', 9850], ['02/09/2026', 'VODAFONE BILL', 400, '', 9450]]), 'Statement');
 fs.writeFileSync(path.join(dir, 'bankB_aug-sep.xlsx'), XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' }));
-fs.writeFileSync(path.join(dir, 'bankB_export.csv'), csv([['Date', 'Details', 'Amount'], ['20/08/2026', 'Uber Ride Cairo', '-150.00'], ['25/08/2026', 'EL EZABY PHARMACY', '-220.00']]));
+fs.writeFileSync(path.join(dir, 'bankB_export.csv'), csv([['Account: 7005566'], ['Date', 'Details', 'Amount'], ['20/08/2026', 'Uber Ride Cairo', '-150.00'], ['25/08/2026', 'EL EZABY PHARMACY', '-220.00']]));
 (async () => {
   const doc = await PDFDocument.create(), font = await doc.embedFont(StandardFonts.Helvetica), pg = doc.addPage([595, 842]);
   const lines = ['Card statement   Card number: 4111 **** **** 7788   Currency EGP', 'Statement period from 01/08/2026 to 31/08/2026', 'Date   Description   Amount   Balance', 'Opening balance   0.00',

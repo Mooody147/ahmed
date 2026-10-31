@@ -208,7 +208,7 @@ const isTotalLine = s => /^(opening|closing|brought|carried|total|balance (b\/f|
 function statementMeta(lines) {
   const text = lines.join(' \n ');
   const cur = CURRENCIES.map(c => [c, (text.match(new RegExp('\\b' + c + '\\b', 'g')) || []).length]).sort((a, b) => b[1] - a[1])[0];
-  const acct = /(?:card (?:no\.?|number)|account|a\/c|acct|iban|رقم الحساب|رقم البطاقه|الحساب)\s*(?:no\.?|number|#|:)?\s*[:\-]?\s*([A-Z]{0,4}[\d\s*xX-]{6,})/i.exec(AR(text));
+  const acct = /(?:card (?:no\.?|number)|account|a\/c|acct|iban|رقم الحساب|رقم البطاقه|الحساب)\s*(?:no\.?|number|#|:)?\s*[:\-]?\s*([A-Z]{0,4}[\d*xX•][\d *xX•-]{4,}\d)/i.exec(AR(text));
   const per = /(?:from|period|من|الفتره)[^0-9]{0,20}(\d{1,4}[-/.]\d{1,2}[-/.]\d{1,4}|\d{1,2}\s+[A-Za-z؀-ۿ]{3,}\.?\s+\d{2,4})\s*(?:to|until|-|–|الى|إلى|حتى)\s*(\d{1,4}[-/.]\d{1,2}[-/.]\d{1,4}|\d{1,2}\s+[A-Za-z؀-ۿ]{3,}\.?\s+\d{2,4})/i.exec(AR(text));
   return { currency: cur && cur[1] ? cur[0] : '', account: acct ? acct[1].replace(/\s+/g, '').slice(-14) : '', periodText: per ? [per[1], per[2]] : null };
 }
@@ -380,6 +380,23 @@ function statementCheck(rows, meta) {
   if (typeof res.opening === 'number' && typeof res.closing === 'number') res.diff = r2(res.opening + sumAmt - res.closing);
   return res;
 }
+
+/* ---------- which bank, which account ---------- */
+const BANKS = [['CIB', /\bCIB\b|commercial international bank|البنك التجاري الدولي/i], ['NBE', /national bank of egypt|\bNBE\b|البنك الأهلي المصري|البنك الاهلي المصري/i], ['Banque Misr', /banque misr|bank misr|بنك مصر/i],
+  ['QNB', /\bQNB\b|بنك قطر الوطني/i], ['HSBC', /\bHSBC\b/i], ['ADIB', /\bADIB\b|abu dhabi islamic/i], ['AAIB', /\bAAIB\b|arab african international/i], ['Emirates NBD', /emirates nbd/i], ['Bank of Alexandria', /alex ?bank|bank of alexandria|بنك الإسكندرية|بنك الاسكندرية/i],
+  ['Banque du Caire', /banque du caire|bank of cairo|بنك القاهرة/i], ['FAB', /\bFAB\b|first abu dhabi/i], ['Mashreq', /mashreq/i], ['Crédit Agricole', /cr[ée]dit agricole/i], ['Attijariwafa', /attijari/i], ['Faisal Islamic Bank', /faisal islamic|بنك فيصل/i],
+  ['Al Baraka', /al ?baraka|بنك البركة/i], ['Suez Canal Bank', /suez canal bank|بنك قناة السويس/i], ['NBK', /national bank of kuwait|\bNBK\b/i], ['KFH', /\bKFH\b|kuwait finance house/i], ['SAIB', /\bSAIB\b/i], ['HDB', /housing (?:and|&) development bank/i],
+  ['ADCB', /\bADCB\b|abu dhabi commercial/i], ['Arab Bank', /\barab bank\b/i], ['Banque Saudi Fransi', /saudi fransi/i], ['Al Rajhi', /al ?rajhi/i], ['Emirates Islamic', /emirates islamic/i]];
+// the bank named in a statement's heading (or its file name); '' when it does not say
+function detectBank(text) {
+  const t = AR(text || '').slice(0, 4000);
+  for (const [name, re] of BANKS) if (re.test(t)) return name;
+  const m = /\b(Bank of [A-Z][A-Za-z]+(?: [A-Z][A-Za-z]+)?|[A-Z][A-Za-z&.]+(?: [A-Z][A-Za-z&.]+){0,2} Bank)\b/.exec(t);
+  return m ? m[1].replace(/\s+/g, ' ').trim() : '';
+}
+// a statement for a card or a bank account, from its own wording (used when the user does not say)
+const looksLikeCard = text => /credit card|card statement|minimum (?:payment|due)|credit limit|card number|بطاقة ائتمان|الحد الأدنى للسداد|الحد الائتماني/i.test(AR(text || '').slice(0, 6000));
+const last4 = s => String(s || '').replace(/\D/g, '').slice(-4);
 
 /* ---------- matching a statement against the ledger (importing twice never counts twice) ---------- */
 const cents = v => Math.round(v * 100);
@@ -913,7 +930,7 @@ function validateBackup(o) {
 }
 
 return { EPS, r2, norm, AR, CURRENCIES, validDate, dnum, addDays, spanDays, ym, addMonths, monthList, dim, monthEnd, parseDate, dateOrder, parseNum, cleanDesc, payeeKey,
-  DEFAULT_CATS, catMap, classify, learnRule, refundOf, pairMoves, CODE_CAT, detectGrid, rowsFromGrid, rowsFromText, chainBest, statementCheck, matchImport, importCounts, similar, overlaps, fp, quant, median, entries, analyze, series,
+  detectBank, looksLikeCard, last4, DEFAULT_CATS, catMap, classify, learnRule, refundOf, pairMoves, CODE_CAT, detectGrid, rowsFromGrid, rowsFromText, chainBest, statementCheck, matchImport, importCounts, similar, overlaps, fp, quant, median, entries, analyze, series,
   recurring, incomeBase, STRATEGY, budgetPlan, monthControl, unusual, SCEN, monthFactor, simulate, sensitivity, shiftDate, allocate, thirdParty, holdingReturns, propertyShare, rentForecast, cardOwed, position, monthsTo, forecast, goalPlan, reconcile, validateBackup };
 })();
 if (typeof module !== 'undefined') module.exports = FIN;

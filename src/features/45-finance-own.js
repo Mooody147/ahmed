@@ -145,7 +145,8 @@ FIN_VIEW.settings = () => {
     <ul class="small fin-list">
       <li><b>Where it is kept:</b> ${St.mode === 'db' ? 'in your Claude account, in a private area of this page that only you can read. People you share the page with cannot see it. It is there on any device where you open this page signed in.' : 'in this browser only (cloud saving is not available in this view). Export a backup regularly — clearing the browser deletes it.'}</li>
       <li><b>Limits:</b> each month of transactions is one stored record (up to about 180 KB, split when larger); the page can hold 25,000 records in total, shared with your tasks and emails. ${St.mode === 'db' ? '' : 'Browser storage is usually limited to about 5 MB.'}</li>
-      <li><b>Sent to Claude:</b> nothing, unless you press “Read with Claude” for a photo or a scanned statement — then that file’s pages (or text) are sent to read its lines. Everything else is calculated on this device.</li>
+      <li><b>Sent to Claude:</b> only photos and scanned statements (or a PDF whose lines could not be read here), to copy their lines. CSV, Excel and text PDFs are read on this device, and every number is calculated here. <label class="check"><input type="checkbox" data-chg="fin-flag" data-k="autoAI" ${p.autoAI !== false ? 'checked' : ''}> read photos and scans with Claude straight away</label> (off: you are asked first)</li>
+      <li><b>Importing:</b> <label class="check"><input type="checkbox" data-chg="fin-flag" data-k="reviewFirst" ${p.reviewFirst ? 'checked' : ''}> let me check each statement line by line before it is saved</label> (off: saved straight away; probable repeats are skipped and listed)</li>
       <li><b>Original statements:</b> <label class="check"><input type="checkbox" data-chg="fin-keep-orig" ${p.keepOriginals ? 'checked' : ''}> keep the original file of each import</label> ${St.assets ? 'in this page’s file storage (private while the page is private; anyone you give edit access could open them).' : '— file storage is not available in this view, so originals are not kept here; every transaction still keeps its original line.'}</li>
     </ul></section>
   <section class="card fin-card"><h2>Backup and restore</h2>
@@ -188,7 +189,7 @@ Object.assign(ACT, {
   'fin-acct-del': el => { const p = finP(), a = p.accounts[+el.dataset.i]; if (!a) return; const n = finTx().filter(t => t.acct === a.id).length; if (n) { toast(`${a.name} has ${n} transactions — delete or move them first.`, { err: true }); return; } finSave(q => { q.accounts.splice(+el.dataset.i, 1); }); render(); },
   'fin-acct-ledger': el => { UI.fin.l = { ...UI.fin.l, acct: el.dataset.id, ids: null, page: 0 }; UI.fin.sec = 'ledger'; render(); },
   'fin-dup-ok': el => { const ch = el.dataset.ids.split(',').map(id => FS.by.get(id)).filter(Boolean).map(o => { const t = clone(o); t.flags = [...new Set([...(t.flags || []), 'dup_ok'])]; finHist(t, 'duplicate check', null, 'both are real', 'you confirmed'); return t; }); finWrite(ch); render(); },
-  'fin-template': () => { const t = finTemplate(); finSave(p => { for (const x of t.parties) if (!p.parties.find(y => y.id === x.id)) p.parties.push(x); for (const h of t.holdings) if (!p.holdings.find(y => y.id === h.id)) p.holdings.push(h); }); render(); toast('Added — check each record against your documents.'); },
+  'fin-template': () => { const t = finTemplate(); finSave(p => { p.templateAdded = true; for (const x of t.parties) if (!p.parties.find(y => y.id === x.id)) p.parties.push(x); for (const h of t.holdings) if (!p.holdings.find(y => y.id === h.id)) p.holdings.push(h); }); render(); toast('Added — check each record against your documents.'); },
   'fin-hold-add': () => { const k = ($('#fin-hk') || {}).value || 'deposit'; finSave(p => { p.holdings.push({ id: E.uid('h'), kind: k, name: (FIN_HKINDS.find(x => x[0] === k) || [, 'Holding'])[1], owner: 'me', custodian: 'me', currency: p.base, verified: false, log: [], events: [], unverified: [] }); }); render(); },
   'fin-hold-del': el => { const h = finP().holdings[+el.dataset.i]; if (!h || !confirm(`Remove “${h.name}”?`)) return; finSave(p => { p.holdings.splice(+el.dataset.i, 1); }); render(); },
   'fin-hlog-add': el => { finSave(p => { const h = p.holdings[+el.dataset.i]; h.log = [...(h.log || []), { m: finToday().slice(0, 7), received: '', mine: h.myShareMonthly || '', allocated: '' }]; }); render(); },
@@ -224,5 +225,6 @@ Object.assign(CHG, {
     finLog('categories merged', { from, to, n }); render(); toast('Merged.');
   },
   'fin-keep-orig': el => { finSave(p => { p.keepOriginals = el.checked; }); },
+  'fin-flag': el => { finSave(p => { p[el.dataset.k] = el.checked; }); render(); },
   'fin-restore': el => { const f = el.files && el.files[0]; el.value = ''; if (!f) return; f.text().then(t => { let d = null; try { d = JSON.parse(t); } catch {} UI.fin.restore = { name: f.name, data: d, v: FIN.validateBackup(d) }; render(); }); },
 });
