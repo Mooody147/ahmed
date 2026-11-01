@@ -2161,10 +2161,11 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 .fin-prog { position: absolute; left: 0; bottom: 0; height: 4px; border-radius: 0 4px 0 10px; max-width: 100%; background: linear-gradient(90deg, var(--fin-s3), color-mix(in srgb, var(--fin-s3) 60%, #fff)); }
 .fin-leaf.trend-up .mtxt small { color: var(--crit); } .fin-leaf.trend-down .mtxt small { color: var(--ok); }
 @media (prefers-reduced-motion: no-preference) {
-  .fin-canvas-page .fin-room { animation: finRoomIn .5s cubic-bezier(.2, .8, .2, 1) both; }
-  .fin-canvas-page .fin-room:nth-child(2) { animation-delay: .04s; } .fin-canvas-page .fin-room:nth-child(3) { animation-delay: .08s; } .fin-canvas-page .fin-room:nth-child(n+4) { animation-delay: .12s; }
+  /* rooms rise in when you open the canvas — not again on every change */
+  .fin-cv-vp.intro .fin-room { animation: finRoomIn .5s cubic-bezier(.2, .8, .2, 1) both; }
+  .fin-cv-vp.intro .fin-room:nth-child(2) { animation-delay: .04s; } .fin-cv-vp.intro .fin-room:nth-child(3) { animation-delay: .08s; } .fin-cv-vp.intro .fin-room:nth-child(n+4) { animation-delay: .12s; }
   @keyframes finRoomIn { from { opacity: 0; transform: translateY(10px) scale(.985); } to { opacity: 1; transform: none; } }
-  .fin-leaf.alert.crit { animation: finAlertPulse 2.4s ease-in-out 2; }
+  .fin-cv-vp.intro .fin-leaf.alert.crit { animation: finAlertPulse 2.4s ease-in-out 2; }
   @keyframes finAlertPulse { 50% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--crit) 25%, transparent), var(--elev-1); } }
 }
 /* attention cards */
@@ -2228,6 +2229,64 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 .fin-menu-i span { width: 20px; text-align: center; }
 @media (prefers-reduced-motion: no-preference) { .fin-menu { animation: finPopIn .14s ease-out both; transform-origin: top left; } }
 @media (max-width: 700px) { .fin-talk-win { left: 8px !important; right: 8px !important; top: auto !important; bottom: 8px !important; width: auto; resize: none; max-height: 70%; } }
+
+/* ---------- the second layout: Flow ---------- */
+.fin-cv-modes button { display: inline-flex; align-items: center; gap: 4px; }
+.fin-cv-vp.mode-flow { background: #0d0a1f; border-color: #2a2147; --flow-ink: #f4f0ff; --flow-dim: #b9aedb; }
+/* the night sky: three soft lights drifting slowly behind the canvas (they never move with it) */
+.fin-flow-sky { position: absolute; inset: 0; overflow: hidden; pointer-events: none; background:
+  radial-gradient(1200px 700px at 15% -10%, #3b1d5c 0%, transparent 60%), radial-gradient(900px 600px at 110% 110%, #3a1430 0%, transparent 60%), linear-gradient(160deg, #0f0c26, #120a1c 60%, #0b0f22); }
+.fin-flow-sky i { position: absolute; width: 60vmax; height: 60vmax; border-radius: 50%; filter: blur(60px); opacity: .42; will-change: transform; }
+.fin-flow-sky i:nth-child(1) { left: -12%; top: -18%; background: radial-gradient(circle, #7b3fe4, transparent 65%); }
+.fin-flow-sky i:nth-child(2) { right: -18%; top: 10%; background: radial-gradient(circle, #e0457b, transparent 65%); opacity: .3; }
+.fin-flow-sky i:nth-child(3) { left: 25%; bottom: -30%; background: radial-gradient(circle, #1fb6c9, transparent 65%); opacity: .26; }
+@media (prefers-reduced-motion: no-preference) {
+  .fin-flow-sky i:nth-child(1) { animation: finSky1 26s ease-in-out infinite alternate; }
+  .fin-flow-sky i:nth-child(2) { animation: finSky2 32s ease-in-out infinite alternate; }
+  .fin-flow-sky i:nth-child(3) { animation: finSky1 38s ease-in-out infinite alternate-reverse; }
+  @keyframes finSky1 { to { transform: translate(14vmax, 8vmax) scale(1.15); } }
+  @keyframes finSky2 { to { transform: translate(-12vmax, 10vmax) scale(.9); } }
+}
+.mode-flow .fin-cv-world { z-index: 1; }
+/* rooms: frosted glass lit by their own colour */
+.mode-flow .fin-room { background: linear-gradient(160deg, hsl(var(--h) 60% 40% / .30), hsl(var(--h) 50% 18% / .42) 55%, rgba(14, 10, 32, .55)); border: 1px solid hsl(var(--h) 80% 75% / .28);
+  box-shadow: 0 1px 0 hsl(var(--h) 90% 85% / .25) inset, 0 30px 80px -40px hsl(var(--h) 80% 55% / .65), 0 0 0 1px rgba(0,0,0,.25); }
+.mode-flow .fin-room::before { background: linear-gradient(180deg, hsl(var(--h) 90% 75% / .22), transparent); }
+.mode-flow .fin-room-h b, .mode-flow .fin-room-sub b { color: var(--flow-ink); }
+.mode-flow .fin-room-h small, .mode-flow .fin-room-sub small, .mode-flow .fin-room-go { color: var(--flow-dim); }
+.mode-flow .fin-room-ic { background: hsl(var(--h) 70% 60% / .22); box-shadow: 0 0 18px hsl(var(--h) 90% 65% / .45); }
+.mode-flow .fin-room-h .btn.ghost { color: var(--flow-ink); }
+.mode-flow .fin-room-h .btn.ghost:hover { background: rgba(255,255,255,.12); }
+.mode-flow .fin-room-t.sel { box-shadow: 0 0 0 2px hsl(var(--h) 90% 70% / .7); border-radius: 12px; }
+/* cards: bright tiles that lean toward the pointer, with a light that follows it */
+.mode-flow .mnode.fin-leaf { border-color: hsl(var(--h) 60% 75% / .55); box-shadow: 0 10px 28px -16px rgba(0,0,0,.65), 0 0 0 1px rgba(255,255,255,.04);
+  background: radial-gradient(160px 80px at var(--gx, 50%) 0%, hsl(var(--h) 90% 92% / .9), transparent 70%), linear-gradient(180deg, var(--face-top), transparent 50%), var(--surface);
+  transform: perspective(800px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); transition: transform .18s ease-out, box-shadow .18s ease; }
+.mode-flow .mnode.fin-leaf:hover { transform: perspective(800px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) translateY(-3px) scale(1.015);
+  box-shadow: 0 22px 40px -18px hsl(var(--h) 80% 40% / .7), 0 0 0 1px hsl(var(--h) 90% 70% / .5), 0 0 30px -6px hsl(var(--h) 90% 65% / .55); }
+.mode-flow .fin-det { box-shadow: 0 24px 60px -30px rgba(0,0,0,.8), 0 0 0 1px rgba(255,255,255,.06); }
+.mode-flow .fin-det[data-det="up"] .fin-up-grid { grid-template-columns: minmax(0, 1fr); }
+.mode-flow .fin-link { stroke: hsl(190 90% 70% / .75); }
+/* the ribbons */
+.fin-flow { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; }
+.fin-flow .glow { filter: blur(14px); opacity: .55; }
+.fin-flow .body { opacity: .78; }
+.fin-flow-r.empty .body { opacity: .18; } .fin-flow-r.empty .glow { opacity: 0; }
+.fin-flow .dots { fill: none; stroke: #fff; stroke-width: 3.2; stroke-linecap: round; stroke-dasharray: 0.1 26; opacity: .9; }
+@media (prefers-reduced-motion: no-preference) { .fin-flow .dots { animation: finFlowDots 3s linear infinite; } @keyframes finFlowDots { to { stroke-dashoffset: -26.1; } } }
+.fin-flow-l .what { font-size: 12px; font-weight: 500; fill: var(--flow-dim, #ccc); }
+.fin-flow-l { fill: var(--flow-ink, #fff); font: 700 15px/1 var(--font, system-ui); paint-order: stroke; stroke: rgba(10, 6, 24, .85); stroke-width: 5px; stroke-linejoin: round; }
+.fin-flow-h { fill: var(--flow-dim, #ccc); font: 700 13px/1 var(--font, system-ui); letter-spacing: .14em; text-transform: uppercase; }
+.mode-flow ~ .fin-cvmini, .fin-cv-stage:has(.mode-flow) .fin-cvmini { background: rgba(16, 12, 36, .85); border-color: rgba(255,255,255,.15); }
+.mode-flow .fin-room-go { display: none; }
+/* Flow's lanes are narrower: room subtitles and the coming-weeks list wrap instead of running under the buttons */
+.mode-flow .fin-room:not(.ov):not(.goals):not(.sec) .fin-room-h > .spacer { display: none; }
+.mode-flow .fin-room:not(.ov):not(.goals):not(.sec) .fin-room-t { flex: 1 1 0; }
+.mode-flow .fin-room:not(.ov):not(.goals):not(.sec) .fin-room-t > div { min-width: 0; }
+.mode-flow .fin-room:not(.ov):not(.goals):not(.sec) .fin-room-t small { white-space: normal; max-width: none; line-height: 1.3; overflow: visible; }
+.mode-flow .fin-room-h { height: 66px; align-items: flex-start; padding-top: 10px; }
+.mode-flow .fin-room:not(.ov):not(.goals):not(.sec) .fin-room-h { height: 98px; }
+.mode-flow .fin-up-l { white-space: normal; overflow: visible; overflow-wrap: anywhere; }
 
 </style>
 <div class="titlestrip" id="titlestrip"><span class="ts-brand"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c3.3 4 6 7.2 6 10.4a6 6 0 0 1-12 0C6 10.2 8.7 7 12 3z"/><path d="m9.3 13.6 1.9 1.9 3.6-4.1"/></svg> Action Register</span><button class="ts-search" data-act="palette" title="Search and commands (Ctrl+K)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg><span>Search or type a command</span><kbd>Ctrl K</kbd></button><span class="ts-space"></span></div>
@@ -16099,13 +16158,15 @@ function finCvRoom(r) {
     </div></section>`;
 }
 function finCvBoard() {
-  const cv = UI.fin.cv, root = finCvModel(), n = finNow(), plan = finBuyPlan(), rooms = finCvRooms(root), L = finCvLayout(rooms, plan, n);
+  const cv = UI.fin.cv, root = finCvModel(), n = finNow(), plan = finBuyPlan(), rooms = finCvRooms(root), flow = cv.mode === 'flow' && typeof finFlowLayout === 'function', L = flow ? finFlowLayout(rooms, plan, n) : finCvLayout(rooms, plan, n);
   const hueOf = new Map(); for (const r of rooms) { const walk = k => { hueOf.set(k.id, r.hue); (k.children || []).forEach(walk); }; if (r.node) walk(r.node); }
   UI.fin.cvSize = { w: L.w, h: L.h }; UI.fin.cvCards = new Map(L.cards.map(c => [c.id, c]));
   if (UI.fin.pop && !UI.fin.cvCards.has(UI.fin.pop)) UI.fin.pop = null;
   const path = e => { const mx = (e.x0 + e.x1) / 2; return `M${e.x0},${e.y0} C${mx},${e.y0} ${mx},${e.y1} ${e.x1},${e.y1}`; };
-  return `<div class="fin-cv-vp" id="fin-cv-vp"><div class="fin-cv-world" id="fin-cv-world" style="width:${L.w}px;height:${L.h}px;transform:translate(${cv.x}px,${cv.y}px) scale(${cv.k})">
-      ${L.rooms.map(finCvRoom).join('')}
+  // the entrance plays when you open the canvas (within its first moment), not on every redraw after
+  const now = Date.now(); if (!UI.fin.cvShownAt) UI.fin.cvShownAt = now; const intro = now - UI.fin.cvShownAt < 700;
+  return `<div class="fin-cv-vp${flow ? ' mode-flow' : ''}${intro ? ' intro' : ''}" id="fin-cv-vp">${flow ? finFlowSky() : ''}<div class="fin-cv-world" id="fin-cv-world" style="width:${L.w}px;height:${L.h}px;transform:translate(${cv.x}px,${cv.y}px) scale(${cv.k})">
+      ${flow ? finFlowSVG(L) : ''}${L.rooms.map(finCvRoom).join('')}
       <svg class="fin-cv-edges" width="${L.w}" height="${L.h}" aria-hidden="true">${L.edges.map(e => `<path class="${e.cls}" d="${path(e)}"><title>${esc(e.title)}</title></path>`).join('')}</svg>
       ${L.subs.map(s => `<div class="fin-room-sub" style="left:${s.x}px;top:${s.y}px;width:${s.w}px"><b>${esc(s.label)}</b>${s.sum ? ` <small>${esc(s.sum)}</small>` : ''}</div>`).join('')}
       ${L.cards.map(c => finCvCard(c, hueOf.get(c.id) ?? (c.id.startsWith('b:') || c.id.startsWith('src:') || c.id.startsWith('g:') ? 190 : 200))).join('')}
@@ -16142,6 +16203,7 @@ VIEW_FN.finance = () => {
 </div>`;
 };
 
+HOOKS.beforeRender.push(() => { if (UI.view !== 'finance' || (UI.fin.tab || 'canvas') !== 'canvas') UI.fin.cvShownAt = 0; });
 /* --- moving around --- */
 function finCvGlide() { FCAM.stop(); const w = $('#fin-cv-world'); if (!w) return; w.classList.add('glide'); clearTimeout(UI.fin.glideT); UI.fin.glideT = setTimeout(() => { const x = $('#fin-cv-world'); if (x) x.classList.remove('glide'); finPopPlace(); }, 420); }
 // drawn once per screen frame however many pointer or trackpad events arrive
@@ -16892,6 +16954,7 @@ function finCvToolsHTML() {
   const rooms = (UI.fin.cvRoomsList || []).filter(r => r.kind !== 'sec');
   return `<div class="fin-cv-find" role="search"><input class="input sm" id="fin-cv-q" type="search" placeholder="Find on the canvas…  ( / )" value="${esc(UI.fin.cvQ)}" aria-label="Find on the canvas" autocomplete="off"><span class="small muted" id="fin-cv-qn"></span></div>
     <select class="input sm fin-cv-goto" data-chg="fin-cv-goto-room" aria-label="Go to a room"><option value="">Go to…</option>${rooms.map(r => `<option value="${esc(r.id)}">${r.icon} ${esc(r.title)}</option>`).join('')}</select>
+    ${typeof finCvModeHTML === 'function' ? finCvModeHTML() : ''}
     <button class="btn sm" data-act="fin-talk-win" aria-pressed="${!!UI.fin.talk.win}" title="Tell the canvas, in a window on it ( T )">💬 Tell the canvas</button>
     <button class="btn sm" data-act="fin-cv-help" aria-pressed="${!!UI.fin.help}" title="Keys and gestures ( ? )">?</button>`;
 }
@@ -16922,13 +16985,14 @@ document.addEventListener('keydown', e => {
   else if (k === '-' || k === '_') { own(); finCvZoomSmooth(1 / 1.15); }
   else if (k === '?') { own(); UI.fin.help = !UI.fin.help; render(); }
   else if (k === 't' || k === 'T') { own(); finTalkWin(!UI.fin.talk.win); }
+  else if ((k === 'l' || k === 'L') && typeof finCvMode === 'function') { own(); finCvMode(UI.fin.cv.mode === 'flow' ? 'rooms' : 'flow'); }
   else if (/^Arrow(Left|Right|Up|Down)$/.test(k)) { e.preventDefault(); const d = e.shiftKey ? 420 : 160; FCAM.pan(k === 'ArrowLeft' ? d : k === 'ArrowRight' ? -d : 0, k === 'ArrowUp' ? d : k === 'ArrowDown' ? -d : 0); }   // glides
   else if (/^[1-9]$/.test(k)) { const r = (UI.fin.cvRoomsList || []).filter(x => x.kind !== 'sec')[+k - 1]; if (r) { own(); finCvZoomRoom(r.id); } }
 }, true);
 function finCvHelpHTML() {
   if (!UI.fin.help) return '';
   return `<div class="fin-cv-keys" role="dialog" aria-label="Keys and gestures"><div class="row"><b>Keys and gestures</b><span class="spacer"></span><button class="icon-btn" data-act="fin-cv-help" aria-label="Close">${I.x}</button></div>
-    <dl>${[['Drag, or scroll', 'move around (let go while moving: it slides on)'], ['Right-click a card, or press and hold it', 'its menu — and Tell the canvas about that card only'], ['T', 'Tell the canvas, in a window'], ['Arrow keys (Shift: further)', 'move around'], ['Ctrl + scroll, or pinch', 'zoom'], ['Tap a card', 'its details pop out'], ['Double-tap a card, or F2', 'edit it'], ['Double-click a room’s title', 'zoom to the room'], ['/', 'find on the canvas (Enter: next)'], ['1 – 9', 'jump to a room'], ['+  −  0', 'zoom in, out, fit'], ['F', 'full screen'], ['Esc', 'close the last thing opened']].map(([a, b]) => `<dt>${esc(a)}</dt><dd>${esc(b)}</dd>`).join('')}</dl></div>`;
+    <dl>${[['Drag, or scroll', 'move around (let go while moving: it slides on)'], ['Right-click a card, or press and hold it', 'its menu — and Tell the canvas about that card only'], ['T', 'Tell the canvas, in a window'], ['L', 'switch the card layout: Rooms or Flow'], ['Arrow keys (Shift: further)', 'move around'], ['Ctrl + scroll, or pinch', 'zoom'], ['Tap a card', 'its details pop out'], ['Double-tap a card, or F2', 'edit it'], ['Double-click a room’s title', 'zoom to the room'], ['/', 'find on the canvas (Enter: next)'], ['1 – 9', 'jump to a room'], ['+  −  0', 'zoom in, out, fit'], ['F', 'full screen'], ['Esc', 'close the last thing opened']].map(([a, b]) => `<dt>${esc(a)}</dt><dd>${esc(b)}</dd>`).join('')}</dl></div>`;
 }
 // zoom so a whole room fits the window
 function finCvZoomRoom(id) {
@@ -17151,6 +17215,146 @@ Object.assign(ACT, {
   'fin-menu-do': el => finMenuDo(el.dataset.k),
 });
 Object.assign(window.__FIN, { menu: (id, x, y) => finMenuOpen(id, x, y), about: () => UI.fin.talk.about });
+
+/* ===== features/52-finance-flow.js ===== */
+// Money canvas — the second card layout, "Flow": your money as one river from left to right.
+// My money stays on top. Below it, where money comes from (income) flows into where it is (your accounts), and from
+// there into where it goes (spending, commitments) and down into your goals; what needs attention, what you own and
+// others' money sit on a rail on the right. Glowing ribbons join them, as thick as that money is per month, with
+// particles running the way the money moves. Rooms are glass on a slowly moving night sky; cards tilt toward the
+// pointer; switching layouts moves every card from its place in one to its place in the other.
+// Rooms (the first layout) is unchanged. Everything on the canvas works the same in both: details, pop-outs, the card
+// menu, editing, search, go to, the minimap, Tell the canvas.
+
+const FFL = { A: { x: 0, w: 320 }, B: { x: 470, w: 320 }, C: { x: 940, w: 400 }, D: { x: 1460, w: 332 }, TOP: 96, LANE: 120, HEAD: 102 };
+const FIN_FLOW_COL = { inc: 'A', accts: 'B', exp: 'C', com: 'C', next: 'D', own: 'D', third: 'D' };
+try { const m = localStorage.getItem('ar-fin-cv-mode'); if (m === 'flow' || m === 'rooms') UI.fin.cv.mode = m; } catch {}
+
+function finFlowLayout(rooms, plan, n) {
+  const { PAD, CG, CW, CH } = FR, FULL = FR.FULL, cards = [], dets = [], edges = [], subs = [];
+  // narrow lanes: the title, and its summary on up to three lines, need a taller header
+  const headOf = r => r.w < 600 ? FFL.HEAD : FR.HEAD;
+  // cards one under the other in a narrow room (as wide as the room), in rows where there is room for more
+  const grid = (list, x0, y, w) => {
+    const per = Math.max(1, Math.floor((w + CG) / (CW + CG))), cw = per === 1 ? w : CW; let row = [];
+    const flush = () => { if (!row.length) return; y += CH + CG; row = []; };
+    for (const c of list) {
+      if (c.type === 'branch') { flush(); subs.push({ id: c.id, label: `${c.icon} ${c.label}`, sum: c.sum, x: x0, y, w }); y += 34; grid(c.children, x0, y, w); y = subs.y2; continue; }
+      c.x = x0 + row.length * (cw + CG); c.y = y; c.w = cw; c.h = CH; cards.push(c); row.push(c); if (row.length === per) flush();
+    }
+    flush(); subs.y2 = y; return [];
+  };
+  const fill = (r, x, y, w) => {
+    r.x = x; r.y = y; r.w = w; const HEAD = headOf(r), x0 = x + PAD, iw = w - 2 * PAD; let yy = y + HEAD;
+    if (UI.fin.cvCol.has(r.id)) r.h = HEAD + 6;
+    else if (r.kind === 'ov') { const h = finDetH('ov', 420); dets.push({ id: 'ov', x: x0, y: yy, w: iw, h }); r.h = yy + h + PAD - y; }
+    else if (r.kind === 'sec') { const h = finDetH(r.id, 640); dets.push({ id: r.id, x: x0, y: yy, w: iw, h }); r.h = yy + h + PAD - y; }
+    else if (r.kind === 'next') { yy = finNextLayout(r, x0, yy, iw, cards, dets, subs, grid); r.h = yy + PAD - y; }
+    else if (r.kind === 'goals') { yy = finGoalsLayout(r, plan, n, x0, yy, iw, cards, dets, edges, subs, grid); r.h = yy + PAD - y; }
+    else { grid(r.node.children, x0, yy, iw); r.h = Math.max(subs.y2 - CG, y + HEAD + 20) + PAD - y; }
+    return y + r.h;
+  };
+  const by = id => rooms.find(r => r.id === id);
+  let y = 0;
+  const ov = by('ov'); if (ov) y = fill(ov, 0, 0, FULL) + FFL.TOP;
+  // the river: four lanes side by side
+  const lanes = { A: [], B: [], C: [], D: [] }, rest = [];
+  for (const r of rooms) {
+    if (r.id === 'ov' || r.kind === 'goals' || r.kind === 'sec') continue;
+    (lanes[FIN_FLOW_COL[r.id] || 'D'] || rest).push(r);
+  }
+  const riverTop = y, bottoms = {};
+  for (const [k, list] of Object.entries(lanes)) { let yy = riverTop; for (const r of list) yy = fill(r, FFL[k].x, yy, FFL[k].w) + 40; bottoms[k] = yy - 40; }
+  y = Math.max(riverTop, ...Object.values(bottoms)) + FFL.LANE;
+  const buy = rooms.find(r => r.kind === 'goals'); if (buy) y = fill(buy, 0, y, FULL) + 60;
+  for (const r of rooms) if (r.kind === 'sec') y = fill(r, 0, y, FULL) + 44;
+  // the ribbons: how much flows each month
+  const flows = [], lab = { A: 'Comes in', B: 'Where it is', C: 'Goes out', D: 'Watch & own' };
+  const v = { inc: n.income || 0, exp: n.spending || 0, com: n.instMonthly || 0, save: Math.max(0, n.capacity || 0) }, max = Math.max(1, ...Object.values(v));
+  const th = x => x > 0 ? Math.round(8 + 38 * Math.sqrt(x / max)) : 4;
+  const span = (r, at) => Math.min(r.y + r.h - 24, r.y + headOf(r) + at);
+  const inc = by('inc'), acc = by('accts'), exp = by('exp'), com = by('com');
+  if (inc && acc) flows.push({ id: 'inc', a: { x: inc.x + inc.w, y: span(inc, 40) }, b: { x: acc.x, y: span(acc, 40) }, t: th(v.inc), h0: inc.hue, h1: acc.hue, amt: v.inc ? fk(v.inc) : '—', what: v.inc ? 'in a month' : 'income not known yet', empty: !v.inc });
+  let off = 40;
+  for (const [r, val, what] of [[exp, v.exp, 'spent a month'], [com, v.com, 'instalments a month']]) {
+    if (!acc || !r) continue; const t = th(val);
+    flows.push({ id: r.id, a: { x: acc.x + acc.w, y: span(acc, off) }, b: { x: r.x, y: span(r, 40) }, t, h0: acc.hue, h1: r.hue, amt: val ? fk(val) : '—', what: val ? what : 'none yet', empty: !val });
+    off += Math.max(t, 10) + 70;
+  }
+  if (acc && buy) flows.push({ id: 'save', down: true, a: { x: acc.x + acc.w / 2, y: acc.y + acc.h }, b: { x: acc.x + acc.w / 2, y: buy.y }, t: th(v.save), h0: acc.hue, h1: buy.hue, amt: v.save ? fk(v.save) : '—', what: v.save ? 'a month to your goals' : 'nothing left to save yet', empty: !v.save });
+  const heads = Object.entries(lanes).filter(([, l]) => l.length).map(([k]) => ({ x: FFL[k].x + 6, y: riverTop - 30, label: lab[k] }));
+  const w = FULL, h = Math.max(y - 44, 200);
+  UI.fin.cvPos = new Map([...rooms.map(r => [r.id, { x: r.x, y: r.y, w: r.w, h: r.h }]), ...cards.map(c => [c.id, { x: c.x, y: c.y, w: c.w, h: c.h }]), ...dets.map(d => [d.id + ':det', d])]);
+  UI.fin.cvRoot = UI.fin.cvPos.get('ov');
+  UI.fin.cvRoomsList = rooms.map(r => ({ id: r.id, kind: r.kind, x: r.x, y: r.y, w: r.w, h: r.h, hue: r.hue, icon: r.icon, title: r.title }));
+  return { rooms, cards, dets, edges, subs, w, h, flows, heads };
+}
+
+// the ribbons, drawn under the rooms
+function finFlowSVG(L) {
+  if (!L.flows) return '';
+  const col = h => `hsl(${h ?? 200} 80% 62%)`;
+  const ribbon = f => {
+    const t = f.t / 2;
+    if (f.down) { const my = (f.a.y + f.b.y) / 2; return `M${f.a.x - t},${f.a.y} C${f.a.x - t},${my} ${f.b.x - t},${my} ${f.b.x - t},${f.b.y} L${f.b.x + t},${f.b.y} C${f.b.x + t},${my} ${f.a.x + t},${my} ${f.a.x + t},${f.a.y} Z`; }
+    const mx = (f.a.x + f.b.x) / 2;
+    return `M${f.a.x},${f.a.y - t} C${mx},${f.a.y - t} ${mx},${f.b.y - t} ${f.b.x},${f.b.y - t} L${f.b.x},${f.b.y + t} C${mx},${f.b.y + t} ${mx},${f.a.y + t} ${f.a.x},${f.a.y + t} Z`;
+  };
+  const mid = f => f.down ? `M${f.a.x},${f.a.y} C${f.a.x},${(f.a.y + f.b.y) / 2} ${f.b.x},${(f.a.y + f.b.y) / 2} ${f.b.x},${f.b.y}` : `M${f.a.x},${f.a.y} C${(f.a.x + f.b.x) / 2},${f.a.y} ${(f.a.x + f.b.x) / 2},${f.b.y} ${f.b.x},${f.b.y}`;
+  return `<svg class="fin-flow" width="${L.w}" height="${L.h}" aria-hidden="true"><defs>${L.flows.map(f => `<linearGradient id="ffg-${f.id}" gradientUnits="userSpaceOnUse" x1="${f.a.x}" y1="${f.a.y}" x2="${f.b.x}" y2="${f.b.y}"><stop offset="0" stop-color="${col(f.h0)}"/><stop offset="1" stop-color="${col(f.h1)}"/></linearGradient>`).join('')}</defs>
+    ${L.flows.map(f => `<g class="fin-flow-r ${f.empty ? 'empty' : ''}"><path class="glow" d="${ribbon(f)}" fill="url(#ffg-${f.id})"/><path class="body" d="${ribbon(f)}" fill="url(#ffg-${f.id})"/>${f.empty ? '' : `<path class="dots" d="${mid(f)}" style="animation-duration:${Math.max(1.6, 5 - f.t / 12).toFixed(1)}s"/>`}
+      ${finFlowLabel(f)}</g>`).join('')}
+    ${(L.heads || []).map(h => `<text class="fin-flow-h" x="${h.x}" y="${h.y}">${esc(h.label)}</text>`).join('')}</svg>`;
+}
+// the amount and what it is, on two short lines: in the gap between two lanes (beside the ribbon going down)
+function finFlowLabel(f) {
+  const x = f.down ? f.a.x + f.t / 2 + 14 : f.a.x + 18, y = f.down ? (f.a.y + f.b.y) / 2 - 6 : Math.max(f.a.y, f.b.y) + f.t / 2 + 26;
+  return `<text class="fin-flow-l" x="${x}" y="${y}"><tspan class="amt">${esc(f.amt)}</tspan><tspan class="what" x="${x}" dy="18">${esc(f.what)}</tspan></text>`;
+}
+// the night sky behind the Flow layout (it does not move with the canvas, so moving stays light)
+const finFlowSky = () => '<div class="fin-flow-sky" aria-hidden="true"><i></i><i></i><i></i></div>';
+
+/* --- switching: every card moves from its place in one layout to its place in the other --- */
+function finCvMode(mode) {
+  mode = mode === 'flow' ? 'flow' : 'rooms'; if ((UI.fin.cv.mode || 'rooms') === mode) return;
+  const reduce = (() => { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch { return true; } })();
+  const before = new Map(); if (!reduce) for (const el of document.querySelectorAll('#fin-cv-world [data-node], #fin-cv-world [data-room]')) { if (el.closest('.fin-room-h')) continue; before.set((el.dataset.room ? 'r:' : 'n:') + (el.dataset.room || el.dataset.node), { x: parseFloat(el.style.left) || 0, y: parseFloat(el.style.top) || 0 }); }
+  UI.fin.cv.mode = mode; try { localStorage.setItem('ar-fin-cv-mode', mode); } catch {}
+  UI.fin.menu = null; UI.fin.cv.user = false; UI.fin.cv.fitted = false; finCvGlide(); render();
+  if (reduce) return;
+  const moved = [];
+  for (const el of document.querySelectorAll('#fin-cv-world [data-node], #fin-cv-world [data-room]')) {
+    if (el.closest('.fin-room-h')) continue;
+    const b = before.get((el.dataset.room ? 'r:' : 'n:') + (el.dataset.room || el.dataset.node)), x = parseFloat(el.style.left) || 0, y = parseFloat(el.style.top) || 0;
+    el.style.transition = 'none';
+    if (b) el.style.transform = `translate(${b.x - x}px, ${b.y - y}px)`; else { el.style.opacity = '0'; el.style.transform = 'scale(.92)'; }
+    moved.push(el);
+  }
+  for (const d of document.querySelectorAll('#fin-cv-world .fin-det, #fin-cv-world .fin-room-sub, #fin-cv-world .fin-flow')) { d.style.transition = 'none'; d.style.opacity = '0'; moved.push(d); }
+  void document.body.offsetWidth;
+  requestAnimationFrame(() => {
+    for (const el of moved) { el.style.transition = 'transform .7s cubic-bezier(.2,.8,.2,1), opacity .5s ease .15s'; el.style.transform = ''; el.style.opacity = ''; }
+    setTimeout(() => { for (const el of moved) { el.style.transition = ''; } }, 900);
+  });
+}
+
+/* --- cards lean toward the pointer (Flow only) --- */
+const FTL = { el: null, raf: 0, x: 0, y: 0 };
+document.addEventListener('pointermove', e => {
+  if (e.pointerType !== 'mouse' || UI.fin.cv.mode !== 'flow' || UI.view !== 'finance') return;
+  const c = e.target.closest && e.target.closest('.mode-flow #fin-cv-world .fin-leaf');
+  if (FTL.el && FTL.el !== c) { FTL.el.style.removeProperty('--rx'); FTL.el.style.removeProperty('--ry'); FTL.el = null; }
+  if (!c || e.buttons) return; FTL.el = c; FTL.x = e.clientX; FTL.y = e.clientY;
+  if (!FTL.raf) FTL.raf = requestAnimationFrame(() => { FTL.raf = 0; const el = FTL.el; if (!el) return; const r = el.getBoundingClientRect(); const px = (FTL.x - r.left) / r.width - 0.5, py = (FTL.y - r.top) / r.height - 0.5;
+    el.style.setProperty('--rx', (-py * 7).toFixed(2) + 'deg'); el.style.setProperty('--ry', (px * 9).toFixed(2) + 'deg'); el.style.setProperty('--gx', Math.round((px + 0.5) * 100) + '%'); });
+});
+
+function finCvModeHTML() {
+  const m = UI.fin.cv.mode || 'rooms';
+  return `<div class="seg fin-cv-modes" role="group" aria-label="Card layout">${[['rooms', '▦', 'Rooms'], ['flow', '✦', 'Flow']].map(([k, i, l]) => `<button data-act="fin-cv-mode" data-v="${k}" aria-pressed="${m === k}" title="${k === 'rooms' ? 'Rooms: every topic in its own room' : 'Flow: your money as a river, from income to goals'} ( L )"><span aria-hidden="true">${i}</span> ${l}</button>`).join('')}</div>`;
+}
+Object.assign(ACT, { 'fin-cv-mode': el => finCvMode(el.dataset.v) });
+Object.assign(window.__FIN, { mode: m => (m ? finCvMode(m) : UI.fin.cv.mode || 'rooms') });
 
 /* ---------- boot ---------- */
 const startView = (location.hash || '').replace('#', '');

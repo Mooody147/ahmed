@@ -409,10 +409,11 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 .fin-prog { position: absolute; left: 0; bottom: 0; height: 4px; border-radius: 0 4px 0 10px; max-width: 100%; background: linear-gradient(90deg, var(--fin-s3), color-mix(in srgb, var(--fin-s3) 60%, #fff)); }
 .fin-leaf.trend-up .mtxt small { color: var(--crit); } .fin-leaf.trend-down .mtxt small { color: var(--ok); }
 @media (prefers-reduced-motion: no-preference) {
-  .fin-canvas-page .fin-room { animation: finRoomIn .5s cubic-bezier(.2, .8, .2, 1) both; }
-  .fin-canvas-page .fin-room:nth-child(2) { animation-delay: .04s; } .fin-canvas-page .fin-room:nth-child(3) { animation-delay: .08s; } .fin-canvas-page .fin-room:nth-child(n+4) { animation-delay: .12s; }
+  /* rooms rise in when you open the canvas — not again on every change */
+  .fin-cv-vp.intro .fin-room { animation: finRoomIn .5s cubic-bezier(.2, .8, .2, 1) both; }
+  .fin-cv-vp.intro .fin-room:nth-child(2) { animation-delay: .04s; } .fin-cv-vp.intro .fin-room:nth-child(3) { animation-delay: .08s; } .fin-cv-vp.intro .fin-room:nth-child(n+4) { animation-delay: .12s; }
   @keyframes finRoomIn { from { opacity: 0; transform: translateY(10px) scale(.985); } to { opacity: 1; transform: none; } }
-  .fin-leaf.alert.crit { animation: finAlertPulse 2.4s ease-in-out 2; }
+  .fin-cv-vp.intro .fin-leaf.alert.crit { animation: finAlertPulse 2.4s ease-in-out 2; }
   @keyframes finAlertPulse { 50% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--crit) 25%, transparent), var(--elev-1); } }
 }
 /* attention cards */
@@ -476,3 +477,61 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 .fin-menu-i span { width: 20px; text-align: center; }
 @media (prefers-reduced-motion: no-preference) { .fin-menu { animation: finPopIn .14s ease-out both; transform-origin: top left; } }
 @media (max-width: 700px) { .fin-talk-win { left: 8px !important; right: 8px !important; top: auto !important; bottom: 8px !important; width: auto; resize: none; max-height: 70%; } }
+
+/* ---------- the second layout: Flow ---------- */
+.fin-cv-modes button { display: inline-flex; align-items: center; gap: 4px; }
+.fin-cv-vp.mode-flow { background: #0d0a1f; border-color: #2a2147; --flow-ink: #f4f0ff; --flow-dim: #b9aedb; }
+/* the night sky: three soft lights drifting slowly behind the canvas (they never move with it) */
+.fin-flow-sky { position: absolute; inset: 0; overflow: hidden; pointer-events: none; background:
+  radial-gradient(1200px 700px at 15% -10%, #3b1d5c 0%, transparent 60%), radial-gradient(900px 600px at 110% 110%, #3a1430 0%, transparent 60%), linear-gradient(160deg, #0f0c26, #120a1c 60%, #0b0f22); }
+.fin-flow-sky i { position: absolute; width: 60vmax; height: 60vmax; border-radius: 50%; filter: blur(60px); opacity: .42; will-change: transform; }
+.fin-flow-sky i:nth-child(1) { left: -12%; top: -18%; background: radial-gradient(circle, #7b3fe4, transparent 65%); }
+.fin-flow-sky i:nth-child(2) { right: -18%; top: 10%; background: radial-gradient(circle, #e0457b, transparent 65%); opacity: .3; }
+.fin-flow-sky i:nth-child(3) { left: 25%; bottom: -30%; background: radial-gradient(circle, #1fb6c9, transparent 65%); opacity: .26; }
+@media (prefers-reduced-motion: no-preference) {
+  .fin-flow-sky i:nth-child(1) { animation: finSky1 26s ease-in-out infinite alternate; }
+  .fin-flow-sky i:nth-child(2) { animation: finSky2 32s ease-in-out infinite alternate; }
+  .fin-flow-sky i:nth-child(3) { animation: finSky1 38s ease-in-out infinite alternate-reverse; }
+  @keyframes finSky1 { to { transform: translate(14vmax, 8vmax) scale(1.15); } }
+  @keyframes finSky2 { to { transform: translate(-12vmax, 10vmax) scale(.9); } }
+}
+.mode-flow .fin-cv-world { z-index: 1; }
+/* rooms: frosted glass lit by their own colour */
+.mode-flow .fin-room { background: linear-gradient(160deg, hsl(var(--h) 60% 40% / .30), hsl(var(--h) 50% 18% / .42) 55%, rgba(14, 10, 32, .55)); border: 1px solid hsl(var(--h) 80% 75% / .28);
+  box-shadow: 0 1px 0 hsl(var(--h) 90% 85% / .25) inset, 0 30px 80px -40px hsl(var(--h) 80% 55% / .65), 0 0 0 1px rgba(0,0,0,.25); }
+.mode-flow .fin-room::before { background: linear-gradient(180deg, hsl(var(--h) 90% 75% / .22), transparent); }
+.mode-flow .fin-room-h b, .mode-flow .fin-room-sub b { color: var(--flow-ink); }
+.mode-flow .fin-room-h small, .mode-flow .fin-room-sub small, .mode-flow .fin-room-go { color: var(--flow-dim); }
+.mode-flow .fin-room-ic { background: hsl(var(--h) 70% 60% / .22); box-shadow: 0 0 18px hsl(var(--h) 90% 65% / .45); }
+.mode-flow .fin-room-h .btn.ghost { color: var(--flow-ink); }
+.mode-flow .fin-room-h .btn.ghost:hover { background: rgba(255,255,255,.12); }
+.mode-flow .fin-room-t.sel { box-shadow: 0 0 0 2px hsl(var(--h) 90% 70% / .7); border-radius: 12px; }
+/* cards: bright tiles that lean toward the pointer, with a light that follows it */
+.mode-flow .mnode.fin-leaf { border-color: hsl(var(--h) 60% 75% / .55); box-shadow: 0 10px 28px -16px rgba(0,0,0,.65), 0 0 0 1px rgba(255,255,255,.04);
+  background: radial-gradient(160px 80px at var(--gx, 50%) 0%, hsl(var(--h) 90% 92% / .9), transparent 70%), linear-gradient(180deg, var(--face-top), transparent 50%), var(--surface);
+  transform: perspective(800px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); transition: transform .18s ease-out, box-shadow .18s ease; }
+.mode-flow .mnode.fin-leaf:hover { transform: perspective(800px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) translateY(-3px) scale(1.015);
+  box-shadow: 0 22px 40px -18px hsl(var(--h) 80% 40% / .7), 0 0 0 1px hsl(var(--h) 90% 70% / .5), 0 0 30px -6px hsl(var(--h) 90% 65% / .55); }
+.mode-flow .fin-det { box-shadow: 0 24px 60px -30px rgba(0,0,0,.8), 0 0 0 1px rgba(255,255,255,.06); }
+.mode-flow .fin-det[data-det="up"] .fin-up-grid { grid-template-columns: minmax(0, 1fr); }
+.mode-flow .fin-link { stroke: hsl(190 90% 70% / .75); }
+/* the ribbons */
+.fin-flow { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; }
+.fin-flow .glow { filter: blur(14px); opacity: .55; }
+.fin-flow .body { opacity: .78; }
+.fin-flow-r.empty .body { opacity: .18; } .fin-flow-r.empty .glow { opacity: 0; }
+.fin-flow .dots { fill: none; stroke: #fff; stroke-width: 3.2; stroke-linecap: round; stroke-dasharray: 0.1 26; opacity: .9; }
+@media (prefers-reduced-motion: no-preference) { .fin-flow .dots { animation: finFlowDots 3s linear infinite; } @keyframes finFlowDots { to { stroke-dashoffset: -26.1; } } }
+.fin-flow-l .what { font-size: 12px; font-weight: 500; fill: var(--flow-dim, #ccc); }
+.fin-flow-l { fill: var(--flow-ink, #fff); font: 700 15px/1 var(--font, system-ui); paint-order: stroke; stroke: rgba(10, 6, 24, .85); stroke-width: 5px; stroke-linejoin: round; }
+.fin-flow-h { fill: var(--flow-dim, #ccc); font: 700 13px/1 var(--font, system-ui); letter-spacing: .14em; text-transform: uppercase; }
+.mode-flow ~ .fin-cvmini, .fin-cv-stage:has(.mode-flow) .fin-cvmini { background: rgba(16, 12, 36, .85); border-color: rgba(255,255,255,.15); }
+.mode-flow .fin-room-go { display: none; }
+/* Flow's lanes are narrower: room subtitles and the coming-weeks list wrap instead of running under the buttons */
+.mode-flow .fin-room:not(.ov):not(.goals):not(.sec) .fin-room-h > .spacer { display: none; }
+.mode-flow .fin-room:not(.ov):not(.goals):not(.sec) .fin-room-t { flex: 1 1 0; }
+.mode-flow .fin-room:not(.ov):not(.goals):not(.sec) .fin-room-t > div { min-width: 0; }
+.mode-flow .fin-room:not(.ov):not(.goals):not(.sec) .fin-room-t small { white-space: normal; max-width: none; line-height: 1.3; overflow: visible; }
+.mode-flow .fin-room-h { height: 66px; align-items: flex-start; padding-top: 10px; }
+.mode-flow .fin-room:not(.ov):not(.goals):not(.sec) .fin-room-h { height: 98px; }
+.mode-flow .fin-up-l { white-space: normal; overflow: visible; overflow-wrap: anywhere; }
