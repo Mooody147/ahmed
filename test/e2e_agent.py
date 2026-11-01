@@ -204,6 +204,30 @@ async def main():
         await pg.keyboard.press('b'); await pg.wait_for_timeout(200); assert await ev("!!document.getElementById('fin-bal-win')"), 'B opens it'
         await pg.keyboard.press('Escape'); await pg.wait_for_timeout(200); assert not await ev("!!document.getElementById('fin-bal-win')"), 'Esc closes it'
 
+        # 8c. a card's pop-out: it grows out of the card, is sized to the window, and is never cut off — on a wide screen,
+        # a tablet, a phone, and with the page scrolled so part of the canvas is off the screen
+        await ev("window.__FIN.presentEnd()"); await pg.keyboard.press('Escape')
+        inside = """(() => { const p = document.getElementById('fin-pop'), v = document.getElementById('fin-cv-vp'); if (!p || !v) return 'none';
+          const r = p.getBoundingClientRect(), b = v.getBoundingClientRect(), rail = document.querySelector('.rail'), rb = rail && getComputedStyle(rail).position === 'sticky' ? rail.getBoundingClientRect().bottom : 0;
+          const top = Math.max(b.top, rb, 0), bottom = Math.min(b.bottom, innerHeight);
+          return [r.left >= b.left - 1, r.right <= b.right + 1, r.top >= top - 1, r.bottom <= bottom + 1, Math.round(r.width), Math.round(b.width), p.className]; })()"""
+        for vw, vh, scroll in [(1400, 1000, 0), (820, 700, 0), (390, 800, 0), (1400, 1000, 260)]:
+            await pg.set_viewport_size({'width': vw, 'height': vh}); await pg.wait_for_timeout(500)
+            if vw < 600 and await ev("!document.getElementById('fin-cv-vp')"): await pg.click('.ph-tab[data-k="more"]'); await pg.click('[data-act="ph-nav"][data-view="finance"]'); await pg.wait_for_timeout(500)
+            node = 'a:' + prim
+            await ev(f"window.__FIN.show('{node}')"); await pg.wait_for_timeout(700)
+            await ev(f"window.scrollTo(0, {scroll})"); await pg.wait_for_timeout(200)
+            await ev(f"document.querySelector('.fin-leaf[data-node=\"{node}\"]').click()")   # (a single click waits a moment: a double-click zooms instead)
+            await pg.wait_for_selector('#fin-pop', timeout=3000)
+            grows = await ev("(() => { const p = document.getElementById('fin-pop'); return !!p && p.getAnimations().length > 0; })()")
+            await pg.wait_for_timeout(600); res = await ev(inside); print('POP', vw, vh, scroll, grows, res)
+            assert res != 'none' and all(res[:4]), ('the pop-out is fully in view', vw, vh, scroll, res)
+            if vw < 700: assert res[4] >= res[5] - 20, 'on a narrow canvas it takes the width'
+            else: assert 360 <= res[4] <= 560
+            if vw == 1400 and scroll == 0: await pg.screenshot(path=os.path.join(HERE, 'shots', 'finance-pop.png')); assert grows, 'it grows out of the card'
+            await pg.keyboard.press('Escape'); await pg.wait_for_timeout(400); await ev("window.scrollTo(0, 0)")
+        await pg.set_viewport_size({'width': 1400, 'height': 1000}); await pg.wait_for_timeout(500)
+
         # 9. a box goes with its ✕ (and Undo)
         await ev("window.__FIN.show('box:recurring')"); await pg.wait_for_timeout(400)
         await pg.click('.fin-room[data-room="box:recurring"] [data-act="fin-box-del"]'); await pg.wait_for_timeout(300)

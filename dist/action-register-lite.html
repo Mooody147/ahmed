@@ -2133,7 +2133,7 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 .fin-cv-float { position: absolute; top: max(10px, env(safe-area-inset-top, 0px)); right: max(10px, env(safe-area-inset-right, 0px)); z-index: 8; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; padding: 6px; border-radius: 14px; background: color-mix(in srgb, var(--surface) 88%, transparent); box-shadow: var(--elev-2); backdrop-filter: blur(6px); }
 
 /* ---------- a card's details pop out beside it ---------- */
-.fin-pop { position: absolute; left: 0; top: 0; z-index: 6; width: min(460px, calc(100% - 16px)); max-height: calc(100% - 16px); box-sizing: border-box; display: flex; flex-direction: column;
+.fin-pop { position: absolute; left: 0; top: 0; z-index: 6; width: min(460px, calc(100% - 16px)); max-height: calc(100% - 16px); will-change: transform; box-sizing: border-box; display: flex; flex-direction: column;
   background: var(--surface); border: 1px solid color-mix(in srgb, hsl(var(--h) 50% 50%) 25%, var(--line)); border-radius: 20px;
   box-shadow: 0 28px 64px -24px rgba(20, 10, 30, .45), 0 10px 24px -12px rgba(20, 10, 30, .25), 0 0 0 1px rgba(255,255,255,.04) inset; }
 .fin-pop::before { content: ""; position: absolute; width: 14px; height: 14px; background: var(--surface); border: inherit; border-width: 0; transform: rotate(45deg); }
@@ -2155,7 +2155,6 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 .fin-cv-world.glide { transition: transform .4s cubic-bezier(.2, .8, .2, 1); }
 .fin-leaf.sel { z-index: 3; }
 @media (prefers-reduced-motion: no-preference) {
-  .fin-pop.enter { animation: finPopIn .42s cubic-bezier(.2, .95, .25, 1.12) both; }
   .fin-pop.r.enter { --dx: -18px; --dy: 0px; } .fin-pop.l.enter { --dx: 18px; --dy: 0px; } .fin-pop.b.enter { --dx: 0px; --dy: -14px; } .fin-pop.t.enter { --dx: 0px; --dy: 14px; }
   .fin-pop.enter .fin-pop-b > * { animation: finPopItem .5s cubic-bezier(.2, .8, .2, 1) both; }
   .fin-pop.enter .fin-pop-b > :nth-child(2) { animation-delay: .05s; } .fin-pop.enter .fin-pop-b > :nth-child(3) { animation-delay: .1s; }
@@ -2496,6 +2495,8 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 @media (max-width: 520px) { .fin-bal-r { grid-template-columns: minmax(0, 1fr); } .fin-bal-f input { width: 100%; } .fin-bal-in > * { flex: 1; } }
 .fin-cvwrap.full .fin-bal-tab, .fin-cvwrap.full .fin-bal-win { top: 72px; }
 @media (max-width: 600px) { .fin-bal-tab { grid-template-columns: auto; padding: 8px 10px; border-radius: 50%; } .fin-bal-tab small, .fin-bal-tab { font-size: 0; } .fin-bal-tab span { font-size: 20px; grid-row: auto; } }
+
+.fin-pop.c { box-shadow: 0 40px 120px -20px rgba(0, 0, 0, .7), 0 0 0 1px rgba(255, 255, 255, .06); }
 
 </style>
 <div class="titlestrip" id="titlestrip"><span class="ts-brand"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c3.3 4 6 7.2 6 10.4a6 6 0 0 1-12 0C6 10.2 8.7 7 12 3z"/><path d="m9.3 13.6 1.9 1.9 3.6-4.1"/></svg> Action Register</span><button class="ts-search" data-act="palette" title="Search and commands (Ctrl+K)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg><span>Search or type a command</span><kbd>Ctrl K</kbd></button><span class="ts-space"></span></div>
@@ -16350,31 +16351,60 @@ function finPopHTML() {
     <div class="fin-pop-h">${c.icon ? `<span class="fin-pop-ic" aria-hidden="true">${c.icon}</span>` : ''}<div class="fin-pop-t"><b>${esc(c.label)}</b>${c.sub ? `<small>${esc(c.sub)}</small>` : ''}</div>${c.val ? `<span class="fin-pop-v num">${esc(c.val)}</span>` : ''}<button class="icon-btn" data-act="fin-pop-x" title="Close (Esc)" aria-label="Close">${I.x}</button></div>
     <div class="fin-pop-b">${body}</div></div>`;
 }
-// beside its card (right, else left, else below), always inside the canvas window; a little pointer shows which card
+// beside its card, sized to the canvas window, kept inside the part of the canvas you can see — never cut off
+// (right or left of the card where there is room, else below or above; when nothing fits, centred over the canvas).
+// It grows out of the card itself the first time it opens, and goes back into it when it closes.
+function finPopGeom() {
+  const vp = $('#fin-cv-vp'), b = UI.fin.pop && UI.fin.cvPos && UI.fin.cvPos.get(UI.fin.pop); if (!vp || !b) return null;
+  const cv = UI.fin.cv, W = vp.clientWidth, H = vp.clientHeight, R = vp.getBoundingClientRect();
+  const rail = document.querySelector('.rail'), railB = rail && getComputedStyle(rail).position === 'sticky' ? rail.getBoundingClientRect().bottom : 0;
+  const top = Math.max(0, railB - R.top, -R.top) + 8, bottom = Math.min(H, innerHeight - R.top) - 8;   // what you can see of the canvas
+  return { vp, W, H, top, bottom, ax: cv.x + b.x * cv.k, ay: cv.y + b.y * cv.k, aw: b.w * cv.k, ah: b.h * cv.k };
+}
 function finPopPlace() {
-  const el = $('#fin-pop'), vp = $('#fin-cv-vp'), b = UI.fin.pop && UI.fin.cvPos && UI.fin.cvPos.get(UI.fin.pop); if (!el || !vp || !b) return;
-  const cv = UI.fin.cv, W = vp.clientWidth, H = vp.clientHeight, w = el.offsetWidth, h = el.offsetHeight, gap = 16;
-  const ax = cv.x + b.x * cv.k, ay = cv.y + b.y * cv.k, aw = b.w * cv.k, ah = b.h * cv.k, acx = ax + aw / 2, acy = ay + ah / 2;
+  const el = $('#fin-pop'), G = finPopGeom(); if (!el || !G) return;
+  const { W, top, bottom, ax, ay, aw, ah } = G, VH = Math.max(160, bottom - top), gap = 16, acx = ax + aw / 2, acy = ay + ah / 2;
+  // its size follows the window: a column on a wide canvas, nearly the whole width on a narrow one; never taller than what you see
+  const w = W < 700 ? W - 16 : Math.round(Math.min(560, Math.max(360, W * 0.38)));
+  el.style.width = w + 'px'; el.style.maxHeight = VH + 'px';
+  const h = Math.min(el.scrollHeight, VH);
+  const room = { r: W - 8 - (ax + aw + gap), l: ax - gap - 8, b: bottom - (ay + ah + gap), t: ay - gap - top };
   let side, x, y;
-  if (ax + aw + gap + w <= W - 8) { side = 'r'; x = ax + aw + gap; }
-  else if (ax - gap - w >= 8) { side = 'l'; x = ax - gap - w; }
-  else side = ay + ah + gap + h <= H - 8 || ay < H / 2 ? 'b' : 't';
-  if (side === 'r' || side === 'l') y = Math.max(8, Math.min(H - h - 8, acy - h / 2));
-  else { x = Math.max(8, Math.min(W - w - 8, acx - w / 2)); y = side === 'b' ? Math.min(H - h - 8, ay + ah + gap) : Math.max(8, ay - gap - h); }
-  el.classList.remove('r', 'l', 'b', 't'); el.classList.add(side);
+  if (room.r >= w && room.r >= room.l) side = 'r'; else if (room.l >= w) side = 'l'; else if (room.r >= w) side = 'r';
+  else if (room.b >= Math.min(h, VH * 0.55) && room.b >= room.t) side = 'b'; else if (room.t >= Math.min(h, VH * 0.55)) side = 't'; else side = 'c';
+  if (side === 'r' || side === 'l') { x = side === 'r' ? ax + aw + gap : ax - gap - w; y = Math.max(top, Math.min(bottom - h, acy - h / 2)); }
+  else if (side === 'b' || side === 't') { x = Math.max(8, Math.min(W - w - 8, acx - w / 2)); y = side === 'b' ? Math.min(bottom - h, ay + ah + gap) : Math.max(top, ay - gap - h); }
+  else { x = Math.max(8, (W - w) / 2); y = top + Math.max(0, (VH - h) / 2); }
+  el.classList.remove('r', 'l', 'b', 't', 'c'); el.classList.add(side);
   const py = Math.max(18, Math.min(h - 18, acy - y)), px = Math.max(18, Math.min(w - 18, acx - x));
-  el.style.left = Math.round(x) + 'px'; el.style.top = Math.round(Math.max(8, y)) + 'px';
+  el.style.left = Math.round(x) + 'px'; el.style.top = Math.round(y) + 'px';
   el.style.setProperty('--py', py + 'px'); el.style.setProperty('--px', px + 'px');
-  el.style.transformOrigin = side === 'r' ? `0 ${py}px` : side === 'l' ? `100% ${py}px` : side === 'b' ? `${px}px 0` : `${px}px 100%`;
-  // the pointer hides when its card has left the window
-  el.classList.toggle('far', acx < 0 || acx > W || acy < 0 || acy > H);
+  // the pointer hides when its card has left the window, or the pop-out is centred
+  el.classList.toggle('far', side === 'c' || acx < 0 || acx > W || acy < top || acy > bottom);
+  // the first time: it grows out of the card — from the card's own size and place on the screen to its own
+  const key = UI.fin.pop + '@' + UI.fin.popAt, reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (UI.fin.popGrown !== key && el.classList.contains('enter')) UI.fin.popGrown = key, UI.fin.popGrow = { t: performance.now(), ax, ay, aw, ah, el: null };
+  // (the canvas may redraw while it grows — the new pop-out carries on from the same moment)
+  const GR = UI.fin.popGrow, since = GR ? performance.now() - GR.t : 1e9;
+  if (UI.fin.popGrown === key && GR && GR.el !== el && since < 440 && !reduce && el.animate && GR.aw > 2 && GR.ah > 2) {
+    GR.el = el; const sx = Math.max(0.05, GR.aw / w), sy = Math.max(0.05, GR.ah / Math.max(1, h));
+    const an = el.animate([{ transformOrigin: '0 0', transform: `translate(${GR.ax - x}px, ${GR.ay - y}px) scale(${sx}, ${sy})`, opacity: 0.35, borderRadius: '10px' },
+      { transformOrigin: '0 0', transform: 'none', opacity: 1, borderRadius: '20px' }], { duration: 440, easing: 'cubic-bezier(.2, .9, .22, 1)' });
+    an.currentTime = since;
+  }
 }
 function finPopOpen(id) { UI.fin.pop = id; UI.fin.popAt = Date.now(); render(); }
 function finPopClose() {
   const el = $('#fin-pop'); if (!el || !UI.fin.pop) { UI.fin.pop = null; render(); return; }
   const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
-  el.classList.remove('enter'); el.classList.add('leave');
-  setTimeout(() => { UI.fin.pop = null; render(); }, reduce ? 0 : 170);
+  el.classList.remove('enter');
+  // back into its card: the reverse of how it came out
+  const G = finPopGeom(), r = el.getBoundingClientRect(), V = G && G.vp.getBoundingClientRect();
+  if (!reduce && G && el.animate && G.aw > 2 && G.ah > 2) {
+    const x = r.left - V.left, y = r.top - V.top;
+    el.animate([{ transformOrigin: '0 0', transform: 'none', opacity: 1 }, { transformOrigin: '0 0', transform: `translate(${G.ax - x}px, ${G.ay - y}px) scale(${Math.max(0.05, G.aw / r.width)}, ${Math.max(0.05, G.ah / r.height)})`, opacity: 0.2 }], { duration: 260, easing: 'cubic-bezier(.4, 0, .7, .2)', fill: 'forwards' });
+  } else el.classList.add('leave');
+  setTimeout(() => { UI.fin.pop = null; render(); }, reduce ? 0 : 250);
 }
 // a tap on an empty part of the canvas puts the pop-out away
 document.addEventListener('click', e => { if (UI.view !== 'finance' || !UI.fin.pop || !e.target.closest) return; if (e.target.closest('#fin-cv-vp') && !e.target.closest('.fin-cvn, .fin-det, button, a, input, select, textarea, label')) finPopClose(); });

@@ -352,7 +352,7 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 .fin-cv-float { position: absolute; top: max(10px, env(safe-area-inset-top, 0px)); right: max(10px, env(safe-area-inset-right, 0px)); z-index: 8; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; padding: 6px; border-radius: 14px; background: color-mix(in srgb, var(--surface) 88%, transparent); box-shadow: var(--elev-2); backdrop-filter: blur(6px); }
 
 /* ---------- a card's details pop out beside it ---------- */
-.fin-pop { position: absolute; left: 0; top: 0; z-index: 6; width: min(460px, calc(100% - 16px)); max-height: calc(100% - 16px); box-sizing: border-box; display: flex; flex-direction: column;
+.fin-pop { position: absolute; left: 0; top: 0; z-index: 6; width: min(460px, calc(100% - 16px)); max-height: calc(100% - 16px); will-change: transform; box-sizing: border-box; display: flex; flex-direction: column;
   background: var(--surface); border: 1px solid color-mix(in srgb, hsl(var(--h) 50% 50%) 25%, var(--line)); border-radius: 20px;
   box-shadow: 0 28px 64px -24px rgba(20, 10, 30, .45), 0 10px 24px -12px rgba(20, 10, 30, .25), 0 0 0 1px rgba(255,255,255,.04) inset; }
 .fin-pop::before { content: ""; position: absolute; width: 14px; height: 14px; background: var(--surface); border: inherit; border-width: 0; transform: rotate(45deg); }
@@ -374,7 +374,6 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 .fin-cv-world.glide { transition: transform .4s cubic-bezier(.2, .8, .2, 1); }
 .fin-leaf.sel { z-index: 3; }
 @media (prefers-reduced-motion: no-preference) {
-  .fin-pop.enter { animation: finPopIn .42s cubic-bezier(.2, .95, .25, 1.12) both; }
   .fin-pop.r.enter { --dx: -18px; --dy: 0px; } .fin-pop.l.enter { --dx: 18px; --dy: 0px; } .fin-pop.b.enter { --dx: 0px; --dy: -14px; } .fin-pop.t.enter { --dx: 0px; --dy: 14px; }
   .fin-pop.enter .fin-pop-b > * { animation: finPopItem .5s cubic-bezier(.2, .8, .2, 1) both; }
   .fin-pop.enter .fin-pop-b > :nth-child(2) { animation-delay: .05s; } .fin-pop.enter .fin-pop-b > :nth-child(3) { animation-delay: .1s; }
@@ -715,3 +714,5 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 @media (max-width: 520px) { .fin-bal-r { grid-template-columns: minmax(0, 1fr); } .fin-bal-f input { width: 100%; } .fin-bal-in > * { flex: 1; } }
 .fin-cvwrap.full .fin-bal-tab, .fin-cvwrap.full .fin-bal-win { top: 72px; }
 @media (max-width: 600px) { .fin-bal-tab { grid-template-columns: auto; padding: 8px 10px; border-radius: 50%; } .fin-bal-tab small, .fin-bal-tab { font-size: 0; } .fin-bal-tab span { font-size: 20px; grid-row: auto; } }
+
+.fin-pop.c { box-shadow: 0 40px 120px -20px rgba(0, 0, 0, .7), 0 0 0 1px rgba(255, 255, 255, .06); }
