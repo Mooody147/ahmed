@@ -5554,6 +5554,14 @@ function thirdParty(txs, parties) {
       if (need >= EPS) p.links.push({ from: null, to: o.id, amount: r2(need), note: 'paid out more than was received for this person' });
     }
     p.open = fifo.filter(f => f.left >= EPS); p.in = r2(p.in); p.out = r2(p.out); p.held = r2(p.in - p.out);
+    // settled with them up to a date (you said everything they sent until then was given back or paid out for them):
+    // every transaction stays; what came in and went out until then simply no longer counts as still held
+    const party = (parties || []).find(x => x.id === p.id), st = party && validDate(party.settledTo) ? party.settledTo : null;
+    if (st) {
+      const before = p.items.filter(t => t.date <= st), after = p.items.filter(t => t.date > st);
+      p.settledTo = st; p.settledNote = party.settledNote || ''; p.settled = r2(before.reduce((s, t) => s + t.amount, 0));
+      p.held = r2(after.reduce((s, t) => s + t.amount, 0)); p.open = p.open.filter(f => f.date > st);
+    }
   }
   return Object.values(out);
 }
@@ -16324,7 +16332,10 @@ function finCardDetail(id) {
       + (h.note ? `<p class="small muted">${esc(h.note)}</p>` : '') + ((h.history || []).length ? `<h4>Changes</h4><div class="fin-det-tx">${h.history.slice(-5).reverse().map(x => `<div><span class="muted">${fday((x.at || '').slice(0, 10))}</span><span>before</span><b class="num">${x.principal ? fm(+x.principal) : x.valuation ? fm(+x.valuation) : '—'}</b></div>`).join('')}</div>` : '')
       + `<div class="row">${edit}${finBtn('fin-cv-sec', '🏛️ Ownership', { s: 'own' })}</div>`;
   }
-  if (kind === 't') { const x = FIN.thirdParty(finTx(), p.parties).find(z => z.id === key); if (!x) return ''; return finKv([['Came in', fk(x.in), ''], ['Went out', fk(x.out), ''], ['Still held', fk(x.held), 'not yours']]) + `<h4>Their money</h4>${finTxList(x.items.slice().sort((a, b) => b.date.localeCompare(a.date)))}<div class="row">${edit}</div>`; }
+  if (kind === 't') { const x = FIN.thirdParty(finTx(), p.parties).find(z => z.id === key); if (!x) return ''; const real = p.parties.some(z => z.id === key);
+    return finKv([['Came in', fk(x.in), ''], ['Went out', fk(x.out), ''], ['Still held', fk(x.held), x.settledTo ? `settled up to ${fday(x.settledTo)}` : 'not yours']])
+      + (x.settledTo ? `<p class="small muted">Settled with ${esc(x.name)} up to ${fday(x.settledTo)}${x.settledNote ? ` — ${esc(x.settledNote)}` : ''}: ${fk(x.settled)} counted as given back or paid out for them. Every transaction is kept.</p>` : '')
+      + `<h4>Their money</h4>${finTxList(x.items.slice().sort((a, b) => b.date.localeCompare(a.date)))}<div class="row">${edit}${real && Math.abs(x.held) >= 0.01 ? finBtn('fin-party-settle', '✓ All settled — given back or paid out for them', { id: key }) : ''}${x.settledTo ? finBtn('fin-party-settle', 'Undo the settlement', { id: key, v: 'clear' }) : ''}</div>`; }
   if (kind === 'b') {
     const it = finBuyPlan().items.find(z => z.id === key); if (!it) return ''; const o = it.options || {};
     const opt = (label, ok, q) => `<tr class="${it.rec === label[1] ? 'on' : ''}"><td>${label[0]}</td><td>${ok ? '✓' : '—'}</td><td class="num">${q ? fm(q.monthly) + ' × ' + q.months : ''}</td><td class="num">${q ? fm(q.cost) : ''}</td></tr>`;
@@ -17416,6 +17427,7 @@ function finMenuItems(id) {
   if (act.act === 'fin-acct-ledger' || act.act === 'fin-drill-cat') items.push(['tx', '📒', 'Its transactions']);
   if (act.act === 'fin-sec' && act.s && FIN_VIEW[act.s]) items.push(['part', FIN_ICON[act.s] || '📂', 'Open ' + ((FIN_SECS.find(s => s[0] === act.s) || [])[1] || 'its part')]);
   if (act.act === 'fin-buy-edit') items.push(['buy', '🛍️', 'Plan this purchase']);
+  if (id.startsWith('t:') && (finP().parties || []).some(z => 't:' + z.id === id)) items.push(['settle', '✓', 'All settled — given back or paid out for them']);
   items.push(['zoom', '🎯', 'Zoom to it']);
   if (n.val) items.push(['copy', '📋', 'Copy “' + E.clip(n.val, 24) + '”']);
   if (spec && spec.remove) items.push(['rm', '🗑', 'Remove']);
@@ -17445,6 +17457,7 @@ function finMenuDo(k) {
   if (k === 'talk') return finTalkWin(true, finAboutOf(id));
   if (k === 'det') return finPopOpen(id);
   if (k === 'edit') return finCvEditOpen(id);
+  if (k === 'settle') return finPartySettle(id.slice(2));
   if (k === 'zoom') { finCvGoto(id); UI.fin.flash = { ids: new Set([id]), until: Date.now() + 1800 }; return render(); }
   if (k === 'copy') { try { navigator.clipboard.writeText(n.val); toast('Copied ' + n.val); } catch { toast(n.val); } return; }
   if (k === 'rm') { const s = finCvSpec(id); if (s && s.remove) { const snap = finSnapshot(), line = s.remove(); finCvEditDone(line, snap, []); } return; }
@@ -18188,7 +18201,7 @@ function finAgentContext() {
   const C = finCanvasP(), root = finCvModel(), branches = root.children.map(b => ({ id: b.id, title: b.label, cards: (function leaves(l) { return l.flatMap(c => c.type === 'branch' ? leaves(c.children) : [c]); })(b.children).filter(c => !c.cls.includes('tool') && !c.cls.includes('more')).slice(0, 14).map(c => ({ id: c.id, label: c.label, shows: c.val || '' })) }));
   const feed = finTalkFeed().slice(-10).map(x => x.who === 'you' ? { you: E.clip(x.text || '', 400) } : { canvas: E.clip(x.reply || '', 300), did: (x.done || []).slice(0, 6) });
   return { view: UI.fin.cv.mode || 'mind', mapBranches: ['mm-earn (Earned income)', 'mm-pass (Passive income)', 'mm-assets (Assets)', 'exp (Spending)', 'mm-liab (Liabilities)', 'buy (Your choices — goals & purchases)', 'below (under the map)'],
-    rooms: branches, myBoxes: C.boxes.map(b => ({ id: b.id, title: b.title, branch: b.branch, show: b.show, note: b.note || '' })), renamed: C.labels, hidden: C.hidden, conversationSoFar: feed };
+    people: FIN.thirdParty(finTx(), finP().parties).map(x => ({ id: x.id, name: x.name, held: x.held, cameIn: x.in, wentOut: x.out, settledTo: x.settledTo || null })), rooms: branches, myBoxes: C.boxes.map(b => ({ id: b.id, title: b.title, branch: b.branch, show: b.show, note: b.note || '' })), renamed: C.labels, hidden: C.hidden, conversationSoFar: feed };
 }
 const FIN_AGENT_RULES = () => `
 
@@ -18203,6 +18216,7 @@ To change the canvas, add "canvas":[operations] to the JSON (the canvas checks e
 {"op":"renameBranch","room":"room or branch id (also free for Financial freedom)","title":""}
 {"op":"category","action":"create|rename|merge","id":"category id (rename, merge)","name":"","kind":"expense|income","into":"category id (merge)"}
 {"op":"recategorize","filter":FILTER,"to":"category id, or the name of a category created in the same answer","remember":true when new transactions like these should get it too}
+{"op":"settleParty","party":"person id or name from people","to":"YYYY-MM-DD (default today)","note":"","clear":false} — when the owner says everything someone sent until a date was given back or paid out for them (their transactions stay; they are no longer counted as held)
 {"op":"fold","room":""}   {"op":"unfold","room":""}   {"op":"view","mode":"mind|rich|flow"}   {"op":"show","node":"card, room or box id to bring into view"}
 SHOW = {"what":"transactions|recurring|categories|months|accounts|instalments|goals|holdings|cards|text","filter":FILTER,"sort":"date-desc|date-asc|amount-desc|amount-asc|name","limit":1-200,"group":"none|category|month|account|merchant","format":"table|list|bars|total","columns":["date","desc","amount","category","account","balance"],"nodes":["card ids — for what:cards"]}
 FILTER = {"account":"id from accounts","category":["category ids"],"direction":"in|out","from":"YYYY-MM-DD","to":"YYYY-MM-DD","lastDays":number,"text":"words in the description","minAmount":number,"maxAmount":number}
@@ -18235,7 +18249,7 @@ function finAgentApply(ops, about) {
     if (Array.isArray(s.columns)) o.columns = s.columns.filter(c => FIN_BOX_COLS.includes(c)).slice(0, 6);
     if (Array.isArray(s.nodes)) o.nodes = s.nodes.filter(id => card(id)).slice(0, 30);
     return o; };
-  const aboutOk = op => !about || (op.node && op.node === about.id) || ['addBox', 'updateBox', 'removeBox', 'show', 'view'].includes(op.op);
+  const aboutOk = op => !about || (op.node && op.node === about.id) || ['addBox', 'updateBox', 'removeBox', 'show', 'view'].includes(op.op) || (op.op === 'settleParty' && about.id.startsWith('t:'));
   for (const op of ops.slice(0, 30)) {
     if (!op || typeof op !== 'object') continue;
     if (!aboutOk(op)) { notes.push(`Kept to ${about.label} — not done: ${str(op.op, 20)}`); continue; }
@@ -18278,12 +18292,30 @@ function finAgentApply(ops, about) {
         const id = str(op.room, 40); if (!id) continue; if (op.op === 'fold') UI.fin.cvCol.add(id); else UI.fin.cvCol.delete(id); finCvKeep(); done.push(`${op.op === 'fold' ? 'folded' : 'unfolded'} ${id}`);
       } else if (op.op === 'view' && FIN_CV_MODES.includes(op.mode)) { if (UI.fin.cv.mode !== op.mode) { UI.fin.agentMode = op.mode; done.push(`switched to ${op.mode === 'rich' ? 'Rich Dad' : op.mode === 'flow' ? 'Flow' : 'the Mind map'}`); } }
       else if (op.op === 'show' && op.node) UI.fin.goto = str(op.node, 60);
+      else if (op.op === 'settleParty') {
+        const p = finP(), q = String(op.party || ''), x = (p.parties || []).find(z => z.id === q) || (p.parties || []).find(z => FIN.norm(z.name) === FIN.norm(q)) || (p.parties || []).find(z => q && FIN.norm(z.name).includes(FIN.norm(q)));
+        if (!x) { notes.push(`No person “${str(op.party, 30)}” among others' money.`); continue; }
+        done.push(...finPartySettle(x.id, !!op.clear, op.to, op.note ? str(op.note, 140) : ''));
+      }
     } catch (e) { console.error(e); notes.push(`Could not do ${str(op.op, 20)} (${e.message || e}).`); }
   }
   return { done, notes };
 }
 
-Object.assign(ACT, { 'fin-box-del': el => { const id = (el.dataset.id || '').replace(/^box:/, ''), b = finCanvasP().boxes.find(x => x.id === id); if (!b) return; finAsk(`Remove the box “${b.title}”?`); finCanvasSave(c => { c.boxes = c.boxes.filter(x => x.id !== id); }); render(); } });
+// settled with someone: everything they sent until today was given back or paid out for them — kept as a record, with
+// Undo, presented on the canvas; their card goes when nothing of theirs is held any more
+function finPartySettle(pid, clear, to, note) {
+  const p = finP(), x = (p.parties || []).find(z => z.id === pid); if (!x) return [];
+  const before = typeof finChangeIndex === 'function' ? finChangeIndex() : null, snap = finSnapshot(), day = FIN.validDate(to) ? to : finToday();
+  const held = (FIN.thirdParty(finTx(), p.parties).find(z => z.id === pid) || {}).held || 0;
+  finSave(q => { const y = q.parties.find(z => z.id === pid); if (!y) return; if (clear) { delete y.settledTo; delete y.settledNote; } else { y.settledTo = day; y.settledNote = note || 'everything they sent was given back or paid out for them'; } });
+  const line = clear ? `${x.name}: settlement removed — their money counts as held again` : `${x.name}: settled up to ${fday(day)} — ${fk(held)} no longer held (given back or paid out for them); every transaction kept`;
+  const m = { id: E.uid('tk'), at: nowISO(), who: 'edit', text: line, undoable: true }; UI.fin.undo.set(m.id, snap); finTalkPush(m);
+  UI.fin.menu = null; UI.fin.pop = null; if (before && typeof finPresent === 'function') finPresent(before, ['t:' + pid, 'third']);
+  render(); return [line];
+}
+Object.assign(ACT, { 'fin-party-settle': el => finPartySettle(el.dataset.id, el.dataset.v === 'clear'),
+  'fin-box-del': el => { const id = (el.dataset.id || '').replace(/^box:/, ''), b = finCanvasP().boxes.find(x => x.id === id); if (!b) return; finAsk(`Remove the box “${b.title}”?`); finCanvasSave(c => { c.boxes = c.boxes.filter(x => x.id !== id); }); render(); } });
 Object.assign(window.__FIN, { canvas: () => finCanvasP(), agent: (ops, about) => { const r = finAgentApply(ops, about); render(); return r; }, boxRows: id => { const b = finCanvasP().boxes.find(x => x.id === id); return b ? finBoxRows(b.show || {}) : null; } });
 
 /* ===== features/57-finance-brands.js ===== */

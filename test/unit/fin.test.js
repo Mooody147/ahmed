@@ -249,6 +249,10 @@ eq([rec.confirmed.balance, rec.computed, rec.diff, rec.status], [104590, 104590,
 /* third-party money and net worth */
 const tp = F.thirdParty(tx6, ctx.parties);
 eq([tp[0].in, tp[0].out, tp[0].held, tp[0].links.length], [100000, 60000, 40000, 1], 'Ahmed: 100,000 in, 60,000 out, 40,000 still held');
+// settled with him up to a date: every transaction kept, nothing before it held any more; later money counts again
+{ const later = [...tx6, { id: 'late1', date: '2099-01-02', amount: 5000, cat: 'held', party: tx6.find(t => t.cat === 'held').party }];
+  const st = F.thirdParty(later, ctx.parties.map(x => x.id === tp[0].id ? { ...x, settledTo: '2099-01-01', settledNote: 'all given back' } : x))[0];
+  eq([st.in, st.out, st.settled, st.held, st.settledTo, st.items.length], [105000, 60000, 40000, 5000, '2099-01-01', tp[0].items.length + 1], 'settled: transactions kept, only what came after still held'); }
 const pos = F.position({ base: 'EGP', accounts: [{ id: 'A', name: 'Bank A', kind: 'current', currency: 'EGP' }, { id: 'K', name: 'Card', kind: 'credit_card', currency: 'EGP' }],
   recon: { A: { confirmed: { balance: 150000, date: '2026-08-31' } }, K: { confirmed: { balance: -5300, date: '2026-08-31' } } }, thirdParty: tp, parties: [{ id: 'brother', name: 'My brother' }],
   holdings: [{ id: 'cd', kind: 'cd', name: 'Certificate', owner: 'me', principal: 63000 }, { id: 'mom', kind: 'deposit', name: 'Deposit in my mother’s account', owner: 'me', custodian: 'my mother', principal: 1380000 },

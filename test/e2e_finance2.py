@@ -541,6 +541,24 @@ async def main():
         assert await ev(f"{U}.cvOpen.length") == n_open, 'a double-click zooms, it does not open the part'
         await pg.screenshot(path=os.path.join(HERE, 'shots', 'finance-complete.png'))
 
+        # someone's money, settled: everything they sent was given back or paid out for them — their transactions stay,
+        # nothing of theirs is held any more; Undo; and the same in words
+        third = await ev("window.__FIN.prefs().parties.map(z => [z.id, z.name])"); held0 = (await ev("window.__FIN.now()"))['held']; n_tx = await ev("window.__FIN.tx().length")
+        pid = [x for x in third if 'Ali' in x[1]][0][0]; print('PARTIES', third, held0)
+        await ev(f"window.__FIN.show('t:{pid}')"); await pg.wait_for_timeout(400)
+        await pg.click(f'.fin-cvn[data-node="t:{pid}"]', button='right'); await pg.wait_for_selector('#fin-menu')
+        await pg.click('#fin-menu [data-k="settle"]'); await pg.wait_for_timeout(500); await ev("window.__FIN.presentEnd && window.__FIN.presentEnd()")
+        t_ali = await ev(f"window.__FIN.third('{pid}')"); print('SETTLED', t_ali['held'], t_ali.get('settledTo'), t_ali.get('settled'))
+        assert t_ali['held'] == 0 and t_ali.get('settledTo') and not await ev(f"!!document.querySelector('.fin-leaf[data-node=\"t:{pid}\"]')"), 'nothing of his held; his card goes'
+        assert (await ev("window.__FIN.now()"))['held'] == held0 - 10000 and await ev("window.__FIN.tx().length") == n_tx, 'the money is yours again; every transaction kept'
+        bm = await ev("window.__FIN.talk().filter(x => /settled up to/.test(x.text || '')).pop()"); assert bm
+        await ev(f"document.querySelector('[data-act=\"fin-talk-undo\"][data-id=\"{bm['id']}\"]').click()"); await pg.wait_for_timeout(400); await ev("window.__FIN.presentEnd && window.__FIN.presentEnd()")
+        assert (await ev(f"window.__FIN.third('{pid}')"))['held'] == 10000, 'Undo'
+        r = await ev("window.__FIN.agent([{ op: 'settleParty', party: 'ali hassan' }])"); await pg.wait_for_timeout(300); await ev("window.__FIN.presentEnd && window.__FIN.presentEnd()")
+        assert (await ev(f"window.__FIN.third('{pid}')"))['held'] == 0, ('said in words', r)
+        await ev(f"window.__FIN.agent([{{ op: 'settleParty', party: '{pid}', clear: true }}])"); await pg.wait_for_timeout(300); await ev("window.__FIN.presentEnd && window.__FIN.presentEnd()")
+        assert (await ev(f"window.__FIN.third('{pid}')"))['held'] == 10000, 'and undone in words'
+
         # questions are answered and change nothing; asking to see something opens it
         t0 = await ev("window.__FIN.tx().length"); m = await say('How much did I spend on food in September?')
         assert 'groceries' in m['reply'] and not m.get('changes') and await ev("window.__FIN.tx().length") == t0

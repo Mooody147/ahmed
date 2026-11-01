@@ -242,7 +242,10 @@ function finCardDetail(id) {
       + (h.note ? `<p class="small muted">${esc(h.note)}</p>` : '') + ((h.history || []).length ? `<h4>Changes</h4><div class="fin-det-tx">${h.history.slice(-5).reverse().map(x => `<div><span class="muted">${fday((x.at || '').slice(0, 10))}</span><span>before</span><b class="num">${x.principal ? fm(+x.principal) : x.valuation ? fm(+x.valuation) : '—'}</b></div>`).join('')}</div>` : '')
       + `<div class="row">${edit}${finBtn('fin-cv-sec', '🏛️ Ownership', { s: 'own' })}</div>`;
   }
-  if (kind === 't') { const x = FIN.thirdParty(finTx(), p.parties).find(z => z.id === key); if (!x) return ''; return finKv([['Came in', fk(x.in), ''], ['Went out', fk(x.out), ''], ['Still held', fk(x.held), 'not yours']]) + `<h4>Their money</h4>${finTxList(x.items.slice().sort((a, b) => b.date.localeCompare(a.date)))}<div class="row">${edit}</div>`; }
+  if (kind === 't') { const x = FIN.thirdParty(finTx(), p.parties).find(z => z.id === key); if (!x) return ''; const real = p.parties.some(z => z.id === key);
+    return finKv([['Came in', fk(x.in), ''], ['Went out', fk(x.out), ''], ['Still held', fk(x.held), x.settledTo ? `settled up to ${fday(x.settledTo)}` : 'not yours']])
+      + (x.settledTo ? `<p class="small muted">Settled with ${esc(x.name)} up to ${fday(x.settledTo)}${x.settledNote ? ` — ${esc(x.settledNote)}` : ''}: ${fk(x.settled)} counted as given back or paid out for them. Every transaction is kept.</p>` : '')
+      + `<h4>Their money</h4>${finTxList(x.items.slice().sort((a, b) => b.date.localeCompare(a.date)))}<div class="row">${edit}${real && Math.abs(x.held) >= 0.01 ? finBtn('fin-party-settle', '✓ All settled — given back or paid out for them', { id: key }) : ''}${x.settledTo ? finBtn('fin-party-settle', 'Undo the settlement', { id: key, v: 'clear' }) : ''}</div>`; }
   if (kind === 'b') {
     const it = finBuyPlan().items.find(z => z.id === key); if (!it) return ''; const o = it.options || {};
     const opt = (label, ok, q) => `<tr class="${it.rec === label[1] ? 'on' : ''}"><td>${label[0]}</td><td>${ok ? '✓' : '—'}</td><td class="num">${q ? fm(q.monthly) + ' × ' + q.months : ''}</td><td class="num">${q ? fm(q.cost) : ''}</td></tr>`;

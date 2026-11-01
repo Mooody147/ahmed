@@ -944,6 +944,14 @@ function thirdParty(txs, parties) {
       if (need >= EPS) p.links.push({ from: null, to: o.id, amount: r2(need), note: 'paid out more than was received for this person' });
     }
     p.open = fifo.filter(f => f.left >= EPS); p.in = r2(p.in); p.out = r2(p.out); p.held = r2(p.in - p.out);
+    // settled with them up to a date (you said everything they sent until then was given back or paid out for them):
+    // every transaction stays; what came in and went out until then simply no longer counts as still held
+    const party = (parties || []).find(x => x.id === p.id), st = party && validDate(party.settledTo) ? party.settledTo : null;
+    if (st) {
+      const before = p.items.filter(t => t.date <= st), after = p.items.filter(t => t.date > st);
+      p.settledTo = st; p.settledNote = party.settledNote || ''; p.settled = r2(before.reduce((s, t) => s + t.amount, 0));
+      p.held = r2(after.reduce((s, t) => s + t.amount, 0)); p.open = p.open.filter(f => f.date > st);
+    }
   }
   return Object.values(out);
 }
