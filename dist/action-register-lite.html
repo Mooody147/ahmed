@@ -2377,12 +2377,12 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 .rd-l { font: 700 20px/1 var(--font, system-ui); fill: var(--ink); paint-order: stroke; stroke: color-mix(in srgb, var(--bg) 92%, transparent); stroke-width: 6px; stroke-linejoin: round; }
 .rd-l .per { font-size: 14px; font-weight: 600; fill: var(--ink-2); }
 /* what each card is */
-.mode-rich .mnode.fin-leaf.rd-earned { border-left: 6px solid #3b82c4; }
-.mode-rich .mnode.fin-leaf.rd-passive { border-left: 6px solid #c9a227; background: linear-gradient(90deg, color-mix(in srgb, #c9a227 14%, var(--surface)), var(--surface) 60%); }
-.mode-rich .mnode.fin-leaf.rd-asset { border-left: 6px solid #2e9e5b; background: linear-gradient(90deg, color-mix(in srgb, #2e9e5b 10%, var(--surface)), var(--surface) 60%); }
-.mode-rich .mnode.fin-leaf.rd-liability { border-left: 6px solid #d9534f; background: linear-gradient(90deg, color-mix(in srgb, #d9534f 10%, var(--surface)), var(--surface) 60%); }
-.mode-rich .mnode.fin-leaf.rd-expense { border-left: 6px solid #e08a5a; }
-.mode-rich .mnode.fin-leaf.rd-doodad { border-left: 6px dashed #8e6bbf; }
+.mode-rich .mnode.fin-leaf.rd-earned, .mode-mind .mnode.fin-leaf.rd-earned { border-left: 6px solid #3b82c4; }
+.mode-rich .mnode.fin-leaf.rd-passive, .mode-mind .mnode.fin-leaf.rd-passive { border-left: 6px solid #c9a227; background: linear-gradient(90deg, color-mix(in srgb, #c9a227 14%, var(--surface)), var(--surface) 60%); }
+.mode-rich .mnode.fin-leaf.rd-asset, .mode-mind .mnode.fin-leaf.rd-asset { border-left: 6px solid #2e9e5b; background: linear-gradient(90deg, color-mix(in srgb, #2e9e5b 10%, var(--surface)), var(--surface) 60%); }
+.mode-rich .mnode.fin-leaf.rd-liability, .mode-mind .mnode.fin-leaf.rd-liability { border-left: 6px solid #d9534f; background: linear-gradient(90deg, color-mix(in srgb, #d9534f 10%, var(--surface)), var(--surface) 60%); }
+.mode-rich .mnode.fin-leaf.rd-expense, .mode-mind .mnode.fin-leaf.rd-expense { border-left: 6px solid #e08a5a; }
+.mode-rich .mnode.fin-leaf.rd-doodad, .mode-mind .mnode.fin-leaf.rd-doodad { border-left: 6px dashed #8e6bbf; }
 /* the scorecard */
 .fin-rd-score { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 16px; align-items: center; }
 .fin-rd-pat { display: grid; gap: 2px; } .fin-rd-pat b { font-size: 30px; font-family: var(--f-display); }
@@ -2391,6 +2391,44 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 .fin-rd-bar { height: 14px; border-radius: 99px; background: var(--line-2); overflow: hidden; } .fin-rd-bar i { display: block; height: 100%; background: linear-gradient(90deg, #c9a227, #2e9e5b); border-radius: 99px; }
 .mode-rich .fin-det[data-det="up"] .fin-up-grid { grid-template-columns: minmax(0, 1fr); }
 .mode-rich .fin-up-l { white-space: normal; overflow: visible; overflow-wrap: anywhere; }
+
+/* ---------- the Mind map, the Rich Dad way ---------- */
+.mode-mind .mnode.fin-leaf.rd-asset.rd-cash { border-left: 6px solid #7cc79a; background: var(--surface); }
+.mode-mind .mnode.fin-leaf.rd-asset.rd-idle { border-left: 6px dashed #2e9e5b; background: var(--surface); }
+.mm-branch.work .limb { fill: #3b82c4; } .mm-branch.gold .limb { fill: #c9a227; }
+.fin-twig.work { stroke: #3b82c4; } .fin-twig.gold { stroke: #c9a227; }
+.mm-i { font: 600 15px/1 var(--font, system-ui); fill: var(--ink-2); paint-order: stroke; stroke: color-mix(in srgb, var(--bg) 90%, transparent); stroke-width: 5px; stroke-linejoin: round; }
+.mm-cross .pipe { fill: none; stroke-linecap: round; opacity: .5; }
+.mm-cross .flow { fill: none; stroke: #fff; stroke-width: 5; stroke-linecap: round; stroke-dasharray: 0.1 22; opacity: .95; }
+.mm-cross.gold .pipe { stroke: #c9a227; } .mm-cross.red .pipe { stroke: #d9534f; } .mm-cross.green .pipe { stroke: #2e9e5b; }
+@media (prefers-reduced-motion: no-preference) { .mm-cross .flow { animation: finMind 2.6s linear infinite; } }
+.mode-mind .fin-room.free { border: 3px solid #c9a227; box-shadow: 0 0 0 10px color-mix(in srgb, #c9a227 12%, transparent), 0 30px 70px -40px rgba(120, 90, 10, .5); background: color-mix(in srgb, var(--surface) 96%, #c9a227); }
+.mode-mind .fin-room.free .fin-room-t b { font-size: 28px; }
+.fin-free { display: grid; gap: 14px; }
+.fin-free-top { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 18px; align-items: center; }
+.fin-free-ring { width: 150px; height: 150px; }
+.fin-free-ring .bg { fill: none; stroke: var(--line-2); stroke-width: 14; }
+.fin-free-ring .fg { fill: none; stroke: #2e9e5b; stroke-width: 14; stroke-linecap: round; transform: rotate(-90deg); transform-origin: 64px 64px; transition: stroke-dasharray .6s ease; }
+.fin-free-ring .p { font: 800 30px/1 var(--f-display, system-ui); fill: var(--ink); } .fin-free-ring .s { font: 600 13px/1 var(--font, system-ui); fill: var(--ink-2); }
+.fin-free-pat { display: grid; gap: 4px; } .fin-free-pat b { font-size: 32px; font-family: var(--f-display); }
+.fin-free.rich .fin-free-pat b { color: #2e9e5b; } .fin-free.middle .fin-free-pat b { color: #c47a1c; } .fin-free.poor .fin-free-pat b { color: #d9534f; } .fin-free.building .fin-free-pat b { color: #3b82c4; }
+.fin-free-cf { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; align-items: stretch; }
+.fin-free-cf > div { display: grid; gap: 4px; padding: 10px 12px; border-radius: 12px; background: var(--surface-2, var(--bg)); border-top: 4px solid var(--line); min-width: 0; }
+.fin-free-cf > div span { font-size: 12px; color: var(--ink-2); overflow-wrap: anywhere; } .fin-free-cf > div b { font-size: 16px; }
+.fin-free-cf .work { border-top-color: #3b82c4; } .fin-free-cf .gold { border-top-color: #c9a227; } .fin-free-cf .drain { border-top-color: #e08a5a; } .fin-free-cf .debt { border-top-color: #d9534f; } .fin-free-cf .green { border-top-color: #2e9e5b; }
+.fin-free-cf small { grid-column: 1 / -1; text-align: right; }
+.fin-free-bs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.fin-free-bs > div { display: grid; gap: 2px; padding: 10px 14px; border-radius: 12px; }
+.fin-free-bs .asset { background: color-mix(in srgb, #2e9e5b 12%, var(--surface)); } .fin-free-bs .liab { background: color-mix(in srgb, #d9534f 12%, var(--surface)); }
+.fin-free-bs b { font-size: 20px; } .fin-free-bs small { color: var(--ink-2); }
+.fin-free h4 { margin: 2px 0 0; }
+.fin-moves { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.fin-moves li { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; gap: 10px; align-items: start; padding: 10px 12px; border-radius: 12px; background: var(--surface-2, var(--bg)); }
+.fin-moves .ic { font-size: 20px; line-height: 1.2; } .fin-moves li div { display: grid; gap: 2px; min-width: 0; } .fin-moves li .small { overflow-wrap: anywhere; }
+.fin-free-key { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: center; }
+.fin-free-key i { display: inline-block; width: 14px; height: 10px; border-radius: 3px; margin-right: -6px; vertical-align: middle; }
+.fin-free-key .work { background: #3b82c4; } .fin-free-key .gold { background: #c9a227; } .fin-free-key .green { background: #2e9e5b; } .fin-free-key .cash { background: #7cc79a; }
+.fin-free-key .idle { border: 2px dashed #2e9e5b; } .fin-free-key .red { background: #d9534f; } .fin-free-key .exp { background: #e08a5a; } .fin-free-key .doodad { border: 2px dashed #8e6bbf; }
 
 </style>
 <div class="titlestrip" id="titlestrip"><span class="ts-brand"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c3.3 4 6 7.2 6 10.4a6 6 0 0 1-12 0C6 10.2 8.7 7 12 3z"/><path d="m9.3 13.6 1.9 1.9 3.6-4.1"/></svg> Action Register</span><button class="ts-search" data-act="palette" title="Search and commands (Ctrl+K)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg><span>Search or type a command</span><kbd>Ctrl K</kbd></button><span class="ts-space"></span></div>
@@ -16254,6 +16292,7 @@ function finGoalsTimeline(plan) {
 function finDetBody(id, plan, n) {
   if (id === 'ov') return finOverviewHTML();
   if (id === 'rd' && typeof finRdScoreHTML === 'function') return finRdScoreHTML();
+  if (id === 'free' && typeof finFreeHTML === 'function') return finFreeHTML();
   if (id === 'gk') return finGoalsHead(plan, n);
   if (id === 'gt') return finGoalsTimeline(plan);
   if (id === 'up') return finUpcomingHTML();
@@ -16312,14 +16351,15 @@ function finCvCard(c, hue) {
 function finCvRoom(r) {
   const folded = UI.fin.cvCol.has(r.id), fresh = Date.now() < UI.fin.flash.until && UI.fin.flash.ids.has(r.id) ? ' fresh' : '';
   const hasKids = r.kind === 'room' ? r.node.children.length : r.kind !== 'sec';   // overview, coming up and goals fold too
+  const aid = r.addId === undefined ? r.id : r.addId, solo = !r.syn && r.kind !== 'free';   // the Mind map's own branches and centre: no "only this room"
   const titleAct = r.kind === 'sec' ? `data-act="fin-cv-sec" data-s="${esc(r.sec)}"` : r.sec ? `data-act="fin-cv-sec" data-s="${esc(r.sec)}"` : '';
   return `<section class="fin-room ${r.kind}${r.cls ? ' tr-' + r.cls : ''}${fresh}" data-room="${esc(r.id)}" style="left:${r.x}px;top:${r.y}px;width:${r.w}px;height:${r.h}px;--h:${r.hue ?? 200}">
     <div class="fin-room-h">
       <div class="fin-room-t fin-cvn${r.sec && r.kind !== 'sec' && finSecOpen(r.sec) ? ' sel' : ''}" data-node="${esc(r.id)}" ${titleAct} role="button" tabindex="0" title="${r.kind === 'sec' ? 'Close' : r.sec ? 'Open ' + esc(finSecLabel(r.sec)) + ' here' : ''}"><span class="fin-room-ic" aria-hidden="true">${r.icon}</span><div><b>${esc(r.title)}</b>${r.sum ? `<small>${esc(r.sum)}</small>` : ''}</div>${r.sec && r.kind !== 'sec' ? `<span class="fin-room-go">${finSecOpen(r.sec) ? '▴ close' : '▾ open'}</span>` : ''}</div>
       <span class="spacer"></span>
-      ${typeof finCvAddSpec === 'function' && finCvAddSpec(r.id) ? `<button class="btn sm ghost" data-act="fin-cv-add" data-id="${esc(r.id)}" title="Add" aria-label="Add to ${esc(r.title)}">＋</button>` : ''}
+      ${typeof finCvAddSpec === 'function' && aid && finCvAddSpec(aid) ? `<button class="btn sm ghost" data-act="fin-cv-add" data-id="${esc(aid)}" title="Add" aria-label="Add to ${esc(r.title)}">＋</button>` : ''}
       ${r.kind === 'sec' ? `<button class="btn sm ghost" data-act="fin-cv-sec" data-s="${esc(r.sec)}" aria-label="Close ${esc(r.title)}">✕</button>`
-        : `${hasKids ? `<button class="btn sm ghost" data-act="fin-cv-tog" data-id="${esc(r.id)}" aria-expanded="${!folded}" title="${folded ? 'Unfold' : 'Fold'}" aria-label="${folded ? 'Unfold' : 'Fold'} ${esc(r.title)}">${folded ? '▸' : '▾'}</button>` : ''}<button class="btn sm ghost" data-act="fin-cv-focus" data-id="${esc(r.id)}" title="${UI.fin.cv.focus === r.id ? 'Show everything' : 'Show only this room'}" aria-label="${UI.fin.cv.focus === r.id ? 'Show everything' : 'Show only ' + esc(r.title)}">⤢</button>`}
+        : `${hasKids ? `<button class="btn sm ghost" data-act="fin-cv-tog" data-id="${esc(r.id)}" aria-expanded="${!folded}" title="${folded ? 'Unfold' : 'Fold'}" aria-label="${folded ? 'Unfold' : 'Fold'} ${esc(r.title)}">${folded ? '▸' : '▾'}</button>` : ''}${solo ? `<button class="btn sm ghost" data-act="fin-cv-focus" data-id="${esc(r.id)}" title="${UI.fin.cv.focus === r.id ? 'Show everything' : 'Show only this room'}" aria-label="${UI.fin.cv.focus === r.id ? 'Show everything' : 'Show only ' + esc(r.title)}">⤢</button>` : ''}`}
     </div></section>`;
 }
 function finCvBoard() {
@@ -17415,7 +17455,8 @@ function finRdKind(c, roomId) {
 }
 // the numbers behind the scorecard
 function finRdNumbers() {
-  const n = finNow(), root = finCvModel(), room = id => (root.children.find(b => b.id === id) || { children: [] }).children, leaves = list => list.flatMap(c => c.type === 'branch' ? leaves(c.children) : [c]);
+  const n = finNow(), f0 = UI.fin.cv.focus; UI.fin.cv.focus = null; let root; try { root = finCvModel(); } finally { UI.fin.cv.focus = f0; }   // all of it, even when one room is in focus
+  const room = id => (root.children.find(b => b.id === id) || { children: [] }).children, leaves = list => list.flatMap(c => c.type === 'branch' ? leaves(c.children) : [c]);
   const amt = c => { const m = /(-?[\d,]+(?:\.\d+)?)/.exec(String(c.val || '').replace(/ /g, ' ')); return m ? Math.abs(parseFloat(m[1].replace(/,/g, ''))) || 0 : 0; };
   let passive = 0, earned = 0; for (const c of leaves(room('inc'))) { const k = finRdKind(c, 'inc'); if (k === 'passive') passive += amt(c); else if (k === 'earned') earned += amt(c); }
   const own = leaves(room('own')), assets = (n.cash || 0) + own.filter(c => finRdKind(c, 'own') === 'asset').reduce((s, c) => s + amt(c), 0);
@@ -17716,108 +17757,193 @@ Object.assign(ACT, {
 });
 
 /* ===== features/55-finance-mind.js ===== */
-// Money canvas — the card layout "Mind map", with money flowing on it.
-// My money is the centre; branches go out to the left and right like a classic mind map: accounts, income,
-// spending, commitments, what you own, others' money, what is coming up, goals. Each main branch is as thick as that
-// money is per month and coloured by its health (green fine, amber watch it, red needs you); the most urgent and the
-// biggest sit at the top. Money moves on the branches: income flows in toward My money; spending, instalments and
-// savings flow out — particles running the way the money goes, faster on bigger branches. Inside each branch a thin
-// branch reaches every card, as thick as its amount. When something changes, its branch pulses brighter for a moment.
+// Money canvas — the card layout "Mind map", built on the ideas of Rich Dad Poor Dad.
+// In the centre: financial freedom — how much of your expenses passive income already covers (out of the rat race when
+// it covers all of them), your cash-flow pattern, and the wealth moves that matter most now.
+// Left, where money comes from and what makes it: earned income (you work for money), passive income (money works for
+// you) and your assets (what puts money in your pocket — the ones that pay you, and the money that only sits).
+// Right, where money goes: expenses, liabilities (what takes money out of your pocket — the card, Halan, instalments,
+// debt) and your choices (goals and purchases — doodads unless they pay you back).
+// The channels carry the money live, as thick as it is and as fast: your job and your assets feed you; savings flow
+// into assets; expenses, debt and purchases drain. Two channels show what the book is about: assets paying you
+// (passive income) and liabilities costing you every month; when your assets already pay a liability, a channel shows
+// that too. Each channel says what share of your income it is. A change makes its branch pulse.
 // Everything on the canvas works the same here: details, pop-outs, the card menu, editing, search, Tell the canvas.
 
-const FMM = { GAPX: 300, GAPY: 46, W: 620, WIDE: 1120, NEXT: 720, CENTER: 820, HEAD: 92 };
+const FMM = { GAPX: 430, GAPY: 54, W: 640, WIDE: 1120, CENTER: 900, HEAD: 92, OUT: 270 };
 // a card's amount, from what it shows ("EGP 3,267", "owes EGP 7,960", "EGP 3,000/mo")
 const finMindAmt = c => { const m = /(-?[\d,]+(?:\.\d+)?)/.exec(String(c.val || '').replace(/ /g, ' ')); return m ? Math.abs(parseFloat(m[1].replace(/,/g, ''))) || 0 : 0; };
+const finPct = (v, of) => of > 0 ? Math.round(v / of * 100) : null;
 
-function finMindLayout(rooms, plan, n) {
+// what a holding is, the Rich Dad way: an asset that pays you, or one that does not pay you yet
+const finHoldPays = h => (+h.rate > 0 && +h.principal > 0) || +h.myShareMonthly > 0;
+
+// the numbers behind the map: cash flow, assets that pay, idle money, debt, doodads, and the road to freedom
+function finWealth() {
+  const R = finRdNumbers(), n = R.n, p = finP(), plan = finBuyPlan();
+  const mine = (p.holdings || []).filter(h => (!h.owner || h.owner === 'me') && h.kind !== 'liability');
+  // the stated return of your assets that have one (a weighted average) — only from rates you entered
+  const rated = mine.filter(h => +h.rate > 0 && +h.principal > 0 && (!h.currency || h.currency === p.base)), rp = rated.reduce((s, h) => s + +h.principal, 0);
+  const yld = rp > 0 ? rated.reduce((s, h) => s + +h.principal * +h.rate, 0) / rp / 100 : null;
+  // assets whose return already pays a liability (e.g. interest allocated to instalments): expected minus your share
+  const payL = mine.filter(h => h.allocTo && +h.rate > 0 && +h.principal > 0).map(h => ({ h, amt: Math.max(0, +h.principal * +h.rate / 100 / 12 - (+h.myShareMonthly || 0)) })).filter(x => x.amt > 0);
+  const payLiab = payL.reduce((s, x) => s + x.amt, 0);
+  const idle = Math.max(0, n.free || 0), gap = Math.max(0, R.expenses - R.passive);
+  // the next instalment to end: when it ends, its money can go to assets
+  const ending = (n.inst || []).filter(i => i.status === 'active' && i.end).sort((a, b) => a.end < b.end ? -1 : 1)[0] || null;
+  // the road to freedom — an estimate only when a rate is known: free cash invested now and the monthly surplus
+  // invested every month, at your assets' stated average return; expenses and returns assumed to stay as they are
+  let months = null;
+  if (gap > 0 && yld) { const g2 = gap - idle * yld / 12, step = R.save * yld / 12; months = g2 <= 0 ? 0 : step > 0 ? Math.ceil(g2 / step) : null; }
+  // of the monthly surplus, what goes to purchases and what is left to buy assets
+  const toBuy = Math.min(R.save, plan.monthly || 0), toAssets = Math.max(0, R.save - toBuy);
+  return { R, n, plan, yld, rated, payL, payLiab, idle, gap, ending, months, toBuy, toAssets, doodads: plan.items || [] };
+}
+
+// the centre: financial freedom, your pattern, your cash flow, and the moves that build wealth
+function finFreeHTML() {
+  const W = finWealth(), R = W.R, n = W.n, [pt, why] = FIN_RD_PATTERN[R.pattern], pct = Math.round(R.freedom * 100), C = 2 * Math.PI * 52;
+  const ring = `<svg class="fin-free-ring" viewBox="0 0 128 128" aria-hidden="true"><circle cx="64" cy="64" r="52" class="bg"/><circle cx="64" cy="64" r="52" class="fg" style="stroke-dasharray:${(C * R.freedom).toFixed(1)} ${C.toFixed(1)}"/><text x="64" y="62" text-anchor="middle" class="p">${pct}%</text><text x="64" y="82" text-anchor="middle" class="s">free</text></svg>`;
+  const years = W.months === null ? '' : W.months === 0 ? 'now, if your free cash were invested' : W.months > 600 ? 'more than 50 years at this pace' : W.months < 24 ? `in about ${W.months} months` : `in about ${(W.months / 12).toFixed(W.months < 120 ? 1 : 0)} years`;
+  const moves = [];
+  if (W.idle > 0) moves.push(['🏗️', 'Put idle money to work', `${fk(W.idle)} sits in your accounts beyond your ${fk(n.reserve)} safety reserve.${W.yld ? ` At your assets’ stated ${(W.yld * 100).toFixed(1)}% a year it would pay about ${fk(Math.round(W.idle * W.yld / 12))} a month (estimate).` : ' An asset that pays you would turn it into passive income.'}`, 'own']);
+  if (R.save > 0) moves.push(['🌱', 'Pay yourself first', W.toBuy >= R.save ? `All of your ${fk(R.save)} monthly surplus is planned for purchases — nothing goes to assets. Send part of it to assets first; purchases can wait a little.` : `${fk(R.save)} a month is left after expenses and your goals${W.toBuy ? `; ${fk(W.toBuy)} of it is planned for purchases` : ''} — send ${fk(W.toAssets)} to assets before it turns into spending.`, 'forecast']);
+  const owed = n.card && n.card.owed > 0 ? n.card.owed : 0;
+  if (owed || n.instMonthly > 0) moves.push(['✂️', 'Cut liabilities', `${owed ? `The card owes ${fk(owed)}. ` : ''}${n.instMonthly > 0 ? `Instalments take ${fk(n.instMonthly)} a month (${finPct(n.instMonthly, R.income) ?? '—'}% of income). ` : ''}${W.ending ? `${W.ending.name} ends ${fmon(W.ending.end)} — send its ${fk(W.ending.amount)} to assets, not to new spending.` : ''}`, 'credit']);
+  if (W.doodads.length) moves.push(['🛍️', 'Let assets buy your doodads', `${W.doodads.length} planned purchase${W.doodads.length === 1 ? '' : 's'} (${fk(W.plan.total)}) will not pay you back. The book’s rule: buy assets first, and let their income pay for the luxuries.`, 'buy']);
+  moves.push(W.gap > 0 ? ['📈', 'Grow passive income', `${fk(W.gap)} a month more passive income covers every expense — then you are out of the rat race${years ? `: ${years} (estimate — assumes your surplus and free cash go to assets at today’s stated return, and expenses stay as they are)` : '. Enter what your assets earn (a rate) to see when.'}`, 'own'] : ['🏆', 'You are out of the rat race', 'Passive income covers your expenses. Keep buying assets before luxuries.', 'own']);
+  if (W.payLiab > 0) moves.push(['🔁', 'Your assets already pay a liability', `${W.payL.map(x => x.h.name).join(', ')}: about ${fk(W.payLiab)} a month of the return goes to your instalments (estimate) — the rich let assets pay for liabilities.`, 'own']);
+  const flow = [['Earned income', '+' + fk(R.earned), 'work'], ['Passive income', '+' + fk(R.passive), 'gold'], ['Expenses', '−' + fk(n.spending || 0), 'drain'], ['Instalments (liabilities)', '−' + fk(n.instMonthly || 0), 'debt'], ['Surplus → assets', fk(W.toAssets), 'green']];
+  return `<div class="fin-free ${R.pattern}">
+    <div class="fin-free-top">${ring}<div class="fin-free-pat"><span class="small muted">Your cash-flow pattern</span><b>${pt}</b><span class="small">${esc(why)}</span>
+      <span class="small muted">Out of the rat race when passive income covers your expenses: ${fk(R.passive)} of ${fk(R.expenses)} a month.</span></div></div>
+    <div class="fin-free-cf">${flow.map(([l, v, c]) => `<div class="${c}"><span>${esc(l)}</span><b class="num">${v}</b></div>`).join('')}<small class="muted">a month</small></div>
+    <div class="fin-free-bs"><div class="asset"><span>Assets</span><b class="num">${fk(R.assets)}</b><small>put money in your pocket</small></div><div class="liab"><span>Liabilities</span><b class="num">${fk(R.liab)}</b><small>take money out of it</small></div></div>
+    <h4>Wealth moves</h4><ol class="fin-moves">${moves.slice(0, 5).map(([i, t, w, s]) => `<li><span class="ic" aria-hidden="true">${i}</span><div><b>${esc(t)}</b><span class="small">${esc(w)}</span></div><button class="btn sm ghost" data-act="fin-cv-sec" data-s="${s}">Open</button></li>`).join('')}</ol>
+    <div class="fin-free-key small muted"><i class="work"></i>earned <i class="gold"></i>passive <i class="green"></i>asset that pays <i class="cash"></i>cash <i class="idle"></i>asset not paying yet <i class="red"></i>liability <i class="exp"></i>expense <i class="doodad"></i>doodad</div>
+  </div>`;
+}
+
+// the branches of the map: the Rich Dad statement, made of the canvas's own cards
+function finMindRooms(rooms) {
+  const by = id => rooms.find(r => r.id === id), kids = id => (by(id) && by(id).node ? by(id).node.children : []), W = finWealth(), R = W.R, n = W.n;
+  const mark = (c, k) => { if (k && !(c.cls || '').includes(' rd-')) c.cls = (c.cls || '') + ' rd-' + k; return c; };
+  const syn = (id, icon, title, sum, hue, sec, addId, children) => ({ id, kind: 'room', syn: true, node: { id, children }, icon, title, sum, hue, sec, addId });
+  const inc = kids('inc'), isP = c => !(c.cls || '').includes('tool') && finRdKind(c, 'inc') === 'passive';
+  const earned = inc.filter(c => !isP(c)).map(c => mark(c, finRdKind(c, 'inc'))), passive = inc.filter(isP).map(c => mark(c, 'passive'));
+  const p = finP(), hold = id => (p.holdings || []).find(h => 'h:' + h.id === id);
+  const assets = [...kids('accts').filter(c => !c.id.startsWith('a:') || finRdKind(c, 'accts') === 'asset').map(c => c.id.startsWith('a:') ? mark(c, 'asset rd-cash') : c),
+    ...kids('own').filter(c => !c.id.startsWith('l:')).map(c => { const h = hold(c.id); return h ? mark(c, finHoldPays(h) ? 'asset' : 'asset rd-idle') : c; })];
+  const liab = [...kids('accts').filter(c => c.id.startsWith('a:') && finRdKind(c, 'accts') === 'liability'), ...kids('com').filter(c => !/none$/.test(c.id)), ...kids('own').filter(c => c.id.startsWith('l:'))].map(c => mark(c, 'liability'));
+  for (const c of kids('exp')) if (c.type !== 'branch') mark(c, finRdKind(c, 'exp')); else c.children.forEach(x => mark(x, 'expense'));
+  const out = [];
+  out.push(syn('mm-earn', '💼', 'Earned income', `${fk(R.earned)} a month · you work for money`, 210, 'inc', 'inc', earned));
+  out.push(syn('mm-pass', '🌱', 'Passive income', R.passive ? `${fk(R.passive)} a month · money works for you` : 'none yet — buy assets that pay you', 45, 'own', null, passive));
+  out.push(syn('mm-assets', '🏛️', 'Assets', `${fk(R.assets)} · put money in your pocket`, 150, 'own', 'accts', assets));
+  const exp = by('exp'); if (exp) out.push({ ...exp, sum: `${fk(n.spending)} a month · ${finPct(n.spending, R.income) ?? '—'}% of income` });
+  out.push(syn('mm-liab', '⛓️', 'Liabilities', `${fk(R.liab)} owed · ${fk(n.instMonthly)} a month · take money out of your pocket`, 0, 'credit', 'com', liab));
+  const buy = by('buy'); if (buy) out.push({ ...buy, title: 'Your choices — goals & purchases', sum: W.doodads.length ? `${W.doodads.length} doodad${W.doodads.length === 1 ? '' : 's'} · ${fk(W.plan.total)} · assets first` : buy.sum });
+  const used = new Set(['inc', 'accts', 'own', 'com', 'exp', 'buy']), rest = rooms.filter(r => !used.has(r.id));
+  return { side: { L: out.slice(0, 3), R: out.slice(3) }, rest, W };
+}
+
+function finMindLayout(rooms0, plan, n) {
   const { PAD, CG, CW, CH } = FR, cards = [], dets = [], edges = [], subs = [], HEAD = FMM.HEAD;
   const grid = (list, x0, y, w) => {
     const per = Math.max(1, Math.floor((w + CG) / (CW + CG))), cw = per === 1 ? w : Math.floor((w - (per - 1) * CG) / per); let row = [];
     const flush = () => { if (!row.length) return; y += CH + CG; row = []; };
     for (const c of list) {
       if (c.type === 'branch') { flush(); subs.push({ id: c.id, label: `${c.icon} ${c.label}`, sum: c.sum, x: x0, y, w }); y += 34; grid(c.children, x0, y, w); y = subs.y2; continue; }
-      c.x = x0 + row.length * (cw + CG); c.y = y; c.w = cw; c.h = CH; c.room = c.room || null; cards.push(c); row.push(c); if (row.length === per) flush();
+      c.x = x0 + row.length * (cw + CG); c.y = y; c.w = cw; c.h = CH; cards.push(c); row.push(c); if (row.length === per) flush();
     }
     flush(); subs.y2 = y; return [];
   };
   const fill = (r, x, y, w) => {
     r.x = x; r.y = y; r.w = w; r.cls = 'mind'; const x0 = x + PAD, iw = w - 2 * PAD; let yy = y + HEAD; const c0 = cards.length;
     if (UI.fin.cvCol.has(r.id)) r.h = HEAD + 6;
-    else if (r.kind === 'ov') { const h = finDetH('ov', 520); dets.push({ id: 'ov', x: x0, y: yy, w: iw, h }); r.h = yy + h + PAD - y; }
-    else if (r.kind === 'sec') { const h = finDetH(r.id, 640); dets.push({ id: r.id, x: x0, y: yy, w: iw, h }); r.h = yy + h + PAD - y; }
+    else if (r.kind === 'ov' || r.kind === 'sec' || r.kind === 'free') { const id = r.kind === 'ov' ? 'ov' : r.id, h = finDetH(id, r.kind === 'sec' ? 640 : r.kind === 'free' ? 820 : 520); dets.push({ id, x: x0, y: yy, w: iw, h }); r.h = yy + h + PAD - y; }
     else if (r.kind === 'next') { yy = finNextLayout(r, x0, yy, iw, cards, dets, subs, grid); r.h = yy + PAD - y; }
     else if (r.kind === 'goals') { yy = finGoalsLayout(r, plan, n, x0, yy, iw, cards, dets, edges, subs, grid); r.h = yy + PAD - y; }
     else { grid(r.node.children, x0, yy, iw); r.h = Math.max(subs.y2 - CG, y + HEAD + 20) + PAD - y; }
     for (let i = c0; i < cards.length; i++) cards[i].room = r.id;
     return y + r.h;
   };
-  // the centre: My money
-  const ov = rooms.find(r => r.id === 'ov');
-  const al = typeof finAlerts === 'function' ? finAlerts() : [], late = (plan.items || []).some(i => i.late);
-  // how each branch is doing, and how much money moves on it a month
-  const health = id => {
-    if (id === 'next') return al.some(a => a.sev === 'crit') ? 'red' : al.some(a => a.sev === 'warn') ? 'amber' : 'green';
-    if (id === 'exp') return n.income > 0 ? (n.spending > n.income ? 'red' : n.spending > n.income * 0.8 ? 'amber' : 'green') : 'amber';
-    if (id === 'com') return n.income > 0 ? (n.instMonthly > n.income * 0.35 ? 'red' : n.instMonthly > n.income * 0.2 ? 'amber' : 'green') : 'green';
-    if (id === 'accts') return (n.free ?? 0) < 0 ? 'red' : (n.free ?? 0) < (n.reserve || 0) ? 'amber' : 'green';
-    if (id === 'inc') return n.income > 0 ? 'green' : 'amber';
-    if (id === 'buy') return late ? 'amber' : 'green';
-    return 'calm';
+  const measure = r => { const c0 = cards.length, d0 = dets.length, s0 = subs.length, e0 = edges.length; fill(r, 0, 0, r.mw); cards.length = c0; dets.length = d0; subs.length = s0; edges.length = e0; return r.h; };
+  const M = finMindRooms(rooms0), W = M.W, R = W.R;
+  const center = { id: 'free', kind: 'free', icon: '🗽', title: 'Financial freedom', sum: `${FIN_RD_PATTERN[R.pattern][0]} pattern · ${Math.round(R.freedom * 100)}% out of the rat race`, hue: 45, mw: FMM.CENTER };
+  for (const s of ['L', 'R']) for (const r of M.side[s]) { r.mw = r.kind === 'goals' ? FMM.WIDE : FMM.W; r.mh = measure(r); }
+  const hgt = s => M.side[s].reduce((t, r) => t + r.mh + FMM.GAPY, 0) - FMM.GAPY, leftW = Math.max(FMM.W, ...M.side.L.map(r => r.mw)) + FMM.OUT;
+  const ch = measure(center), colH = Math.max(hgt('L'), hgt('R'), ch), midY = colH / 2, cx0 = leftW + FMM.GAPX;
+  fill(center, cx0, Math.round(midY - ch / 2), FMM.CENTER);
+  for (const s of ['L', 'R']) {
+    let y = Math.round(midY - hgt(s) / 2);
+    for (const r of M.side[s]) { fill(r, s === 'L' ? leftW - r.mw : cx0 + FMM.CENTER + FMM.GAPX, y, r.mw); r.side = s; y = r.y + r.h + FMM.GAPY; }
+  }
+  const W0 = cx0 + FMM.CENTER + FMM.GAPX + Math.max(FMM.W, ...M.side.R.map(r => r.mw)) + FMM.OUT;
+  // the rest — my money in detail, coming up, others' money, what Claude sorted — in a row below the map
+  const rest = M.rest.filter(r => r.kind !== 'sec'), mapB = Math.max(...[center, ...M.side.L, ...M.side.R].map(r => r.y + r.h));
+  let x = FMM.OUT, y = mapB + 260, rowH = 0;
+  for (const r of rest) { const w = r.kind === 'ov' ? FMM.CENTER : r.kind === 'next' ? 760 : FMM.W; if (x + w > W0 - FMM.OUT && x > FMM.OUT) { x = FMM.OUT; y += rowH + 50; rowH = 0; } fill(r, x, y, w); x += w + 50; rowH = Math.max(rowH, r.h); }
+  y += rowH + 80;
+  for (const r of M.rest) if (r.kind === 'sec') { fill(r, FMM.OUT, y, W0 - 2 * FMM.OUT); y = r.y + r.h + 44; }
+  const rooms = [center, ...M.side.L, ...M.side.R, ...M.rest];
+
+  // the channels: from the centre to each branch, as thick as the money on it a month, and the way the money goes
+  const all = [...M.side.L, ...M.side.R], inc = R.income || 1, ins = id => all.find(r => r.id === id);
+  const spendH = n.income > 0 ? (n.spending > n.income ? 'red' : n.spending > n.income * 0.8 ? 'amber' : 'green') : 'amber';
+  const debtH = n.income > 0 ? (n.instMonthly > n.income * 0.35 ? 'red' : n.instMonthly > n.income * 0.2 ? 'amber' : 'green') : 'calm';
+  const pc = v => finPct(v, inc), info = {
+    'mm-earn': { m: R.earned, dir: 'in', health: 'work', line: 'you work for money' },
+    'mm-pass': { m: R.passive, dir: 'in', health: 'gold', line: R.passive ? `money works for you · covers ${Math.round(R.freedom * 100)}% of expenses` : 'nothing yet — the goal' },
+    'mm-assets': { m: W.toAssets, dir: 'out', health: W.toAssets > 0 ? 'green' : 'amber', line: (W.toAssets > 0 ? 'a month into assets' : 'into assets — purchases take all your surplus') + (W.idle ? ` · ${fk(W.idle)} idle` : '') },
+    exp: { m: n.spending || 0, dir: 'out', health: spendH, line: `expenses · ${pc(n.spending) ?? '—'}% of income` },
+    'mm-liab': { m: n.instMonthly || 0, dir: 'out', health: debtH === 'green' && R.liab > 0 ? 'amber' : debtH, line: `to debt · ${pc(n.instMonthly) ?? '—'}% of income` },
+    buy: { m: plan.monthly || 0, dir: 'out', health: W.doodads.length ? 'amber' : 'green', line: W.doodads.length ? `put aside for doodads · assets first` : 'put aside for goals' },
   };
-  const money = id => id === 'inc' ? n.income : id === 'exp' ? n.spending : id === 'com' ? n.instMonthly : id === 'buy' ? Math.max(0, n.capacity || 0) : id === 'accts' ? Math.min(n.cash || 0, (n.income || 0) * 1.5 || n.cash || 0) : 0;
-  const dir = id => id === 'inc' ? 'in' : ['exp', 'com', 'buy'].includes(id) ? 'out' : id === 'accts' ? 'both' : 'none';
-  const rank = id => ({ red: 0, amber: 1, green: 2, calm: 3 })[health(id)];
-  // every other room is a branch; sizes first, then each side stacked (the most urgent and biggest at the top)
-  const branches = rooms.filter(r => r.kind !== 'ov' && r.kind !== 'sec').map(r => ({ r, w: r.kind === 'goals' ? FMM.WIDE : r.kind === 'next' ? FMM.NEXT : FMM.W }));
-  for (const b of branches) { const c0 = cards.length, d0 = dets.length, s0 = subs.length, e0 = edges.length; fill(b.r, 0, 0, b.w); b.h = b.r.h; cards.length = c0; dets.length = d0; subs.length = s0; edges.length = e0; }
-  branches.sort((a, b) => rank(a.r.id) - rank(b.r.id) || money(b.r.id) - money(a.r.id) || a.h - b.h);
-  const sides = { R: [], L: [] }, hgt = { R: 0, L: 0 };
-  for (const b of branches) { const s = hgt.R <= hgt.L ? 'R' : 'L'; sides[s].push(b); hgt[s] += b.h + FMM.GAPY; }
-  const colH = Math.max(hgt.R, hgt.L) - FMM.GAPY, leftW = Math.max(0, ...sides.L.map(b => b.w)), cx0 = leftW + FMM.GAPX;
-  let ovH = 0; if (ov) { const c0 = cards.length, d0 = dets.length, s0 = subs.length; fill(ov, cx0, 0, FMM.CENTER); ovH = ov.h; cards.length = c0; dets.length = d0; subs.length = s0; }
-  const midY = Math.max(colH, ovH) / 2; if (ov) { const dy = Math.round(midY - ovH / 2); fill(ov, cx0, dy, FMM.CENTER); }
-  const center = ov ? { x: ov.x, y: ov.y, w: ov.w, h: ov.h } : { x: cx0, y: midY - 60, w: FMM.CENTER, h: 120 };
-  for (const s of ['R', 'L']) {
-    let y = Math.round(midY - (hgt[s] - FMM.GAPY) / 2);
-    for (const b of sides[s]) { const x = s === 'R' ? center.x + center.w + FMM.GAPX : leftW - b.w; fill(b.r, x, y, b.w); b.side = s; y = b.r.y + b.r.h + FMM.GAPY; }
-  }
-  const all = [...sides.R, ...sides.L];
-  let y = Math.max(colH, ovH) + 80; const W = center.x + center.w + FMM.GAPX + Math.max(0, ...sides.R.map(b => b.w));
-  for (const r of rooms) if (r.kind === 'sec') { fill(r, 0, y, W); y = r.y + r.h + 44; }
-  // the branches: from My money to each room, and from each room's title to its cards
-  const maxM = Math.max(1, ...all.map(b => money(b.r.id))), thick = v => v > 0 ? Math.round(8 + 30 * Math.sqrt(v / maxM)) : 5;
-  const hot = new Set(); if (Date.now() < UI.fin.flash.until) for (const c of cards) if (UI.fin.flash.ids.has(c.id)) hot.add(c.room); for (const b of all) if (Date.now() < UI.fin.flash.until && UI.fin.flash.ids.has(b.r.id)) hot.add(b.r.id);
-  const main = all.map(b => {
-    const r = b.r, R = b.side === 'R', hub = { x: R ? r.x : r.x + r.w, y: r.y + 44 }, from = { x: R ? center.x + center.w : center.x, y: Math.min(center.y + center.h - 40, Math.max(center.y + 40, hub.y)) };
-    const label = r.id === 'accts' ? (n.cash ? [fk(n.cash), ' cash now'] : null) : money(r.id) ? [fk(money(r.id)), ' a month'] : null;
-    return { id: r.id, a: from, b: hub, t: thick(money(r.id)), health: health(r.id), dir: dir(r.id), label, hot: hot.has(r.id), side: b.side };
+  const maxM = Math.max(1, ...all.map(r => (info[r.id] || {}).m || 0)), thick = v => v > 0 ? Math.round(8 + 30 * Math.sqrt(v / maxM)) : 5;
+  const hot = new Set(); if (Date.now() < UI.fin.flash.until) { for (const c of cards) if (UI.fin.flash.ids.has(c.id)) hot.add(c.room); for (const r of all) if (UI.fin.flash.ids.has(r.id)) hot.add(r.id); }
+  const C = { x: center.x, y: center.y, w: center.w, h: center.h };
+  const main = all.map(r => {
+    const I = info[r.id] || { m: 0, dir: 'none', health: 'calm', line: '' }, L = r.side === 'L', hub = { x: L ? r.x + r.w : r.x, y: r.y + 44 }, from = { x: L ? C.x : C.x + C.w, y: Math.min(C.y + C.h - 40, Math.max(C.y + 40, hub.y)) };
+    return { id: r.id, a: from, b: hub, t: thick(I.m), health: I.health, dir: I.dir, label: [fk(I.m).replace(/\.00$/, ''), ' a month'], line: I.line, hot: hot.has(r.id), side: r.side };
   });
-  const twigs = [];
-  for (const b of all) {
-    const r = b.r, R = b.side === 'R', hub = { x: R ? r.x + 9 : r.x + r.w - 9, y: r.y + FMM.HEAD - 2 }, own = cards.filter(c => c.room === r.id), mx = Math.max(1, ...own.map(finMindAmt));
-    // a thin branch to each card, drawn over the room and under the cards (as the canvas's links)
-    for (const c of own) { const k = 1 + Math.round(3 * Math.sqrt(finMindAmt(c) / mx)); edges.push({ x0: hub.x, y0: hub.y, x1: R ? c.x : c.x + c.w, y1: c.y + c.h / 2, cls: `fin-twig ${health(r.id)} tw${k}`, title: `${r.title} → ${c.label}` }); }
+  // the channels the book is about: assets paying you, liabilities costing you, assets paying liabilities
+  const cross = [], A = ins('mm-assets'), P = ins('mm-pass'), Lb = ins('mm-liab'), Ex = ins('exp');
+  if (A && P) cross.push({ id: 'pays', cls: 'gold', side: 'L', a: { x: A.x, y: A.y + 50 }, b: { x: P.x, y: P.y + 50 }, t: thick(R.passive), label: R.passive ? [fk(R.passive), ' a month'] : ['—', ''], line: R.passive ? 'your assets pay you' : 'no asset pays you yet' });
+  if (Lb && Ex) cross.push({ id: 'costs', cls: 'red', side: 'R', a: { x: Lb.x + Lb.w, y: Lb.y + 50 }, b: { x: Ex.x + Ex.w, y: Ex.y + 50 }, t: thick(n.instMonthly || 0), label: [fk(n.instMonthly || 0), ' a month'], line: 'your liabilities cost you' });
+  if (A && Lb && W.payLiab > 0) cross.push({ id: 'assetpays', cls: 'green under', a: { x: A.x + A.w * 0.6, y: A.y + A.h }, b: { x: Lb.x + Lb.w * 0.4, y: Lb.y + Lb.h }, low: mapB + 150, t: thick(W.payLiab), label: [fk(W.payLiab), ' a month'], line: 'your assets pay a liability (estimate)' });
+  for (const r of all) {
+    const L = r.side === 'L', hub = { x: L ? r.x + r.w - 9 : r.x + 9, y: r.y + FMM.HEAD - 2 }, own = cards.filter(c => c.room === r.id), mx = Math.max(1, ...own.map(finMindAmt)), h = (info[r.id] || {}).health || 'calm';
+    for (const c of own) { const k = 1 + Math.round(3 * Math.sqrt(finMindAmt(c) / mx)); edges.push({ x0: hub.x, y0: hub.y, x1: L ? c.x + c.w : c.x, y1: c.y + c.h / 2, cls: `fin-twig ${h} tw${k}`, title: `${r.title} → ${c.label}` }); }
   }
-  const w = W, h = Math.max(y - 44, Math.max(colH, ovH));
+  const w = W0, h = Math.max(y - 44, colH);
   UI.fin.cvPos = new Map([...rooms.map(r => [r.id, { x: r.x, y: r.y, w: r.w, h: r.h }]), ...cards.map(c => [c.id, { x: c.x, y: c.y, w: c.w, h: c.h }]), ...dets.map(d => [d.id + ':det', d])]);
-  UI.fin.cvRoot = UI.fin.cvPos.get('ov');
+  UI.fin.cvRoot = UI.fin.cvPos.get('free');
   UI.fin.cvRoomsList = rooms.map(r => ({ id: r.id, kind: r.kind, x: r.x, y: r.y, w: r.w, h: r.h, hue: r.hue, icon: r.icon, title: r.title }));
-  return { rooms, cards, dets, edges, subs, w, h, mind: { main, twigs } };
+  return { rooms, cards, dets, edges, subs, w, h, mind: { main, cross } };
 }
 
-// the branches, drawn under the rooms: tapered, coloured by health, with money running along them
+// the channels, drawn under the rooms: tapered, coloured by what they mean, with money running along them
 function finMindSVG(L) {
   const M = L.mind; if (!M) return '';
   const curve = (a, b) => { const mx = (a.x + b.x) / 2; return `M${a.x},${a.y} C${mx},${a.y} ${mx},${b.y} ${b.x},${b.y}`; };
   const taper = (a, b, t0, t1) => { const mx = (a.x + b.x) / 2; return `M${a.x},${a.y - t0 / 2} C${mx},${a.y - t0 / 2} ${mx},${b.y - t1 / 2} ${b.x},${b.y - t1 / 2} L${b.x},${b.y + t1 / 2} C${mx},${b.y + t1 / 2} ${mx},${a.y + t0 / 2} ${a.x},${a.y + t0 / 2} Z`; };
+  const speed = t => Math.max(1.2, 4.2 - t / 12).toFixed(1);
+  const text = (x, y, lab, line, anchor) => `<text class="mm-l" x="${x}" y="${y}" text-anchor="${anchor || 'middle'}">${esc(lab[0])}<tspan class="per">${esc(lab[1])}</tspan></text>${line ? `<text class="mm-i" x="${x}" y="${y + 24}" text-anchor="${anchor || 'middle'}">${esc(line)}</text>` : ''}`;
   let out = '';
   for (const b of M.main) {
-    const d = curve(b.a, b.b), speed = Math.max(1.4, 4.2 - b.t / 12).toFixed(1);
-    out += `<g class="mm-branch ${b.health}${b.hot ? ' hot' : ''}"><path class="limb" d="${taper(b.a, b.b, b.t + 6, Math.max(4, b.t * 0.55))}"/>`;
-    if (b.dir === 'out' || b.dir === 'both') out += `<path class="flow" d="${d}" style="animation-duration:${speed}s"/>`;
-    if (b.dir === 'in' || b.dir === 'both') out += `<path class="flow in" d="${curve(b.b, b.a)}" style="animation-duration:${speed}s"/>`;
-    if (b.label) { const lx = (b.a.x + b.b.x) / 2, ly = (b.a.y + b.b.y) / 2 - b.t / 2 - 12; out += `<text class="mm-l" x="${lx}" y="${ly}" text-anchor="middle">${esc(b.label[0])}<tspan class="per">${esc(b.label[1])}</tspan></text>`; }
-    out += `</g>`;
+    const d = curve(b.a, b.b), dl = b.dir === 'in' ? curve(b.b, b.a) : d;
+    out += `<g class="mm-branch ${b.health}${b.hot ? ' hot' : ''}" data-ch="${esc(b.id)}"><path class="limb" d="${taper(b.a, b.b, b.t + 6, Math.max(4, b.t * 0.55))}"/>`;
+    if (b.dir !== 'none') out += `<path class="flow${b.dir === 'in' ? ' in' : ''}" d="${dl}" style="animation-duration:${speed(b.t)}s"/>`;
+    out += text((b.a.x + b.b.x) / 2, (b.a.y + b.b.y) / 2 - b.t / 2 - 40, b.label, b.line) + `</g>`;
+  }
+  for (const c of M.cross) {
+    let d, lx, ly, anchor = 'middle';
+    if (c.low) { d = `M${c.a.x},${c.a.y} C${c.a.x},${c.low} ${c.b.x},${c.low} ${c.b.x},${c.b.y}`; lx = (c.a.x + c.b.x) / 2; ly = c.low - c.t / 2 - 50; }
+    else { const L = c.side === 'L', o = L ? -(FMM.OUT - 110) : FMM.OUT - 110, ox = c.a.x + o; d = `M${c.a.x},${c.a.y} C${ox},${c.a.y} ${ox},${c.b.y} ${c.b.x},${c.b.y}`; lx = c.a.x + o * 0.75 + (L ? -1 : 1) * (c.t / 2 + 40); ly = (c.a.y + c.b.y) / 2; }
+    // beside the outer channels the words run along the channel, so they stay on the canvas
+    const words = c.low ? text(lx, ly, c.label, c.line, anchor) : `<g transform="translate(${lx},${ly}) rotate(${c.side === 'L' ? -90 : 90})">${text(0, 0, c.label, c.line, 'middle')}</g>`;
+    out += `<g class="mm-cross ${c.cls}" data-ch="${esc(c.id)}"><path class="pipe" d="${d}" style="stroke-width:${c.t}px"/><path class="flow" d="${d}" style="animation-duration:${speed(c.t)}s"/>${words}</g>`;
   }
   return `<svg class="fin-mind" width="${L.w}" height="${L.h}" aria-hidden="true">${out}</svg>`;
 }
