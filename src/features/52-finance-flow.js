@@ -8,7 +8,7 @@
 // canvas) works the same in all of them.
 
 const FRS = { W: 2520, SIDE: 700, MID: 1000, GAP: 60, STREAM: 150, PIPE: 190, TANK_W: 236, TANK_H: 250, HEAD: 92 };
-const FIN_CV_MODES = ['rooms', 'flow', 'res'];
+const FIN_CV_MODES = ['rooms', 'flow', 'res', 'mind'];
 try { const m = localStorage.getItem('ar-fin-cv-mode'); if (FIN_CV_MODES.includes(m)) UI.fin.cv.mode = m; else if (m === 'tree') UI.fin.cv.mode = 'res'; } catch {}
 try { indexedDB.deleteDatabase('ar-tree'); } catch {}   // the Tree's saved pictures are not needed any more
 
@@ -121,7 +121,7 @@ function finCvMode(mode) {
     if (b) el.style.transform = `translate(${b.x - x}px, ${b.y - y}px)`; else { el.style.opacity = '0'; el.style.transform = 'scale(.92)'; }
     moved.push(el);
   }
-  for (const d of document.querySelectorAll('#fin-cv-world .fin-det, #fin-cv-world .fin-room-sub, #fin-cv-world .fin-res, #fin-cv-world .fin-flow')) { d.style.transition = 'none'; d.style.opacity = '0'; moved.push(d); }
+  for (const d of document.querySelectorAll('#fin-cv-world .fin-det, #fin-cv-world .fin-room-sub, #fin-cv-world .fin-res, #fin-cv-world .fin-flow, #fin-cv-world .fin-mind')) { d.style.transition = 'none'; d.style.opacity = '0'; moved.push(d); }
   void document.body.offsetWidth;
   requestAnimationFrame(() => {
     for (const el of moved) { el.style.transition = 'transform .7s cubic-bezier(.2,.8,.2,1), opacity .5s ease .15s'; el.style.transform = ''; el.style.opacity = ''; }
@@ -141,8 +141,8 @@ document.addEventListener('pointermove', e => {
 });
 
 function finCvModeHTML() {
-  const m = UI.fin.cv.mode || 'rooms', tip = { rooms: 'Rooms: every topic in its own room', flow: 'Flow: your money as a river, from income to goals', res: 'Reservoirs: each account a tank filled to its balance; income flows in from the top, pipes carry money out to spending, commitments and goals' };
-  return `<div class="seg fin-cv-modes" role="group" aria-label="Card layout">${[['rooms', '▦', 'Rooms'], ['flow', '✦', 'Flow'], ['res', '💧', 'Reservoirs']].map(([k, i, l]) => `<button data-act="fin-cv-mode" data-v="${k}" aria-pressed="${m === k}" title="${tip[k]} ( L )"><span aria-hidden="true">${i}</span> ${l}</button>`).join('')}</div>`;
+  const m = UI.fin.cv.mode || 'rooms', tip = { rooms: 'Rooms: every topic in its own room', flow: 'Flow: your money as a river, from income to goals', res: 'Reservoirs: each account a tank filled to its balance; income flows in from the top, pipes carry money out to spending, commitments and goals', mind: 'Mind map: My money in the centre, branches as thick as their money and coloured by health, money flowing along them' };
+  return `<div class="seg fin-cv-modes" role="group" aria-label="Card layout">${[['rooms', '▦', 'Rooms'], ['flow', '✦', 'Flow'], ['res', '💧', 'Reservoirs'], ['mind', '🧠', 'Mind map']].map(([k, i, l]) => `<button data-act="fin-cv-mode" data-v="${k}" aria-pressed="${m === k}" title="${tip[k]} ( L )"><span aria-hidden="true">${i}</span> ${l}</button>`).join('')}</div>`;
 }
 Object.assign(ACT, { 'fin-cv-mode': el => finCvMode(el.dataset.v) });
 Object.assign(window.__FIN, { mode: m => (m ? finCvMode(m) : UI.fin.cv.mode || 'rooms') });

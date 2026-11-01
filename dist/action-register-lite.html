@@ -2384,6 +2384,27 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 .mode-res .fin-det[data-det="up"] .fin-up-grid { grid-template-columns: minmax(0, 1fr); }
 .mode-res .fin-up-l { white-space: normal; overflow: visible; overflow-wrap: anywhere; }
 
+/* ---------- the layout "Mind map": branches as thick as their money, coloured by health, money flowing ---------- */
+.fin-cv-vp.mode-mind { background: radial-gradient(1400px 900px at 50% 45%, color-mix(in srgb, var(--accent) 6%, var(--bg)), var(--bg)); }
+.mode-mind .fin-room { background: color-mix(in srgb, var(--surface) 82%, transparent); border: 1.5px solid color-mix(in srgb, hsl(var(--h) 50% 55%) 35%, var(--line)); box-shadow: 0 14px 36px -28px rgba(30, 20, 50, .45); }
+.mode-mind .fin-room.ov { border: 2.5px solid color-mix(in srgb, var(--accent) 55%, var(--line)); box-shadow: 0 0 0 8px color-mix(in srgb, var(--accent) 8%, transparent), 0 30px 70px -40px color-mix(in srgb, var(--accent) 60%, transparent); }
+.mode-mind .fin-room-h { height: 84px; }
+.mode-mind .fin-room-t b { font-size: 22px; }
+.fin-mind { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; }
+.fin-twig { fill: none; stroke-linecap: round; opacity: .5; }
+.fin-twig.green { stroke: #4caf72; } .fin-twig.amber { stroke: #e0a030; } .fin-twig.red { stroke: #d9534f; } .fin-twig.calm { stroke: #7a8fb0; }
+.fin-twig.tw1 { stroke-width: 1.5px; } .fin-twig.tw2 { stroke-width: 3px; } .fin-twig.tw3 { stroke-width: 4.5px; } .fin-twig.tw4 { stroke-width: 6px; }
+.mm-branch .limb { opacity: .85; }
+.mm-branch.green .limb { fill: #4caf72; } .mm-branch.amber .limb { fill: #e0a030; } .mm-branch.red .limb { fill: #d9534f; } .mm-branch.calm .limb { fill: #8b9dbb; }
+.mm-branch .flow { fill: none; stroke: #fff; stroke-width: 5; stroke-linecap: round; stroke-dasharray: 0.1 22; opacity: .95; }
+.mm-branch.hot .limb { filter: drop-shadow(0 0 10px rgba(255, 210, 90, .9)); }
+.mm-branch.hot .flow { stroke: #fff7c8; stroke-width: 7; }
+@media (prefers-reduced-motion: no-preference) { .mm-branch .flow { animation: finMind 2.6s linear infinite; } .mm-branch.hot .flow { animation-duration: .9s !important; } @keyframes finMind { to { stroke-dashoffset: -22.1; } } }
+.mm-l { font: 700 20px/1 var(--font, system-ui); fill: var(--ink); paint-order: stroke; stroke: color-mix(in srgb, var(--bg) 90%, transparent); stroke-width: 6px; stroke-linejoin: round; }
+.mm-l .per { font-size: 14px; font-weight: 600; fill: var(--ink-2); }
+.mode-mind .fin-det[data-det="up"] .fin-up-grid { grid-template-columns: minmax(0, 1fr); }
+.mode-mind .fin-up-l { white-space: normal; overflow: visible; overflow-wrap: anywhere; }
+
 </style>
 <div class="titlestrip" id="titlestrip"><span class="ts-brand"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c3.3 4 6 7.2 6 10.4a6 6 0 0 1-12 0C6 10.2 8.7 7 12 3z"/><path d="m9.3 13.6 1.9 1.9 3.6-4.1"/></svg> Action Register</span><button class="ts-search" data-act="palette" title="Search and commands (Ctrl+K)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg><span>Search or type a command</span><kbd>Ctrl K</kbd></button><span class="ts-space"></span></div>
 <div class="app">
@@ -16315,15 +16336,15 @@ function finCvRoom(r) {
     </div></section>`;
 }
 function finCvBoard() {
-  const cv = UI.fin.cv, root = finCvModel(), n = finNow(), plan = finBuyPlan(), rooms = finCvRooms(root), res = cv.mode === 'res' && typeof finResLayout === 'function', flow = cv.mode === 'flow' && typeof finFlowLayout === 'function', L = res ? finResLayout(rooms, plan, n) : flow ? finFlowLayout(rooms, plan, n) : finCvLayout(rooms, plan, n);
+  const cv = UI.fin.cv, root = finCvModel(), n = finNow(), plan = finBuyPlan(), rooms = finCvRooms(root), res = cv.mode === 'res' && typeof finResLayout === 'function', flow = cv.mode === 'flow' && typeof finFlowLayout === 'function', mind = cv.mode === 'mind' && typeof finMindLayout === 'function', L = res ? finResLayout(rooms, plan, n) : flow ? finFlowLayout(rooms, plan, n) : mind ? finMindLayout(rooms, plan, n) : finCvLayout(rooms, plan, n);
   const hueOf = new Map(); for (const r of rooms) { const walk = k => { hueOf.set(k.id, r.hue); (k.children || []).forEach(walk); }; if (r.node) walk(r.node); }
   UI.fin.cvSize = { w: L.w, h: L.h }; UI.fin.cvCards = new Map(L.cards.map(c => [c.id, c]));
   if (UI.fin.pop && !UI.fin.cvCards.has(UI.fin.pop)) UI.fin.pop = null;
   const path = e => { const mx = (e.x0 + e.x1) / 2; return `M${e.x0},${e.y0} C${mx},${e.y0} ${mx},${e.y1} ${e.x1},${e.y1}`; };
   // the entrance plays when you open the canvas (within its first moment), not on every redraw after
   const now = Date.now(); if (!UI.fin.cvShownAt) UI.fin.cvShownAt = now; const intro = now - UI.fin.cvShownAt < 700;
-  return `<div class="fin-cv-vp${res ? ' mode-res' : flow ? ' mode-flow' : ''}${intro ? ' intro' : ''}${cv.k < 0.62 ? ' z-far' : ''}" id="fin-cv-vp">${flow ? finFlowSky() : ''}<div class="fin-cv-world" id="fin-cv-world" style="width:${L.w}px;height:${L.h}px;transform:translate(${cv.x}px,${cv.y}px) scale(${cv.k})">
-      ${res ? finResSVG(L) : flow ? finFlowSVG(L) : ''}${L.rooms.map(finCvRoom).join('')}
+  return `<div class="fin-cv-vp${res ? ' mode-res' : flow ? ' mode-flow' : mind ? ' mode-mind' : ''}${intro ? ' intro' : ''}${cv.k < 0.62 ? ' z-far' : ''}" id="fin-cv-vp">${flow ? finFlowSky() : ''}<div class="fin-cv-world" id="fin-cv-world" style="width:${L.w}px;height:${L.h}px;transform:translate(${cv.x}px,${cv.y}px) scale(${cv.k})">
+      ${res ? finResSVG(L) : flow ? finFlowSVG(L) : mind ? finMindSVG(L) : ''}${L.rooms.map(finCvRoom).join('')}
       <svg class="fin-cv-edges" width="${L.w}" height="${L.h}" aria-hidden="true">${L.edges.map(e => `<path class="${e.cls}" d="${path(e)}"><title>${esc(e.title)}</title></path>`).join('')}</svg>
       ${L.subs.map(s => `<div class="fin-room-sub" style="left:${s.x}px;top:${s.y}px;width:${s.w}px"><b>${esc(s.label)}</b>${s.sum ? ` <small>${esc(s.sum)}</small>` : ''}</div>`).join('')}
       ${L.cards.map(c => finCvCard(c, hueOf.get(c.id) ?? (c.id.startsWith('b:') || c.id.startsWith('src:') || c.id.startsWith('g:') ? 190 : 200))).join('')}
@@ -16377,7 +16398,7 @@ function finCvApply() {
 }
 // on opening: as wide as the screen allows (readable), from the top; Fit shows all of it
 function finCvFit(all) {
-  if (UI.fin.cv.mode === 'res') all = true;   // the whole system of tanks and pipes at once
+  if (UI.fin.cv.mode === 'res' || UI.fin.cv.mode === 'mind') all = true;   // the whole system of tanks and pipes at once
   const vp = $('#fin-cv-vp'), s = UI.fin.cvSize, cv = UI.fin.cv; if (!vp || !s) return;
   const W = vp.clientWidth, H = vp.clientHeight; if (!W || !H) return;
   if (all) { const top = cv.full ? 64 : 16; cv.k = Math.max(0.1, Math.min(1, (W - 32) / s.w, (H - top - 16) / s.h)); cv.x = (W - s.w * cv.k) / 2; cv.y = Math.max(top, top + (H - top - 16 - s.h * cv.k) / 2); }   // full screen: below the floating controls
@@ -17390,7 +17411,7 @@ Object.assign(window.__FIN, { menu: (id, x, y) => finMenuOpen(id, x, y), about: 
 // canvas) works the same in all of them.
 
 const FRS = { W: 2520, SIDE: 700, MID: 1000, GAP: 60, STREAM: 150, PIPE: 190, TANK_W: 236, TANK_H: 250, HEAD: 92 };
-const FIN_CV_MODES = ['rooms', 'flow', 'res'];
+const FIN_CV_MODES = ['rooms', 'flow', 'res', 'mind'];
 try { const m = localStorage.getItem('ar-fin-cv-mode'); if (FIN_CV_MODES.includes(m)) UI.fin.cv.mode = m; else if (m === 'tree') UI.fin.cv.mode = 'res'; } catch {}
 try { indexedDB.deleteDatabase('ar-tree'); } catch {}   // the Tree's saved pictures are not needed any more
 
@@ -17503,7 +17524,7 @@ function finCvMode(mode) {
     if (b) el.style.transform = `translate(${b.x - x}px, ${b.y - y}px)`; else { el.style.opacity = '0'; el.style.transform = 'scale(.92)'; }
     moved.push(el);
   }
-  for (const d of document.querySelectorAll('#fin-cv-world .fin-det, #fin-cv-world .fin-room-sub, #fin-cv-world .fin-res, #fin-cv-world .fin-flow')) { d.style.transition = 'none'; d.style.opacity = '0'; moved.push(d); }
+  for (const d of document.querySelectorAll('#fin-cv-world .fin-det, #fin-cv-world .fin-room-sub, #fin-cv-world .fin-res, #fin-cv-world .fin-flow, #fin-cv-world .fin-mind')) { d.style.transition = 'none'; d.style.opacity = '0'; moved.push(d); }
   void document.body.offsetWidth;
   requestAnimationFrame(() => {
     for (const el of moved) { el.style.transition = 'transform .7s cubic-bezier(.2,.8,.2,1), opacity .5s ease .15s'; el.style.transform = ''; el.style.opacity = ''; }
@@ -17523,8 +17544,8 @@ document.addEventListener('pointermove', e => {
 });
 
 function finCvModeHTML() {
-  const m = UI.fin.cv.mode || 'rooms', tip = { rooms: 'Rooms: every topic in its own room', flow: 'Flow: your money as a river, from income to goals', res: 'Reservoirs: each account a tank filled to its balance; income flows in from the top, pipes carry money out to spending, commitments and goals' };
-  return `<div class="seg fin-cv-modes" role="group" aria-label="Card layout">${[['rooms', '▦', 'Rooms'], ['flow', '✦', 'Flow'], ['res', '💧', 'Reservoirs']].map(([k, i, l]) => `<button data-act="fin-cv-mode" data-v="${k}" aria-pressed="${m === k}" title="${tip[k]} ( L )"><span aria-hidden="true">${i}</span> ${l}</button>`).join('')}</div>`;
+  const m = UI.fin.cv.mode || 'rooms', tip = { rooms: 'Rooms: every topic in its own room', flow: 'Flow: your money as a river, from income to goals', res: 'Reservoirs: each account a tank filled to its balance; income flows in from the top, pipes carry money out to spending, commitments and goals', mind: 'Mind map: My money in the centre, branches as thick as their money and coloured by health, money flowing along them' };
+  return `<div class="seg fin-cv-modes" role="group" aria-label="Card layout">${[['rooms', '▦', 'Rooms'], ['flow', '✦', 'Flow'], ['res', '💧', 'Reservoirs'], ['mind', '🧠', 'Mind map']].map(([k, i, l]) => `<button data-act="fin-cv-mode" data-v="${k}" aria-pressed="${m === k}" title="${tip[k]} ( L )"><span aria-hidden="true">${i}</span> ${l}</button>`).join('')}</div>`;
 }
 Object.assign(ACT, { 'fin-cv-mode': el => finCvMode(el.dataset.v) });
 Object.assign(window.__FIN, { mode: m => (m ? finCvMode(m) : UI.fin.cv.mode || 'rooms') });
@@ -17688,6 +17709,113 @@ Object.assign(ACT, {
   'srv-done': el => srvMarkOne(el.dataset.id),
   'srv-all': () => { const ids = srvPending().map(e => e.id); srvMark(ids, true); render(); toast(`${ids.length} emails marked as on the work server.`, { action: 'Undo', fn: () => { srvMark(ids, false); render(); } }); },
 });
+
+/* ===== features/55-finance-mind.js ===== */
+// Money canvas — the card layout "Mind map", with money flowing on it.
+// My money is the centre; branches go out to the left and right like a classic mind map: accounts, income,
+// spending, commitments, what you own, others' money, what is coming up, goals. Each main branch is as thick as that
+// money is per month and coloured by its health (green fine, amber watch it, red needs you); the most urgent and the
+// biggest sit at the top. Money moves on the branches: income flows in toward My money; spending, instalments and
+// savings flow out — particles running the way the money goes, faster on bigger branches. Inside each branch a thin
+// branch reaches every card, as thick as its amount. When something changes, its branch pulses brighter for a moment.
+// Everything on the canvas works the same here: details, pop-outs, the card menu, editing, search, Tell the canvas.
+
+const FMM = { GAPX: 300, GAPY: 46, W: 620, WIDE: 1120, NEXT: 720, CENTER: 820, HEAD: 92 };
+// a card's amount, from what it shows ("EGP 3,267", "owes EGP 7,960", "EGP 3,000/mo")
+const finMindAmt = c => { const m = /(-?[\d,]+(?:\.\d+)?)/.exec(String(c.val || '').replace(/ /g, ' ')); return m ? Math.abs(parseFloat(m[1].replace(/,/g, ''))) || 0 : 0; };
+
+function finMindLayout(rooms, plan, n) {
+  const { PAD, CG, CW, CH } = FR, cards = [], dets = [], edges = [], subs = [], HEAD = FMM.HEAD;
+  const grid = (list, x0, y, w) => {
+    const per = Math.max(1, Math.floor((w + CG) / (CW + CG))), cw = per === 1 ? w : Math.floor((w - (per - 1) * CG) / per); let row = [];
+    const flush = () => { if (!row.length) return; y += CH + CG; row = []; };
+    for (const c of list) {
+      if (c.type === 'branch') { flush(); subs.push({ id: c.id, label: `${c.icon} ${c.label}`, sum: c.sum, x: x0, y, w }); y += 34; grid(c.children, x0, y, w); y = subs.y2; continue; }
+      c.x = x0 + row.length * (cw + CG); c.y = y; c.w = cw; c.h = CH; c.room = c.room || null; cards.push(c); row.push(c); if (row.length === per) flush();
+    }
+    flush(); subs.y2 = y; return [];
+  };
+  const fill = (r, x, y, w) => {
+    r.x = x; r.y = y; r.w = w; r.cls = 'mind'; const x0 = x + PAD, iw = w - 2 * PAD; let yy = y + HEAD; const c0 = cards.length;
+    if (UI.fin.cvCol.has(r.id)) r.h = HEAD + 6;
+    else if (r.kind === 'ov') { const h = finDetH('ov', 520); dets.push({ id: 'ov', x: x0, y: yy, w: iw, h }); r.h = yy + h + PAD - y; }
+    else if (r.kind === 'sec') { const h = finDetH(r.id, 640); dets.push({ id: r.id, x: x0, y: yy, w: iw, h }); r.h = yy + h + PAD - y; }
+    else if (r.kind === 'next') { yy = finNextLayout(r, x0, yy, iw, cards, dets, subs, grid); r.h = yy + PAD - y; }
+    else if (r.kind === 'goals') { yy = finGoalsLayout(r, plan, n, x0, yy, iw, cards, dets, edges, subs, grid); r.h = yy + PAD - y; }
+    else { grid(r.node.children, x0, yy, iw); r.h = Math.max(subs.y2 - CG, y + HEAD + 20) + PAD - y; }
+    for (let i = c0; i < cards.length; i++) cards[i].room = r.id;
+    return y + r.h;
+  };
+  // the centre: My money
+  const ov = rooms.find(r => r.id === 'ov');
+  const al = typeof finAlerts === 'function' ? finAlerts() : [], late = (plan.items || []).some(i => i.late);
+  // how each branch is doing, and how much money moves on it a month
+  const health = id => {
+    if (id === 'next') return al.some(a => a.sev === 'crit') ? 'red' : al.some(a => a.sev === 'warn') ? 'amber' : 'green';
+    if (id === 'exp') return n.income > 0 ? (n.spending > n.income ? 'red' : n.spending > n.income * 0.8 ? 'amber' : 'green') : 'amber';
+    if (id === 'com') return n.income > 0 ? (n.instMonthly > n.income * 0.35 ? 'red' : n.instMonthly > n.income * 0.2 ? 'amber' : 'green') : 'green';
+    if (id === 'accts') return (n.free ?? 0) < 0 ? 'red' : (n.free ?? 0) < (n.reserve || 0) ? 'amber' : 'green';
+    if (id === 'inc') return n.income > 0 ? 'green' : 'amber';
+    if (id === 'buy') return late ? 'amber' : 'green';
+    return 'calm';
+  };
+  const money = id => id === 'inc' ? n.income : id === 'exp' ? n.spending : id === 'com' ? n.instMonthly : id === 'buy' ? Math.max(0, n.capacity || 0) : id === 'accts' ? Math.min(n.cash || 0, (n.income || 0) * 1.5 || n.cash || 0) : 0;
+  const dir = id => id === 'inc' ? 'in' : ['exp', 'com', 'buy'].includes(id) ? 'out' : id === 'accts' ? 'both' : 'none';
+  const rank = id => ({ red: 0, amber: 1, green: 2, calm: 3 })[health(id)];
+  // every other room is a branch; sizes first, then each side stacked (the most urgent and biggest at the top)
+  const branches = rooms.filter(r => r.kind !== 'ov' && r.kind !== 'sec').map(r => ({ r, w: r.kind === 'goals' ? FMM.WIDE : r.kind === 'next' ? FMM.NEXT : FMM.W }));
+  for (const b of branches) { const c0 = cards.length, d0 = dets.length, s0 = subs.length, e0 = edges.length; fill(b.r, 0, 0, b.w); b.h = b.r.h; cards.length = c0; dets.length = d0; subs.length = s0; edges.length = e0; }
+  branches.sort((a, b) => rank(a.r.id) - rank(b.r.id) || money(b.r.id) - money(a.r.id) || a.h - b.h);
+  const sides = { R: [], L: [] }, hgt = { R: 0, L: 0 };
+  for (const b of branches) { const s = hgt.R <= hgt.L ? 'R' : 'L'; sides[s].push(b); hgt[s] += b.h + FMM.GAPY; }
+  const colH = Math.max(hgt.R, hgt.L) - FMM.GAPY, leftW = Math.max(0, ...sides.L.map(b => b.w)), cx0 = leftW + FMM.GAPX;
+  let ovH = 0; if (ov) { const c0 = cards.length, d0 = dets.length, s0 = subs.length; fill(ov, cx0, 0, FMM.CENTER); ovH = ov.h; cards.length = c0; dets.length = d0; subs.length = s0; }
+  const midY = Math.max(colH, ovH) / 2; if (ov) { const dy = Math.round(midY - ovH / 2); fill(ov, cx0, dy, FMM.CENTER); }
+  const center = ov ? { x: ov.x, y: ov.y, w: ov.w, h: ov.h } : { x: cx0, y: midY - 60, w: FMM.CENTER, h: 120 };
+  for (const s of ['R', 'L']) {
+    let y = Math.round(midY - (hgt[s] - FMM.GAPY) / 2);
+    for (const b of sides[s]) { const x = s === 'R' ? center.x + center.w + FMM.GAPX : leftW - b.w; fill(b.r, x, y, b.w); b.side = s; y = b.r.y + b.r.h + FMM.GAPY; }
+  }
+  const all = [...sides.R, ...sides.L];
+  let y = Math.max(colH, ovH) + 80; const W = center.x + center.w + FMM.GAPX + Math.max(0, ...sides.R.map(b => b.w));
+  for (const r of rooms) if (r.kind === 'sec') { fill(r, 0, y, W); y = r.y + r.h + 44; }
+  // the branches: from My money to each room, and from each room's title to its cards
+  const maxM = Math.max(1, ...all.map(b => money(b.r.id))), thick = v => v > 0 ? Math.round(8 + 30 * Math.sqrt(v / maxM)) : 5;
+  const hot = new Set(); if (Date.now() < UI.fin.flash.until) for (const c of cards) if (UI.fin.flash.ids.has(c.id)) hot.add(c.room); for (const b of all) if (Date.now() < UI.fin.flash.until && UI.fin.flash.ids.has(b.r.id)) hot.add(b.r.id);
+  const main = all.map(b => {
+    const r = b.r, R = b.side === 'R', hub = { x: R ? r.x : r.x + r.w, y: r.y + 44 }, from = { x: R ? center.x + center.w : center.x, y: Math.min(center.y + center.h - 40, Math.max(center.y + 40, hub.y)) };
+    const label = r.id === 'accts' ? (n.cash ? [fk(n.cash), ' cash now'] : null) : money(r.id) ? [fk(money(r.id)), ' a month'] : null;
+    return { id: r.id, a: from, b: hub, t: thick(money(r.id)), health: health(r.id), dir: dir(r.id), label, hot: hot.has(r.id), side: b.side };
+  });
+  const twigs = [];
+  for (const b of all) {
+    const r = b.r, R = b.side === 'R', hub = { x: R ? r.x + 9 : r.x + r.w - 9, y: r.y + FMM.HEAD - 2 }, own = cards.filter(c => c.room === r.id), mx = Math.max(1, ...own.map(finMindAmt));
+    // a thin branch to each card, drawn over the room and under the cards (as the canvas's links)
+    for (const c of own) { const k = 1 + Math.round(3 * Math.sqrt(finMindAmt(c) / mx)); edges.push({ x0: hub.x, y0: hub.y, x1: R ? c.x : c.x + c.w, y1: c.y + c.h / 2, cls: `fin-twig ${health(r.id)} tw${k}`, title: `${r.title} → ${c.label}` }); }
+  }
+  const w = W, h = Math.max(y - 44, Math.max(colH, ovH));
+  UI.fin.cvPos = new Map([...rooms.map(r => [r.id, { x: r.x, y: r.y, w: r.w, h: r.h }]), ...cards.map(c => [c.id, { x: c.x, y: c.y, w: c.w, h: c.h }]), ...dets.map(d => [d.id + ':det', d])]);
+  UI.fin.cvRoot = UI.fin.cvPos.get('ov');
+  UI.fin.cvRoomsList = rooms.map(r => ({ id: r.id, kind: r.kind, x: r.x, y: r.y, w: r.w, h: r.h, hue: r.hue, icon: r.icon, title: r.title }));
+  return { rooms, cards, dets, edges, subs, w, h, mind: { main, twigs } };
+}
+
+// the branches, drawn under the rooms: tapered, coloured by health, with money running along them
+function finMindSVG(L) {
+  const M = L.mind; if (!M) return '';
+  const curve = (a, b) => { const mx = (a.x + b.x) / 2; return `M${a.x},${a.y} C${mx},${a.y} ${mx},${b.y} ${b.x},${b.y}`; };
+  const taper = (a, b, t0, t1) => { const mx = (a.x + b.x) / 2; return `M${a.x},${a.y - t0 / 2} C${mx},${a.y - t0 / 2} ${mx},${b.y - t1 / 2} ${b.x},${b.y - t1 / 2} L${b.x},${b.y + t1 / 2} C${mx},${b.y + t1 / 2} ${mx},${a.y + t0 / 2} ${a.x},${a.y + t0 / 2} Z`; };
+  let out = '';
+  for (const b of M.main) {
+    const d = curve(b.a, b.b), speed = Math.max(1.4, 4.2 - b.t / 12).toFixed(1);
+    out += `<g class="mm-branch ${b.health}${b.hot ? ' hot' : ''}"><path class="limb" d="${taper(b.a, b.b, b.t + 6, Math.max(4, b.t * 0.55))}"/>`;
+    if (b.dir === 'out' || b.dir === 'both') out += `<path class="flow" d="${d}" style="animation-duration:${speed}s"/>`;
+    if (b.dir === 'in' || b.dir === 'both') out += `<path class="flow in" d="${curve(b.b, b.a)}" style="animation-duration:${speed}s"/>`;
+    if (b.label) { const lx = (b.a.x + b.b.x) / 2, ly = (b.a.y + b.b.y) / 2 - b.t / 2 - 12; out += `<text class="mm-l" x="${lx}" y="${ly}" text-anchor="middle">${esc(b.label[0])}<tspan class="per">${esc(b.label[1])}</tspan></text>`; }
+    out += `</g>`;
+  }
+  return `<svg class="fin-mind" width="${L.w}" height="${L.h}" aria-hidden="true">${out}</svg>`;
+}
 
 /* ---------- boot ---------- */
 const startView = (location.hash || '').replace('#', '');

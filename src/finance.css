@@ -602,3 +602,24 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 .fin-cv-vp.z-far.mode-res .mnode.fin-leaf.tank .mtxt b { font-size: 21px; }
 .mode-res .fin-det[data-det="up"] .fin-up-grid { grid-template-columns: minmax(0, 1fr); }
 .mode-res .fin-up-l { white-space: normal; overflow: visible; overflow-wrap: anywhere; }
+
+/* ---------- the layout "Mind map": branches as thick as their money, coloured by health, money flowing ---------- */
+.fin-cv-vp.mode-mind { background: radial-gradient(1400px 900px at 50% 45%, color-mix(in srgb, var(--accent) 6%, var(--bg)), var(--bg)); }
+.mode-mind .fin-room { background: color-mix(in srgb, var(--surface) 82%, transparent); border: 1.5px solid color-mix(in srgb, hsl(var(--h) 50% 55%) 35%, var(--line)); box-shadow: 0 14px 36px -28px rgba(30, 20, 50, .45); }
+.mode-mind .fin-room.ov { border: 2.5px solid color-mix(in srgb, var(--accent) 55%, var(--line)); box-shadow: 0 0 0 8px color-mix(in srgb, var(--accent) 8%, transparent), 0 30px 70px -40px color-mix(in srgb, var(--accent) 60%, transparent); }
+.mode-mind .fin-room-h { height: 84px; }
+.mode-mind .fin-room-t b { font-size: 22px; }
+.fin-mind { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; }
+.fin-twig { fill: none; stroke-linecap: round; opacity: .5; }
+.fin-twig.green { stroke: #4caf72; } .fin-twig.amber { stroke: #e0a030; } .fin-twig.red { stroke: #d9534f; } .fin-twig.calm { stroke: #7a8fb0; }
+.fin-twig.tw1 { stroke-width: 1.5px; } .fin-twig.tw2 { stroke-width: 3px; } .fin-twig.tw3 { stroke-width: 4.5px; } .fin-twig.tw4 { stroke-width: 6px; }
+.mm-branch .limb { opacity: .85; }
+.mm-branch.green .limb { fill: #4caf72; } .mm-branch.amber .limb { fill: #e0a030; } .mm-branch.red .limb { fill: #d9534f; } .mm-branch.calm .limb { fill: #8b9dbb; }
+.mm-branch .flow { fill: none; stroke: #fff; stroke-width: 5; stroke-linecap: round; stroke-dasharray: 0.1 22; opacity: .95; }
+.mm-branch.hot .limb { filter: drop-shadow(0 0 10px rgba(255, 210, 90, .9)); }
+.mm-branch.hot .flow { stroke: #fff7c8; stroke-width: 7; }
+@media (prefers-reduced-motion: no-preference) { .mm-branch .flow { animation: finMind 2.6s linear infinite; } .mm-branch.hot .flow { animation-duration: .9s !important; } @keyframes finMind { to { stroke-dashoffset: -22.1; } } }
+.mm-l { font: 700 20px/1 var(--font, system-ui); fill: var(--ink); paint-order: stroke; stroke: color-mix(in srgb, var(--bg) 90%, transparent); stroke-width: 6px; stroke-linejoin: round; }
+.mm-l .per { font-size: 14px; font-weight: 600; fill: var(--ink-2); }
+.mode-mind .fin-det[data-det="up"] .fin-up-grid { grid-template-columns: minmax(0, 1fr); }
+.mode-mind .fin-up-l { white-space: normal; overflow: visible; overflow-wrap: anywhere; }

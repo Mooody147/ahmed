@@ -356,15 +356,15 @@ function finCvRoom(r) {
     </div></section>`;
 }
 function finCvBoard() {
-  const cv = UI.fin.cv, root = finCvModel(), n = finNow(), plan = finBuyPlan(), rooms = finCvRooms(root), res = cv.mode === 'res' && typeof finResLayout === 'function', flow = cv.mode === 'flow' && typeof finFlowLayout === 'function', L = res ? finResLayout(rooms, plan, n) : flow ? finFlowLayout(rooms, plan, n) : finCvLayout(rooms, plan, n);
+  const cv = UI.fin.cv, root = finCvModel(), n = finNow(), plan = finBuyPlan(), rooms = finCvRooms(root), res = cv.mode === 'res' && typeof finResLayout === 'function', flow = cv.mode === 'flow' && typeof finFlowLayout === 'function', mind = cv.mode === 'mind' && typeof finMindLayout === 'function', L = res ? finResLayout(rooms, plan, n) : flow ? finFlowLayout(rooms, plan, n) : mind ? finMindLayout(rooms, plan, n) : finCvLayout(rooms, plan, n);
   const hueOf = new Map(); for (const r of rooms) { const walk = k => { hueOf.set(k.id, r.hue); (k.children || []).forEach(walk); }; if (r.node) walk(r.node); }
   UI.fin.cvSize = { w: L.w, h: L.h }; UI.fin.cvCards = new Map(L.cards.map(c => [c.id, c]));
   if (UI.fin.pop && !UI.fin.cvCards.has(UI.fin.pop)) UI.fin.pop = null;
   const path = e => { const mx = (e.x0 + e.x1) / 2; return `M${e.x0},${e.y0} C${mx},${e.y0} ${mx},${e.y1} ${e.x1},${e.y1}`; };
   // the entrance plays when you open the canvas (within its first moment), not on every redraw after
   const now = Date.now(); if (!UI.fin.cvShownAt) UI.fin.cvShownAt = now; const intro = now - UI.fin.cvShownAt < 700;
-  return `<div class="fin-cv-vp${res ? ' mode-res' : flow ? ' mode-flow' : ''}${intro ? ' intro' : ''}${cv.k < 0.62 ? ' z-far' : ''}" id="fin-cv-vp">${flow ? finFlowSky() : ''}<div class="fin-cv-world" id="fin-cv-world" style="width:${L.w}px;height:${L.h}px;transform:translate(${cv.x}px,${cv.y}px) scale(${cv.k})">
-      ${res ? finResSVG(L) : flow ? finFlowSVG(L) : ''}${L.rooms.map(finCvRoom).join('')}
+  return `<div class="fin-cv-vp${res ? ' mode-res' : flow ? ' mode-flow' : mind ? ' mode-mind' : ''}${intro ? ' intro' : ''}${cv.k < 0.62 ? ' z-far' : ''}" id="fin-cv-vp">${flow ? finFlowSky() : ''}<div class="fin-cv-world" id="fin-cv-world" style="width:${L.w}px;height:${L.h}px;transform:translate(${cv.x}px,${cv.y}px) scale(${cv.k})">
+      ${res ? finResSVG(L) : flow ? finFlowSVG(L) : mind ? finMindSVG(L) : ''}${L.rooms.map(finCvRoom).join('')}
       <svg class="fin-cv-edges" width="${L.w}" height="${L.h}" aria-hidden="true">${L.edges.map(e => `<path class="${e.cls}" d="${path(e)}"><title>${esc(e.title)}</title></path>`).join('')}</svg>
       ${L.subs.map(s => `<div class="fin-room-sub" style="left:${s.x}px;top:${s.y}px;width:${s.w}px"><b>${esc(s.label)}</b>${s.sum ? ` <small>${esc(s.sum)}</small>` : ''}</div>`).join('')}
       ${L.cards.map(c => finCvCard(c, hueOf.get(c.id) ?? (c.id.startsWith('b:') || c.id.startsWith('src:') || c.id.startsWith('g:') ? 190 : 200))).join('')}
@@ -418,7 +418,7 @@ function finCvApply() {
 }
 // on opening: as wide as the screen allows (readable), from the top; Fit shows all of it
 function finCvFit(all) {
-  if (UI.fin.cv.mode === 'res') all = true;   // the whole system of tanks and pipes at once
+  if (UI.fin.cv.mode === 'res' || UI.fin.cv.mode === 'mind') all = true;   // the whole system of tanks and pipes at once
   const vp = $('#fin-cv-vp'), s = UI.fin.cvSize, cv = UI.fin.cv; if (!vp || !s) return;
   const W = vp.clientWidth, H = vp.clientHeight; if (!W || !H) return;
   if (all) { const top = cv.full ? 64 : 16; cv.k = Math.max(0.1, Math.min(1, (W - 32) / s.w, (H - top - 16) / s.h)); cv.x = (W - s.w * cv.k) / 2; cv.y = Math.max(top, top + (H - top - 16 - s.h * cv.k) / 2); }   // full screen: below the floating controls

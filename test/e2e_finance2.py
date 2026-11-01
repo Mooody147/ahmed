@@ -389,17 +389,35 @@ async def main():
         await pg.click(f'.fin-cvn[data-node="{acard}"]', button='right'); await pg.wait_for_timeout(200); assert await ev("!!document.getElementById('fin-menu')"), 'and has its menu'; await pg.keyboard.press('Escape')
         await pg.click('[data-act="fin-cv-fit"]'); await pg.wait_for_timeout(600); await pg.screenshot(path=os.path.join(HERE, 'shots', 'finance-reservoirs.png'))
         assert await ev("localStorage.getItem('ar-fin-cv-mode')") == 'res', 'the choice is remembered'
-        await ev("document.activeElement && document.activeElement.blur()"); await pg.keyboard.press('l'); await pg.wait_for_timeout(1000)
-        assert await ev("window.__FIN.mode()") == 'rooms' and not await ev("document.getElementById('fin-cv-vp').classList.contains('mode-res')"), 'L: from Reservoirs back to Rooms'
-        # Flow (the river) is still there; L goes Rooms → Flow → Reservoirs → Rooms
+        await pg.click('.fin-cv-bar [data-act="fin-cv-mode"][data-v="rooms"]'); await pg.wait_for_timeout(1000)
+        assert await ev("window.__FIN.mode()") == 'rooms' and not await ev("document.getElementById('fin-cv-vp').classList.contains('mode-res')"), 'back to Rooms'
+        await ev("document.activeElement && document.activeElement.blur()")
+        # Flow (the river) is still there; L goes Rooms → Flow → Reservoirs → Mind map → Rooms
         await pg.keyboard.press('l'); await pg.wait_for_timeout(1000)
         assert await ev("window.__FIN.mode()") == 'flow' and await ev("document.getElementById('fin-cv-vp').classList.contains('mode-flow')")
         assert sorted(await ev("[...document.querySelectorAll('#fin-cv-world .fin-leaf[data-node]')].map(c => c.dataset.node)")) == rooms_cards, 'the same cards in Flow'
         assert await ev("document.querySelectorAll('.fin-flow .fin-flow-r').length") >= 3, 'the ribbons and their moving money'
         await pg.screenshot(path=os.path.join(HERE, 'shots', 'finance-flow.png'))
         await pg.keyboard.press('l'); await pg.wait_for_timeout(1000); assert await ev("window.__FIN.mode()") == 'res'
+        # the Mind map: My money in the centre, a branch to every room as thick as its money and coloured by its health,
+        # money flowing along the branches (in from income, out to spending, commitments and goals), a thin branch to
+        # every card; a change makes its branch pulse
+        await pg.keyboard.press('l'); await pg.wait_for_timeout(1100); assert await ev("window.__FIN.mode()") == 'mind' and await ev("document.getElementById('fin-cv-vp').classList.contains('mode-mind')")
+        assert sorted(await ev("[...document.querySelectorAll('#fin-cv-world .fin-leaf[data-node]')].map(c => c.dataset.node)")) == rooms_cards, 'the same cards in the Mind map'
+        nb = await ev("document.querySelectorAll('.fin-mind .mm-branch').length"); nr = await ev("[...document.querySelectorAll('#fin-cv-world .fin-room')].filter(r => !r.classList.contains('ov') && !r.classList.contains('sec')).length")
+        print('MIND', nb, nr, await ev("[...document.querySelectorAll('.fin-mind .mm-l')].map(t => t.textContent)"), await ev("[...document.querySelectorAll('.fin-mind .mm-branch')].map(b => b.getAttribute('class'))"))
+        assert nb == nr, 'a branch from My money to every room'
+        assert await ev("document.querySelectorAll('.fin-mind .mm-branch .flow').length") >= 3 and await ev("!!document.querySelector('.fin-mind .mm-branch .flow.in')"), 'money flows along the branches, income inward'
+        assert await ev("document.querySelectorAll('#fin-cv-world .fin-twig').length") >= 10, 'a thin branch to each card'
+        P = await ev("Object.fromEntries(['ov', 'exp', 'inc'].map(id => [id, window.__AR.UI.fin.cvPos.get(id)]))")
+        assert P['exp']['x'] > P['ov']['x'] + P['ov']['w'] or P['exp']['x'] + P['exp']['w'] < P['ov']['x'], 'branches stand either side of My money'
+        await ev("(() => { const U = window.__AR.UI.fin, id = document.querySelector('#fin-cv-world .fin-leaf[data-node^=\"a:\"]').dataset.node; U.flash = { ids: new Set([id]), until: Date.now() + 4000 }; window.__FIN.open('map'); })()"); await pg.wait_for_timeout(300)
+        assert await ev("!!document.querySelector('.fin-mind .mm-branch.hot')"), 'a change makes its branch pulse'
+        fit = await ev("(() => { const v = document.getElementById('fin-cv-vp').getBoundingClientRect(), w = document.getElementById('fin-cv-world').getBoundingClientRect(); return [w.left >= v.left - 1, w.right <= v.right + 1, w.top >= v.top - 1, w.bottom <= v.bottom + 1]; })()")
+        assert all(fit), ('Fit shows the whole map', fit)
+        await pg.screenshot(path=os.path.join(HERE, 'shots', 'finance-mindmap.png'))
         await pg.keyboard.press('l'); await pg.wait_for_timeout(1000); assert await ev("window.__FIN.mode()") == 'rooms'
-        assert await ev("[...document.querySelectorAll('.fin-cv-bar [data-act=\"fin-cv-mode\"]')].map(b => b.dataset.v).join()") == 'rooms,flow,res'
+        assert await ev("[...document.querySelectorAll('.fin-cv-bar [data-act=\"fin-cv-mode\"]')].map(b => b.dataset.v).join()") == 'rooms,flow,res,mind'
 
         # only two tabs above the canvas: Canvas and Settings
         tabs = await ev("[...document.querySelectorAll('.fin-tabs button')].map(b => b.textContent.trim())"); print('TABS', tabs)
