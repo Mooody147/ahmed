@@ -362,7 +362,7 @@ function finCvBoard() {
   const path = e => { const mx = (e.x0 + e.x1) / 2; return `M${e.x0},${e.y0} C${mx},${e.y0} ${mx},${e.y1} ${e.x1},${e.y1}`; };
   // the entrance plays when you open the canvas (within its first moment), not on every redraw after
   const now = Date.now(); if (!UI.fin.cvShownAt) UI.fin.cvShownAt = now; const intro = now - UI.fin.cvShownAt < 700;
-  return `<div class="fin-cv-vp${tree ? ' mode-tree' : flow ? ' mode-flow' : ''}${intro ? ' intro' : ''}${tree && cv.k < 0.62 ? ' z-far' : ''}" id="fin-cv-vp">${tree ? finTreeSky() : flow ? finFlowSky() : ''}<div class="fin-cv-world" id="fin-cv-world" style="width:${L.w}px;height:${L.h}px;transform:translate(${cv.x}px,${cv.y}px) scale(${cv.k})">
+  return `<div class="fin-cv-vp${tree ? ' mode-tree' : flow ? ' mode-flow' : ''}${intro ? ' intro' : ''}${cv.k < 0.62 ? ' z-far' : ''}" id="fin-cv-vp">${tree ? finTreeSky() : flow ? finFlowSky() : ''}<div class="fin-cv-world" id="fin-cv-world" style="width:${L.w}px;height:${L.h}px;transform:translate(${cv.x}px,${cv.y}px) scale(${cv.k})">
       ${tree ? finTreeSVG(L) : flow ? finFlowSVG(L) : ''}${L.rooms.map(finCvRoom).join('')}
       <svg class="fin-cv-edges" width="${L.w}" height="${L.h}" aria-hidden="true">${L.edges.map(e => `<path class="${e.cls}" d="${path(e)}"><title>${esc(e.title)}</title></path>`).join('')}</svg>
       ${L.subs.map(s => `<div class="fin-room-sub" style="left:${s.x}px;top:${s.y}px;width:${s.w}px"><b>${esc(s.label)}</b>${s.sum ? ` <small>${esc(s.sum)}</small>` : ''}</div>`).join('')}
@@ -411,7 +411,7 @@ function finCvApply() {
   // a fast moving layer only while it moves; a moment after, text and lines are drawn sharp at the new size
   if (w) { w.classList.add('moving'); clearTimeout(UI.fin.sharpT); UI.fin.sharpT = setTimeout(() => { const x = $('#fin-cv-world'); if (x) x.classList.remove('moving'); }, 160); }
   const z = $('#fin-cv-z'); if (z) z.textContent = Math.round(cv.k * 100) + '%';
-  const vpz = $('#fin-cv-vp'); if (vpz) vpz.classList.toggle('z-far', cv.mode === 'tree' && cv.k < 0.62);
+  const vpz = $('#fin-cv-vp'); if (vpz) vpz.classList.toggle('z-far', cv.k < 0.62);
   finPopPlace(); if (typeof finMiniPlace === 'function') finMiniPlace();
   if (typeof finCvEditorPlace === 'function') finCvEditorPlace();
 }

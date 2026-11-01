@@ -511,7 +511,8 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 .mode-tree .fin-room.tr-crown { border-color: color-mix(in srgb, var(--tree-leaf2) 70%, transparent); }
 .mode-tree .fin-room-h { height: 84px; }
 .mode-tree .fin-room-t b { font-size: 22px; }
-.mode-tree .mnode.fin-leaf { transform: perspective(800px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); transition: transform .18s ease-out, box-shadow .18s ease; }
+/* flat (and so drawn sharp at every zoom) until the pointer is on it; then it leans toward the pointer */
+.mode-tree .mnode.fin-leaf { transition: transform .18s ease-out, box-shadow .18s ease; }
 .mode-tree .mnode.fin-leaf:hover { transform: perspective(800px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) translateY(-3px); box-shadow: 0 18px 34px -16px hsl(var(--h) 60% 30% / .5), 0 0 0 1px hsl(var(--h) 70% 60% / .45); }
 .mode-tree .fin-det[data-det="up"] .fin-up-grid { grid-template-columns: minmax(0, 1fr); }
 /* zoomed out: cards show only their name and figure, in big type; room titles grow; details stay */
@@ -558,7 +559,7 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 /* cards: bright tiles that lean toward the pointer, with a light that follows it */
 .mode-flow .mnode.fin-leaf { border-color: hsl(var(--h) 60% 75% / .55); box-shadow: 0 10px 28px -16px rgba(0,0,0,.65), 0 0 0 1px rgba(255,255,255,.04);
   background: radial-gradient(160px 80px at var(--gx, 50%) 0%, hsl(var(--h) 90% 92% / .9), transparent 70%), linear-gradient(180deg, var(--face-top), transparent 50%), var(--surface);
-  transform: perspective(800px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); transition: transform .18s ease-out, box-shadow .18s ease; }
+  transition: transform .18s ease-out, box-shadow .18s ease; }   /* flat until hovered: sharp at every zoom */
 .mode-flow .mnode.fin-leaf:hover { transform: perspective(800px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) translateY(-3px) scale(1.015);
   box-shadow: 0 22px 40px -18px hsl(var(--h) 80% 40% / .7), 0 0 0 1px hsl(var(--h) 90% 70% / .5), 0 0 30px -6px hsl(var(--h) 90% 65% / .55); }
 .mode-flow .fin-det { box-shadow: 0 24px 60px -30px rgba(0,0,0,.8), 0 0 0 1px rgba(255,255,255,.06); }
@@ -585,3 +586,21 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 .mode-flow .fin-room:not(.ov):not(.goals):not(.sec) .fin-room-h { height: 98px; }
 .mode-flow .fin-up-l { white-space: normal; overflow: visible; overflow-wrap: anywhere; }
 
+
+/* ---------- every layout, zoomed out: big, sharp type ----------
+   Below 62% a card is its name over its figure (sub-lines, sparklines and icons wait until you zoom in), and room
+   titles grow, so the whole canvas reads at Fit. Text is drawn at its exact size at every zoom. */
+.fin-cv-world { text-rendering: geometricPrecision; -webkit-font-smoothing: antialiased; }
+.fin-cv-vp.z-far .fin-leaf .mtxt small, .fin-cv-vp.z-far .fin-leaf .fin-spark, .fin-cv-vp.z-far .fin-cv-ic { display: none; }
+.fin-cv-vp.z-far .mnode.fin-leaf { flex-direction: column; align-items: stretch; justify-content: center; gap: 1px; padding: 3px 12px; }
+.fin-cv-vp.z-far .fin-leaf .mtxt { width: 100%; }
+.fin-cv-vp.z-far .fin-leaf .mtxt b { font-size: 19px; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fin-cv-vp.z-far .fin-leaf .fin-cv-v { font-size: 19px; line-height: 1.2; text-align: left; }
+.fin-cv-vp.z-far .fin-room-t b { font-size: 28px; }
+.fin-cv-vp.z-far .fin-room-t small { font-size: 16px; }
+.fin-cv-vp.z-far .fin-room-sub b { font-size: 18px; }
+.fin-cv-vp.z-far.mode-tree .fin-leaf .mtxt b, .fin-cv-vp.z-far.mode-tree .fin-leaf .fin-cv-v { font-size: 23px; }
+.fin-cv-vp.z-far.mode-tree .fin-room-t b { font-size: 32px; }
+/* Flow's lanes are narrow: a modest title so the summary still fits its header */
+.fin-cv-vp.z-far.mode-flow .fin-room:not(.ov):not(.goals):not(.sec) .fin-room-t b { font-size: 22px; }
+.fin-cv-vp.z-far.mode-flow .fin-room:not(.ov):not(.goals):not(.sec) .fin-room-t small { font-size: 13px; line-height: 1.25; }

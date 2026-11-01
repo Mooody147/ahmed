@@ -351,6 +351,9 @@ async def main():
         fit = await ev("(() => { const v = document.getElementById('fin-cv-vp').getBoundingClientRect(), w = document.getElementById('fin-cv-world').getBoundingClientRect(); return [w.left >= v.left - 1, w.right <= v.right + 1, w.top >= v.top - 1, w.bottom <= v.bottom + 1]; })()")
         assert all(fit), ('Fit shows the whole tree', fit)
         assert await ev("document.getElementById('fin-cv-vp').classList.contains('z-far')") == (await ev("window.__AR.UI.fin.cv.k") < 0.62), 'zoomed out: big type'
+        await pg.mouse.move(2, 2); await pg.wait_for_timeout(300)
+        flat = await ev("[...document.querySelectorAll('#fin-cv-world .fin-leaf')].filter(c => getComputedStyle(c).transform.startsWith('matrix3d')).length")
+        assert flat == 0, ('cards are flat at rest, so their text is drawn sharp at every zoom', flat)
         acard = await ev("document.querySelector('#fin-cv-world .fin-leaf[data-node^=\"a:\"]').dataset.node")
         await ev(f"window.__FIN.show('{acard}')"); await pg.wait_for_timeout(500); await pg.click(f'.fin-cvn[data-node="{acard}"]'); await pg.wait_for_timeout(500)
         assert await ev("!!document.getElementById('fin-pop')"), 'a card pops out in the Tree too'
