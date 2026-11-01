@@ -2192,14 +2192,14 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 .fin-cv-keys dl { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 12px; margin: 8px 0 0; font-size: 12.5px; }
 .fin-cv-keys dt { font-weight: 700; } .fin-cv-keys dd { margin: 0; color: var(--ink-2); }
 /* the minimap */
-.fin-mini { position: absolute; left: 12px; bottom: 12px; z-index: 5; padding: 6px; box-sizing: content-box; background: color-mix(in srgb, var(--surface) 90%, transparent); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--elev-2); cursor: crosshair; backdrop-filter: blur(6px); }
-.fin-mini svg { display: block; }
-.fin-mini rect { fill: color-mix(in srgb, hsl(var(--h) 60% 75%) 70%, var(--surface)); stroke: color-mix(in srgb, hsl(var(--h) 50% 45%) 50%, transparent); stroke-width: .6; }
-.fin-mini rect.vpr { fill: color-mix(in srgb, var(--accent) 12%, transparent); stroke: var(--accent); stroke-width: 1.5; }
-.fin-mini-x { position: absolute; top: -8px; right: -8px; width: 20px; height: 20px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); font-size: 13px; line-height: 1; padding: 0; color: var(--ink-2); }
-.fin-mini-show { position: absolute; left: 12px; bottom: 12px; z-index: 5; }
-@media (max-width: 700px) { .fin-mini { display: none; } .fin-cv-find .input { width: 140px; } }
-.fin-mini { opacity: .92; } .fin-mini:hover { opacity: 1; }
+.fin-cvmini { position: absolute; left: 12px; bottom: 12px; z-index: 5; padding: 6px; box-sizing: content-box; background: color-mix(in srgb, var(--surface) 90%, transparent); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--elev-2); cursor: crosshair; backdrop-filter: blur(6px); }
+.fin-cvmini svg { display: block; }
+.fin-cvmini rect { fill: color-mix(in srgb, hsl(var(--h) 60% 75%) 70%, var(--surface)); stroke: color-mix(in srgb, hsl(var(--h) 50% 45%) 50%, transparent); stroke-width: .6; }
+.fin-cvmini rect.vpr { fill: color-mix(in srgb, var(--accent) 12%, transparent); stroke: var(--accent); stroke-width: 1.5; }
+.fin-cvmini-x { position: absolute; top: -8px; right: -8px; width: 20px; height: 20px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); font-size: 13px; line-height: 1; padding: 0; color: var(--ink-2); }
+.fin-cvmini-show { position: absolute; left: 12px; bottom: 12px; z-index: 5; }
+@media (max-width: 700px) { .fin-cvmini { display: none; } .fin-cv-find .input { width: 140px; } }
+.fin-cvmini { opacity: .92; } .fin-cvmini:hover { opacity: 1; }
 .fin-cv-bar { row-gap: 6px; }
 
 </style>
@@ -16717,11 +16717,11 @@ document.addEventListener('dblclick', e => { const t = e.target.closest && e.tar
 
 /* --- the minimap: every room, and where you are --- */
 function finCvMiniHTML() {
-  const R = UI.fin.cvRoomsList || [], s = UI.fin.cvSize; if (!R.length || !s || UI.fin.miniOff) return UI.fin.miniOff ? `<button class="btn sm fin-mini-show" data-act="fin-mini" title="Show the minimap">🗺️</button>` : '';
+  const R = UI.fin.cvRoomsList || [], s = UI.fin.cvSize; if (!R.length || !s || UI.fin.miniOff) return UI.fin.miniOff ? `<button class="btn sm fin-cvmini-show" data-act="fin-mini" title="Show the minimap">🗺️</button>` : '';
   const k = Math.min(150 / s.w, 120 / s.h), W = Math.max(40, Math.round(s.w * k)), H = Math.max(30, Math.round(s.h * k));
-  return `<div class="fin-mini" id="fin-mini" title="Click to go there" style="width:${W}px;height:${H}px" data-k="${k}"><svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMinYMin meet" aria-hidden="true">
+  return `<div class="fin-cvmini" id="fin-mini" title="Click to go there" style="width:${W}px;height:${H}px" data-k="${k}"><svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMinYMin meet" aria-hidden="true">
     ${R.map(r => `<rect x="${(r.x * k).toFixed(1)}" y="${(r.y * k).toFixed(1)}" width="${Math.max(2, r.w * k).toFixed(1)}" height="${Math.max(2, r.h * k).toFixed(1)}" rx="3" style="--h:${r.hue ?? 200}"/>`).join('')}
-    <rect class="vpr" id="fin-mini-vp" x="0" y="0" width="10" height="10" rx="2"/></svg><button class="fin-mini-x" data-act="fin-mini" aria-label="Hide the minimap">×</button></div>`;
+    <rect class="vpr" id="fin-mini-vp" x="0" y="0" width="10" height="10" rx="2"/></svg><button class="fin-cvmini-x" data-act="fin-mini" aria-label="Hide the minimap">×</button></div>`;
 }
 function finMiniPlace() {
   const m = $('#fin-mini-vp'), mini = $('#fin-mini'), vp = $('#fin-cv-vp'), cv = UI.fin.cv; if (!m || !mini || !vp) return;

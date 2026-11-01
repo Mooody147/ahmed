@@ -148,11 +148,11 @@ document.addEventListener('dblclick', e => { const t = e.target.closest && e.tar
 
 /* --- the minimap: every room, and where you are --- */
 function finCvMiniHTML() {
-  const R = UI.fin.cvRoomsList || [], s = UI.fin.cvSize; if (!R.length || !s || UI.fin.miniOff) return UI.fin.miniOff ? `<button class="btn sm fin-mini-show" data-act="fin-mini" title="Show the minimap">🗺️</button>` : '';
+  const R = UI.fin.cvRoomsList || [], s = UI.fin.cvSize; if (!R.length || !s || UI.fin.miniOff) return UI.fin.miniOff ? `<button class="btn sm fin-cvmini-show" data-act="fin-mini" title="Show the minimap">🗺️</button>` : '';
   const k = Math.min(150 / s.w, 120 / s.h), W = Math.max(40, Math.round(s.w * k)), H = Math.max(30, Math.round(s.h * k));
-  return `<div class="fin-mini" id="fin-mini" title="Click to go there" style="width:${W}px;height:${H}px" data-k="${k}"><svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMinYMin meet" aria-hidden="true">
+  return `<div class="fin-cvmini" id="fin-mini" title="Click to go there" style="width:${W}px;height:${H}px" data-k="${k}"><svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMinYMin meet" aria-hidden="true">
     ${R.map(r => `<rect x="${(r.x * k).toFixed(1)}" y="${(r.y * k).toFixed(1)}" width="${Math.max(2, r.w * k).toFixed(1)}" height="${Math.max(2, r.h * k).toFixed(1)}" rx="3" style="--h:${r.hue ?? 200}"/>`).join('')}
-    <rect class="vpr" id="fin-mini-vp" x="0" y="0" width="10" height="10" rx="2"/></svg><button class="fin-mini-x" data-act="fin-mini" aria-label="Hide the minimap">×</button></div>`;
+    <rect class="vpr" id="fin-mini-vp" x="0" y="0" width="10" height="10" rx="2"/></svg><button class="fin-cvmini-x" data-act="fin-mini" aria-label="Hide the minimap">×</button></div>`;
 }
 function finMiniPlace() {
   const m = $('#fin-mini-vp'), mini = $('#fin-mini'), vp = $('#fin-cv-vp'), cv = UI.fin.cv; if (!m || !mini || !vp) return;
