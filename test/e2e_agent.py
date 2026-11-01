@@ -174,6 +174,36 @@ async def main():
         assert not await ev("!!document.querySelector('.fin-room[data-room=\"box:plan\"] img, .fin-room[data-room=\"box:plan\"] script, .fin-det[data-det=\"box:plan\"] img, .fin-det[data-det=\"box:plan\"] script')") and not await ev("window.__xss"), 'shown as text, never run'
         assert await ev("window.__FIN.canvas().boxes.find(b => b.id === 'x').show.what") == 'transactions', 'an unknown shape falls back to a safe one'
 
+        # 8b. the floating Balances tab: it asks for today's balances; what you type goes everywhere at once
+        await ev("window.__FIN.presentEnd()"); await ev("window.__FIN.mode('mind')"); await pg.wait_for_timeout(900)
+        assert await ev("!!document.querySelector('.fin-cv-stage .fin-bal-tab')"), 'the tab on the canvas'
+        print('BAL TAB', await ev("document.querySelector('.fin-bal-tab').textContent.replace(/\\s+/g, ' ')"))
+        await pg.click('.fin-bal-tab'); await pg.wait_for_selector('#fin-bal-win')
+        n_rows = await ev("document.querySelectorAll('#fin-bal-win .fin-bal-r').length"); n_acc = await ev("window.__FIN.prefs().accounts.filter(a => ['current', 'savings', 'credit_card', 'bnpl', 'cash', 'investment'].includes(a.kind)).length")
+        assert n_rows == n_acc, ('every account', n_rows, n_acc)
+        prim = await ev("window.__FIN.prefs().accounts.find(a => /0012$/.test(a.number || '')).id"); cardid = await ev("window.__FIN.prefs().accounts.find(a => a.kind === 'credit_card').id")
+        await pg.fill(f'#fin-bal-win [data-id="{cardid}"][data-k="outstanding"]', '5000')
+        await pg.fill(f'#fin-bal-win [data-id="{prim}"][data-k="balance"]', '61234'); await pg.press(f'#fin-bal-win [data-id="{prim}"][data-k="balance"]', 'Enter'); await pg.wait_for_timeout(500)
+        assert not await ev("!!document.getElementById('fin-bal-win')"), 'saved and closed'
+        lp = await ev(f"window.__FIN.latest('{prim}')"); lc = await ev(f"window.__FIN.latest('{cardid}')"); print('LATEST', lp.get('balance'), lc.get('owed'))
+        assert lp['balance'] == 61234 and lc['owed'] == 5000, 'recorded'
+        assert '61,234' in await ev(f"document.querySelector('.fin-leaf[data-node=\"a:{prim}\"]').textContent"), 'the card shows it'
+        assert (await ev("window.__FIN.now()"))['card']['owed'] == 5000, 'and every calculation uses it'
+        pr = await ev("window.__FIN.presentation()"); print('BAL PRESENT', [st['text'] for st in pr['steps']])
+        assert pr['on'] and any(st['id'] == 'a:' + prim for st in pr['steps']), 'presented on the canvas'
+        await ev("window.__FIN.mode('rich')"); await pg.wait_for_timeout(1000)
+        assert '61,234' in await ev(f"document.querySelector('.fin-leaf[data-node=\"a:{prim}\"]').textContent"), 'in every layout'
+        await ev("window.__FIN.presentEnd()"); await ev("window.__FIN.mode('mind')"); await pg.wait_for_timeout(900)
+        bm = await ev("window.__FIN.talk().filter(x => (x.text || '').startsWith('Balances:')).pop()"); assert bm, 'a line in the conversation'
+        for _ in range(4):   # newest first: what was sorted out after the balances, then the balances
+            if await ev(f"!!document.querySelector('[data-act=\"fin-talk-undo\"][data-id=\"{bm['id']}\"]')"): break
+            await ev("[...document.querySelectorAll('#fin-talk-feed [data-act=\"fin-talk-undo\"]')].pop().click()"); await pg.wait_for_timeout(400); await ev("window.__FIN.presentEnd()")
+        await ev(f"document.querySelector('[data-act=\"fin-talk-undo\"][data-id=\"{bm['id']}\"]').click()"); await pg.wait_for_timeout(500)
+        assert (await ev(f"window.__FIN.latest('{prim}')"))['balance'] != 61234, 'Undo'
+        await ev("window.__FIN.presentEnd()")
+        await pg.keyboard.press('b'); await pg.wait_for_timeout(200); assert await ev("!!document.getElementById('fin-bal-win')"), 'B opens it'
+        await pg.keyboard.press('Escape'); await pg.wait_for_timeout(200); assert not await ev("!!document.getElementById('fin-bal-win')"), 'Esc closes it'
+
         # 9. a box goes with its ✕ (and Undo)
         await ev("window.__FIN.show('box:recurring')"); await pg.wait_for_timeout(400)
         await pg.click('.fin-room[data-room="box:recurring"] [data-act="fin-box-del"]'); await pg.wait_for_timeout(300)

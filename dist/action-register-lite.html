@@ -2480,6 +2480,23 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 .fin-show-dots { display: flex; gap: 4px; } .fin-show-dots i { width: 7px; height: 7px; border-radius: 50%; background: rgba(255, 255, 255, .25); } .fin-show-dots i.done { background: rgba(255, 211, 77, .6); } .fin-show-dots i.on { background: #ffd34d; box-shadow: 0 0 8px #ffd34d; }
 @media (prefers-reduced-motion: reduce) { .fin-show-ring, .fin-show-cap { transition: none; } .fin-show-ring.ghost { animation: none; } }
 
+/* ---------- the floating Balances tab and window ---------- */
+.fin-bal-tab { position: absolute; left: 16px; top: 16px; z-index: 25; display: grid; grid-template-columns: auto auto; column-gap: 8px; align-items: center; padding: 8px 14px 8px 12px; border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, .22); background: rgba(22, 16, 44, .82); color: #fff; font: 700 14px/1.2 var(--font, system-ui); cursor: pointer; text-align: left; backdrop-filter: none; box-shadow: 0 10px 30px -14px rgba(0, 0, 0, .7); }
+.fin-bal-tab span { grid-row: span 2; font-size: 20px; } .fin-bal-tab small { font-weight: 500; font-size: 11.5px; color: #cfc4f0; }
+.fin-bal-tab:hover { background: rgba(40, 28, 80, .92); }
+.fin-bal-tab.ask { border-color: rgba(255, 211, 77, .7); }
+@media (prefers-reduced-motion: no-preference) { .fin-bal-tab.ask { animation: finBalAsk 2.6s ease-in-out infinite; } @keyframes finBalAsk { 50% { box-shadow: 0 0 0 6px rgba(255, 211, 77, .18), 0 10px 30px -14px rgba(0, 0, 0, .7); } } }
+.fin-bal-win { left: 16px; right: auto; top: 16px; bottom: auto; width: min(460px, calc(100% - 32px)); }
+.fin-bal-rows { display: grid; gap: 8px; margin: 8px 0 12px; }
+.fin-bal-r { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 8px 10px; border-radius: 12px; background: var(--surface-2, var(--bg)); }
+.fin-bal-n { display: grid; gap: 2px; min-width: 0; } .fin-bal-n b { overflow-wrap: anywhere; } .fin-bal-n small { color: var(--ink-2); overflow-wrap: anywhere; }
+.fin-bal-in { display: flex; gap: 6px; }
+.fin-bal-f { display: grid; gap: 2px; } .fin-bal-f span { font-size: 11px; color: var(--ink-2); } .fin-bal-f input { width: 118px; }
+@media (max-width: 520px) { .fin-bal-r { grid-template-columns: minmax(0, 1fr); } .fin-bal-f input { width: 100%; } .fin-bal-in > * { flex: 1; } }
+.fin-cvwrap.full .fin-bal-tab, .fin-cvwrap.full .fin-bal-win { top: 72px; }
+@media (max-width: 600px) { .fin-bal-tab { grid-template-columns: auto; padding: 8px 10px; border-radius: 50%; } .fin-bal-tab small, .fin-bal-tab { font-size: 0; } .fin-bal-tab span { font-size: 20px; grid-row: auto; } }
+
 </style>
 <div class="titlestrip" id="titlestrip"><span class="ts-brand"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c3.3 4 6 7.2 6 10.4a6 6 0 0 1-12 0C6 10.2 8.7 7 12 3z"/><path d="m9.3 13.6 1.9 1.9 3.6-4.1"/></svg> Action Register</span><button class="ts-search" data-act="palette" title="Search and commands (Ctrl+K)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg><span>Search or type a command</span><kbd>Ctrl K</kbd></button><span class="ts-space"></span></div>
 <div class="app">
@@ -16410,7 +16427,7 @@ VIEW_FN.finance = () => {
   const cv = UI.fin.cv;
   // full screen: the canvas alone — no title, no description, no talk box; a few controls float in its corner
   if (cv.full) return `<div class="wrap fin fin-canvas-page"><section class="fin-cvwrap full" id="fin-s-map" aria-label="Money canvas, full screen">
-    <div class="fin-cv-stage">${finCvBoard()}${finPopHTML()}${typeof finCvMiniHTML === 'function' ? finCvMiniHTML() + finCvHelpHTML() : ''}${typeof finCvEditorHTML === 'function' ? finCvEditorHTML() : ''}${typeof finTalkWinHTML === 'function' ? finTalkWinHTML() + finMenuHTML() : ''}
+    <div class="fin-cv-stage">${finCvBoard()}${finPopHTML()}${typeof finCvMiniHTML === 'function' ? finCvMiniHTML() + finCvHelpHTML() : ''}${typeof finCvEditorHTML === 'function' ? finCvEditorHTML() : ''}${typeof finTalkWinHTML === 'function' ? finTalkWinHTML() + finMenuHTML() : ''}${typeof finBalWinHTML === 'function' ? finBalTabHTML() + finBalWinHTML() : ''}
       <div class="fin-cv-float" role="toolbar" aria-label="Canvas controls">${typeof finCvToolsHTML === 'function' ? finCvToolsHTML() : ''}
         ${UI.fin.cvOpen.length || UI.fin.pop ? `<button class="btn sm" data-act="fin-cv-close-all" title="Fold every opened detail and part">Close details</button>` : ''}
         <div class="seg zoom" role="group" aria-label="Zoom"><button data-act="fin-cv-zoom" data-v="out" aria-label="Zoom out">−</button><button data-act="fin-cv-fit" title="Fit to the screen"><span id="fin-cv-z">${Math.round(cv.k * 100)}%</span></button><button data-act="fin-cv-zoom" data-v="in" aria-label="Zoom in">+</button></div>
@@ -16428,7 +16445,7 @@ VIEW_FN.finance = () => {
       <button class="btn sm" data-act="fin-cv-all" data-v="open" title="Unfold every room">Unfold all</button><button class="btn sm" data-act="fin-cv-all" data-v="fold" title="Fold every room to its title">Fold all</button>
       <div class="seg zoom" role="group" aria-label="Zoom"><button data-act="fin-cv-zoom" data-v="out" aria-label="Zoom out">−</button><button data-act="fin-cv-fit" title="Fit to the screen"><span id="fin-cv-z">${Math.round(cv.k * 100)}%</span></button><button data-act="fin-cv-zoom" data-v="in" aria-label="Zoom in">+</button></div>
       <button class="btn sm" data-act="fin-cv-full" aria-pressed="${cv.full}" title="${cv.full ? 'Back (Esc)' : 'Full screen'}">${cv.full ? '✕ Close' : '⤢ Full screen'}</button></div>
-    <div class="fin-cv-stage">${finCvBoard()}${finPopHTML()}${typeof finCvMiniHTML === 'function' ? finCvMiniHTML() + finCvHelpHTML() : ''}${typeof finCvEditorHTML === 'function' ? finCvEditorHTML() : ''}${typeof finTalkWinHTML === 'function' ? finTalkWinHTML() + finMenuHTML() : ''}</div>
+    <div class="fin-cv-stage">${finCvBoard()}${finPopHTML()}${typeof finCvMiniHTML === 'function' ? finCvMiniHTML() + finCvHelpHTML() : ''}${typeof finCvEditorHTML === 'function' ? finCvEditorHTML() : ''}${typeof finTalkWinHTML === 'function' ? finTalkWinHTML() + finMenuHTML() : ''}${typeof finBalWinHTML === 'function' ? finBalTabHTML() + finBalWinHTML() : ''}</div>
   </section>
   ${typeof finTalkHTML === 'function' ? `<section class="card fin-card fin-talk-card" aria-label="Tell the canvas"><div class="row"><h2>Tell the canvas</h2><span class="spacer"></span>${UI.fin.talk.win ? '' : `<button class="btn sm ghost" data-act="fin-talk-win" title="Open it in a window on the canvas ( T )">⧉ Open on the canvas</button>`}</div>${UI.fin.talk.win ? finTalkDockedHTML() : finTalkHTML()}</section>` : ''}
 </div>`;
@@ -16600,10 +16617,10 @@ const finTalkFeed = () => finTalkDoc('feed').items;
 function finTalkPush(m) { const d = clone(finTalkDoc('feed')); const x = { ...m, text: String(m.text || '').slice(0, 1200), reply: String(m.reply || '').slice(0, 1000), notes: (m.notes || []).slice(0, 10).map(n => String(n).slice(0, 200)), done: (m.done || []).slice(0, 12).map(n => String(n).slice(0, 160)) }; d.items = [...d.items, x].slice(-40); colPut('fintalk', d); }
 function finTalkAdd(files) { for (const f of files) UI.fin.talk.files.push({ file: f, name: f.name, type: f.type || '' }); render(); }
 function finTalkMsg(m, live) {
-  if (m.who === 'edit') { const last = finTalkFeed().filter(x => x.who !== 'you' && x.undoable).pop(), can = !m.undone && last && last.id === m.id && UI.fin.undo.has(m.id);
+  if (m.who === 'edit') { const last = finTalkFeed().filter(x => x.who !== 'you' && x.undoable && !x.undone).pop(), can = !m.undone && last && last.id === m.id && UI.fin.undo.has(m.id);
     return `<div class="fin-msg edit"><div class="fin-bub"><span>✎ On the canvas: ${esc(m.text)}</span>${m.undone ? ' <span class="small muted">↩ Undone.</span>' : can ? ` <button class="btn sm ghost" data-act="fin-talk-undo" data-id="${esc(m.id)}">↩ Undo</button>` : ''}</div></div>`; }
   if (m.who === 'you') return `<div class="fin-msg you"><div class="fin-bub">${m.about ? `<span class="fin-about-tag">about ${esc(m.about)}</span>` : ''}${m.text ? esc(m.text) : ''}${(m.files || []).length ? `<div class="fin-msg-files">${m.files.map(f => `<span class="fin-tag">📎 ${esc(f)}</span>`).join('')}</div>` : ''}</div></div>`;
-  const last = finTalkFeed().filter(x => x.who !== 'you' && x.undoable).pop(), canUndo = !live && !m.undone && m.undoable && last && last.id === m.id && UI.fin.undo.has(m.id);
+  const last = finTalkFeed().filter(x => x.who !== 'you' && x.undoable && !x.undone).pop(), canUndo = !live && !m.undone && m.undoable && last && last.id === m.id && UI.fin.undo.has(m.id);
   return `<div class="fin-msg claude ${live ? 'live' : ''}"><span class="fin-av" aria-hidden="true">🤖</span><div class="fin-bub">
     ${live ? `<p class="fin-working"><span class="fin-dots" aria-hidden="true"></span>${esc(m.status || 'Working…')}</p>` : ''}
     ${m.reply ? `<p>${esc(m.reply)}</p>` : ''}
@@ -17231,6 +17248,7 @@ document.addEventListener('keydown', e => {
   else if (k === '-' || k === '_') { own(); finCvZoomSmooth(1 / 1.15); }
   else if (k === '?') { own(); UI.fin.help = !UI.fin.help; render(); }
   else if (k === 't' || k === 'T') { own(); finTalkWin(!UI.fin.talk.win); }
+  else if ((k === 'b' || k === 'B') && typeof finBalWinHTML === 'function') { own(); UI.fin.balWin = !UI.fin.balWin; render(); }
   else if ((k === 'l' || k === 'L') && typeof finCvMode === 'function') { own(); finCvMode(FIN_CV_MODES[(FIN_CV_MODES.indexOf(UI.fin.cv.mode || 'mind') + 1) % FIN_CV_MODES.length]); }
   else if (/^Arrow(Left|Right|Up|Down)$/.test(k)) { e.preventDefault(); const d = e.shiftKey ? 420 : 160; FCAM.pan(k === 'ArrowLeft' ? d : k === 'ArrowRight' ? -d : 0, k === 'ArrowUp' ? d : k === 'ArrowDown' ? -d : 0); }   // glides
   else if (/^[1-9]$/.test(k)) { const r = (UI.fin.cvRoomsList || []).filter(x => x.kind !== 'sec')[+k - 1]; if (r) { own(); finCvZoomRoom(r.id); } }
@@ -18356,6 +18374,67 @@ HOOKS.afterRender.push(() => {
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && FPR.steps.length) finPresentEnd(true); }, true);
 Object.assign(ACT, { 'fin-show': el => { const v = el.dataset.v; if (v === 'end') return finPresentEnd(true); if (v === 'next') return finPresentGo(FPR.i + 1); FPR.paused = v === 'pause'; if (FPR.paused) { clearTimeout(FPR.timer); finPresentHUD(); } else finPresentGo(FPR.i + 1); } });
 Object.assign(window.__FIN, { presentEnd: () => finPresentEnd(true), presentation: () => ({ on: FPR.steps.length > 0, i: FPR.i, steps: FPR.steps.map(s => ({ id: s.id, text: s.text, kind: s.kind })) }) });
+
+/* ===== features/59-finance-balances.js ===== */
+// Money canvas — a floating tab for today's balances. A small tab on the canvas ("🏦 Balances · 3 days ago") asks for
+// your accounts' balances — it glows when one is more than a day old. It opens a window over the canvas with every
+// account: what was last known, and a box for what the bank shows now (owed and available for the card and Halan).
+// Save (or Enter) records them exactly as Balances & history does — each new figure compared with the last one and
+// with the transactions since, anything unexplained settled or asked about — so every card, total and channel on
+// every layout (Mind map, Rich Dad, Flow, Financial freedom) follows at once. The change is presented on the canvas
+// and has Undo, like any other.
+
+const finBalKinds = ['current', 'savings', 'credit_card', 'bnpl', 'cash', 'investment'];
+// how old the newest of your balances is, in days (null: none yet)
+function finBalAge() {
+  const n = finNow(), today = finToday(), ds = n.accts.filter(x => finBalKinds.includes(x.a.kind)).map(x => x.l && x.l.date).filter(Boolean);
+  if (!ds.length) return null;
+  const oldest = ds.sort()[0]; return Math.max(0, Math.round((Date.parse(today) - Date.parse(oldest)) / 864e5));
+}
+function finBalTabHTML() {
+  if (UI.fin.balWin || UI.fin.pop) return '';   // out of the way while a card is open
+  const age = finBalAge(), stale = age === null || age >= 1;
+  return `<button class="fin-bal-tab${stale ? ' ask' : ''}" data-act="fin-bal-win" title="Enter your accounts' balances ( B )"><span aria-hidden="true">🏦</span> Balances<small>${age === null ? 'none yet — add them' : age === 0 ? 'up to date' : age === 1 ? 'oldest is from yesterday' : `oldest is ${age} days old`}</small></button>`;
+}
+function finBalWinHTML() {
+  if (!UI.fin.balWin) return '';
+  const n = finNow(), U = UI.fin.daily = UI.fin.daily || { date: finToday(), v: {} }, rows = n.accts.filter(x => finBalKinds.includes(x.a.kind));
+  const field = (id, k, label) => `<label class="fin-bal-f"><span>${label}</span><input class="input num sm" data-chg="fin-daily" data-id="${esc(id)}" data-k="${k}" value="${esc((U.v[id] || {})[k] ?? '')}" inputmode="decimal" enterkeyhint="done" aria-label="${esc(label)}"></label>`;
+  const last = (a, l) => !l.date ? 'no balance yet' : (a.kind === 'credit_card' || a.kind === 'bnpl' ? `${typeof l.owed === 'number' ? 'owes ' + fk(l.owed) : ''}${l.available !== null && l.available !== undefined ? ' · ' + fk(l.available) + ' available' : ''}` : typeof l.balance === 'number' ? fk(l.balance) : '—') + ` · ${fday(l.date)}`;
+  return `<section class="fin-talk-win fin-bal-win" id="fin-bal-win" role="dialog" aria-label="Today's balances">
+    <div class="fin-talk-win-h"><span aria-hidden="true">🏦</span><b>Today’s balances</b><span class="spacer"></span><label class="small">as of <input class="input sm" type="date" data-chg="fin-daily-date" value="${esc(U.date)}"></label>
+      <button class="icon-btn" data-act="fin-bal-win" data-v="close" aria-label="Close">${I.x}</button></div>
+    <div class="fin-talk-win-b"><p class="small muted">Type what each bank app shows now — only the ones you checked. Everything on the canvas follows.</p>
+      <div class="fin-bal-rows">${rows.map(({ a, l }) => `<div class="fin-bal-r"><div class="fin-bal-n"><b>${esc(a.name)}</b><small>last: ${esc(last(a, l))}</small></div>
+        <div class="fin-bal-in">${a.kind === 'credit_card' || a.kind === 'bnpl' ? field(a.id, 'outstanding', 'Owed') + field(a.id, 'available', 'Available') : field(a.id, 'balance', 'Balance')}</div></div>`).join('')}</div>
+      <div class="row end"><button class="btn ghost" data-act="fin-bal-win" data-v="close">Cancel</button><button class="btn primary" data-act="fin-bal-save">Save balances</button></div></div></section>`;
+}
+function finBalSave() {
+  // the box you are typing in lets go first: its last value counts, and a redraw cannot report it again later
+  if (document.activeElement && document.activeElement.closest && document.activeElement.closest('#fin-bal-win')) document.activeElement.blur();
+  const U = UI.fin.daily; if (!U || !Object.values(U.v || {}).some(v => Object.values(v).some(x => String(x ?? '').trim() !== ''))) { toast('Type at least one balance.', { err: true }); return; }
+  const before = typeof finChangeIndex === 'function' ? finChangeIndex() : null, snap = finSnapshot();
+  finDailyCheck(); const P = (UI.fin.daily.preview || []).slice(); if (!P.length) return;
+  finDailySave();
+  // a line in the conversation, with Undo — and the change presented across the canvas
+  const line = 'Balances: ' + P.map(r => `${r.name} ${r.balance !== null && r.balance !== undefined ? fm(r.balance) : r.outstanding !== null && r.outstanding !== undefined ? 'owes ' + fm(r.outstanding) : fm(r.available)}`).join(' · ');
+  const m = { id: E.uid('tk'), at: nowISO(), who: 'edit', text: line, undoable: true }; UI.fin.undo.set(m.id, snap); finTalkPush(m);
+  UI.fin.balWin = false; UI.fin.fixTried.clear();
+  if (before && typeof finPresent === 'function') finPresent(before, P.map(r => 'a:' + r.id));
+  render();
+}
+Object.assign(ACT, {
+  'fin-bal-win': el => { UI.fin.balWin = el.dataset.v === 'close' ? false : !UI.fin.balWin; render(); if (UI.fin.balWin) setTimeout(() => { const i = document.querySelector('#fin-bal-win input[data-chg="fin-daily"]'); if (i) i.focus(); }, 30); },
+  'fin-bal-save': () => finBalSave(),
+});
+// Enter in a balance saves; Esc closes
+document.addEventListener('keydown', e => {
+  if (!UI.fin.balWin || UI.view !== 'finance') return;
+  if (e.key === 'Escape') { e.stopPropagation(); UI.fin.balWin = false; render(); return; }
+  const w = e.target.closest && e.target.closest('#fin-bal-win'); if (!w) return;
+  if (e.key === 'Enter' && e.target.matches('input[data-chg="fin-daily"]')) { e.preventDefault(); CHG['fin-daily'](e.target); setTimeout(() => ACT['fin-bal-save'](), 0); }
+}, true);
+Object.assign(window.__FIN, { balAge: () => finBalAge() });
 
 /* ---------- boot ---------- */
 const startView = (location.hash || '').replace('#', '');

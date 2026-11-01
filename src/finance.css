@@ -698,3 +698,20 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 .fin-show-bar .btn { color: #fff; min-width: 30px; } .fin-show-bar .btn:hover { background: rgba(255, 255, 255, .14); }
 .fin-show-dots { display: flex; gap: 4px; } .fin-show-dots i { width: 7px; height: 7px; border-radius: 50%; background: rgba(255, 255, 255, .25); } .fin-show-dots i.done { background: rgba(255, 211, 77, .6); } .fin-show-dots i.on { background: #ffd34d; box-shadow: 0 0 8px #ffd34d; }
 @media (prefers-reduced-motion: reduce) { .fin-show-ring, .fin-show-cap { transition: none; } .fin-show-ring.ghost { animation: none; } }
+
+/* ---------- the floating Balances tab and window ---------- */
+.fin-bal-tab { position: absolute; left: 16px; top: 16px; z-index: 25; display: grid; grid-template-columns: auto auto; column-gap: 8px; align-items: center; padding: 8px 14px 8px 12px; border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, .22); background: rgba(22, 16, 44, .82); color: #fff; font: 700 14px/1.2 var(--font, system-ui); cursor: pointer; text-align: left; backdrop-filter: none; box-shadow: 0 10px 30px -14px rgba(0, 0, 0, .7); }
+.fin-bal-tab span { grid-row: span 2; font-size: 20px; } .fin-bal-tab small { font-weight: 500; font-size: 11.5px; color: #cfc4f0; }
+.fin-bal-tab:hover { background: rgba(40, 28, 80, .92); }
+.fin-bal-tab.ask { border-color: rgba(255, 211, 77, .7); }
+@media (prefers-reduced-motion: no-preference) { .fin-bal-tab.ask { animation: finBalAsk 2.6s ease-in-out infinite; } @keyframes finBalAsk { 50% { box-shadow: 0 0 0 6px rgba(255, 211, 77, .18), 0 10px 30px -14px rgba(0, 0, 0, .7); } } }
+.fin-bal-win { left: 16px; right: auto; top: 16px; bottom: auto; width: min(460px, calc(100% - 32px)); }
+.fin-bal-rows { display: grid; gap: 8px; margin: 8px 0 12px; }
+.fin-bal-r { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 8px 10px; border-radius: 12px; background: var(--surface-2, var(--bg)); }
+.fin-bal-n { display: grid; gap: 2px; min-width: 0; } .fin-bal-n b { overflow-wrap: anywhere; } .fin-bal-n small { color: var(--ink-2); overflow-wrap: anywhere; }
+.fin-bal-in { display: flex; gap: 6px; }
+.fin-bal-f { display: grid; gap: 2px; } .fin-bal-f span { font-size: 11px; color: var(--ink-2); } .fin-bal-f input { width: 118px; }
+@media (max-width: 520px) { .fin-bal-r { grid-template-columns: minmax(0, 1fr); } .fin-bal-f input { width: 100%; } .fin-bal-in > * { flex: 1; } }
+.fin-cvwrap.full .fin-bal-tab, .fin-cvwrap.full .fin-bal-win { top: 72px; }
+@media (max-width: 600px) { .fin-bal-tab { grid-template-columns: auto; padding: 8px 10px; border-radius: 50%; } .fin-bal-tab small, .fin-bal-tab { font-size: 0; } .fin-bal-tab span { font-size: 20px; grid-row: auto; } }
