@@ -56,6 +56,13 @@ CHECK = r"""() => {
   for (const it of items) { const r = rooms.find(R => it.x >= R.x - 1 && it.x + it.w <= R.x + R.w + 1 && it.y >= R.y - 1 && it.y + it.h <= R.y + R.h + 1); if (!r) out.push('outside every room: ' + name(it.n)); }
   return [...new Set(out)];
 }"""
+# the words on the canvas's channels (Mind map, Rich Dad, Flow): never over a box or a card, never over each other
+CHANNELS = """(() => { const out = [], R = el => el.getBoundingClientRect(), hit = (a, b, m) => Math.min(a.right, b.right) - Math.max(a.left, b.left) > m && Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) > m;
+  const texts = [...document.querySelectorAll('#fin-cv-world .fin-rich text, #fin-cv-world .fin-mind text, #fin-cv-world .fin-flow text')].filter(t => t.textContent.trim() && R(t).width > 0);
+  const boxes = [...document.querySelectorAll('#fin-cv-world .fin-room, #fin-cv-world .fin-leaf')];
+  for (const t of texts) { const r = R(t); for (const b of boxes) if (hit(r, R(b), 2)) { out.push('channel words over a box: ' + t.textContent.trim().slice(0, 40) + ' × ' + (b.dataset.room || b.dataset.node)); break; } }
+  for (let i = 0; i < texts.length; i++) for (let j = i + 1; j < texts.length; j++) if (texts[i].parentNode !== texts[j].parentNode && hit(R(texts[i]), R(texts[j]), 2)) out.push('channel words over each other: ' + texts[i].textContent.trim().slice(0, 30) + ' × ' + texts[j].textContent.trim().slice(0, 30));
+  return out; })()"""
 async def main():
     async with async_playwright() as p:
         b = await p.chromium.launch(); cx = await b.new_context(viewport={'width': 1400, 'height': 950}); pg = await cx.new_page(); ev = pg.evaluate
@@ -89,6 +96,8 @@ async def main():
                 await ev("window.__AR.UI.fin.cvOpen = []; window.__AR.UI.fin.pop = null"); await ev(f"window.__FIN.mode('{mode}')"); await pg.wait_for_timeout(1100)
                 found = await ev(CHECK)
                 if found: problems[f'{w}px canvas ({name})'] = found
+                ch = await ev(CHANNELS)
+                if ch: problems[f'{w}px canvas ({name}) channels'] = ch
                 if w in (1400, 390): await pg.screenshot(path=os.path.join(HERE, 'shots', f'audit-{w}-{mode}.png'))
                 for q in ['.fin-leaf[data-node^="a:"]', '.fin-leaf[data-node^="c:"]']:
                     nid = await ev(f"(document.querySelector('{q}') || {{}}).dataset?.node")

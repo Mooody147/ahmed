@@ -17548,7 +17548,7 @@ Object.assign(window.__FIN, { menu: (id, x, y) => finMenuOpen(id, x, y), about: 
 // you are from leaving the rat race — when passive income covers every expense.
 // Rooms, Flow and the Mind map are the other layouts; everything on the canvas works the same in all of them.
 
-const FRD = { LM: 240, COL: 1260, GAP: 80, HEAD: 92, FRAME: 70 };
+const FRD = { LM: 460, COL: 1260, GAP: 520, HEAD: 92, FRAME: 70 };   // room left of the columns for your job, and between them for the channels' words
 const FIN_CV_MODES = ['mind', 'rich', 'flow'];
 // the Mind map is the default; a saved Rooms (removed) opens the Mind map, a saved Reservoirs or Tree opens Rich Dad
 UI.fin.cv.mode = 'mind';
@@ -18021,7 +18021,7 @@ function finMindLayout(rooms0, plan, n) {
   const pc = v => finPct(v, inc), info = {
     'mm-earn': { m: R.earned, dir: 'in', health: 'work', line: 'you work for money' },
     'mm-pass': { m: R.passive, dir: 'in', health: 'gold', line: R.passive ? `money works for you · covers ${Math.round(R.freedom * 100)}% of expenses` : 'nothing yet — the goal' },
-    'mm-assets': { m: W.toAssets, dir: 'out', health: W.toAssets > 0 ? 'green' : 'amber', line: (W.toAssets > 0 ? 'a month into assets' : 'into assets — purchases take all your surplus') + (W.idle ? ` · ${fk(W.idle)} idle` : '') },
+    'mm-assets': { m: W.toAssets, dir: 'out', health: W.toAssets > 0 ? 'green' : 'amber', line: W.toAssets > 0 ? 'into assets' : 'into assets — purchases take it all', line2: W.idle ? `${fk(W.idle)} sits idle` : '' },
     exp: { m: n.spending || 0, dir: 'out', health: spendH, line: `expenses · ${pc(n.spending) ?? '—'}% of income` },
     'mm-liab': { m: n.instMonthly || 0, dir: 'out', health: debtH === 'green' && R.liab > 0 ? 'amber' : debtH, line: `to debt · ${pc(n.instMonthly) ?? '—'}% of income` },
     buy: { m: plan.monthly || 0, dir: 'out', health: W.doodads.length ? 'amber' : 'green', line: W.doodads.length ? `put aside for doodads · assets first` : 'put aside for goals' },
@@ -18031,7 +18031,7 @@ function finMindLayout(rooms0, plan, n) {
   const C = { x: center.x, y: center.y, w: center.w, h: center.h };
   const main = all.map(r => {
     const I = info[r.id] || { m: 0, dir: 'none', health: 'calm', line: '' }, L = r.side === 'L', hub = { x: L ? r.x + r.w : r.x, y: r.y + 44 }, from = { x: L ? C.x : C.x + C.w, y: Math.min(C.y + C.h - 40, Math.max(C.y + 40, hub.y)) };
-    return { id: r.id, a: from, b: hub, t: thick(I.m), health: I.health, dir: I.dir, label: [fk(I.m).replace(/\.00$/, ''), ' a month'], line: I.line, hot: hot.has(r.id), side: r.side };
+    return { id: r.id, a: from, b: hub, t: thick(I.m), health: I.health, dir: I.dir, label: [fk(I.m).replace(/\.00$/, ''), ' a month'], line: I.line, line2: I.line2 || '', hot: hot.has(r.id), side: r.side };
   });
   // the channels the book is about: assets paying you, liabilities costing you, assets paying liabilities
   const cross = [], A = ins('mm-assets'), P = ins('mm-pass'), Lb = ins('mm-liab'), Ex = ins('exp');
@@ -18070,13 +18070,13 @@ function finMindSVG(L) {
   const curve = (a, b) => { const mx = (a.x + b.x) / 2; return `M${a.x},${a.y} C${mx},${a.y} ${mx},${b.y} ${b.x},${b.y}`; };
   const taper = (a, b, t0, t1) => { const mx = (a.x + b.x) / 2; return `M${a.x},${a.y - t0 / 2} C${mx},${a.y - t0 / 2} ${mx},${b.y - t1 / 2} ${b.x},${b.y - t1 / 2} L${b.x},${b.y + t1 / 2} C${mx},${b.y + t1 / 2} ${mx},${a.y + t0 / 2} ${a.x},${a.y + t0 / 2} Z`; };
   const speed = t => Math.max(1.2, 4.2 - t / 12).toFixed(1);
-  const text = (x, y, lab, line, anchor) => `<text class="mm-l" x="${x}" y="${y}" text-anchor="${anchor || 'middle'}">${esc(lab[0])}<tspan class="per">${esc(lab[1])}</tspan></text>${line ? `<text class="mm-i" x="${x}" y="${y + 24}" text-anchor="${anchor || 'middle'}">${esc(line)}</text>` : ''}`;
+  const text = (x, y, lab, line, anchor, line2) => `<text class="mm-l" x="${x}" y="${y}" text-anchor="${anchor || 'middle'}">${esc(lab[0])}<tspan class="per">${esc(lab[1])}</tspan></text>${line ? `<text class="mm-i" x="${x}" y="${y + 24}" text-anchor="${anchor || 'middle'}">${esc(line)}</text>` : ''}${line2 ? `<text class="mm-i" x="${x}" y="${y + 44}" text-anchor="${anchor || 'middle'}">${esc(line2)}</text>` : ''}`;
   let out = '';
   for (const b of M.main) {
     const d = curve(b.a, b.b), dl = b.dir === 'in' ? curve(b.b, b.a) : d;
     out += `<g class="mm-branch ${b.health}${b.hot ? ' hot' : ''}" data-ch="${esc(b.id)}"><path class="limb" d="${taper(b.a, b.b, b.t + 6, Math.max(4, b.t * 0.55))}"/>`;
     if (b.dir !== 'none') out += `<path class="flow${b.dir === 'in' ? ' in' : ''}" d="${dl}" style="animation-duration:${speed(b.t)}s"/>`;
-    out += text((b.a.x + b.b.x) / 2, (b.a.y + b.b.y) / 2 - b.t / 2 - 40, b.label, b.line) + `</g>`;
+    out += text((b.a.x + b.b.x) / 2, (b.a.y + b.b.y) / 2 - b.t / 2 - (b.line2 ? 60 : 40), b.label, b.line, 'middle', b.line2) + `</g>`;
   }
   for (const c of M.cross) {
     let d, lx, ly, anchor = 'middle';

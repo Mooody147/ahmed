@@ -7,7 +7,7 @@
 // you are from leaving the rat race — when passive income covers every expense.
 // Rooms, Flow and the Mind map are the other layouts; everything on the canvas works the same in all of them.
 
-const FRD = { LM: 240, COL: 1260, GAP: 80, HEAD: 92, FRAME: 70 };
+const FRD = { LM: 460, COL: 1260, GAP: 520, HEAD: 92, FRAME: 70 };   // room left of the columns for your job, and between them for the channels' words
 const FIN_CV_MODES = ['mind', 'rich', 'flow'];
 // the Mind map is the default; a saved Rooms (removed) opens the Mind map, a saved Reservoirs or Tree opens Rich Dad
 UI.fin.cv.mode = 'mind';
