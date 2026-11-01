@@ -453,3 +453,26 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 @media (max-width: 700px) { .fin-cvmini { display: none; } .fin-cv-find .input { width: 140px; } }
 .fin-cvmini { opacity: .92; } .fin-cvmini:hover { opacity: 1; }
 .fin-cv-bar { row-gap: 6px; }
+
+/* ---------- Tell the canvas, in a window on the canvas ---------- */
+.fin-talk-win { position: absolute; right: 16px; bottom: 16px; z-index: 30; width: min(440px, calc(100% - 32px)); max-height: min(560px, calc(100% - 32px)); display: flex; flex-direction: column;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 24px 60px -24px rgba(30, 10, 30, .45), var(--elev-2); overflow: hidden; resize: both; min-width: 280px; min-height: 220px; }
+.fin-talk-win-h { display: flex; align-items: center; gap: 8px; padding: 8px 10px 8px 14px; border-bottom: 1px solid var(--line); background: linear-gradient(180deg, var(--accent-soft), var(--surface)); cursor: move; user-select: none; touch-action: none; }
+.fin-talk-win-b { flex: 1; min-height: 0; overflow: auto; padding: 12px 14px 14px; overscroll-behavior: contain; }
+.fin-talk-win .fin-talk-feed { max-height: none; }
+.fin-talk-moved { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+@media (prefers-reduced-motion: no-preference) { .fin-talk-win { animation: finPopIn .22s cubic-bezier(.2, .8, .2, 1) both; } }
+/* the card a message is about */
+.fin-about { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; padding: 6px 6px 6px 12px; border-radius: 12px; background: color-mix(in srgb, var(--warn) 12%, var(--surface)); border: 1px solid color-mix(in srgb, var(--warn) 40%, var(--line)); font-size: 13px; }
+.fin-about-k { color: var(--ink-2); }
+.fin-about .icon-btn { margin-left: auto; }
+.fin-about-tag { display: block; font-size: 11.5px; font-weight: 600; color: var(--accent-2); margin-bottom: 2px; }
+/* the card menu */
+.fin-menu { position: absolute; z-index: 40; min-width: 220px; max-width: 300px; padding: 6px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); box-shadow: 0 18px 44px -18px rgba(30, 10, 30, .5), var(--elev-2); display: grid; gap: 1px; }
+.fin-menu-h { padding: 6px 10px 6px; font-size: 12px; font-weight: 600; color: var(--ink-2); border-bottom: 1px solid var(--line); margin-bottom: 4px; overflow-wrap: anywhere; }
+.fin-menu-i { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; padding: 8px 10px; border: 0; border-radius: 9px; background: none; font: inherit; font-size: 13.5px; color: var(--ink); cursor: pointer; }
+.fin-menu-i:hover, .fin-menu-i:focus-visible { background: var(--accent-soft); outline: none; }
+.fin-menu-i.danger { color: var(--crit, #b3261e); }
+.fin-menu-i span { width: 20px; text-align: center; }
+@media (prefers-reduced-motion: no-preference) { .fin-menu { animation: finPopIn .14s ease-out both; transform-origin: top left; } }
+@media (max-width: 700px) { .fin-talk-win { left: 8px !important; right: 8px !important; top: auto !important; bottom: 8px !important; width: auto; resize: none; max-height: 70%; } }

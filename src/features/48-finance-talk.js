@@ -33,7 +33,7 @@ function finTalkAdd(files) { for (const f of files) UI.fin.talk.files.push({ fil
 function finTalkMsg(m, live) {
   if (m.who === 'edit') { const last = finTalkFeed().filter(x => x.who !== 'you' && x.undoable).pop(), can = !m.undone && last && last.id === m.id && UI.fin.undo.has(m.id);
     return `<div class="fin-msg edit"><div class="fin-bub"><span>✎ On the canvas: ${esc(m.text)}</span>${m.undone ? ' <span class="small muted">↩ Undone.</span>' : can ? ` <button class="btn sm ghost" data-act="fin-talk-undo" data-id="${esc(m.id)}">↩ Undo</button>` : ''}</div></div>`; }
-  if (m.who === 'you') return `<div class="fin-msg you"><div class="fin-bub">${m.text ? esc(m.text) : ''}${(m.files || []).length ? `<div class="fin-msg-files">${m.files.map(f => `<span class="fin-tag">📎 ${esc(f)}</span>`).join('')}</div>` : ''}</div></div>`;
+  if (m.who === 'you') return `<div class="fin-msg you"><div class="fin-bub">${m.about ? `<span class="fin-about-tag">about ${esc(m.about)}</span>` : ''}${m.text ? esc(m.text) : ''}${(m.files || []).length ? `<div class="fin-msg-files">${m.files.map(f => `<span class="fin-tag">📎 ${esc(f)}</span>`).join('')}</div>` : ''}</div></div>`;
   const last = finTalkFeed().filter(x => x.who !== 'you' && x.undoable).pop(), canUndo = !live && !m.undone && m.undoable && last && last.id === m.id && UI.fin.undo.has(m.id);
   return `<div class="fin-msg claude ${live ? 'live' : ''}"><span class="fin-av" aria-hidden="true">🤖</span><div class="fin-bub">
     ${live ? `<p class="fin-working"><span class="fin-dots" aria-hidden="true"></span>${esc(m.status || 'Working…')}</p>` : ''}
@@ -50,10 +50,11 @@ function finTalkHTML() {
   return `<div class="fin-talk" id="fin-talk">
     <div class="fin-talk-feed" id="fin-talk-feed" aria-live="polite">${feed.length || T.live ? feed.map(m => finTalkMsg(m)).join('') + (T.live ? finTalkMsg(T.live, true) : '')
       : `<p class="small muted fin-talk-empty">Tell the canvas what changed — “my salary is 36,000 from November”, “Primary balance today 21,000”, “the 10,000 on the 28th is Ali’s”, “I want a laptop for 40,000 by March”, “I paid 600 for dinner in cash” — or ask “how much did I spend on food in September?”. Add statements or screenshots with 📎. It updates at once, and Undo is always there.</p>`}</div>
+    ${typeof finAboutChipHTML === 'function' ? finAboutChipHTML() : ''}
     <div class="fin-talk-in">
       <label class="btn fin-talk-att" title="Add statements or screenshots"><span aria-hidden="true">📎</span><span class="sr">Add statements or screenshots</span><input type="file" multiple accept="image/*,.pdf,.csv,.xls,.xlsx,.txt" data-chg="fin-talk-files" hidden></label>
       <div class="fin-talk-box">${T.files.length ? `<div class="fin-talk-files">${T.files.map((f, i) => `<span class="fin-tag">${esc(f.name)} <button class="icon-btn" data-act="fin-talk-file-x" data-i="${i}" aria-label="Remove ${esc(f.name)}">${I.x}</button></span>`).join('')}</div>` : ''}
-        <textarea class="input" id="fin-talk-in" rows="2" placeholder="Tell the canvas what changed, or ask about your money…" aria-label="Tell the canvas">${esc(T.text)}</textarea></div>
+        <textarea class="input" id="fin-talk-in" rows="2" placeholder="${T.about ? 'Tell the canvas about ' + esc(E.clip(T.about.label, 40)) + ' — or ask about it…' : 'Tell the canvas what changed, or ask about your money…'}" aria-label="Tell the canvas">${esc(T.text)}</textarea></div>
       <button class="btn primary fin-talk-send" data-act="fin-talk-send" ${T.busy ? 'disabled' : ''}>${T.busy ? 'Working…' : 'Send'}</button>
     </div></div>`;
 }
@@ -87,12 +88,14 @@ async function finTalkSend() {
   const T = UI.fin.talk; T.text = ($('#fin-talk-in') || {}).value ?? T.text;
   const text = (T.text || '').trim(), files = T.files.slice(); if (!text && !files.length) return;
   T.text = ''; T.files = [];
-  finTalkPush({ id: E.uid('tk'), at: nowISO(), who: 'you', text, files: files.map(f => f.name) });
+  const about = T.about ? { ...T.about } : null;
+  finTalkPush({ id: E.uid('tk'), at: nowISO(), who: 'you', text, files: files.map(f => f.name), ...(about ? { about: about.label } : {}) });
   await finTalkWait();
   const snap = finSnapshot(), before = finCvIndex(), m = finTalkLive(files.length ? 'Reading what you added…' : 'Claude is reading…');
   UI.fin.undo.set(m.id, snap);
   try {
-    const stm = files.filter(f => !finIsImage(f)), imgs = files.filter(finIsImage);
+    const stm = about ? [] : files.filter(f => !finIsImage(f)), imgs = files.filter(finIsImage);
+    if (about && files.some(f => !finIsImage(f))) m.notes.push('Statements are read for the whole canvas — add them with the card chip removed. Screenshots went with your message.');
     if (stm.length) {
       m.status = `Reading ${stm.length} statement${stm.length === 1 ? '' : 's'}…`; render();
       const q0 = (UI.fin.queue || []).length; await finAuto(stm.map(f => f.file), finKindFrom(text));
@@ -105,10 +108,11 @@ async function finTalkSend() {
     }
     if ((text && !finOnlyKind(text)) || imgs.length) {
       if (!St.sample) m.notes.push('Claude is not available here, so only the statements were read.');
-      else { m.status = 'Claude is reading…'; render(); await finTalkClaude(m, text, imgs); }
+      else { m.status = 'Claude is reading…'; render(); await finTalkClaude(m, text, imgs, about); }
     }
+    if (about) m.about = about.label;
     m.status = 'Sorting out anything unclear…'; render();
-    const dec = await finAutoFix(true); if (dec.length) { m.decided = dec.length; m.notes.push(...dec.slice(0, 6).map(d => `${d.label}: ${d.how}`)); if (dec.length > 6) m.notes.push(`and ${dec.length - 6} more — see “Sorted by Claude”`); }
+    const dec = about ? [] : await finAutoFix(true); if (dec.length) { m.decided = dec.length; m.notes.push(...dec.slice(0, 6).map(d => `${d.label}: ${d.how}`)); if (dec.length > 6) m.notes.push(`and ${dec.length - 6} more — see “Sorted by Claude”`); }
   } catch (e) { console.error(e); m.notes.push('Something went wrong (' + (e.message || e) + '). Nothing was lost — try again.'); }
   finTalkFinish(m, before);
 }
@@ -128,11 +132,13 @@ function finTalkContext() {
     position: { cash: n.cash, freeCash: n.free, incomeMonthly: n.income, usualSpendingMonthly: n.spending, savingMonthly: n.capacity, instalmentsMonthly: n.instMonthly, card: n.card ? { owed: n.card.owed ?? null, available: n.card.available ?? null, limit: n.card.limit ?? null } : null, netWorth: own.net },
     months: all.months.slice(-6).map(b => ({ month: b.m, income: b.inc, expenses: b.exp, byCategory: Object.fromEntries(Object.entries(b.byCat || {}).sort((x, y) => y[1] - x[1]).slice(0, 10).map(([k, v]) => [(finCat(k) || { name: k }).name, FIN.r2(v)])) })) };
 }
-async function finTalkClaude(m, text, imgs) {
+async function finTalkClaude(m, text, imgs, about) {
   const lim = St.limits && St.limits.images, images = [];
   for (const f of imgs.slice(0, lim ? lim.maxCount || 10 : 10)) { try { const bytes = new Uint8Array(await f.file.arrayBuffer()); const r = await E.extract({ name: f.name, bytes }, { vision: true, maxImageBytes: lim ? lim.maxInputBytes : 0, maxPageImages: 4 }); for (const im of r.images || []) if (im.blob) images.push(im.blob); } catch (e) { m.notes.push(`${f.name}: could not be opened`); } }
-  const r = await St.sample.json(FIN_DRAFT_PROMPT(finTalkContext()) + FIN_TALK_RULES + '\n\nOWNER’S MESSAGE:\n' + (text || '(only screenshots)'), { modelTier: 'default', ...(images.length ? { images } : {}) }) || {};
+  const r = await St.sample.json(FIN_DRAFT_PROMPT(finTalkContext()) + FIN_TALK_RULES + (about ? FIN_ABOUT_RULES(about) : '') + '\n\nOWNER’S MESSAGE:\n' + (text || '(only screenshots)'), { modelTier: 'default', ...(images.length ? { images } : {}) }) || {};
   const P = finDraftCheck(r);
+  // about one card: only what concerns that card is applied; the rest is listed
+  if (about) { const out = finAboutScope(about, P, r); if (out.length) m.notes.push('Kept to ' + about.label + ' — not changed: ' + out.join(', ') + '.'); }
   m.done.push(...finDraftApply(P, { text, files: imgs }));
   m.done.push(...finTalkExtras(r));
   // Claude was told not to ask; anything it still asked is kept as a note, never as a stop

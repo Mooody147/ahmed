@@ -23,6 +23,9 @@ let g; Object.defineProperty(window, '__mockAnswer', { configurable: true, get()
     const ctx = JSON.parse(p.split('CURRENT RECORDS: ')[1].split('\\nRead the message')[0]), msg = p.split('OWNER’S MESSAGE:\\n')[1] || '';
     if (/\\?/.test(msg)) return { reply: 'You spent EGP 4,250 on groceries & food in September.' };
     if (/show me my card/i.test(msg)) return { view: { open: 'credit' }, reply: 'Here is your card.' };
+    if (/only this card/i.test(msg)) { const a12 = ctx.accounts.find(a => /0012$/.test(a.number)), a13 = ctx.accounts.find(a => /0013$/.test(a.number));
+      return { balances: [{ account: a12.id, date: ctx.today, balance: 12345, evidence: 'said' }, { account: a13.id, date: ctx.today, balance: 999, evidence: 'said' }], inputs: [{ key: 'salary', label: 'Salary', kind: 'income', amount: 1, from: ctx.today, permanent: true }],
+        goals: [{ name: 'Boat', price: 5 }], transactions: [{ account: null, date: ctx.today, amount: -77, desc: 'Snack', category: 'dining' }, { account: a13.id, date: ctx.today, amount: -55, desc: 'Elsewhere', category: 'dining' }], reply: 'Done for this card.' }; }
     if (/coffee/i.test(msg)) return { transactions: [{ account: null, date: ctx.today, amount: -90, desc: 'Coffee', category: 'dining' }], reply: 'Added.' };
     if (/debit card/i.test(msg)) return { reply: 'Noted — ••0012 and ••0013 are your everyday accounts.' };
     const prim = ctx.accounts.find(a => /0012$/.test(a.number)), dep = ctx.recentDeposits.find(d => d.amount === 10000);
@@ -292,6 +295,43 @@ async def main():
         await pg.click('[data-act="fin-new-tx"]'); await pg.wait_for_timeout(300)
         assert await ev("document.getElementById('ft-acct').value") == a12['id'], 'a new transaction starts on the default account'
         await ev("document.querySelector('[data-act=\"close-drawer\"]').click()"); await pg.wait_for_timeout(200)
+
+        # Tell the canvas in a window on the canvas: from the toolbar (or T), moved by its title, back under the canvas
+        await pg.click('.fin-cv-bar [data-act="fin-talk-win"]'); await pg.wait_for_timeout(300)
+        assert await ev("!!document.querySelector('.fin-cv-stage #fin-talk-win #fin-talk-in') && document.querySelectorAll('#fin-talk-in').length === 1"), 'the conversation is in the window on the canvas'
+        assert 'open in a window' in await pg.text_content('.fin-talk-card'), 'the box under the canvas points to it'
+        hb = await pg.locator('#fin-talk-win-h').bounding_box(); w0 = await pg.locator('#fin-talk-win').bounding_box()
+        await pg.mouse.move(hb['x'] + 40, hb['y'] + hb['height'] / 2); await pg.mouse.down(); await pg.mouse.move(hb['x'] - 160, hb['y'] - 120, steps=6); await pg.mouse.up()
+        w1 = await pg.locator('#fin-talk-win').bounding_box(); assert w1['x'] < w0['x'] - 100 and w1['y'] < w0['y'] - 20, ('moved by its title (kept inside the canvas)', w0, w1)
+        await ev("document.activeElement && document.activeElement.blur()"); await pg.keyboard.press('t'); await pg.wait_for_timeout(250)
+        assert not await ev("!!document.getElementById('fin-talk-win')") and await ev("!!document.querySelector('.fin-talk-card #fin-talk-in')"), 'T closes it; back under the canvas'
+        # right-click a card: its menu; "Tell the canvas about this card" talks about that card only
+        a12 = await ev("window.__FIN.prefs().accounts.find(a => a.number && a.number.endsWith('0012'))"); a13 = await ev("window.__FIN.prefs().accounts.find(a => a.number && a.number.endsWith('0013'))")
+        await ev(f"window.__FIN.show('a:{a12['id']}')"); await pg.wait_for_timeout(500)
+        await pg.click(f'.fin-cvn[data-node="a:{a12["id"]}"]', button='right'); await pg.wait_for_timeout(250)
+        items = await ev("[...document.querySelectorAll('#fin-menu .fin-menu-i')].map(b => b.textContent.trim())"); print('MENU', items)
+        assert any('Tell the canvas about this card' in x for x in items) and any('Edit' in x for x in items) and any('Its transactions' in x for x in items) and any('Zoom' in x for x in items), items
+        await pg.keyboard.press('Escape'); await pg.wait_for_timeout(150); assert not await ev("!!document.getElementById('fin-menu')"), 'Escape closes the menu'
+        await pg.click(f'.fin-cvn[data-node="a:{a12["id"]}"]', button='right'); await pg.wait_for_timeout(200)
+        await pg.click('#fin-menu [data-k="talk"]'); await pg.wait_for_timeout(300)
+        assert await ev("!!document.querySelector('#fin-talk-win .fin-about')") and a12['name'] in await pg.text_content('#fin-talk-win .fin-about'), 'the window says which card'
+        l13 = await ev(f"window.__FIN.latest('{a13['id']}').balance"); sal0 = await ev("JSON.stringify((window.__FIN.prefs().inputs || []).filter(i => i.key === 'salary'))"); goals0 = await ev("(window.__FIN.prefs().goals || []).length + (window.__FIN.prefs().buys || []).length")
+        n0 = await ev("window.__FIN.tx().length")
+        await say('Only this card: the balance today is 12,345 and I bought a snack for 77')
+        pr = await ev("window.__prompts.filter(p => /^You update a personal finance tool/.test(p.prompt)).pop().prompt")
+        assert 'THIS MESSAGE IS ABOUT ONE CARD ON THE CANVAS ONLY' in pr and a12['name'] in pr.split('THIS MESSAGE IS ABOUT ONE CARD')[1], 'Claude is told which card'
+        assert await ev(f"window.__FIN.latest('{a12['id']}').balance") == 12345, 'that card changed'
+        assert await ev(f"window.__FIN.latest('{a13['id']}').balance") == l13, 'another account did not'
+        assert await ev("JSON.stringify((window.__FIN.prefs().inputs || []).filter(i => i.key === 'salary'))") == sal0, 'income did not change'
+        assert await ev("(window.__FIN.prefs().goals || []).length + (window.__FIN.prefs().buys || []).length") == goals0, 'no new goal'
+        assert await ev(f"window.__FIN.tx().some(t => t.acct === '{a12['id']}' && t.amount === -77)") and not await ev("window.__FIN.tx().some(t => t.desc === 'Elsewhere')"), 'its own spending only'
+        feed = await pg.text_content('#fin-talk-feed'); assert 'Kept to' in feed and 'about ' + a12['name'] in feed, 'what was left alone is listed; the message shows its card'
+        await pg.click('#fin-talk-win [data-act="fin-about-clear"]'); await pg.wait_for_timeout(150); assert not await ev("!!document.querySelector('.fin-about')"), 'back to the whole canvas'
+        await pg.click('#fin-talk-win [data-act="fin-talk-win"][data-v="close"]'); await pg.wait_for_timeout(200)
+        # in full screen the window is there too
+        await pg.click('[data-act="fin-cv-full"]'); await pg.wait_for_timeout(250); await ev("document.activeElement && document.activeElement.blur()"); await pg.keyboard.press('t'); await pg.wait_for_timeout(250)
+        assert await ev("!!document.querySelector('.fin-cvwrap.full #fin-talk-win #fin-talk-in')"), 'Tell the canvas in full screen'
+        await pg.click('#fin-talk-win [data-act="fin-talk-win"][data-v="close"]'); await pg.keyboard.press('Escape'); await pg.wait_for_timeout(250)
 
         # only two tabs above the canvas: Canvas and Settings
         tabs = await ev("[...document.querySelectorAll('.fin-tabs button')].map(b => b.textContent.trim())"); print('TABS', tabs)
