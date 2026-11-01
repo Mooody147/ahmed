@@ -73,6 +73,10 @@ fs.writeFileSync(path.join(dir, 'bankB_export.csv'), csv([['Account: 7005566'], 
     ['01/09/2026', 'SALARY SEPTEMBER', '', '30,000.00', '50,000.00'], ['01/09/2026', 'CARD PAYMENT 1111', '6,580.00', '', '43,420.00'], ['10/09/2026', 'TRANSFER FROM ALI HASSAN', '', '10,000.00', '53,420.00'], ['12/09/2026', 'INSTAPAY TRANSFER IN', '', '5,000.00', '58,420.00'], ['15/09/2026', 'CARREFOUR MAADI', '2,000.00', '', '56,420.00'],
     ['', 'Closing balance', '', '', '56,420.00']]));
   // a photo of a statement (any image: the test's Claude stand-in answers for it)
+  // ••0013: spent from directly with the debit card (its number shows before the account's), pays the card too
+  fs.writeFileSync(path.join(dir, 'nbe statement 013.csv'), csv([['NBE — Statement'], ['Debit card no: 4000 12** **** 7788'], ['Account No: 9900000013'], ['Period from 01/09/2026 to 30/09/2026'], ['Date', 'Description', 'Debit', 'Credit', 'Balance'], ['', 'Opening balance', '', '', '8,000.00'],
+    ['03/09/2026', 'DEBIT CARD PAYMENT SPINNEYS', '850.00', '', '7,150.00'], ['05/09/2026', 'POS PURCHASE ZARA CITY STARS', '1,200.00', '', '5,950.00'], ['20/09/2026', 'TRANSFER IN', '', '3,000.00', '8,950.00'],
+    ['', 'Closing balance', '', '', '8,950.00']]));
   fs.writeFileSync(path.join(dir, 'statement_photo.png'), Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64'));
   console.log('fixtures in', dir);
 })();

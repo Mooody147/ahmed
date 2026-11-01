@@ -59,7 +59,11 @@ function finTalkHTML() {
 }
 
 // what kind of statements these are, from your words (otherwise each file tells by itself)
-const finKindFrom = t => /\b(credit|card|visa|master ?card)\b|بطاقة|ائتمان|كريدت/i.test(t) ? 'credit_card' : /halan|حالا/i.test(t) ? 'bnpl' : /saving|توفير/i.test(t) ? 'savings' : null;
+// only words that clearly mean a credit card (or Halan) set the kind; a debit card, an account, an account number, or
+// saying it is not a credit card leaves each file to tell by itself (its number, its contents)
+const finKindFrom = t => { t = String(t || '');
+  if (/debit|\bnot\b[^.]{0,20}credit|\bnon[- ]?credit|accounts?\b|\b0*1[23]\b|حساب|خصم|مدين|ليست? (بطاق|كريدت)/i.test(t)) return null;
+  return /\bcredit ?cards?\b|\bcredit\b|\bvisa\b|\bmaster ?card\b|ائتمان|كريدت|فيزا/i.test(t) ? 'credit_card' : /halan|حالا/i.test(t) ? 'bnpl' : null; };
 const finOnlyKind = t => !String(t || '').replace(/\b(credit|card|cards|visa|master ?card|statements?|bank|accounts?|current|savings?|halan|nbe|cib|ahly|my|this|these|those|is|are|the|from|for|of|please|here|attached|its|it's|a|an|and|all|old|new|last|months?)\b|بطاقة|ائتمان|كشف|حساب|[\s\d.,:;!?'"()\-–—]/gi, '').trim();
 const finIsImage = f => /^image\//.test(f.type || '') || /\.(png|jpe?g|webp|heic|heif|gif|bmp)$/i.test(f.name);
 

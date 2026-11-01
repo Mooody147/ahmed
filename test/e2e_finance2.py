@@ -23,6 +23,7 @@ let g; Object.defineProperty(window, '__mockAnswer', { configurable: true, get()
     const ctx = JSON.parse(p.split('CURRENT RECORDS: ')[1].split('\\nRead the message')[0]), msg = p.split('OWNER’S MESSAGE:\\n')[1] || '';
     if (/\\?/.test(msg)) return { reply: 'You spent EGP 4,250 on groceries & food in September.' };
     if (/show me my card/i.test(msg)) return { view: { open: 'credit' }, reply: 'Here is your card.' };
+    if (/debit card/i.test(msg)) return { reply: 'Noted — ••0012 and ••0013 are your everyday accounts.' };
     const prim = ctx.accounts.find(a => /0012$/.test(a.number)), dep = ctx.recentDeposits.find(d => d.amount === 10000);
     return { balances: [{ account: prim.id, date: ctx.today, balance: 60000, evidence: 'screenshot 1' }],
       inputs: [{ key: 'salary', label: 'Salary', kind: 'income', amount: 36000, from: '2026-11-01', permanent: true, evidence: 'my salary is now 36,000 from November' }],
@@ -72,7 +73,7 @@ async def main():
         # your five accounts are there without asking
         acc = await ev("window.__FIN.prefs().accounts.map(a => [a.name, a.kind, a.number, a.limit || null])")
         print('ACCOUNTS', acc)
-        assert acc == [['Primary account ••0012', 'current', '0012', None], ['Savings account ••0013', 'savings', '0013', None], ['Credit card', 'credit_card', '', 50400], ['Halan', 'bnpl', '', None]], acc
+        assert acc == [['Primary account ••0012', 'current', '0012', None], ['Account ••0013', 'current', '0013', None], ['Credit card', 'credit_card', '', 50400], ['Halan', 'bnpl', '', None]], acc
         mom = await ev("window.__FIN.prefs().holdings.find(h => h.id === 'mom')")
         assert mom['name'].startswith('CIB investment') and mom['principal'] == 1380000 and mom['myShareMonthly'] == 1300 and mom['custodian'] == 'my mother' and mom['owner'] == 'me'
 
@@ -268,6 +269,17 @@ async def main():
             await pg.wait_for_timeout(200)
         assert await ev("window.__FIN.prefs().accounts.length") == n_acc, 'no second card'
         await ev("window.__FIN.open('map')"); await pg.wait_for_timeout(300)
+
+        # statements for ••0012 / ••0013, described in words that mention cards: each goes to its own account (its number
+        # decides, even with the debit card's number shown first), read as an everyday account — debit-card purchases
+        # are spending there, never credit-card lines or card payments
+        n_acc = await ev("window.__FIN.prefs().accounts.length")
+        m = await say('These are the statements for my 012 and 013 accounts. I use them directly with my debit card — they are not credit card transactions.', [f('nbe statement 013.csv')])
+        a13 = await ev("window.__FIN.prefs().accounts.find(a => a.number && a.number.endsWith('0013'))")
+        assert a13['kind'] == 'current' and await ev("window.__FIN.prefs().accounts.length") == n_acc, ('to ••0013, an everyday account; no new account', a13['kind'])
+        lines = await ev(f"window.__FIN.tx().filter(t => t.acct === '{a13['id']}').map(t => [t.desc, t.amount, t.cat])"); print('0013', lines)
+        assert any('SPINNEYS' in d and amt == -850 and c != 'ccpay' for d, amt, c in lines) and any('ZARA' in d and amt == -1200 for d, amt, c in lines), 'debit-card purchases are spending from ••0013'
+        assert not await ev("window.__FIN.tx().some(t => /SPINNEYS|ZARA CITY/.test(t.desc) && window.__FIN.prefs().accounts.find(a => a.id === t.acct).kind === 'credit_card')"), 'never on the credit card'
 
         # only two tabs above the canvas: Canvas and Settings
         tabs = await ev("[...document.querySelectorAll('.fin-tabs button')].map(b => b.textContent.trim())"); print('TABS', tabs)

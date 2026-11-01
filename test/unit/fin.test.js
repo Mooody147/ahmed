@@ -135,6 +135,7 @@ const cls = d => { const r = F.classify({ desc: d[0], amount: d[1] }, ctx); retu
 eq([['SALARY AUGUST ACME CO', 30000], ['POS CARREFOUR MAADI', -1200], ['NETFLIX.COM', -250], ['REFUND CARREFOUR MAADI', 200], ['CREDIT CARD PAYMENT', -5000], ['TRANSFER FROM AHMED MOHAMED', 100000], ['CERTIFICATE INTEREST 63000', 1000], ['SOMETHING ODD', -10], ['راتب شهر اغسطس', 30000], ['صيدلية العزبي', -150]].map(cls),
   ['salary', 'groceries', 'subs', 'refund', 'ccpay', 'held:ahmed', 'interest@cd', 'other_exp', 'salary', 'health'], 'categories from the wording');
 yes(F.classify({ desc: 'SOMETHING ODD', amount: -10 }).review, 'an unknown line is flagged for review');
+yes(F.classify({ desc: 'DEBIT CARD PAYMENT CARREFOUR MAADI', amount: -900 }, ctx).cat !== 'ccpay' && F.classify({ desc: 'CARD PAYMENT', amount: -5000 }, ctx).cat === 'ccpay', 'a purchase with the debit card is spending, not a credit-card payment');
 const learned = F.learnRule([], { desc: 'POS ZED CLUB 991', amount: -900 }, 'fitness');
 eq(F.classify({ desc: 'ZED CLUB 3321', amount: -900 }, { rules: learned }).cat, 'fitness', 'a correction is applied to the same payee next time');
 eq(F.classify({ desc: 'ZED CLUB 3321', amount: 900 }, { rules: learned }).cat, 'other_inc', '…only in the same direction');

@@ -63,7 +63,23 @@ function finPickAcct(it, kind) {
   const p = finP(), meta = it.meta0 || {}, head = [it.name, it.text ? it.text.slice(0, 3000) : '', it.grid ? it.grid.slice(0, 12).map(r => r.join(' ')).join(' ') : '', meta.account || ''].join(' \n ');
   // a card statement shows card facts (limit, minimum payment, card number); a bank line that mentions a card payment does not count
   kind = kind || (/minimum (?:payment|amount|due)|credit limit|card (?:number|no\.?)\s*:?|available (?:credit|limit)|الحد الأدنى|حد الائتمان|رقم البطاقة/i.test(head) || /card|visa|master/i.test(it.name) ? 'credit_card' : 'current');
-  const bank = FIN.detectBank(head) || FIN.detectBank(it.name), num = FIN.last4(meta.account), cur = meta.currency || '';
+  const bank = FIN.detectBank(head) || FIN.detectBank(it.name), cur = meta.currency || '';
+  let num = FIN.last4(meta.account);
+  // the number decides: when the number read first is not one of yours (a statement may show the debit card's number
+  // before the account's), another long number on it — or the file name, like "012" — that ends like exactly one of
+  // your accounts names it; that account's kind then counts, whatever the words said
+  const mine = p.accounts.filter(a => FIN.last4(a.number).length === 4);
+  let known = num ? mine.find(a => FIN.last4(a.number) === num) : null;
+  if (!known) {
+    const runs = [...new Set(String(head).replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).match(/[\d*xX•][\d *xX•-]{6,}\d/g) || [])].filter(r => r.replace(/[^\d*xX•]/g, '').length >= 8 && !/^\d{1,4}[-/. ]\d{1,2}[-/. ]\d{1,4}$/.test(r.trim()));
+    const hits = [...new Set(runs.map(r => FIN.last4(r)).filter(l => mine.some(a => FIN.last4(a.number) === l)))];
+    if (hits.length === 1) known = mine.find(a => FIN.last4(a.number) === hits[0]);
+  }
+  if (!known) {
+    const fn = (String(it.name).replace(/\.[a-z0-9]+$/i, '').match(/\d{3,}/g) || []).map(d => d.slice(-4)), hit = mine.filter(a => fn.some(d => FIN.last4(a.number).endsWith(d)));
+    if (hit.length === 1) known = hit[0];
+  }
+  if (known) { num = FIN.last4(known.number); kind = known.kind; }
   // a first reading with this kind of account, to compare its lines
   it.acct = ''; it.newAcct = { kind, currency: cur || p.base, bank, name: '' }; finParse(it);
   const scored = p.accounts.map(a => {

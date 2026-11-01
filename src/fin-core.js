@@ -108,7 +108,7 @@ const BUILTIN = [
   ['bonus', 1, /bonus|incentive|حافز|حوافز|مكافا|مكافأ/],
   ['refund', 1, /refund|reversal|revers|chargeback|cash ?back|استرداد|مرتجع|الغاء عمليه|إلغاء/],
   ['interest', 1, /interest|profit paid|credit interest|عائد|فوائد|فائده|ارباح/],
-  ['ccpay', 0, /credit ?card (bill |payment)|card payment|cc payment|payment.{0,12}thank you|payment received|سداد (بطاقه|البطاقه|الفيزا|كارت)|سداد مديونيه البطاقه/],
+  ['ccpay', 0, /credit ?card (bill |payment)|(?<!debit |مدين )card payment|cc payment|payment.{0,12}thank you|payment received|سداد (بطاقه|البطاقه|الفيزا|كارت)|سداد مديونيه البطاقه/],
   ['transfer', 0, /own account|between (my )?accounts|internal transfer|self transfer|تحويل (بين|الي) حساباتي|تحويل داخلي/],
   ['savings', 0, /savings|certificate|time deposit|شهاده|شهادات|ادخار|وديعه/],
   ['invest', 0, /invest|brokerage|securities|mutual fund|صندوق استثمار|استثمار|بورصه/],

@@ -19,7 +19,7 @@ function finEnsurePresets() {
     const has = (pred) => q.accounts.find(pred);
     const add = a => q.accounts.push({ id: E.uid('ac'), currency: 'EGP', owner: 'me', holder: 'me', bank: '', preset: true, createdAt: nowISO(), ...a });
     if (!has(a => FIN.last4(a.number) === '0012')) add({ name: 'Primary account ••0012', kind: 'current', number: '0012', role: 'salary', note: 'Your main account: salary and other money in.' });
-    if (!has(a => FIN.last4(a.number) === '0013')) add({ name: 'Savings account ••0013', kind: 'savings', number: '0013', note: 'Saving and moving money.' });
+    if (!has(a => FIN.last4(a.number) === '0013')) add({ name: 'Account ••0013', kind: 'current', number: '0013', note: 'Spent from directly with your debit card (shared with ••0012), and pays the credit card.' });
     const card = has(a => a.kind === 'credit_card');
     if (!card) add({ name: 'Credit card', kind: 'credit_card', number: '', limit: 50400, limitSet: true, terms: { method: 'none', months: 12 }, note: 'Limit EGP 50,400 when nothing is used.' });
     else { card.limit = card.limit || 50400; card.preset = true; }
@@ -32,7 +32,22 @@ function finEnsurePresets() {
     q.presetsV1 = true;
   });
 }
+// ••0013 is spent from like ••0012 (one debit card for both, and both pay the card): an everyday account, so
+// money moved between them is a transfer, not savings (once; what you change later stays)
+function finPresetsV2() {
+  if (St.mode === 'viewer' || (St.mode === 'db' && !St.colsLoaded.has('prefs'))) return;
+  const p = finP(); if (!p.presetsV1 || p.presetsV2) return;
+  finSave(q => {
+    const s = q.accounts.find(a => a.preset && FIN.last4(a.number) === '0013' && a.kind === 'savings');
+    if (s) { s.kind = 'current'; if (s.name === 'Savings account ••0013') s.name = 'Account ••0013'; s.note = 'Spent from directly with your debit card (shared with ••0012), and pays the credit card.'; }
+    const m = q.accounts.find(a => a.preset && FIN.last4(a.number) === '0012');
+    if (m && m.note === 'Your main account: salary and other money in.') m.note = 'Your main account: salary in; spent from directly with your debit card (shared with ••0013), and pays the credit card.';
+    q.presetsV2 = true;
+  });
+}
 HOOKS.ready.push(() => setTimeout(finEnsurePresets, 800));
+HOOKS.ready.push(() => setTimeout(finPresetsV2, 1200));
+HOOKS.beforeRender.push(() => { if (UI.view === 'finance' && St.ready && finP().presetsV1 && !finP().presetsV2) setTimeout(finPresetsV2, 0); });
 
 /* --- one account saved twice: joined into one ---
    Two accounts of the same kind with the same account or card number (and bank and currency) are the same account —
