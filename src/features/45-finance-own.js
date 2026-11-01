@@ -56,7 +56,7 @@ FIN_VIEW.accounts = () => {
     </section>`; }).join('')}
   ${unpaired.length ? `<section class="card fin-card"><h2>Movements without their other side (${unpaired.length})</h2><p class="small muted">Marked as transfers or card payments, but the matching amount was not found in your other accounts — the other statement may not be imported yet.</p>${finMiniList(unpaired)}</section>` : ''}`;
 };
-const finMiniList = list => `<div class="fin-mini">${list.slice(0, 100).map(t => `<button class="fin-mini-r" data-act="fin-edit" data-id="${esc(t.id)}"><span class="muted small">${fday(t.date)}</span><span>${esc(FIN.cleanDesc(t.desc || ''))}<small class="muted"> · ${esc((finAcct(t.acct) || {}).name || '')}</small></span>${fmc(t.amount, t.currency || (finAcct(t.acct) || {}).currency)}</button>`).join('')}</div>`;
+const finMiniList = list => `<div class="fin-mini">${list.slice(0, 100).map(t => `<button class="fin-mini-r" data-act="fin-edit" data-id="${esc(t.id)}"><span class="muted small">${fday(t.date)}</span><span>${typeof finLogo === 'function' ? finLogo(t.desc, 'sm') : ''}${esc(FIN.cleanDesc(t.desc || ''))}<small class="muted"> · ${esc((finAcct(t.acct) || {}).name || '')}</small></span>${fmc(t.amount, t.currency || (finAcct(t.acct) || {}).currency)}</button>`).join('')}</div>`;
 
 /* --- what I own, what I owe, what is someone else's --- */
 const FIN_HKINDS = [['deposit', 'Deposit / savings'], ['cd', 'Certificate of deposit'], ['managed', 'Money I manage for someone'], ['property', 'Property'], ['liability', 'Installments / debt'], ['other', 'Other asset']];

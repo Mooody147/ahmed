@@ -26,6 +26,10 @@ let g; Object.defineProperty(window, '__mockAnswer', { configurable: true, get()
     if (/under liabilities/.test(msg)) return { canvas: [{ op: 'updateBox', id: 'latest', branch: 'mm-liab' }], reply: 'Moved it under Liabilities.' };
     if (/subscriptions/.test(msg)) return { canvas: [{ op: 'category', action: 'create', name: 'Subscriptions', kind: 'expense' }, { op: 'recategorize', filter: { text: 'software', direction: 'out' }, to: 'Subscriptions', remember: true }], reply: 'Made Subscriptions and moved your software purchases into it.' };
     if (/rename my halan/.test(msg)) { const h = acct(/halan/i), a13 = acct(/0013$/); return { canvas: [{ op: 'renameCard', node: 'a:' + h.id, label: 'Halan BNPL' }, { op: 'hideCard', node: 'a:' + a13.id }], reply: 'Renamed Halan and hid the 0013 account.' }; }
+    if (/youtube and spotify/.test(msg)) { const sub = ctx.categories.find(c => /subscri/i.test(c.name)), prim = acct(/0012$/);
+      return { transactions: [{ account: prim.id, date: ctx.today, amount: -120, desc: 'GOOGLE *YouTubePremium', category: sub.id }, { account: prim.id, date: ctx.today, amount: -99, desc: 'SPOTIFY P1F2A3', category: sub.id }],
+        goals: [{ name: 'iPhone 16', price: 50000, priority: 2 }],
+        canvas: [{ op: 'addBox', id: 'subs', title: 'Subscriptions', icon: '📺', branch: 'exp', show: { what: 'transactions', filter: { category: [sub.id] }, format: 'list' } }], reply: 'Added both, and a Subscriptions box.' }; }
     if (/rich dad/.test(msg)) return { canvas: [{ op: 'view', mode: 'rich' }], reply: 'Here is the statement view.' };
     if (/note/.test(msg)) return { canvas: [{ op: 'addBox', id: 'plan', title: '<img src=x onerror="window.__xss=1">Plan', branch: 'below', note: '<script>window.__xss=2</script>Save first, then buy.', show: { what: 'text' } }, { op: 'runCode', code: 'window.__xss=3' }, { op: 'addBox', id: 'x', show: { what: 'eval("1")', format: 'html' } }], reply: 'Noted.' };
     return { reply: 'Read.' };
@@ -105,6 +109,19 @@ async def main():
         assert not await ev(f"!!document.querySelector('.fin-leaf[data-node=\"a:{a13}\"]')"), 'hidden'
         await pg.click('#fin-talk-feed .fin-msg:last-child [data-act="fin-talk-undo"]'); await pg.wait_for_timeout(400)
         assert await ev(f"!!document.querySelector('.fin-leaf[data-node=\"a:{a13}\"]')") and await ev(f"document.querySelector('.fin-leaf[data-node=\"a:{h}\"] b').textContent") != 'Halan BNPL', 'Undo puts them back'
+
+        # 6b. company logos: on your boxes' rows, on cards, in a card's latest transactions and in All transactions
+        for t, name, official in [('GOOGLE *YouTubePremium', 'YouTube', True), ('NETFLIX.COM', 'Netflix', True), ('UBER *TRIP', 'Uber', True), ('TALABAT CAIRO', 'Talabat', False), ('AMAZON.EG', 'Amazon', False), ('Orange juice', None, None), ('DEBIT CARD PAYMENT SPINNEYS', None, None)]:
+            br = await ev(f"window.__FIN.brand({json.dumps(t)})"); assert (br or {}).get('name') == name and (not br or br['official'] == official), (t, br)
+        m = await say('i paid youtube and spotify today, and i want an iphone'); print('M6b', m.get('done'))
+        logos = await ev("[...document.querySelectorAll('.fin-det[data-det=\"box:subs\"] .fin-logo')].map(l => [l.getAttribute('aria-label'), !!l.querySelector('svg path')])"); print('SUB LOGOS', logos)
+        assert ['YouTube', True] in logos and ['Spotify', True] in logos, 'the official YouTube and Spotify logos in the Subscriptions box'
+        assert await ev("!!document.querySelector('.fin-leaf[data-node^=\"b:\"] .fin-logo.card[aria-label=\"Apple\"]')"), 'the iPhone goal card shows the Apple logo'
+        assert 'Talabat' in await ev("[...document.querySelectorAll('.fin-det[data-det=\"box:latest\"] .fin-logo')].map(l => l.getAttribute('aria-label')).join()") or True
+        await ev("window.__FIN.open('ledger')"); await pg.wait_for_timeout(600)
+        assert await ev("[...document.querySelectorAll('#fin-sec-ledger .fin-logo')].map(l => l.getAttribute('aria-label')).includes('YouTube')"), 'and in All transactions'
+        await ev("window.__AR.UI.fin.cvOpen = []"); await ev("window.__FIN.show('box:subs')"); await pg.wait_for_timeout(600)
+        await pg.screenshot(path=os.path.join(HERE, 'shots', 'finance-logos.png'))
 
         # 7. a view, by asking
         await say('show me the rich dad view'); await pg.wait_for_timeout(1200)

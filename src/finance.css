@@ -664,3 +664,14 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 .fin-box-bars > div { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; align-items: center; }
 .fin-box-bars > div > span { overflow-wrap: anywhere; } .fin-box-bars .fin-det-bar { grid-column: 1 / -1; }
 .fin-box-total { margin: 6px 0 0; text-align: right; }
+
+/* ---------- company logos (Simple Icons, embedded) ---------- */
+.fin-logo { display: inline-grid; place-items: center; flex: none; width: 20px; height: 20px; border-radius: 6px; margin-right: 8px; vertical-align: -5px; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .08), 0 1px 2px rgba(0, 0, 0, .12); font-style: normal; }
+.fin-logo svg { width: 62%; height: 62%; display: block; }
+.fin-logo.letters span { font: 800 9px/1 var(--font, system-ui); letter-spacing: -.02em; }
+.fin-logo.sm { width: 18px; height: 18px; border-radius: 5px; vertical-align: -4px; }
+.fin-logo.card { width: 30px; height: 30px; border-radius: 9px; margin-right: 0; }
+.fin-logo.card.letters span { font-size: 12px; }
+.fin-box-list .fin-logo, .fin-box-bars .fin-logo { margin-right: 6px; }
+.fin-box-list > div > .fin-logo { margin-right: 0; }
+.fin-cv-vp.z-far .fin-logo.card { display: none; }

@@ -55,10 +55,10 @@ function finBoxRows(s) {
     const tx = finBoxTx(s);
     if (grp) { const key = t => grp === 'category' ? ((finCat(t.cat) || { name: t.cat || '—' }).name) : grp === 'month' ? fmon(t.date.slice(0, 7)) : grp === 'account' ? ((finAcct(t.acct) || { name: '—' }).name) : FIN.cleanDesc(t.desc || '—');
       const m = new Map(); for (const t of tx) { const k = key(t), g = m.get(k) || { label: k, amount: 0, count: 0 }; g.amount += t.amount; g.count++; m.set(k, g); }
-      return [...m.values()].sort((a, b) => Math.abs(b.amount) - Math.abs(a.amount)).slice(0, finBoxLim(s)).map(g => ({ label: g.label, amount: FIN.r2(g.amount), note: `${g.count} transaction${g.count === 1 ? '' : 's'}` })); }
-    return tx.slice(0, finBoxLim(s)).map(t => ({ label: FIN.cleanDesc(t.desc || ''), amount: t.amount, cells: { date: fday(t.date), desc: FIN.cleanDesc(t.desc || ''), amount: fm(t.amount), category: (finCat(t.cat) || { name: t.cat || '—' }).name, account: (finAcct(t.acct) || { name: '—' }).name, balance: typeof t.balance === 'number' ? fm(t.balance) : '' } }));
+      return [...m.values()].sort((a, b) => Math.abs(b.amount) - Math.abs(a.amount)).slice(0, finBoxLim(s)).map(g => ({ label: g.label, amount: FIN.r2(g.amount), note: `${g.count} transaction${g.count === 1 ? '' : 's'}`, brand: grp === 'merchant' ? g.label : '' })); }
+    return tx.slice(0, finBoxLim(s)).map(t => ({ label: FIN.cleanDesc(t.desc || ''), brand: t.desc || '', amount: t.amount, cells: { date: fday(t.date), desc: FIN.cleanDesc(t.desc || ''), amount: fm(t.amount), category: (finCat(t.cat) || { name: t.cat || '—' }).name, account: (finAcct(t.acct) || { name: '—' }).name, balance: typeof t.balance === 'number' ? fm(t.balance) : '' } }));
   }
-  if (w === 'recurring') { const f = s.filter || {}; return FIN.recurring(all.entries || []).filter(r => f.direction === 'in' ? r.dir > 0 : r.dir < 0).sort((a, b) => b.perMonth - a.perMonth).slice(0, finBoxLim(s)).map(r => ({ label: FIN.cleanDesc(r.name), amount: -r.perMonth, note: `${r.freq || 'monthly'}${r.next ? ' · next about ' + fday(r.next) : ''}`, cells: { desc: FIN.cleanDesc(r.name), amount: fm(r.amount), date: r.next ? fday(r.next) : '' } })); }
+  if (w === 'recurring') { const f = s.filter || {}; return FIN.recurring(all.entries || []).filter(r => f.direction === 'in' ? r.dir > 0 : r.dir < 0).sort((a, b) => b.perMonth - a.perMonth).slice(0, finBoxLim(s)).map(r => ({ label: FIN.cleanDesc(r.name), brand: r.name, amount: -r.perMonth, note: `${r.freq || 'monthly'}${r.next ? ' · next about ' + fday(r.next) : ''}`, cells: { desc: FIN.cleanDesc(r.name), amount: fm(r.amount), date: r.next ? fday(r.next) : '' } })); }
   if (w === 'categories') {
     const tx = finBoxTx({ ...s, filter: { direction: 'out', lastDays: 90, ...(s.filter || {}) } }), m = new Map();
     for (const t of tx) { const c = finCat(t.cat); if (c && c.kind !== 'expense') continue; m.set(t.cat, (m.get(t.cat) || 0) + t.amount); }
@@ -66,10 +66,10 @@ function finBoxRows(s) {
   }
   if (w === 'months') return all.months.slice(-finBoxLim({ limit: s.limit || 6 })).map(b => ({ label: fmon(b.m), amount: FIN.r2((b.inc || 0) - (b.exp || 0)), note: `in ${fk(b.inc || 0)} · out ${fk(b.exp || 0)}` }));
   if (w === 'accounts') return n.accts.map(({ a, l }) => ({ label: a.name, amount: ['credit_card', 'bnpl'].includes(a.kind) ? -(l.owed || 0) : l.balance ?? 0, note: l.date ? fday(l.date) : 'no balance yet' }));
-  if (w === 'instalments') return n.inst.filter(i => i.status === 'active' || i.status === 'missing').map(i => ({ label: i.name, amount: -i.amount, note: i.of ? `${i.n} of ${i.of} · ends ${fmon(i.end)}` : i.end ? `ends ${fmon(i.end)}` : '' }));
-  if (w === 'goals') return (finBuyPlan().items || []).map(i => ({ label: i.name, amount: -i.price, note: FIN_REC[i.rec] ? FIN_REC[i.rec][0] + (i.ready ? ' · ' + fmon(i.ready) : '') : '' }));
+  if (w === 'instalments') return n.inst.filter(i => i.status === 'active' || i.status === 'missing').map(i => ({ label: i.name, brand: i.name, amount: -i.amount, note: i.of ? `${i.n} of ${i.of} · ends ${fmon(i.end)}` : i.end ? `ends ${fmon(i.end)}` : '' }));
+  if (w === 'goals') return (finBuyPlan().items || []).map(i => ({ label: i.name, brand: i.name, amount: -i.price, note: FIN_REC[i.rec] ? FIN_REC[i.rec][0] + (i.ready ? ' · ' + fmon(i.ready) : '') : '' }));
   if (w === 'holdings') return (finP().holdings || []).filter(h => !h.owner || h.owner === 'me').map(h => ({ label: h.name, amount: h.kind === 'liability' ? -(finLiab(h).remaining || 0) : +h.principal || +h.valuation || 0, note: h.rate ? h.rate + '% a year' : '' }));
-  if (w === 'cards') { const m = new Map(); (function walk(x) { m.set(x.id, x); (x.children || []).forEach(walk); })(finCvModel()); return (s.nodes || []).map(id => m.get(id)).filter(Boolean).map(c => ({ label: c.label, text: c.val || '', note: c.sub || '' })); }
+  if (w === 'cards') { const m = new Map(); (function walk(x) { m.set(x.id, x); (x.children || []).forEach(walk); })(finCvModel()); return (s.nodes || []).map(id => m.get(id)).filter(Boolean).map(c => ({ label: c.label, brand: typeof finCardBrand === 'function' && finCardBrand(c) ? c.label : '', text: c.val || '', note: c.sub || '' })); }
   return [];
 }
 function finBoxHTML(id) {
@@ -77,15 +77,16 @@ function finBoxHTML(id) {
   const s = b.show || {}, fmt = FIN_BOX_FORMAT.includes(s.format) ? s.format : 'list', note = b.note ? `<p class="fin-box-note">${esc(String(b.note)).replace(/\n/g, '<br>')}</p>` : '';
   if (s.what === 'text') return note || '<p class="small muted">An empty note — tell the canvas what to write here.</p>';
   const rows = finBoxRows(s); if (!rows.length) return note + '<p class="small muted">Nothing matches yet.</p>';
+  const lg = r => r.brand && typeof finLogo === 'function' ? finLogo(r.brand, 'sm') : '';   // a company's logo beside its name
   const total = rows.reduce((t, r) => t + (r.amount || 0), 0), money = v => typeof v === 'number' ? `<b class="num ${v > 0 ? 'fin-pos' : ''}">${fm(v)}</b>` : '';
   if (fmt === 'total') return note + finKv([['Total', fm(FIN.r2(total)), `${rows.length} item${rows.length === 1 ? '' : 's'}`], ['Average', fm(FIN.r2(total / rows.length)), 'each']]);
-  if (fmt === 'bars') { const max = Math.max(1, ...rows.map(r => Math.abs(r.amount || 0))); return note + `<div class="fin-box-bars">${rows.map(r => `<div><span>${esc(r.label)}</span>${money(r.amount)}${finBar(Math.abs(r.amount || 0), max, (r.amount || 0) < 0 ? 's2' : 's3')}</div>`).join('')}</div>`; }
+  if (fmt === 'bars') { const max = Math.max(1, ...rows.map(r => Math.abs(r.amount || 0))); return note + `<div class="fin-box-bars">${rows.map(r => `<div><span>${lg(r)}${esc(r.label)}</span>${money(r.amount)}${finBar(Math.abs(r.amount || 0), max, (r.amount || 0) < 0 ? 's2' : 's3')}</div>`).join('')}</div>`; }
   if (fmt === 'table' && rows[0].cells) {
     const cols = (Array.isArray(s.columns) ? s.columns.filter(c => FIN_BOX_COLS.includes(c)) : []).length ? s.columns.filter(c => FIN_BOX_COLS.includes(c)) : ['date', 'desc', 'amount', 'category'].filter(c => rows.some(r => r.cells[c]));
     const name = { date: 'Date', desc: 'Description', amount: 'Amount', category: 'Category', account: 'Account', balance: 'Balance' };
-    return note + `<div class="fin-box-scroll"><table class="fin-box-t"><thead><tr>${cols.map(c => `<th${c === 'amount' || c === 'balance' ? ' class="num"' : ''}>${name[c]}</th>`).join('')}</tr></thead><tbody>${rows.map(r => `<tr>${cols.map(c => `<td${c === 'amount' || c === 'balance' ? ' class="num"' : ''}>${esc(r.cells[c] || '')}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+    return note + `<div class="fin-box-scroll"><table class="fin-box-t"><thead><tr>${cols.map(c => `<th${c === 'amount' || c === 'balance' ? ' class="num"' : ''}>${name[c]}</th>`).join('')}</tr></thead><tbody>${rows.map(r => `<tr>${cols.map(c => `<td${c === 'amount' || c === 'balance' ? ' class="num"' : ''}>${c === 'desc' ? lg(r) : ''}${esc(r.cells[c] || '')}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
   }
-  return note + `<div class="fin-box-list">${rows.map(r => `<div><span><b>${esc(r.label)}</b>${r.note ? `<small>${esc(r.note)}</small>` : ''}</span>${r.text ? `<b class="num">${esc(r.text)}</b>` : money(r.amount)}</div>`).join('')}</div>`
+  return note + `<div class="fin-box-list">${rows.map(r => `<div>${lg(r)}<span><b>${esc(r.label)}</b>${r.note ? `<small>${esc(r.note)}</small>` : ''}</span>${r.text ? `<b class="num">${esc(r.text)}</b>` : money(r.amount)}</div>`).join('')}</div>`
     + (['recurring', 'transactions', 'instalments', 'categories'].includes(s.what) && rows.length > 1 && rows.every(r => typeof r.amount === 'number') ? `<p class="small muted fin-box-total">Together ${fm(FIN.r2(total))}${s.what === 'recurring' || s.what === 'instalments' ? ' a month' : ''}</p>` : '');
 }
 
