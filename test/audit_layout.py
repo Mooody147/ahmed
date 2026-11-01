@@ -84,8 +84,8 @@ async def main():
             found = await ev(CHECK)
             if found: problems[f'{w}px canvas'] = found
             if w in (1400, 390): await pg.screenshot(path=os.path.join(HERE, 'shots', f'audit-{w}-canvas.png'))
-            # the other layouts (Tree and Flow): the same checks, with a card popped out and a part opened in each
-            for mode, name in [('tree', 'Tree'), ('flow', 'Flow')]:
+            # the other layouts (Reservoirs and Flow): the same checks, with a card popped out and a part opened in each
+            for mode, name in [('res', 'Reservoirs'), ('flow', 'Flow')]:
                 await ev("window.__AR.UI.fin.cvOpen = []; window.__AR.UI.fin.pop = null"); await ev(f"window.__FIN.mode('{mode}')"); await pg.wait_for_timeout(1100)
                 found = await ev(CHECK)
                 if found: problems[f'{w}px canvas ({name})'] = found

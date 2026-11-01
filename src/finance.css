@@ -480,54 +480,9 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 
 .fin-cv-modes button { display: inline-flex; align-items: center; gap: 4px; }
 
-/* ---------- the second layout: Tree ---------- */
-.fin-cv-vp.mode-tree { --tree-sky1: #6fa6dc; --tree-sky2: #b4d4f0; --tree-sky3: #e3eedf; --tree-soil1: #b98a5e; --tree-soil2: #8d6240; --tree-soil3: #5e4029;
-  --tree-bark1: #9a6a42; --tree-bark2: #6b4528; --tree-grass1: #79b85a; --tree-grass2: #5e9e44; --tree-leaf1: #8fcf7e; --tree-leaf2: #6db866; --tree-leaf3: #a8dc8c; --tree-sap: #ffc93c; --tree-ink: #2b2014;
-  background: var(--tree-sky2); }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .fin-cv-vp.mode-tree { --tree-sky1: #1d2f4a; --tree-sky2: #22344d; --tree-sky3: #283b33; --tree-soil1: #5a4330; --tree-soil2: #45321f; --tree-soil3: #2e2116; --tree-bark1: #7a5535; --tree-bark2: #523621; --tree-leaf1: #4f8f4a; --tree-leaf2: #3f7a3c; --tree-leaf3: #5f9d55; --tree-ink: #f3ede4; } }
-:root[data-theme="dark"] .fin-cv-vp.mode-tree { --tree-sky1: #1d2f4a; --tree-sky2: #22344d; --tree-sky3: #283b33; --tree-soil1: #5a4330; --tree-soil2: #45321f; --tree-soil3: #2e2116; --tree-bark1: #7a5535; --tree-bark2: #523621; --tree-leaf1: #4f8f4a; --tree-leaf2: #3f7a3c; --tree-leaf3: #5f9d55; --tree-ink: #f3ede4; }
-.fin-tree-sky { position: absolute; inset: 0; overflow: hidden; pointer-events: none; background: linear-gradient(180deg, var(--tree-sky1) 0%, var(--tree-sky2) 55%, var(--tree-sky3) 100%); }
-/* a soft, low sun and thin high cloud — nothing drawn, only light */
-.fin-tree-sky .sun { position: absolute; right: 4%; top: -140px; width: 520px; height: 520px; border-radius: 50%; background: radial-gradient(circle, rgba(255, 246, 214, .85), rgba(255, 236, 190, .28) 32%, rgba(255, 236, 190, 0) 62%); }
-.fin-tree-sky .cloud { position: absolute; height: 46px; border-radius: 50%; background: rgba(255, 255, 255, .5); filter: blur(22px); will-change: transform; }
-.fin-tree-sky .c1 { left: 6%; top: 12%; width: 520px; } .fin-tree-sky .c2 { left: 44%; top: 6%; width: 380px; opacity: .7; } .fin-tree-sky .c3 { left: 70%; top: 24%; width: 300px; opacity: .55; }
-@media (prefers-reduced-motion: no-preference) { .fin-tree-sky .c1 { animation: finCloud 90s linear infinite alternate; } .fin-tree-sky .c3 { animation: finCloud 120s linear infinite alternate-reverse; } @keyframes finCloud { to { translate: 14vw 0; } } }
-.fin-tree .rootlet { fill: #3b2a1b; }
-.fin-tree .root { opacity: .97; }
-.mode-tree .fin-cv-world { z-index: 1; }
-.fin-tree { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; }
-.fin-tree .sap { fill: none; stroke: var(--tree-sap); stroke-width: 6; stroke-linecap: round; stroke-dasharray: 0.1 34; }
-@media (prefers-reduced-motion: no-preference) { .fin-tree .sap { animation: finSap 3s linear infinite; } @keyframes finSap { to { stroke-dashoffset: -34.1; } } }
-.fin-tree-l { font: 700 24px/1 var(--font, system-ui); paint-order: stroke; stroke-width: 6px; stroke-linejoin: round; }
-.fin-tree-l .what { font-size: 17px; font-weight: 600; }
-.fin-tree-l.sky { fill: var(--tree-ink); stroke: rgba(255, 255, 255, .85); }
-.fin-tree-l.soil { fill: #fff8ec; stroke: rgba(40, 24, 10, .8); }
-.fin-tree-h { font: 800 20px/1 var(--font, system-ui); letter-spacing: .06em; fill: var(--tree-ink); paint-order: stroke; stroke: rgba(255, 255, 255, .8); stroke-width: 5px; }
-.fin-tree-h.soil { fill: #fff3e0; stroke: rgba(40, 24, 10, .7); }
-/* rooms: calm, light panels; under the ground a warm tone; on the trunk the bark shows through the edge */
-.mode-tree .fin-room { background: color-mix(in srgb, var(--surface) 90%, transparent); border: 2px solid hsl(var(--h) 45% 55% / .4); box-shadow: 0 22px 50px -30px rgba(40, 50, 20, .55), var(--elev-1); }
-.mode-tree .fin-room.tr-root { background: color-mix(in srgb, #fff3e3 92%, transparent); border-color: rgba(120, 80, 40, .45); }
-.mode-tree .fin-room.tr-trunk { border: 3px solid var(--tree-bark2); }
-.mode-tree .fin-room.tr-crown { border-color: color-mix(in srgb, var(--tree-leaf2) 70%, transparent); }
-.mode-tree .fin-room-h { height: 84px; }
-.mode-tree .fin-room-t b { font-size: 22px; }
 /* flat (and so drawn sharp at every zoom) until the pointer is on it; then it leans toward the pointer */
-.mode-tree .mnode.fin-leaf { transition: transform .18s ease-out, box-shadow .18s ease; }
-.mode-tree .mnode.fin-leaf:hover { transform: perspective(800px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) translateY(-3px); box-shadow: 0 18px 34px -16px hsl(var(--h) 60% 30% / .5), 0 0 0 1px hsl(var(--h) 70% 60% / .45); }
-.mode-tree .fin-det[data-det="up"] .fin-up-grid { grid-template-columns: minmax(0, 1fr); }
 /* zoomed out: cards show only their name and figure, in big type; room titles grow; details stay */
-.mode-tree.z-far .fin-leaf .mtxt small, .mode-tree.z-far .fin-leaf .fin-spark, .mode-tree.z-far .fin-cv-ic { display: none; }
-.mode-tree.z-far .fin-leaf { padding: 4px 12px; }
-.mode-tree.z-far .fin-leaf .mtxt b { font-size: 23px; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.mode-tree.z-far .fin-leaf .fin-cv-v { font-size: 23px; }
-.mode-tree.z-far .fin-room-t b { font-size: 32px; }
-.mode-tree.z-far .fin-room-t small { font-size: 17px; }
-.mode-tree.z-far .fin-room-sub b { font-size: 18px; }
 /* zoomed out, a card is its name over its figure, each on its own line */
-.mode-tree.z-far .mnode.fin-leaf { flex-direction: column; align-items: stretch; justify-content: center; gap: 2px; }
-.mode-tree.z-far .fin-leaf .mtxt { width: 100%; }
-.mode-tree.z-far .fin-leaf .fin-cv-v { text-align: left; line-height: 1.2; }
-.mode-tree .fin-room-go { display: none; }
 
 /* ---------- the third layout: Flow ---------- */
 .fin-cv-vp.mode-flow { background: #0d0a1f; border-color: #2a2147; --flow-ink: #f4f0ff; --flow-dim: #b9aedb; }
@@ -599,16 +554,51 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 .fin-cv-vp.z-far .fin-room-t b { font-size: 28px; }
 .fin-cv-vp.z-far .fin-room-t small { font-size: 16px; }
 .fin-cv-vp.z-far .fin-room-sub b { font-size: 18px; }
-.fin-cv-vp.z-far.mode-tree .fin-leaf .mtxt b, .fin-cv-vp.z-far.mode-tree .fin-leaf .fin-cv-v { font-size: 23px; }
-.fin-cv-vp.z-far.mode-tree .fin-room-t b { font-size: 32px; }
 /* Flow's lanes are narrow: a modest title so the summary still fits its header */
 .fin-cv-vp.z-far.mode-flow .fin-room:not(.ov):not(.goals):not(.sec) .fin-room-t b { font-size: 22px; }
 .fin-cv-vp.z-far.mode-flow .fin-room:not(.ov):not(.goals):not(.sec) .fin-room-t small { font-size: 13px; line-height: 1.25; }
-/* the tree is one picture (drawn once): the canvas only slides and scales it */
-.fin-tree-img { position: absolute; pointer-events: none; user-select: none; -webkit-user-drag: none; image-rendering: auto; }
-.fin-tree-vec { position: absolute; pointer-events: none; }
-.fin-tree-vec svg { display: block; }
-.fin-tree-far { position: absolute; left: -8000px; right: -8000px; height: 9000px; pointer-events: none; background: linear-gradient(180deg, #5d4230, #4b3526 300px, #2a1e16 1400px); border-top: 18px solid #4f7d33; box-sizing: border-box; }
-.fin-tree-wait { display: none; }
-.fin-tree-vec.sketch { opacity: .55; }
-@media (prefers-reduced-motion: no-preference) { .fin-tree-img.fresh { animation: finTreeIn .5s ease-out; } @keyframes finTreeIn { from { opacity: .4; } } }
+
+/* ---------- the layout "Reservoirs": accounts are tanks, money flows as water ---------- */
+.fin-cv-vp.mode-res { background-color: #f3f8fc; background-image: linear-gradient(rgba(70, 120, 160, .07) 1px, transparent 1px), linear-gradient(90deg, rgba(70, 120, 160, .07) 1px, transparent 1px); background-size: 40px 40px; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .fin-cv-vp.mode-res { background-color: #141c24; background-image: linear-gradient(rgba(140, 190, 230, .06) 1px, transparent 1px), linear-gradient(90deg, rgba(140, 190, 230, .06) 1px, transparent 1px); } }
+:root[data-theme="dark"] .fin-cv-vp.mode-res { background-color: #141c24; background-image: linear-gradient(rgba(140, 190, 230, .06) 1px, transparent 1px), linear-gradient(90deg, rgba(140, 190, 230, .06) 1px, transparent 1px); }
+.mode-res .fin-room { background: color-mix(in srgb, var(--surface) 92%, transparent); border: 2px solid color-mix(in srgb, #3f88c5 30%, var(--line)); box-shadow: 0 18px 44px -30px rgba(20, 60, 100, .45), var(--elev-1); }
+.mode-res .fin-room-h { height: 84px; }
+.mode-res .fin-room-t b { font-size: 22px; }
+/* a tank: a glass vessel with a measuring scale; the water is its balance (red: what is owed of the limit) */
+.mnode.fin-leaf.tank { flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 6px; padding: 14px 14px 12px; border: 3px solid #a9c3d8; border-radius: 16px 16px 30px 30px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, .96), rgba(236, 245, 252, .96) 45%, rgba(255, 255, 255, .96)); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .8), 0 16px 30px -18px rgba(20, 60, 100, .5); }
+.mnode.fin-leaf.tank.debt { border-color: #e2b4ad; }
+.fin-tank { position: absolute; inset: 0; border-radius: 13px 13px 27px 27px; overflow: hidden; pointer-events: none; }
+.fin-tank .w { position: absolute; left: 0; right: 0; bottom: 0; height: calc(var(--lvl) * 100%); background: linear-gradient(180deg, rgba(120, 196, 238, .85), rgba(40, 132, 204, .9)); }
+.fin-tank.debt .w { background: linear-gradient(180deg, rgba(240, 150, 132, .85), rgba(196, 62, 48, .9)); }
+.fin-tank .w::before { content: ""; position: absolute; left: -50%; top: -9px; width: 200%; height: 18px; border-radius: 45%; background: rgba(160, 216, 246, .9); }
+.fin-tank.debt .w::before { background: rgba(246, 184, 170, .9); }
+.fin-tank .scale { position: absolute; right: 8px; top: 18%; bottom: 10%; width: 10px; background: repeating-linear-gradient(180deg, rgba(60, 100, 140, .35) 0 2px, transparent 2px 18%); }
+@media (prefers-reduced-motion: no-preference) { .fin-tank .w::before { animation: finWave 6s ease-in-out infinite alternate; } @keyframes finWave { from { transform: translateX(-12%) rotate(-1deg); } to { transform: translateX(12%) rotate(1deg); } } }
+.mnode.fin-leaf.tank .mtxt, .mnode.fin-leaf.tank .fin-cv-v { position: relative; z-index: 1; text-shadow: 0 1px 0 rgba(255, 255, 255, .9), 0 0 6px rgba(255, 255, 255, .8); }
+.mnode.fin-leaf.tank .mtxt b { font-size: 15px; white-space: normal; }
+.mnode.fin-leaf.tank .mtxt small { white-space: normal; }
+.mnode.fin-leaf.tank .fin-cv-v { font-size: 24px; text-align: left; margin-top: auto; padding-bottom: 6px; }
+.mnode.fin-leaf.tank .fin-spark { display: none; }
+/* water and pipes */
+.fin-res { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; }
+.fin-res-stream .fall { stroke: rgba(90, 175, 232, .32); fill: none; stroke-linecap: round; }
+.fin-res-stream .drops { stroke: #2f8fd0; stroke-width: 6; fill: none; stroke-linecap: round; stroke-dasharray: 0.1 28; }
+.fin-res-stream .d2 { stroke-width: 4; opacity: .7; } .fin-res-stream .d3 { stroke-width: 4; opacity: .7; }
+.fin-res-pipes .shell { stroke: #6f8597; fill: none; stroke-linecap: round; }
+.fin-res-pipes .core { stroke: #dcebf6; fill: none; stroke-linecap: round; }
+.fin-res-pipes .flow { stroke: #2f8fd0; stroke-width: 6; fill: none; stroke-linecap: round; stroke-dasharray: 0.1 24; }
+.fin-res-pipes .empty .core { stroke: #eef3f7; }
+.fin-res-pipes .valve { fill: #8aa1b4; stroke: #56697a; stroke-width: 3; }
+@media (prefers-reduced-motion: no-preference) {
+  .fin-res-stream .drops { animation: finDrop 1.6s linear infinite; } .fin-res-stream .d2 { animation-duration: 2.1s; } .fin-res-stream .d3 { animation-duration: 1.9s; }
+  .fin-res-pipes .flow { animation: finDrop 2.4s linear infinite; } .fin-res-pipes .flow.slow { animation-duration: 3.6s; }
+  @keyframes finDrop { to { stroke-dashoffset: -28.1; } }
+}
+.fin-res-l { font: 700 22px/1 var(--font, system-ui); fill: #1d3a52; paint-order: stroke; stroke: rgba(255, 255, 255, .92); stroke-width: 6px; stroke-linejoin: round; }
+.fin-res-l .what { font-size: 15px; font-weight: 600; fill: #45647d; }
+.fin-cv-vp.z-far.mode-res .mnode.fin-leaf.tank .fin-cv-v { font-size: 30px; }
+.fin-cv-vp.z-far.mode-res .mnode.fin-leaf.tank .mtxt b { font-size: 21px; }
+.mode-res .fin-det[data-det="up"] .fin-up-grid { grid-template-columns: minmax(0, 1fr); }
+.mode-res .fin-up-l { white-space: normal; overflow: visible; overflow-wrap: anywhere; }
