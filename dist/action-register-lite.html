@@ -1777,7 +1777,7 @@ a { color: var(--wine); }
 .srv-tag:hover { border-style: solid; background: color-mix(in srgb, var(--ok) 14%, var(--surface)); color: var(--ok); }
 .srv-tag:hover::after { content: " ✓"; }
 .thn-list li { position: relative; }
-.thn-list li > .srv-tag { margin: 2px 0 2px 28px; justify-self: start; }
+.thn-fx .srv-tag { margin-right: 2px; }
 
 /* ================= Money tab ================= */
 /* chart series (validated: blue / orange / aqua, light and dark); text never takes a series colour */
@@ -13616,7 +13616,7 @@ function threadNodeHTML(n, st) {
   const effects = eid => ttasks.map(t => (t.emailIds || [])[0] === eid ? ['＋', t, 'created here'] : (t.history || []).some(h => h.emailId === eid) ? ((t.history || []).some(h => h.emailId === eid && /complet|done/i.test(h.text)) ? ['✓', t, 'completed by this message'] : ['↻', t, 'updated by this message']) : null).filter(Boolean);
   const drag = UI.cvTemp && UI.cvTemp.kind === 'node' && UI.cvTemp.id === n.id ? ' dragging' : '';
   const row = (x, i) => x.gap ? `<li class="thn-gap"><button data-map="th-all">⋯ ${x.gap} more message${x.gap > 1 ? 's' : ''}</button></li>`
-    : `<li class="${x.me ? 'me' : ''}${x === steps[steps.length - 1] ? ' last' : ''}${x.emailId && selE.has(x.emailId) ? ' sel-src' : ''}"><button class="thn-row" data-map="th-email" ${x.emailId ? `data-eid="${esc(x.emailId)}"` : ''} title="${esc(x.says || '')}"><span class="thn-i" aria-hidden="true">${x === steps[steps.length - 1] ? '📍' : TH_KIND[x.kind] || TH_KIND.info}</span><span class="thn-d">${x.date ? esc(fmtDate(x.date, { day: 'numeric', month: 'short' })) : '—'}</span><span class="thn-t" dir="auto"><b>${esc(x.me ? 'Me' : E.clip(x.from || 'Someone', 26))}</b> ${esc(E.clip(x.says || '', 90))}</span></button>${x.emailId && typeof srvTagHTML === 'function' ? srvTagHTML(x.emailId) : ''}${x.emailId && effects(x.emailId).length ? `<span class="thn-fx">${effects(x.emailId).map(([g, t, why]) => `<button class="thn-chip fx-${g === '＋' ? 'new' : g === '✓' ? 'done' : 'upd'}${t.status === 'done' ? ' done' : ''}" data-map="th-task" data-tid="${esc(t.id)}" title="${esc(`${t.ref} ${why}: ${t.title}`)}">${g} ${esc(t.ref || '')}</button>`).join('')}</span>` : ''}</li>`;
+    : `<li class="${x.me ? 'me' : ''}${x === steps[steps.length - 1] ? ' last' : ''}${x.emailId && selE.has(x.emailId) ? ' sel-src' : ''}"><button class="thn-row" data-map="th-email" ${x.emailId ? `data-eid="${esc(x.emailId)}"` : ''} title="${esc(x.says || '')}"><span class="thn-i" aria-hidden="true">${x === steps[steps.length - 1] ? '📍' : TH_KIND[x.kind] || TH_KIND.info}</span><span class="thn-d">${x.date ? esc(fmtDate(x.date, { day: 'numeric', month: 'short' })) : '—'}</span><span class="thn-t" dir="auto"><b>${esc(x.me ? 'Me' : E.clip(x.from || 'Someone', 26))}</b> ${esc(E.clip(x.says || '', 90))}</span></button>${x.emailId && (effects(x.emailId).length || (typeof srvTagHTML === 'function' && srvTagHTML(x.emailId))) ? `<span class="thn-fx">${typeof srvTagHTML === 'function' ? srvTagHTML(x.emailId) : ''}${effects(x.emailId).map(([g, t, why]) => `<button class="thn-chip fx-${g === '＋' ? 'new' : g === '✓' ? 'done' : 'upd'}${t.status === 'done' ? ' done' : ''}" data-map="th-task" data-tid="${esc(t.id)}" title="${esc(`${t.ref} ${why}: ${t.title}`)}">${g} ${esc(t.ref || '')}</button>`).join('')}</span>` : ''}</li>`;
   const inside = (n.children || []).length;
   return `<div class="mnode thread${n.compact && !opened ? ' compact' : ''}${inside ? ' holds' : ''}${selT && selE.size && ems.some(e => selE.has(e.id)) ? ' has-sel' : ''}${drag}" data-node="${esc(n.id)}" data-type="thread" style="${st}">
     <div class="thn-h"><span class="thn-ic" aria-hidden="true">🧵</span><div class="thn-ht"><b dir="auto">${esc(E.clip(E.normSubject(ems[0].subject || '') || 'Email thread', 70))}</b><small>${steps.length} message${steps.length > 1 ? 's' : ''} · ${ems.length} added${first ? ` · ${esc(fmtDate(first.date, { day: 'numeric', month: 'short' }))}${last && last.date !== first.date ? ' → ' + esc(fmtDate(last.date, { day: 'numeric', month: 'short' })) : ''}` : ''}${open ? ` · ${open} open` : ''}</small></div>${steps.length > 6 || (n.compact && steps.length > 1) ? `<button class="mfocus" data-map="th-all" title="${all ? 'Show less' : 'Show the whole conversation'}">${all ? '▴' : '▾'}</button>` : ''}</div>
@@ -14402,23 +14402,23 @@ function finPickAcct(it, kind) {
   // the number decides: when the number read first is not one of yours (a statement may show the debit card's number
   // before the account's), another long number on it — or the file name, like "012" — that ends like exactly one of
   // your accounts names it; that account's kind then counts, whatever the words said
-  const mine = p.accounts.filter(a => FIN.last4(a.number).length === 4);
-  let known = num ? mine.find(a => FIN.last4(a.number) === num) : null;
+  const mine = p.accounts.filter(a => finAcctTails(a).length);
+  let known = num ? mine.find(a => finAcctTails(a).includes(num)) : null;
   if (!known) {
     const runs = [...new Set(String(head).replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).match(/[\d*xX•][\d *xX•-]{6,}\d/g) || [])].filter(r => r.replace(/[^\d*xX•]/g, '').length >= 8 && !/^\d{1,4}[-/. ]\d{1,2}[-/. ]\d{1,4}$/.test(r.trim()));
-    const hits = [...new Set(runs.map(r => FIN.last4(r)).filter(l => mine.some(a => FIN.last4(a.number) === l)))];
-    if (hits.length === 1) known = mine.find(a => FIN.last4(a.number) === hits[0]);
+    const hits = [...new Set(runs.map(r => FIN.last4(r)).filter(l => mine.some(a => finAcctTails(a).includes(l))))];
+    if (hits.length === 1) known = mine.find(a => finAcctTails(a).includes(hits[0]));
   }
   if (!known) {
-    const fn = (String(it.name).replace(/\.[a-z0-9]+$/i, '').match(/\d{3,}/g) || []).map(d => d.slice(-4)), hit = mine.filter(a => fn.some(d => FIN.last4(a.number).endsWith(d)));
+    const fn = (String(it.name).replace(/\.[a-z0-9]+$/i, '').match(/\d{3,}/g) || []).map(d => d.slice(-4)), hit = mine.filter(a => fn.some(d => finAcctTails(a).some(t => t.endsWith(d))));
     if (hit.length === 1) known = hit[0];
   }
-  if (known) { num = FIN.last4(known.number); kind = known.kind; }
+  if (known) { num = finAcctTails(known).includes(num) ? num : FIN.last4(known.number); kind = known.kind; }
   // a first reading with this kind of account, to compare its lines
   it.acct = ''; it.newAcct = { kind, currency: cur || p.base, bank, name: '' }; finParse(it);
   const scored = p.accounts.map(a => {
     let sc = 0; const why = [];
-    if (num && a.number) { if (FIN.last4(a.number) === num) { sc += 10; why.push('same account number'); } else sc -= 100; }
+    if (num && a.number) { if (finAcctTails(a).includes(num)) { sc += 10; why.push('same account number'); } else sc -= 100; }
     if (a.kind !== kind) sc -= 3;
     if (cur && a.currency && a.currency !== cur) sc -= 100;
     if (bank && a.bank) { if (FIN.norm(a.bank) === FIN.norm(bank)) { sc += 3; why.push('same bank'); } else sc -= 5; }
@@ -15188,7 +15188,7 @@ FIN_VIEW.accounts = () => {
   const p = finP(), rec = finRecon(), tx = finTx();
   const unpaired = tx.filter(t => ['transfer', 'ccpay', 'savings', 'invest'].includes(t.cat) && !t.pair && p.accounts.length > 1);
   return `<section class="card fin-card"><h2>Accounts</h2>
-    ${p.accounts.length ? `<div class="tbl-wrap"><table class="tbl fin-acct"><thead><tr><th>Name</th><th>Bank</th><th>Type</th><th>Currency</th><th>Account no.</th><th>Belongs to</th><th>In the name of</th><th>Opening balance</th><th>on</th><th>Default</th><th></th></tr></thead><tbody>${p.accounts.map((a, i) => `<tr>
+    ${p.accounts.length ? `<div class="tbl-wrap"><table class="tbl fin-acct"><thead><tr><th>Name</th><th>Bank</th><th>Type</th><th>Currency</th><th>Account no.</th><th>Belongs to</th><th>In the name of</th><th>Opening balance</th><th>on</th><th>Default</th><th>Same account as</th><th></th></tr></thead><tbody>${p.accounts.map((a, i) => `<tr>
       <td><input class="input sm" data-chg="fin-acct" data-i="${i}" data-k="name" value="${esc(a.name)}"></td><td><input class="input sm" data-chg="fin-acct" data-i="${i}" data-k="bank" value="${esc(a.bank || '')}"></td>
       <td><select class="input sm" data-chg="fin-acct" data-i="${i}" data-k="kind">${FIN_AKINDS.map(([k, l]) => `<option value="${k}" ${a.kind === k ? 'selected' : ''}>${l}</option>`).join('')}</select></td>
       <td><select class="input sm" data-chg="fin-acct" data-i="${i}" data-k="currency">${FIN.CURRENCIES.map(k => `<option ${a.currency === k ? 'selected' : ''}>${k}</option>`).join('')}</select></td>
@@ -15197,6 +15197,7 @@ FIN_VIEW.accounts = () => {
       <td><input class="input sm" data-chg="fin-acct" data-i="${i}" data-k="holder" value="${esc(a.holder && a.holder !== 'me' ? a.holder : '')}" placeholder="me"></td>
       <td><input class="input num sm" data-chg="fin-acct" data-i="${i}" data-k="opening" value="${esc(a.opening ?? '')}" inputmode="decimal"></td><td><input class="input sm" type="date" data-chg="fin-acct" data-i="${i}" data-k="openingDate" value="${esc(a.openingDate || '')}"></td>
       <td><input type="radio" name="fin-def" data-act="fin-acct-def" data-id="${esc(a.id)}" ${(finDefAcct() || {}).id === a.id ? 'checked' : ''} aria-label="${esc(a.name)} is the default account" title="Where money goes when nothing says which account"></td>
+      <td><select class="input sm" data-chg="fin-acct-same" data-id="${esc(a.id)}" aria-label="${esc(a.name)} is the same account as" title="Two records of one account (e.g. two numbers of it): join them"><option value="">—</option>${p.accounts.filter(x => x.id !== a.id && (x.kind === a.kind || (x.kind !== 'credit_card' && a.kind !== 'credit_card' && x.kind !== 'bnpl' && a.kind !== 'bnpl'))).map(x => `<option value="${esc(x.id)}">${esc(x.name)}</option>`).join('')}</select></td>
       <td><button class="icon-btn" data-act="fin-acct-del" data-i="${i}" aria-label="Remove">${I.x}</button></td></tr>`).join('')}</tbody></table></div>` : '<p class="small muted">No accounts yet — importing a statement creates one, or add it here.</p>'}
     <button class="btn sm" data-act="fin-acct-add">${I.plus} Account</button>
     <p class="small muted">The default account is where money goes when nothing says which account: what you tell the canvas, a transaction you add, a statement with no number. The opening balance is optional: it lets the app calculate a balance between statements (shown as an estimate). Statement balances are always preferred.</p></section>
@@ -15468,7 +15469,7 @@ const finAcctKey = a => { const n = finNumKey(a.number); return n && a.kind ? [a
 // an account already there for this kind and number (before a statement makes a new one)
 function finAcctSameNumber(kind, number, bank, currency) {
   const k = finAcctKey({ kind, number, bank, currency: currency || finP().base }); if (!k) return null;
-  return finP().accounts.find(a => finAcctKey({ ...a, currency: a.currency || finP().base }) === k) || null;
+  return finP().accounts.find(a => finAcctKey({ ...a, currency: a.currency || finP().base }) === k) || finP().accounts.find(a => a.kind === kind && (a.aliases || []).includes(finNumKey(number))) || null;
 }
 function finJoinDupAccts() {
   if (St.mode === 'viewer' || (St.mode === 'db' && St.colsLoaded && !['prefs', 'fintx', 'finbatch', 'finbal'].every(n => St.colsLoaded.has(n)))) return 0;
@@ -15477,13 +15478,23 @@ function finJoinDupAccts() {
   for (const a of p.accounts) { const k = finAcctKey({ ...a, currency: a.currency || p.base }); if (k) groups.set(k, [...(groups.get(k) || []), a]); }
   for (const [k, g] of groups) if (g.some(a => UI.fin.joinSkip.has(a.id))) groups.delete(k);
   const sets = [...groups.values()].filter(g => g.length > 1); if (!sets.length) return 0;
-  const snap = finSnapshot(), to = new Map(), lines = [];
+  const to = new Map(), lines = [];
   for (const g of sets) {
     const keep = g.slice().sort((x, y) => (y.preset ? 1 : 0) - (x.preset ? 1 : 0) || String(x.createdAt || '').localeCompare(String(y.createdAt || '')))[0];
     for (const a of g) if (a !== keep) to.set(a.id, keep.id);
     const n = finTx().filter(t => g.some(a => a !== keep && a.id === t.acct)).length;
     lines.push(`${keep.name}${finNumKey(keep.number) ? ' ••' + finNumKey(keep.number) : ''}: ${g.length} copies of the same ${keep.kind === 'credit_card' ? 'card' : 'account'} joined into one — ${n} transaction${n === 1 ? '' : 's'} moved to it, nothing removed`);
   }
+  finMergeAccts(to, 'One account was saved twice — I joined the copies:', lines);
+  return sets.length;
+}
+// Joins accounts that are one and the same: everything that named a copy (transactions, statements, balances,
+// settings) is pointed at the one kept; what only a copy knew is kept, its number is remembered as another number of
+// the same account (so a statement or screenshot showing it lands there); the conversation says so, with Undo.
+function finMergeAccts(to, reply, lines) {
+  if (!to.size) return 0;
+  const snap = finSnapshot(), p0 = finP(), tails = new Map();
+  for (const [from, keep] of to) { const a = p0.accounts.find(x => x.id === from); const t = a && finNumKey(a.number); if (t) tails.set(keep, [...(tails.get(keep) || []), t, ...((a && a.aliases) || [])]); }
   // ids are unique random strings, so every place that names a copy is found and pointed at the one kept
   const swap = d => { let j = JSON.stringify(d), hit = false; for (const [from, keep] of to) { const q = JSON.stringify(from); if (j.includes(q)) { j = j.split(q).join(JSON.stringify(keep)); hit = true; } } return hit ? JSON.parse(j) : null; };
   for (const n of ['fintx', 'finbatch', 'finbal']) for (const d of colList(n)) { const x = swap(d); if (x) colPut(n, x); }
@@ -15493,14 +15504,36 @@ function finJoinDupAccts() {
     for (const a of [...accts.filter(x => !to.has(x.id)), ...accts.filter(x => to.has(x.id))]) {   // the one kept first, the copies after
       const id = to.get(a.id) || a.id, k = out.find(x => x.id === id);
       if (!k) { out.push(to.has(a.id) ? { ...a, id } : a); continue; }
-      for (const [f, v] of Object.entries(a)) if (f !== 'id' && f !== 'name' && f !== 'preset' && (k[f] === undefined || k[f] === null || k[f] === '')) k[f] = v;   // what only the copy knew is kept
+      for (const [f, v] of Object.entries(a)) if (!['id', 'name', 'preset', 'number', 'aliases', 'kind'].includes(f) && (k[f] === undefined || k[f] === null || k[f] === '')) k[f] = v;   // what only the copy knew is kept
     }
+    for (const k of out) if (tails.has(k.id)) k.aliases = [...new Set([...(k.aliases || []), ...tails.get(k.id)])].filter(t => t && t !== finNumKey(k.number));
     q.accounts = out;
   });
   FS.key = '';
-  const m = { id: E.uid('tk'), at: nowISO(), who: 'claude', reply: 'One account was saved twice — I joined the copies:', done: [], notes: lines, undoable: true, joined: [...to.keys()] };
+  const m = { id: E.uid('tk'), at: nowISO(), who: 'claude', reply, done: [], notes: lines, undoable: true, joined: [...to.keys()] };
   UI.fin.undo.set(m.id, snap); finTalkPush(m); render();
-  return sets.length;
+  return to.size;
+}
+// you choose it: "this account is the same as that one" (Settings › Accounts, or in words to the canvas)
+function finSameAccount(copyId, keepId, how) {
+  const p = finP(), c = p.accounts.find(a => a.id === copyId), k = p.accounts.find(a => a.id === keepId); if (!c || !k || c === k) return 0;
+  const keep = k.preset || !c.preset ? k : c, copy = keep === k ? c : k, n = finTx().filter(t => t.acct === copy.id).length;
+  return finMergeAccts(new Map([[copy.id, keep.id]]), how || 'Joined as one account:', [`${copy.name} → ${keep.name}: ${n} transaction${n === 1 ? '' : 's'} and its balances moved, nothing removed${finNumKey(copy.number) ? `; ${finNumKey(copy.number)} is now another number of ${keep.name}` : ''}`]);
+}
+document.addEventListener('change', e => { const el = e.target; if (!el || el.dataset.chg !== 'fin-acct-same' || !el.value) return; finSameAccount(el.dataset.id, el.value); toast('Joined — the conversation has Undo.'); });
+// every number an account goes by: its own and the ones it was joined with
+const finAcctTails = a => [finNumKey(a.number), ...(a.aliases || [])].filter(t => t && t.length === 4);
+// you said: Account ••0120 is your Primary account ••0012 (one account, two numbers) — joined once
+function finSameAs0120() {
+  if (St.mode === 'viewer' || (St.mode === 'db' && St.colsLoaded && !['prefs', 'fintx', 'finbatch', 'finbal'].every(n => St.colsLoaded.has(n)))) return 0;
+  const p = finP(); if (!p.presetsV1 || p.same0120) return 0;
+  const keep = p.accounts.find(a => a.preset && finNumKey(a.number) === '0012' && a.kind === 'current');
+  if (!keep) return 0;
+  const copies = p.accounts.filter(a => a !== keep && a.kind === 'current' && finAcctTails(a).includes('0120'));
+  finSave(q => { q.same0120 = true; const k = q.accounts.find(a => a.id === keep.id); if (k) k.aliases = [...new Set([...(k.aliases || []), '0120'])]; });
+  if (!copies.length) return 0;
+  const n = finTx().filter(t => copies.some(c => c.id === t.acct)).length;
+  return finMergeAccts(new Map(copies.map(c => [c.id, keep.id])), 'You said ••0120 is your Primary account ••0012 — I joined them:', [`${copies.map(c => c.name).join(', ')} → ${keep.name}: ${n} transaction${n === 1 ? '' : 's'} and its balances moved, nothing removed; statements or screenshots showing 0120 go to ${keep.name} from now on`]);
 }
 HOOKS.beforeRender.push(() => { if (UI.view === 'finance' && St.ready && !finP().presetsV1) setTimeout(finEnsurePresets, 0); });
 
@@ -16584,6 +16617,7 @@ async function finTalkSend() {
 const FIN_TALK_RULES = `
 YOU ARE TALKING WITH THE OWNER THROUGH THEIR MONEY CANVAS. Besides the fields above, the JSON may also have:
 "transactions":[{"account":"id from accounts; when the owner names no account use the one marked default; null only when it was paid in cash","cash":true when paid in cash,"date":"YYYY-MM-DD","amount":number (negative = money out),"desc":"","category":"id from categories"}] — money the owner says they spent or received that no statement shows yet,
+"sameAccounts":[{"keep":"id from accounts","copy":"id from accounts"}] — only when the owner says two accounts are one and the same account (e.g. two numbers of one account),
 "goalUpdates":[{"id":"id from purchaseGoals","bought":true or false,"delete":true or false,"price":number or null,"wantBy":"YYYY-MM-DD or null","priority":1-3 or null}],
 "view":{"open":"dash|update|import|ledger|exp|inc|budget|sim|forecast|buy|credit|accounts|own|settings or null","focus":"accts|inc|exp|com|own|third|buy or null","dir":"h|v|null"},
 "notes":["one short line for each thing you assumed or could not do"],
@@ -16616,6 +16650,7 @@ async function finTalkClaude(m, text, imgs, about) {
 // money you mentioned and changes to your goals
 function finTalkExtras(r) {
   const done = [], at = nowISO(), today = finToday(), num = v => typeof v === 'number' ? v : (FIN.parseNum(String(v ?? '')) || {}).n ?? null;
+  for (const x of Array.isArray(r.sameAccounts) ? r.sameAccounts.slice(0, 4) : []) if (x && finAcct(x.keep) && finAcct(x.copy) && x.keep !== x.copy) { const a = finAcct(x.copy).name, b = finAcct(x.keep).name; if (finSameAccount(x.copy, x.keep, 'You said these are one account — I joined them:')) done.push(`${a} joined into ${b}`); }
   const add = [];
   for (const x of Array.isArray(r.transactions) ? r.transactions : []) {
     const amount = num(x.amount); if (!amount) continue;
@@ -16745,6 +16780,7 @@ async function finAutoFix(inTalk) {
 HOOKS.afterRender.push(() => {
   if (UI.view !== 'finance' || UI.fin.fixing || UI.fin.talk.busy || UI.fin.autoQ) return;
   if (St.mode === 'db' && St.colsLoaded && !['prefs', 'fintx', 'finbatch'].every(n => St.colsLoaded.has(n))) return;
+  if (finSameAs0120()) return;   // you said ••0120 is ••0012
   if (finJoinDupAccts()) return;   // one account saved twice: joined first (always, it only moves things)
   if (finP().autoFix === false) return;
   const stale = typeof FIN_READER !== 'undefined' ? colList('finbatch').filter(b => !b.undone && (b.reader || 1) < FIN_READER && b.asset) : [];

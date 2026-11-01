@@ -25,6 +25,7 @@ let g; Object.defineProperty(window, '__mockAnswer', { configurable: true, get()
     if (/show me my card/i.test(msg)) return { view: { open: 'credit' }, reply: 'Here is your card.' };
     if (/bank app screen/i.test(msg)) return { balances: [{ account: null, newAccount: { name: 'NBE', kind: 'current', number: 'EG12 0003 0004 0000 0000 0000 0120' }, date: ctx.today, balance: 7000, available: 6500, evidence: 'screenshot: Available Balance 6,500 · equivalent 7,000' }], reply: 'Read your balance.' };
     if (/paid 50 for parking/i.test(msg)) return { transactions: [{ account: null, date: ctx.today, amount: -50, desc: 'Parking', category: 'transport' }], reply: 'Added.' };
+    if (/are the same account/i.test(msg)) { const a12 = ctx.accounts.find(a => /0012$/.test(a.number)), x = ctx.accounts.find(a => /0777$/.test(a.number)); return { sameAccounts: [{ keep: a12.id, copy: x.id }], reply: 'Joined.' }; }
     if (/only this card/i.test(msg)) { const a12 = ctx.accounts.find(a => /0012$/.test(a.number)), a13 = ctx.accounts.find(a => /0013$/.test(a.number));
       return { balances: [{ account: a12.id, date: ctx.today, balance: 12345, evidence: 'said' }, { account: a13.id, date: ctx.today, balance: 999, evidence: 'said' }], inputs: [{ key: 'salary', label: 'Salary', kind: 'income', amount: 1, from: ctx.today, permanent: true }],
         goals: [{ name: 'Boat', price: 5 }], transactions: [{ account: null, date: ctx.today, amount: -77, desc: 'Snack', category: 'dining' }, { account: a13.id, date: ctx.today, amount: -55, desc: 'Elsewhere', category: 'dining' }], reply: 'Done for this card.' }; }
@@ -341,6 +342,24 @@ async def main():
         await ev("window.__FIN.open('map')"); await pg.wait_for_timeout(300)
         card = await ev(f"document.querySelector('[data-node=\"a:{a12['id']}\"]').textContent"); print('CARD', ' '.join(card.split()))
         assert '6,450' in card and 'since' in card, 'the card shows the new balance and what changed since'
+        # one account with two numbers: ••0120 is the Primary account ••0012 — joined (transactions and balances moved,
+        # nothing removed); 0120 is remembered as its other number; Settings and words can join accounts too
+        mk = lambda num: f"""(() => {{ const St = window.__AR.St, p = JSON.parse(JSON.stringify(St.cols.prefs.get('finance'))), id = 'acx{num}'; p.accounts.push({{ id, name: 'Account ••{num}', kind: 'current', number: '{num}', currency: 'EGP', owner: 'me', holder: 'me', createdAt: new Date().toISOString() }}); p.same0120 = false; p.updatedAt = new Date().toISOString(); St.cols.prefs.set('finance', p);
+          const d = [...St.cols.fintx.values()].pop(); d.tx.push({{ id: 'txx{num}', acct: id, date: '2026-10-30', amount: -321, desc: 'SHOP {num}', cat: 'other_exp', src: {{ f: '' }} }}); d.updatedAt = new Date().toISOString(); return id; }})()"""
+        n_tx = await ev("window.__FIN.tx().length"); x120 = await ev(mk('0120'))
+        await ev("window.__FIN.open('map')"); await pg.wait_for_timeout(600)
+        P = await ev("window.__FIN.prefs()")
+        assert not any(a['id'] == x120 for a in P['accounts']) and '0120' in next(a for a in P['accounts'] if a['id'] == a12['id']).get('aliases', []), 'joined; 0120 is another number of ••0012'
+        assert await ev("window.__FIN.tx().find(t => t.id === 'txx0120').acct") == a12['id'] and await ev("window.__FIN.tx().length") == n_tx + 1, 'its transactions moved, nothing removed'
+        assert 'joined' in await pg.text_content('#fin-talk-feed')
+        x777 = await ev(mk('0777')); await ev("window.__AR.UI.fin.cvOpen = []"); await ev("window.__FIN.open('accounts')"); await pg.wait_for_timeout(500)
+        await ev(f"(() => {{ const s = document.querySelector('select[data-chg=\"fin-acct-same\"][data-id=\"{x777}\"]'); s.value = '{a12['id']}'; s.dispatchEvent(new Event('change', {{ bubbles: true }})); }})()"); await pg.wait_for_timeout(300)
+        assert not any(a['id'] == x777 for a in (await ev("window.__FIN.prefs()"))['accounts']), 'Settings › Same account as: joined'
+        await pg.click('#fin-talk-feed .fin-msg:last-child [data-act="fin-talk-undo"]'); await pg.wait_for_timeout(300)
+        assert any(a['id'] == x777 for a in (await ev("window.__FIN.prefs()"))['accounts']), 'Undo separates them again'
+        await ev("window.__FIN.open('map')"); await pg.wait_for_timeout(300)
+        await say('Account 0777 and my primary account are the same account')
+        assert not any(a['id'] == x777 for a in (await ev("window.__FIN.prefs()"))['accounts']), 'said in words: joined'
         # in full screen the window is there too
         await pg.click('[data-act="fin-cv-full"]'); await pg.wait_for_timeout(250); await ev("document.activeElement && document.activeElement.blur()"); await pg.keyboard.press('t'); await pg.wait_for_timeout(250)
         assert await ev("!!document.querySelector('.fin-cvwrap.full #fin-talk-win #fin-talk-in')"), 'Tell the canvas in full screen'

@@ -173,4 +173,4 @@ a { color: var(--wine); }
 .srv-tag:hover { border-style: solid; background: color-mix(in srgb, var(--ok) 14%, var(--surface)); color: var(--ok); }
 .srv-tag:hover::after { content: " ✓"; }
 .thn-list li { position: relative; }
-.thn-list li > .srv-tag { margin: 2px 0 2px 28px; justify-self: start; }
+.thn-fx .srv-tag { margin-right: 2px; }

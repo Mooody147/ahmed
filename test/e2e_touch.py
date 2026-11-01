@@ -3,7 +3,7 @@ panel inside the tool (pen types, width, colours, any colour), pressure response
 action, two-finger zoom off, tap & hold item picker and lasso, four-finger tap), hover preview, the More menu scrolls
 to its last item on a short screen, and no hint sentence on the canvas."""
 import asyncio, os, sys
-os.environ['AR_PAGE'] = 'action-register-lite.html'
+os.environ['AR_PAGE'] = os.environ.get('AR_PAGE_OVERRIDE', 'action-register-lite.html')
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from playwright.async_api import async_playwright
 from harness import *
@@ -118,7 +118,11 @@ async def main():
         await ev("window.__AR.UI.cvSel.clear(); 0")
         await pg.click('.cv-sub [data-act="touch-open"]'); await pg.click('.ts-sheet [data-k="holdAct"][data-v="pick"]'); await pg.click('[data-act="touch-close"]'); await pg.wait_for_timeout(200)
         nb = await bbox(f'[data-el="{sid}"]'); x1 = await ev(f"window.__AR.St.board.get('{sid}').x")
-        await pen(seg((nb['x'] + 50, nb['y'] + 50), (nb['x'] + 130, nb['y'] + 90), 10), hold=650)
+        # a point of the note that is not covered by a card (the layout around it moves as dates pass)
+        px, py = await ev(f"""(() => {{ const el = document.querySelector('[data-el="{sid}"]'), r = el.getBoundingClientRect();
+          for (let fy = 0.2; fy < 0.9; fy += 0.1) for (let fx = 0.2; fx < 0.9; fx += 0.1) {{ const x = r.left + r.width * fx, y = r.top + r.height * fy, e = document.elementFromPoint(x, y); if (e && e.closest('[data-el="{sid}"]')) return [x, y]; }}
+          return [r.left + 50, r.top + 50]; }})()""")
+        await pen(seg((px, py), (px + 80, py + 40), 10), hold=650)
         x2 = await ev(f"window.__AR.St.board.get('{sid}').x"); print('PICK MOVE', x1, '→', x2)
         assert x2 > x1 + 20, 'item picker: the held note moves with the pen'
 

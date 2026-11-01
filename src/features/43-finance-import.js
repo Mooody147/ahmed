@@ -68,23 +68,23 @@ function finPickAcct(it, kind) {
   // the number decides: when the number read first is not one of yours (a statement may show the debit card's number
   // before the account's), another long number on it — or the file name, like "012" — that ends like exactly one of
   // your accounts names it; that account's kind then counts, whatever the words said
-  const mine = p.accounts.filter(a => FIN.last4(a.number).length === 4);
-  let known = num ? mine.find(a => FIN.last4(a.number) === num) : null;
+  const mine = p.accounts.filter(a => finAcctTails(a).length);
+  let known = num ? mine.find(a => finAcctTails(a).includes(num)) : null;
   if (!known) {
     const runs = [...new Set(String(head).replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).match(/[\d*xX•][\d *xX•-]{6,}\d/g) || [])].filter(r => r.replace(/[^\d*xX•]/g, '').length >= 8 && !/^\d{1,4}[-/. ]\d{1,2}[-/. ]\d{1,4}$/.test(r.trim()));
-    const hits = [...new Set(runs.map(r => FIN.last4(r)).filter(l => mine.some(a => FIN.last4(a.number) === l)))];
-    if (hits.length === 1) known = mine.find(a => FIN.last4(a.number) === hits[0]);
+    const hits = [...new Set(runs.map(r => FIN.last4(r)).filter(l => mine.some(a => finAcctTails(a).includes(l))))];
+    if (hits.length === 1) known = mine.find(a => finAcctTails(a).includes(hits[0]));
   }
   if (!known) {
-    const fn = (String(it.name).replace(/\.[a-z0-9]+$/i, '').match(/\d{3,}/g) || []).map(d => d.slice(-4)), hit = mine.filter(a => fn.some(d => FIN.last4(a.number).endsWith(d)));
+    const fn = (String(it.name).replace(/\.[a-z0-9]+$/i, '').match(/\d{3,}/g) || []).map(d => d.slice(-4)), hit = mine.filter(a => fn.some(d => finAcctTails(a).some(t => t.endsWith(d))));
     if (hit.length === 1) known = hit[0];
   }
-  if (known) { num = FIN.last4(known.number); kind = known.kind; }
+  if (known) { num = finAcctTails(known).includes(num) ? num : FIN.last4(known.number); kind = known.kind; }
   // a first reading with this kind of account, to compare its lines
   it.acct = ''; it.newAcct = { kind, currency: cur || p.base, bank, name: '' }; finParse(it);
   const scored = p.accounts.map(a => {
     let sc = 0; const why = [];
-    if (num && a.number) { if (FIN.last4(a.number) === num) { sc += 10; why.push('same account number'); } else sc -= 100; }
+    if (num && a.number) { if (finAcctTails(a).includes(num)) { sc += 10; why.push('same account number'); } else sc -= 100; }
     if (a.kind !== kind) sc -= 3;
     if (cur && a.currency && a.currency !== cur) sc -= 100;
     if (bank && a.bank) { if (FIN.norm(a.bank) === FIN.norm(bank)) { sc += 3; why.push('same bank'); } else sc -= 5; }

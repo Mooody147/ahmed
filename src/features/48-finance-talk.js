@@ -121,6 +121,7 @@ async function finTalkSend() {
 const FIN_TALK_RULES = `
 YOU ARE TALKING WITH THE OWNER THROUGH THEIR MONEY CANVAS. Besides the fields above, the JSON may also have:
 "transactions":[{"account":"id from accounts; when the owner names no account use the one marked default; null only when it was paid in cash","cash":true when paid in cash,"date":"YYYY-MM-DD","amount":number (negative = money out),"desc":"","category":"id from categories"}] — money the owner says they spent or received that no statement shows yet,
+"sameAccounts":[{"keep":"id from accounts","copy":"id from accounts"}] — only when the owner says two accounts are one and the same account (e.g. two numbers of one account),
 "goalUpdates":[{"id":"id from purchaseGoals","bought":true or false,"delete":true or false,"price":number or null,"wantBy":"YYYY-MM-DD or null","priority":1-3 or null}],
 "view":{"open":"dash|update|import|ledger|exp|inc|budget|sim|forecast|buy|credit|accounts|own|settings or null","focus":"accts|inc|exp|com|own|third|buy or null","dir":"h|v|null"},
 "notes":["one short line for each thing you assumed or could not do"],
@@ -153,6 +154,7 @@ async function finTalkClaude(m, text, imgs, about) {
 // money you mentioned and changes to your goals
 function finTalkExtras(r) {
   const done = [], at = nowISO(), today = finToday(), num = v => typeof v === 'number' ? v : (FIN.parseNum(String(v ?? '')) || {}).n ?? null;
+  for (const x of Array.isArray(r.sameAccounts) ? r.sameAccounts.slice(0, 4) : []) if (x && finAcct(x.keep) && finAcct(x.copy) && x.keep !== x.copy) { const a = finAcct(x.copy).name, b = finAcct(x.keep).name; if (finSameAccount(x.copy, x.keep, 'You said these are one account — I joined them:')) done.push(`${a} joined into ${b}`); }
   const add = [];
   for (const x of Array.isArray(r.transactions) ? r.transactions : []) {
     const amount = num(x.amount); if (!amount) continue;
@@ -282,6 +284,7 @@ async function finAutoFix(inTalk) {
 HOOKS.afterRender.push(() => {
   if (UI.view !== 'finance' || UI.fin.fixing || UI.fin.talk.busy || UI.fin.autoQ) return;
   if (St.mode === 'db' && St.colsLoaded && !['prefs', 'fintx', 'finbatch'].every(n => St.colsLoaded.has(n))) return;
+  if (finSameAs0120()) return;   // you said ••0120 is ••0012
   if (finJoinDupAccts()) return;   // one account saved twice: joined first (always, it only moves things)
   if (finP().autoFix === false) return;
   const stale = typeof FIN_READER !== 'undefined' ? colList('finbatch').filter(b => !b.undone && (b.reader || 1) < FIN_READER && b.asset) : [];

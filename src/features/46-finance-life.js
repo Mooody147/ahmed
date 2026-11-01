@@ -66,7 +66,7 @@ const finAcctKey = a => { const n = finNumKey(a.number); return n && a.kind ? [a
 // an account already there for this kind and number (before a statement makes a new one)
 function finAcctSameNumber(kind, number, bank, currency) {
   const k = finAcctKey({ kind, number, bank, currency: currency || finP().base }); if (!k) return null;
-  return finP().accounts.find(a => finAcctKey({ ...a, currency: a.currency || finP().base }) === k) || null;
+  return finP().accounts.find(a => finAcctKey({ ...a, currency: a.currency || finP().base }) === k) || finP().accounts.find(a => a.kind === kind && (a.aliases || []).includes(finNumKey(number))) || null;
 }
 function finJoinDupAccts() {
   if (St.mode === 'viewer' || (St.mode === 'db' && St.colsLoaded && !['prefs', 'fintx', 'finbatch', 'finbal'].every(n => St.colsLoaded.has(n)))) return 0;
@@ -75,13 +75,23 @@ function finJoinDupAccts() {
   for (const a of p.accounts) { const k = finAcctKey({ ...a, currency: a.currency || p.base }); if (k) groups.set(k, [...(groups.get(k) || []), a]); }
   for (const [k, g] of groups) if (g.some(a => UI.fin.joinSkip.has(a.id))) groups.delete(k);
   const sets = [...groups.values()].filter(g => g.length > 1); if (!sets.length) return 0;
-  const snap = finSnapshot(), to = new Map(), lines = [];
+  const to = new Map(), lines = [];
   for (const g of sets) {
     const keep = g.slice().sort((x, y) => (y.preset ? 1 : 0) - (x.preset ? 1 : 0) || String(x.createdAt || '').localeCompare(String(y.createdAt || '')))[0];
     for (const a of g) if (a !== keep) to.set(a.id, keep.id);
     const n = finTx().filter(t => g.some(a => a !== keep && a.id === t.acct)).length;
     lines.push(`${keep.name}${finNumKey(keep.number) ? ' ••' + finNumKey(keep.number) : ''}: ${g.length} copies of the same ${keep.kind === 'credit_card' ? 'card' : 'account'} joined into one — ${n} transaction${n === 1 ? '' : 's'} moved to it, nothing removed`);
   }
+  finMergeAccts(to, 'One account was saved twice — I joined the copies:', lines);
+  return sets.length;
+}
+// Joins accounts that are one and the same: everything that named a copy (transactions, statements, balances,
+// settings) is pointed at the one kept; what only a copy knew is kept, its number is remembered as another number of
+// the same account (so a statement or screenshot showing it lands there); the conversation says so, with Undo.
+function finMergeAccts(to, reply, lines) {
+  if (!to.size) return 0;
+  const snap = finSnapshot(), p0 = finP(), tails = new Map();
+  for (const [from, keep] of to) { const a = p0.accounts.find(x => x.id === from); const t = a && finNumKey(a.number); if (t) tails.set(keep, [...(tails.get(keep) || []), t, ...((a && a.aliases) || [])]); }
   // ids are unique random strings, so every place that names a copy is found and pointed at the one kept
   const swap = d => { let j = JSON.stringify(d), hit = false; for (const [from, keep] of to) { const q = JSON.stringify(from); if (j.includes(q)) { j = j.split(q).join(JSON.stringify(keep)); hit = true; } } return hit ? JSON.parse(j) : null; };
   for (const n of ['fintx', 'finbatch', 'finbal']) for (const d of colList(n)) { const x = swap(d); if (x) colPut(n, x); }
@@ -91,14 +101,36 @@ function finJoinDupAccts() {
     for (const a of [...accts.filter(x => !to.has(x.id)), ...accts.filter(x => to.has(x.id))]) {   // the one kept first, the copies after
       const id = to.get(a.id) || a.id, k = out.find(x => x.id === id);
       if (!k) { out.push(to.has(a.id) ? { ...a, id } : a); continue; }
-      for (const [f, v] of Object.entries(a)) if (f !== 'id' && f !== 'name' && f !== 'preset' && (k[f] === undefined || k[f] === null || k[f] === '')) k[f] = v;   // what only the copy knew is kept
+      for (const [f, v] of Object.entries(a)) if (!['id', 'name', 'preset', 'number', 'aliases', 'kind'].includes(f) && (k[f] === undefined || k[f] === null || k[f] === '')) k[f] = v;   // what only the copy knew is kept
     }
+    for (const k of out) if (tails.has(k.id)) k.aliases = [...new Set([...(k.aliases || []), ...tails.get(k.id)])].filter(t => t && t !== finNumKey(k.number));
     q.accounts = out;
   });
   FS.key = '';
-  const m = { id: E.uid('tk'), at: nowISO(), who: 'claude', reply: 'One account was saved twice — I joined the copies:', done: [], notes: lines, undoable: true, joined: [...to.keys()] };
+  const m = { id: E.uid('tk'), at: nowISO(), who: 'claude', reply, done: [], notes: lines, undoable: true, joined: [...to.keys()] };
   UI.fin.undo.set(m.id, snap); finTalkPush(m); render();
-  return sets.length;
+  return to.size;
+}
+// you choose it: "this account is the same as that one" (Settings › Accounts, or in words to the canvas)
+function finSameAccount(copyId, keepId, how) {
+  const p = finP(), c = p.accounts.find(a => a.id === copyId), k = p.accounts.find(a => a.id === keepId); if (!c || !k || c === k) return 0;
+  const keep = k.preset || !c.preset ? k : c, copy = keep === k ? c : k, n = finTx().filter(t => t.acct === copy.id).length;
+  return finMergeAccts(new Map([[copy.id, keep.id]]), how || 'Joined as one account:', [`${copy.name} → ${keep.name}: ${n} transaction${n === 1 ? '' : 's'} and its balances moved, nothing removed${finNumKey(copy.number) ? `; ${finNumKey(copy.number)} is now another number of ${keep.name}` : ''}`]);
+}
+document.addEventListener('change', e => { const el = e.target; if (!el || el.dataset.chg !== 'fin-acct-same' || !el.value) return; finSameAccount(el.dataset.id, el.value); toast('Joined — the conversation has Undo.'); });
+// every number an account goes by: its own and the ones it was joined with
+const finAcctTails = a => [finNumKey(a.number), ...(a.aliases || [])].filter(t => t && t.length === 4);
+// you said: Account ••0120 is your Primary account ••0012 (one account, two numbers) — joined once
+function finSameAs0120() {
+  if (St.mode === 'viewer' || (St.mode === 'db' && St.colsLoaded && !['prefs', 'fintx', 'finbatch', 'finbal'].every(n => St.colsLoaded.has(n)))) return 0;
+  const p = finP(); if (!p.presetsV1 || p.same0120) return 0;
+  const keep = p.accounts.find(a => a.preset && finNumKey(a.number) === '0012' && a.kind === 'current');
+  if (!keep) return 0;
+  const copies = p.accounts.filter(a => a !== keep && a.kind === 'current' && finAcctTails(a).includes('0120'));
+  finSave(q => { q.same0120 = true; const k = q.accounts.find(a => a.id === keep.id); if (k) k.aliases = [...new Set([...(k.aliases || []), '0120'])]; });
+  if (!copies.length) return 0;
+  const n = finTx().filter(t => copies.some(c => c.id === t.acct)).length;
+  return finMergeAccts(new Map(copies.map(c => [c.id, keep.id])), 'You said ••0120 is your Primary account ••0012 — I joined them:', [`${copies.map(c => c.name).join(', ')} → ${keep.name}: ${n} transaction${n === 1 ? '' : 's'} and its balances moved, nothing removed; statements or screenshots showing 0120 go to ${keep.name} from now on`]);
 }
 HOOKS.beforeRender.push(() => { if (UI.view === 'finance' && St.ready && !finP().presetsV1) setTimeout(finEnsurePresets, 0); });
 
