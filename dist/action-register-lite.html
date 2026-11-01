@@ -2535,6 +2535,13 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 .fin-gc-steps li::before { content: ""; position: absolute; left: -6px; top: 11px; width: 10px; height: 10px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 3px var(--surface); }
 .fin-gc-steps .d { font-weight: 700; color: var(--ink-2); white-space: nowrap; }
 
+/* ---------- what each card is, in one line ---------- */
+.mnode.fin-leaf.has-d { padding-bottom: 22px; }
+.mnode.fin-leaf .fin-cv-d { position: absolute; left: 12px; right: 10px; bottom: 6px; font-size: 10.5px; line-height: 1.3; color: var(--ink-3); font-style: italic; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; }
+.fin-cv-vp.z-far .mnode.fin-leaf.has-d { padding-bottom: 7px; }
+.fin-cv-vp.z-far .fin-leaf .fin-cv-d { display: none; }
+.mnode.fin-leaf .mtxt { min-width: 0; }
+
 </style>
 <div class="titlestrip" id="titlestrip"><span class="ts-brand"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c3.3 4 6 7.2 6 10.4a6 6 0 0 1-12 0C6 10.2 8.7 7 12 3z"/><path d="m9.3 13.6 1.9 1.9 3.6-4.1"/></svg> Action Register</span><button class="ts-search" data-act="palette" title="Search and commands (Ctrl+K)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg><span>Search or type a command</span><kbd>Ctrl K</kbd></button><span class="ts-space"></span></div>
 <div class="app">
@@ -16253,7 +16260,7 @@ function finCvModel() {
 function finCvIndex(root) { const m = new Map(), walk = n => { m.set(n.id, [n.label, n.val || '', n.sub || '', n.sum || ''].join('|')); (n.children || []).forEach(walk); }; walk(root || finCvModel()); return m; }
 
 /* --- rooms: each topic its own area of the canvas, laid out in columns; the big ones span the whole width --- */
-const FR = { W: 568, GAP: 44, COLS: 3, PAD: 18, HEAD: 70, CG: 12, CW: 260, CH: 56, SW: 360, SH: 64, IW: 560, IH: 64 };
+const FR = { W: 568, GAP: 44, COLS: 3, PAD: 18, HEAD: 70, CG: 12, CW: 260, CH: 74, SW: 360, SH: 82, IW: 560, IH: 82 };   // cards are tall enough for a line saying what they are
 FR.FULL = FR.COLS * FR.W + (FR.COLS - 1) * FR.GAP;
 // which room a part opens next to
 const FIN_SEC_ROOM = { dash: 'ov', accounts: 'accts', import: 'accts', ledger: 'accts', update: 'accts', inc: 'inc', sim: 'inc', exp: 'exp', budget: 'exp', credit: 'com', own: 'own', forecast: 'buy' };
@@ -16508,8 +16515,9 @@ function finCvCard(c, hue) {
   const act = tool || c.cls.includes('more') ? { act: 'fin-cv-sec', s: (c.act && c.act.s) || 'ledger' } : c.act && c.act.act === 'fin-cv-add' ? c.act : { act: 'fin-cv-det', id: c.id };
   const editable = typeof finCvSpec === 'function' && !tool && !c.cls.includes('more') && !!finCvSpec(c.id);
   const brand = typeof finCardBrand === 'function' ? finCardBrand(c) : null;   // a company's card shows its logo
-  return `<div class="mnode fin-cvn fin-leaf ${c.cls}${open}${fresh}${editable ? ' editable' : ''}" role="button" tabindex="0" aria-expanded="${!!open}" ${finCvAttrs(act)} data-node="${esc(c.id)}" title="${esc(c.label)}${c.val ? ' — ' + esc(c.val) : ''}${c.sub ? '\n' + esc(c.sub) : ''}" style="${st}">
-    ${brand ? finLogo(brand, 'card') : c.icon ? `<span class="gicon fin-cv-ic" aria-hidden="true">${c.icon}</span>` : ''}<div class="mtxt"><b>${tool ? '<span class="fin-tool-i" aria-hidden="true">' + (FIN_ICON[act.s] || '') + '</span>' : ''}${esc(c.label)}</b>${c.sub ? `<small>${esc(c.sub)}</small>` : ''}</div>${c.val ? `<span class="fin-cv-v num">${esc(c.val)}</span>` : ''}${c.spark && typeof finSparkSVG === 'function' ? finSparkSVG(c.spark, c.sparkCls) : ''}${c.prog ? `<i class="fin-prog" style="width:${Math.round(c.prog * 100)}%" title="${Math.round(c.prog * 100)}% from cash now"></i>` : ''}${editable ? `<button class="fin-cv-btn ed" data-act="fin-cv-edit" data-id="${esc(c.id)}" title="Edit (or double-tap, F2)" aria-label="Edit ${esc(c.label)}">✎</button>` : ''}</div>`;
+  const desc = typeof finCardDesc === 'function' ? finCardDesc(c) : '';   // what it is and how it works, in one line
+  return `<div class="mnode fin-cvn fin-leaf ${c.cls}${open}${fresh}${editable ? ' editable' : ''}${desc ? ' has-d' : ''}" role="button" tabindex="0" aria-expanded="${!!open}" ${finCvAttrs(act)} data-node="${esc(c.id)}" title="${esc(c.label)}${c.val ? ' — ' + esc(c.val) : ''}${c.sub ? '\n' + esc(c.sub) : ''}" style="${st}">
+    ${brand ? finLogo(brand, 'card') : c.icon ? `<span class="gicon fin-cv-ic" aria-hidden="true">${c.icon}</span>` : ''}<div class="mtxt"><b>${tool ? '<span class="fin-tool-i" aria-hidden="true">' + (FIN_ICON[act.s] || '') + '</span>' : ''}${esc(c.label)}</b>${c.sub ? `<small>${esc(c.sub)}</small>` : ''}</div>${desc ? `<small class="fin-cv-d">${esc(desc)}</small>` : ''}${c.val ? `<span class="fin-cv-v num">${esc(c.val)}</span>` : ''}${c.spark && typeof finSparkSVG === 'function' ? finSparkSVG(c.spark, c.sparkCls) : ''}${c.prog ? `<i class="fin-prog" style="width:${Math.round(c.prog * 100)}%" title="${Math.round(c.prog * 100)}% from cash now"></i>` : ''}${editable ? `<button class="fin-cv-btn ed" data-act="fin-cv-edit" data-id="${esc(c.id)}" title="Edit (or double-tap, F2)" aria-label="Edit ${esc(c.label)}">✎</button>` : ''}</div>`;
 }
 function finCvRoom(r) {
   const folded = UI.fin.cvCol.has(r.id), fresh = Date.now() < UI.fin.flash.until && UI.fin.flash.ids.has(r.id) ? ' fresh' : '';
@@ -18867,6 +18875,37 @@ function finRecMark(key, v, since) {
 }
 Object.assign(ACT, { 'fin-rec-mark': el => finRecMark(el.dataset.id, el.dataset.v) });
 Object.assign(window.__FIN, { rec: () => finRec(), recTimeline: () => finRecTimeline().map(r => ({ m: r.m, total: r.total, running: r.running.map(i => i.name), added: r.added.map(i => i.name), stopped: r.stopped.map(i => i.name), stoppedMonthly: r.stoppedMonthly, savedSoFar: r.savedSoFar })), recMark: (k, v, s) => finRecMark(k, v, s) });
+
+/* ===== features/63-finance-cardinfo.js ===== */
+// Money canvas — every card says, in one short line under it, what it represents and how it works ("Money in your bank
+// account", "What you owe · free = limit − owed", "Subscription · counted while it runs"…) — short enough to be read
+// whole on the narrowest card. Hidden when zoomed far out, where a card is only its name over its figure.
+
+function finCardDesc(c) {
+  if (!c || !c.id) return '';
+  const id = c.id, k = id.split(/[:~]/)[0], key = id.slice(id.indexOf(':') + 1);
+  if ((c.cls || '').includes('tool') || (c.cls || '').includes('more') || /:none$/.test(id)) return '';
+  if (k === 'a') { const a = finAcct(key); if (!a) return ''; return a.kind === 'credit_card' ? 'What you owe · free = limit − owed' : a.kind === 'bnpl' ? 'Instalment credit you can use' : a.kind === 'cash' ? 'Cash in hand' : 'Money in your bank account'; }
+  if (k === 'in') return id === 'in:cib' ? 'Passive income · your investment pays' : id === 'in:salary' ? 'Your salary, each month' : 'Income that comes in again';
+  if (k === 'c') return 'Your usual month in this category';
+  if (k === 'rc') { if (id === 'rc~months') return 'Added, stopped and saved, by month';
+    const it = typeof finRec === 'function' ? finRec().items.find(i => 'rc:' + i.key === id) : null; if (!it) return '';
+    if (it.status === 'verify') return 'Not counted until you confirm';
+    if (it.status === 'ended') return 'Stopped · no longer counted';
+    return it.kind === 'inst' ? 'Instalment · monthly until it ends' : it.group === 'subs' ? 'Subscription · counted while it runs' : it.group === 'fixed' ? 'Fixed · same amount every month' : 'Repeats · same amount each time'; }
+  if (k === 'i') return 'Monthly until its last payment';
+  if (k === 'cm') return id === 'cm:card' ? 'Minimum payment and its due date' : 'Free limit and its terms';
+  if (k === 'h') return 'You own it · one of your assets';
+  if (k === 'l') return 'Still to pay · a liability';
+  if (k === 't') return 'Their money · never counted as yours';
+  if (k === 'th') return 'Belongs to someone else';
+  if (k === 'b') return 'A planned purchase · checked for you';
+  if (k === 'g') return 'A savings goal · saved monthly';
+  if (k === 'src') return { 'src:cash': 'After reserve and others’ money', 'src:save': 'Left each month after spending', 'src:card': 'Your free card limit', 'src:halan': 'Your free Halan limit' }[id] || '';
+  if (k === 'd') return 'Sorted by Claude · you can change it';
+  if (k === 'q') return 'A question for you';
+  return '';
+}
 
 /* ---------- boot ---------- */
 const startView = (location.hash || '').replace('#', '');

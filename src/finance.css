@@ -746,3 +746,10 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 .fin-gc-steps li { position: relative; display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 8px; padding: 6px 0 6px 14px; font-size: 13px; }
 .fin-gc-steps li::before { content: ""; position: absolute; left: -6px; top: 11px; width: 10px; height: 10px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 3px var(--surface); }
 .fin-gc-steps .d { font-weight: 700; color: var(--ink-2); white-space: nowrap; }
+
+/* ---------- what each card is, in one line ---------- */
+.mnode.fin-leaf.has-d { padding-bottom: 22px; }
+.mnode.fin-leaf .fin-cv-d { position: absolute; left: 12px; right: 10px; bottom: 6px; font-size: 10.5px; line-height: 1.3; color: var(--ink-3); font-style: italic; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; }
+.fin-cv-vp.z-far .mnode.fin-leaf.has-d { padding-bottom: 7px; }
+.fin-cv-vp.z-far .fin-leaf .fin-cv-d { display: none; }
+.mnode.fin-leaf .mtxt { min-width: 0; }

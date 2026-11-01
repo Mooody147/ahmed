@@ -114,7 +114,7 @@ function finCvModel() {
 function finCvIndex(root) { const m = new Map(), walk = n => { m.set(n.id, [n.label, n.val || '', n.sub || '', n.sum || ''].join('|')); (n.children || []).forEach(walk); }; walk(root || finCvModel()); return m; }
 
 /* --- rooms: each topic its own area of the canvas, laid out in columns; the big ones span the whole width --- */
-const FR = { W: 568, GAP: 44, COLS: 3, PAD: 18, HEAD: 70, CG: 12, CW: 260, CH: 56, SW: 360, SH: 64, IW: 560, IH: 64 };
+const FR = { W: 568, GAP: 44, COLS: 3, PAD: 18, HEAD: 70, CG: 12, CW: 260, CH: 74, SW: 360, SH: 82, IW: 560, IH: 82 };   // cards are tall enough for a line saying what they are
 FR.FULL = FR.COLS * FR.W + (FR.COLS - 1) * FR.GAP;
 // which room a part opens next to
 const FIN_SEC_ROOM = { dash: 'ov', accounts: 'accts', import: 'accts', ledger: 'accts', update: 'accts', inc: 'inc', sim: 'inc', exp: 'exp', budget: 'exp', credit: 'com', own: 'own', forecast: 'buy' };
@@ -369,8 +369,9 @@ function finCvCard(c, hue) {
   const act = tool || c.cls.includes('more') ? { act: 'fin-cv-sec', s: (c.act && c.act.s) || 'ledger' } : c.act && c.act.act === 'fin-cv-add' ? c.act : { act: 'fin-cv-det', id: c.id };
   const editable = typeof finCvSpec === 'function' && !tool && !c.cls.includes('more') && !!finCvSpec(c.id);
   const brand = typeof finCardBrand === 'function' ? finCardBrand(c) : null;   // a company's card shows its logo
-  return `<div class="mnode fin-cvn fin-leaf ${c.cls}${open}${fresh}${editable ? ' editable' : ''}" role="button" tabindex="0" aria-expanded="${!!open}" ${finCvAttrs(act)} data-node="${esc(c.id)}" title="${esc(c.label)}${c.val ? ' — ' + esc(c.val) : ''}${c.sub ? '\n' + esc(c.sub) : ''}" style="${st}">
-    ${brand ? finLogo(brand, 'card') : c.icon ? `<span class="gicon fin-cv-ic" aria-hidden="true">${c.icon}</span>` : ''}<div class="mtxt"><b>${tool ? '<span class="fin-tool-i" aria-hidden="true">' + (FIN_ICON[act.s] || '') + '</span>' : ''}${esc(c.label)}</b>${c.sub ? `<small>${esc(c.sub)}</small>` : ''}</div>${c.val ? `<span class="fin-cv-v num">${esc(c.val)}</span>` : ''}${c.spark && typeof finSparkSVG === 'function' ? finSparkSVG(c.spark, c.sparkCls) : ''}${c.prog ? `<i class="fin-prog" style="width:${Math.round(c.prog * 100)}%" title="${Math.round(c.prog * 100)}% from cash now"></i>` : ''}${editable ? `<button class="fin-cv-btn ed" data-act="fin-cv-edit" data-id="${esc(c.id)}" title="Edit (or double-tap, F2)" aria-label="Edit ${esc(c.label)}">✎</button>` : ''}</div>`;
+  const desc = typeof finCardDesc === 'function' ? finCardDesc(c) : '';   // what it is and how it works, in one line
+  return `<div class="mnode fin-cvn fin-leaf ${c.cls}${open}${fresh}${editable ? ' editable' : ''}${desc ? ' has-d' : ''}" role="button" tabindex="0" aria-expanded="${!!open}" ${finCvAttrs(act)} data-node="${esc(c.id)}" title="${esc(c.label)}${c.val ? ' — ' + esc(c.val) : ''}${c.sub ? '\n' + esc(c.sub) : ''}" style="${st}">
+    ${brand ? finLogo(brand, 'card') : c.icon ? `<span class="gicon fin-cv-ic" aria-hidden="true">${c.icon}</span>` : ''}<div class="mtxt"><b>${tool ? '<span class="fin-tool-i" aria-hidden="true">' + (FIN_ICON[act.s] || '') + '</span>' : ''}${esc(c.label)}</b>${c.sub ? `<small>${esc(c.sub)}</small>` : ''}</div>${desc ? `<small class="fin-cv-d">${esc(desc)}</small>` : ''}${c.val ? `<span class="fin-cv-v num">${esc(c.val)}</span>` : ''}${c.spark && typeof finSparkSVG === 'function' ? finSparkSVG(c.spark, c.sparkCls) : ''}${c.prog ? `<i class="fin-prog" style="width:${Math.round(c.prog * 100)}%" title="${Math.round(c.prog * 100)}% from cash now"></i>` : ''}${editable ? `<button class="fin-cv-btn ed" data-act="fin-cv-edit" data-id="${esc(c.id)}" title="Edit (or double-tap, F2)" aria-label="Edit ${esc(c.label)}">✎</button>` : ''}</div>`;
 }
 function finCvRoom(r) {
   const folded = UI.fin.cvCol.has(r.id), fresh = Date.now() < UI.fin.flash.until && UI.fin.flash.ids.has(r.id) ? ' fresh' : '';
