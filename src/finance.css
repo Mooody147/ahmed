@@ -604,3 +604,11 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 /* Flow's lanes are narrow: a modest title so the summary still fits its header */
 .fin-cv-vp.z-far.mode-flow .fin-room:not(.ov):not(.goals):not(.sec) .fin-room-t b { font-size: 22px; }
 .fin-cv-vp.z-far.mode-flow .fin-room:not(.ov):not(.goals):not(.sec) .fin-room-t small { font-size: 13px; line-height: 1.25; }
+/* the tree is one picture (drawn once): the canvas only slides and scales it */
+.fin-tree-img { position: absolute; pointer-events: none; user-select: none; -webkit-user-drag: none; image-rendering: auto; }
+.fin-tree-vec { position: absolute; pointer-events: none; }
+.fin-tree-vec svg { display: block; }
+.fin-tree-far { position: absolute; left: -8000px; right: -8000px; height: 9000px; pointer-events: none; background: linear-gradient(180deg, #5d4230, #4b3526 300px, #2a1e16 1400px); border-top: 18px solid #4f7d33; box-sizing: border-box; }
+.fin-tree-wait { display: none; }
+.fin-tree-vec.sketch { opacity: .55; }
+@media (prefers-reduced-motion: no-preference) { .fin-tree-img.fresh { animation: finTreeIn .5s ease-out; } @keyframes finTreeIn { from { opacity: .4; } } }

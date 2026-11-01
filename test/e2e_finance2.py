@@ -379,7 +379,13 @@ async def main():
         assert P['inc']['y'] > P['accts']['y'] + P['accts']['h'] and P['own']['y'] > P['accts']['y'] + P['accts']['h'], 'the roots under the ground'
         sap = await ev("document.querySelectorAll('.fin-tree .sap').length"); print('TREE', sap, await ev("[...document.querySelectorAll('.fin-tree-l')].map(t => t.textContent)"))
         assert sap >= 4, 'roots, trunk and branches with the money flowing'
-        assert await ev("document.querySelectorAll('.fin-tree .rootlet').length") > 20 and await ev("!!document.querySelector('.fin-tree #ftLeafM')"), 'a real tree: rootlets, a crown of leaves'
+        # the tree itself is one picture drawn once (in the background), so moving never redraws it; only sap and labels are live
+        for _ in range(60):
+            if await ev("(document.getElementById('fin-tree-art') || {}).tagName === 'IMG'"): break
+            await pg.wait_for_timeout(250)
+        art = await ev("(() => { const i = document.getElementById('fin-tree-art'); return i && i.tagName === 'IMG' ? [i.naturalWidth, i.naturalHeight, i.complete] : null; })()"); print('TREE PICTURE', art)
+        assert art and art[0] > 3000 and art[2], 'the monster tree, drawn once as a large picture'
+        assert await ev("document.querySelectorAll('#fin-cv-world svg *').length") < 400, 'only a light live layer on top'
         fit = await ev("(() => { const v = document.getElementById('fin-cv-vp').getBoundingClientRect(), w = document.getElementById('fin-cv-world').getBoundingClientRect(); return [w.left >= v.left - 1, w.right <= v.right + 1, w.top >= v.top - 1, w.bottom <= v.bottom + 1]; })()")
         assert all(fit), ('Fit shows the whole tree', fit)
         assert await ev("document.getElementById('fin-cv-vp').classList.contains('z-far')") == (await ev("window.__AR.UI.fin.cv.k") < 0.62), 'zoomed out: big type'
