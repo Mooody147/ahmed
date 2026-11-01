@@ -23,13 +23,14 @@ let g; Object.defineProperty(window, '__mockAnswer', { configurable: true, get()
     const ctx = JSON.parse(p.split('CURRENT RECORDS: ')[1].split('\\nRead the message')[0]), msg = p.split('OWNER’S MESSAGE:\\n')[1] || '';
     if (/\\?/.test(msg)) return { reply: 'You spent EGP 4,250 on groceries & food in September.' };
     if (/show me my card/i.test(msg)) return { view: { open: 'credit' }, reply: 'Here is your card.' };
+    if (/coffee/i.test(msg)) return { transactions: [{ account: null, date: ctx.today, amount: -90, desc: 'Coffee', category: 'dining' }], reply: 'Added.' };
     if (/debit card/i.test(msg)) return { reply: 'Noted — ••0012 and ••0013 are your everyday accounts.' };
     const prim = ctx.accounts.find(a => /0012$/.test(a.number)), dep = ctx.recentDeposits.find(d => d.amount === 10000);
     return { balances: [{ account: prim.id, date: ctx.today, balance: 60000, evidence: 'screenshot 1' }],
       inputs: [{ key: 'salary', label: 'Salary', kind: 'income', amount: 36000, from: '2026-11-01', permanent: true, evidence: 'my salary is now 36,000 from November' }],
       thirdParty: dep ? [{ txId: dep.txId, amount: 10000, date: dep.date, person: 'Ali Hassan', note: 'to send back' }] : [],
       installments: [], terms: [], goals: [{ name: 'Laptop', price: 40000, priority: 1, wantBy: '2027-03-31' }],
-      transactions: [{ account: null, date: ctx.today, amount: -600, desc: 'Dinner', category: 'dining' }],
+      transactions: [{ account: null, cash: true, date: ctx.today, amount: -600, desc: 'Dinner', category: 'dining' }],
       questions: [{ text: 'Is the 2,000 bonus every month or only once?', about: 'income' }],
       notes: ['I took “by March” as 31 March 2027.'], reply: 'Done — salary, balance, Ali’s money, the laptop and your dinner are in.' };
   }
@@ -280,6 +281,17 @@ async def main():
         lines = await ev(f"window.__FIN.tx().filter(t => t.acct === '{a13['id']}').map(t => [t.desc, t.amount, t.cat])"); print('0013', lines)
         assert any('SPINNEYS' in d and amt == -850 and c != 'ccpay' for d, amt, c in lines) and any('ZARA' in d and amt == -1200 for d, amt, c in lines), 'debit-card purchases are spending from ••0013'
         assert not await ev("window.__FIN.tx().some(t => /SPINNEYS|ZARA CITY/.test(t.desc) && window.__FIN.prefs().accounts.find(a => a.id === t.acct).kind === 'credit_card')"), 'never on the credit card'
+
+        # ••0012 is the default account: money told with no account goes there (cash only when it was cash); a new
+        # transaction starts there; the canvas and Settings show it
+        a12 = await ev("window.__FIN.prefs().accounts.find(a => a.number && a.number.endsWith('0012'))")
+        assert await ev("window.__FIN.prefs().defaultAcct") == a12['id'], 'the default account is ••0012'
+        await say('I paid 90 for coffee this morning')
+        assert await ev(f"window.__FIN.tx().some(t => t.acct === '{a12['id']}' && t.amount === -90)"), 'no account named: the default account, not cash'
+        assert 'default' in await ev(f"document.querySelector('[data-node=\"a:{a12['id']}\"]').textContent"), 'the canvas card says default'
+        await pg.click('[data-act="fin-new-tx"]'); await pg.wait_for_timeout(300)
+        assert await ev("document.getElementById('ft-acct').value") == a12['id'], 'a new transaction starts on the default account'
+        await ev("document.querySelector('[data-act=\"close-drawer\"]').click()"); await pg.wait_for_timeout(200)
 
         # only two tabs above the canvas: Canvas and Settings
         tabs = await ev("[...document.querySelectorAll('.fin-tabs button')].map(b => b.textContent.trim())"); print('TABS', tabs)

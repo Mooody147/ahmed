@@ -17,6 +17,9 @@ const finSave = mut => { if (St.mode === 'db' && St.colsLoaded && !St.colsLoaded
 const finCats = () => finP().cats || FIN.DEFAULT_CATS;
 const finCat = id => finCats().find(c => c.id === id) || null;
 const finAcct = id => finP().accounts.find(a => a.id === id) || null;
+// your default account: where money goes when nothing says which account (what you tell the canvas, a transaction you add,
+// a bank statement with no number to read)
+const finDefAcct = () => { const p = finP(); return p.accounts.find(a => a.id === p.defaultAcct) || p.accounts.find(a => a.role === 'salary') || p.accounts.find(a => a.kind === 'current') || p.accounts[0] || null; };
 const finToday = () => E.todayISO();
 
 /* --- transactions, grouped by month --- */
@@ -306,7 +309,7 @@ FIN_VIEW.ledger = () => {
 /* --- one transaction: edit, split, see where it came from and what changed --- */
 DRAWER_FN.fintx = dr => {
   const isNew = dr.id === 'new', p = finP();
-  const t = isNew ? (UI.fin.draft || { id: 'new', date: finToday(), acct: (p.accounts[0] || {}).id || '', amount: null, desc: '', cat: '', manual: true }) : FS.by.get(dr.id);
+  const t = isNew ? (UI.fin.draft || { id: 'new', date: finToday(), acct: (finDefAcct() || {}).id || '', amount: null, desc: '', cat: '', manual: true }) : FS.by.get(dr.id);
   if (!t) return null;
   const a = finAcct(t.acct) || {}, cur = t.currency || a.currency || p.base, c = finCat(t.cat) || {};
   const parts = t.parts || [];

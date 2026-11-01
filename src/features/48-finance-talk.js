@@ -116,7 +116,7 @@ async function finTalkSend() {
 /* --- Claude reads your words and screenshots; the change is applied straight away --- */
 const FIN_TALK_RULES = `
 YOU ARE TALKING WITH THE OWNER THROUGH THEIR MONEY CANVAS. Besides the fields above, the JSON may also have:
-"transactions":[{"account":"id from accounts or null for cash","date":"YYYY-MM-DD","amount":number (negative = money out),"desc":"","category":"id from categories"}] — money the owner says they spent or received that no statement shows yet,
+"transactions":[{"account":"id from accounts; when the owner names no account use the one marked default; null only when it was paid in cash","cash":true when paid in cash,"date":"YYYY-MM-DD","amount":number (negative = money out),"desc":"","category":"id from categories"}] — money the owner says they spent or received that no statement shows yet,
 "goalUpdates":[{"id":"id from purchaseGoals","bought":true or false,"delete":true or false,"price":number or null,"wantBy":"YYYY-MM-DD or null","priority":1-3 or null}],
 "view":{"open":"dash|update|import|ledger|exp|inc|budget|sim|forecast|buy|credit|accounts|own|settings or null","focus":"accts|inc|exp|com|own|third|buy or null","dir":"h|v|null"},
 "notes":["one short line for each thing you assumed or could not do"],
@@ -150,6 +150,8 @@ function finTalkExtras(r) {
   for (const x of Array.isArray(r.transactions) ? r.transactions : []) {
     const amount = num(x.amount); if (!amount) continue;
     let acct = x.account && finAcct(x.account) ? x.account : null;
+    // no account named: cash when it says cash, otherwise your default account
+    if (!acct && !x.cash && !/\bcash\b|كاش|نقد|نقدا|نقدي/i.test(String(x.desc || ''))) { const d = finDefAcct(); if (d) acct = d.id; }
     if (!acct) { const cash = finP().accounts.find(a => a.kind === 'cash'); if (cash) acct = cash.id; else { acct = E.uid('ac'); finSave(q => { q.accounts.push({ id: acct, name: 'Cash', kind: 'cash', currency: q.base, owner: 'me', holder: 'me', createdAt: at }); }); } }
     const date = FIN.validDate(x.date) ? x.date : today, desc = String(x.desc || 'From what you told the canvas').slice(0, 140);
     if (finTx().some(t => t.acct === acct && t.date === date && Math.abs(t.amount - amount) < 0.01 && FIN.norm(t.desc || '') === FIN.norm(desc))) continue;

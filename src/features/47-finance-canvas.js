@@ -32,7 +32,7 @@ function finCvModel() {
   B.push(branch('accts', '🏦', 'Accounts', 210, 'accounts', `cash ${fk(n.cash)}${n.cashKnown < n.cashAccts ? ` · ${n.cashAccts - n.cashKnown} without a balance` : ''}`, n.accts.map(({ a, l }) => {
     const credit = a.kind === 'credit_card' || a.kind === 'bnpl', when = l.date ? `${l.source === 'you' ? 'your update' : 'statement'} · ${fday(l.date)}` : 'no balance yet';
     if (credit) return leaf('a:' + a.id, a.name, typeof l.owed === 'number' ? `owes ${fk(l.owed)}` : '—', l.available !== null && l.available !== undefined ? `${fk(l.available)} available · ${when}` : a.kind === 'bnpl' ? 'tell the canvas what the app shows' : when, { act: 'fin-acct-ledger', id: a.id }, typeof l.owed === 'number' && l.owed > 0 ? 'neg' : '');
-    return leaf('a:' + a.id, a.name, typeof l.balance === 'number' ? fk(l.balance) : '—', when, { act: 'fin-acct-ledger', id: a.id }, typeof l.balance === 'number' && l.balance < 0 ? 'neg' : '');
+    return leaf('a:' + a.id, a.name, typeof l.balance === 'number' ? fk(l.balance) : '—', (a.id === (finDefAcct() || {}).id ? 'default · ' : '') + when, { act: 'fin-acct-ledger', id: a.id }, typeof l.balance === 'number' && l.balance < 0 ? 'neg' : '');
   }), [tool('import', '🏦', 'Statements', batches.length ? `${batches.length} read${lastB ? ' · latest ' + fday(lastB.slice(0, 10)) : ''}` : 'add one below or here'),
     tool('ledger', '📒', 'All transactions', `${tx.length} recorded`), tool('update', '✍️', 'Balances & history', 'today’s balances, what changed')]));
 

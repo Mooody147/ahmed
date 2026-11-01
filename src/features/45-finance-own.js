@@ -24,7 +24,7 @@ FIN_VIEW.accounts = () => {
   const p = finP(), rec = finRecon(), tx = finTx();
   const unpaired = tx.filter(t => ['transfer', 'ccpay', 'savings', 'invest'].includes(t.cat) && !t.pair && p.accounts.length > 1);
   return `<section class="card fin-card"><h2>Accounts</h2>
-    ${p.accounts.length ? `<div class="tbl-wrap"><table class="tbl fin-acct"><thead><tr><th>Name</th><th>Bank</th><th>Type</th><th>Currency</th><th>Account no.</th><th>Belongs to</th><th>In the name of</th><th>Opening balance</th><th>on</th><th></th></tr></thead><tbody>${p.accounts.map((a, i) => `<tr>
+    ${p.accounts.length ? `<div class="tbl-wrap"><table class="tbl fin-acct"><thead><tr><th>Name</th><th>Bank</th><th>Type</th><th>Currency</th><th>Account no.</th><th>Belongs to</th><th>In the name of</th><th>Opening balance</th><th>on</th><th>Default</th><th></th></tr></thead><tbody>${p.accounts.map((a, i) => `<tr>
       <td><input class="input sm" data-chg="fin-acct" data-i="${i}" data-k="name" value="${esc(a.name)}"></td><td><input class="input sm" data-chg="fin-acct" data-i="${i}" data-k="bank" value="${esc(a.bank || '')}"></td>
       <td><select class="input sm" data-chg="fin-acct" data-i="${i}" data-k="kind">${FIN_AKINDS.map(([k, l]) => `<option value="${k}" ${a.kind === k ? 'selected' : ''}>${l}</option>`).join('')}</select></td>
       <td><select class="input sm" data-chg="fin-acct" data-i="${i}" data-k="currency">${FIN.CURRENCIES.map(k => `<option ${a.currency === k ? 'selected' : ''}>${k}</option>`).join('')}</select></td>
@@ -32,9 +32,10 @@ FIN_VIEW.accounts = () => {
       <td><select class="input sm" data-chg="fin-acct" data-i="${i}" data-k="owner"><option value="me">Me</option>${p.parties.map(x => `<option value="${esc(x.id)}" ${a.owner === x.id ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select></td>
       <td><input class="input sm" data-chg="fin-acct" data-i="${i}" data-k="holder" value="${esc(a.holder && a.holder !== 'me' ? a.holder : '')}" placeholder="me"></td>
       <td><input class="input num sm" data-chg="fin-acct" data-i="${i}" data-k="opening" value="${esc(a.opening ?? '')}" inputmode="decimal"></td><td><input class="input sm" type="date" data-chg="fin-acct" data-i="${i}" data-k="openingDate" value="${esc(a.openingDate || '')}"></td>
+      <td><input type="radio" name="fin-def" data-act="fin-acct-def" data-id="${esc(a.id)}" ${(finDefAcct() || {}).id === a.id ? 'checked' : ''} aria-label="${esc(a.name)} is the default account" title="Where money goes when nothing says which account"></td>
       <td><button class="icon-btn" data-act="fin-acct-del" data-i="${i}" aria-label="Remove">${I.x}</button></td></tr>`).join('')}</tbody></table></div>` : '<p class="small muted">No accounts yet — importing a statement creates one, or add it here.</p>'}
     <button class="btn sm" data-act="fin-acct-add">${I.plus} Account</button>
-    <p class="small muted">The opening balance is optional: it lets the app calculate a balance between statements (shown as an estimate). Statement balances are always preferred.</p></section>
+    <p class="small muted">The default account is where money goes when nothing says which account: what you tell the canvas, a transaction you add, a statement with no number. The opening balance is optional: it lets the app calculate a balance between statements (shown as an estimate). Statement balances are always preferred.</p></section>
   ${p.accounts.map(a => { const r = rec[a.id], st = r.status; const card = a.kind === 'credit_card' ? FIN.cardOwed(a, r, tx) : null;
     return `<section class="card fin-card"><div class="row"><h2>${esc(a.name)} <small class="muted">${esc(a.currency)}</small></h2><span class="fin-tag ${st === 'reconciled' ? 'ok' : st === 'differences' ? 'crit' : ''}">${st === 'reconciled' ? '✓ reconciled' : st === 'differences' ? 'differences found' : 'not enough data'}</span><span class="spacer"></span><button class="btn sm ghost" data-act="fin-acct-ledger" data-id="${esc(a.id)}">${r.count} transactions</button></div>
       <div class="fin-grid2"><div>
@@ -191,6 +192,7 @@ function finRestore(how) {
 Object.assign(ACT, {
   'fin-acct-add': () => { finSave(p => { p.accounts.push({ id: E.uid('ac'), name: 'New account', bank: '', kind: 'current', currency: p.base, number: '', owner: 'me', holder: 'me', createdAt: nowISO() }); }); render(); },
   'fin-acct-del': el => { const p = finP(), a = p.accounts[+el.dataset.i]; if (!a) return; const n = finTx().filter(t => t.acct === a.id).length; if (n) { toast(`${a.name} has ${n} transactions — delete or move them first.`, { err: true }); return; } finSave(q => { q.accounts.splice(+el.dataset.i, 1); }); render(); },
+  'fin-acct-def': el => { finSave(q => { q.defaultAcct = el.dataset.id; q.defaultSet = true; }); render(); },
   'fin-acct-ledger': el => { UI.fin.l = { ...UI.fin.l, acct: el.dataset.id, ids: null, page: 0 }; UI.fin.jump = UI.fin.sec = 'ledger'; render(); },
   'fin-dup-ok': el => { const ch = el.dataset.ids.split(',').map(id => FS.by.get(id)).filter(Boolean).map(o => { const t = clone(o); t.flags = [...new Set([...(t.flags || []), 'dup_ok'])]; finHist(t, 'duplicate check', null, 'both are real', 'you confirmed'); return t; }); finWrite(ch); render(); },
   'fin-template': () => { const t = finTemplate(); finSave(p => { p.templateAdded = true; for (const x of t.parties) if (!p.parties.find(y => y.id === x.id)) p.parties.push(x); for (const h of t.holdings) if (!p.holdings.find(y => y.id === h.id)) p.holdings.push(h); }); render(); toast('Added — check each record against your documents.'); },

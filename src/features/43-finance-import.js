@@ -105,6 +105,9 @@ function finPickAcct(it, kind) {
   const same = scored.filter(x => x.a.kind === kind && (!cur || x.a.currency === cur));
   // the only account of this kind (and currency) that has no number yet takes a statement that brings one
   if (same.length === 1 && scored[0].a === same[0].a && scored[0].sc >= 0 && (!num || !same[0].a.number) && !(bank && same[0].a.bank && FIN.norm(bank) !== FIN.norm(same[0].a.bank))) { scored[0].sc += 2; scored[0].why.push('your only ' + (kind === 'credit_card' ? 'card' : 'account of this kind')); }
+  // no number to go by and more than one account of this kind: your default account, if it is of this kind
+  const def = finDefAcct();
+  if (!num && def && same.length > 1 && same.some(x => x.a === def) && !(bank && def.bank && FIN.norm(bank) !== FIN.norm(def.bank))) { const x = scored.find(y => y.a === def); x.sc += 2; x.why.push('your default account'); scored.sort((x1, y1) => y1.sc - x1.sc); }
   const best = scored[0];
   if (best && best.sc >= 2) { it.acct = best.a.id; it.newAcct = null; it.acctWhy = best.why.join(', ') || 'the only account of this kind'; }
   else {

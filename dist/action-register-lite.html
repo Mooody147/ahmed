@@ -13730,6 +13730,9 @@ const finSave = mut => { if (St.mode === 'db' && St.colsLoaded && !St.colsLoaded
 const finCats = () => finP().cats || FIN.DEFAULT_CATS;
 const finCat = id => finCats().find(c => c.id === id) || null;
 const finAcct = id => finP().accounts.find(a => a.id === id) || null;
+// your default account: where money goes when nothing says which account (what you tell the canvas, a transaction you add,
+// a bank statement with no number to read)
+const finDefAcct = () => { const p = finP(); return p.accounts.find(a => a.id === p.defaultAcct) || p.accounts.find(a => a.role === 'salary') || p.accounts.find(a => a.kind === 'current') || p.accounts[0] || null; };
 const finToday = () => E.todayISO();
 
 /* --- transactions, grouped by month --- */
@@ -14019,7 +14022,7 @@ FIN_VIEW.ledger = () => {
 /* --- one transaction: edit, split, see where it came from and what changed --- */
 DRAWER_FN.fintx = dr => {
   const isNew = dr.id === 'new', p = finP();
-  const t = isNew ? (UI.fin.draft || { id: 'new', date: finToday(), acct: (p.accounts[0] || {}).id || '', amount: null, desc: '', cat: '', manual: true }) : FS.by.get(dr.id);
+  const t = isNew ? (UI.fin.draft || { id: 'new', date: finToday(), acct: (finDefAcct() || {}).id || '', amount: null, desc: '', cat: '', manual: true }) : FS.by.get(dr.id);
   if (!t) return null;
   const a = finAcct(t.acct) || {}, cur = t.currency || a.currency || p.base, c = finCat(t.cat) || {};
   const parts = t.parts || [];
@@ -14255,6 +14258,9 @@ function finPickAcct(it, kind) {
   const same = scored.filter(x => x.a.kind === kind && (!cur || x.a.currency === cur));
   // the only account of this kind (and currency) that has no number yet takes a statement that brings one
   if (same.length === 1 && scored[0].a === same[0].a && scored[0].sc >= 0 && (!num || !same[0].a.number) && !(bank && same[0].a.bank && FIN.norm(bank) !== FIN.norm(same[0].a.bank))) { scored[0].sc += 2; scored[0].why.push('your only ' + (kind === 'credit_card' ? 'card' : 'account of this kind')); }
+  // no number to go by and more than one account of this kind: your default account, if it is of this kind
+  const def = finDefAcct();
+  if (!num && def && same.length > 1 && same.some(x => x.a === def) && !(bank && def.bank && FIN.norm(bank) !== FIN.norm(def.bank))) { const x = scored.find(y => y.a === def); x.sc += 2; x.why.push('your default account'); scored.sort((x1, y1) => y1.sc - x1.sc); }
   const best = scored[0];
   if (best && best.sc >= 2) { it.acct = best.a.id; it.newAcct = null; it.acctWhy = best.why.join(', ') || 'the only account of this kind'; }
   else {
@@ -15001,7 +15007,7 @@ FIN_VIEW.accounts = () => {
   const p = finP(), rec = finRecon(), tx = finTx();
   const unpaired = tx.filter(t => ['transfer', 'ccpay', 'savings', 'invest'].includes(t.cat) && !t.pair && p.accounts.length > 1);
   return `<section class="card fin-card"><h2>Accounts</h2>
-    ${p.accounts.length ? `<div class="tbl-wrap"><table class="tbl fin-acct"><thead><tr><th>Name</th><th>Bank</th><th>Type</th><th>Currency</th><th>Account no.</th><th>Belongs to</th><th>In the name of</th><th>Opening balance</th><th>on</th><th></th></tr></thead><tbody>${p.accounts.map((a, i) => `<tr>
+    ${p.accounts.length ? `<div class="tbl-wrap"><table class="tbl fin-acct"><thead><tr><th>Name</th><th>Bank</th><th>Type</th><th>Currency</th><th>Account no.</th><th>Belongs to</th><th>In the name of</th><th>Opening balance</th><th>on</th><th>Default</th><th></th></tr></thead><tbody>${p.accounts.map((a, i) => `<tr>
       <td><input class="input sm" data-chg="fin-acct" data-i="${i}" data-k="name" value="${esc(a.name)}"></td><td><input class="input sm" data-chg="fin-acct" data-i="${i}" data-k="bank" value="${esc(a.bank || '')}"></td>
       <td><select class="input sm" data-chg="fin-acct" data-i="${i}" data-k="kind">${FIN_AKINDS.map(([k, l]) => `<option value="${k}" ${a.kind === k ? 'selected' : ''}>${l}</option>`).join('')}</select></td>
       <td><select class="input sm" data-chg="fin-acct" data-i="${i}" data-k="currency">${FIN.CURRENCIES.map(k => `<option ${a.currency === k ? 'selected' : ''}>${k}</option>`).join('')}</select></td>
@@ -15009,9 +15015,10 @@ FIN_VIEW.accounts = () => {
       <td><select class="input sm" data-chg="fin-acct" data-i="${i}" data-k="owner"><option value="me">Me</option>${p.parties.map(x => `<option value="${esc(x.id)}" ${a.owner === x.id ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select></td>
       <td><input class="input sm" data-chg="fin-acct" data-i="${i}" data-k="holder" value="${esc(a.holder && a.holder !== 'me' ? a.holder : '')}" placeholder="me"></td>
       <td><input class="input num sm" data-chg="fin-acct" data-i="${i}" data-k="opening" value="${esc(a.opening ?? '')}" inputmode="decimal"></td><td><input class="input sm" type="date" data-chg="fin-acct" data-i="${i}" data-k="openingDate" value="${esc(a.openingDate || '')}"></td>
+      <td><input type="radio" name="fin-def" data-act="fin-acct-def" data-id="${esc(a.id)}" ${(finDefAcct() || {}).id === a.id ? 'checked' : ''} aria-label="${esc(a.name)} is the default account" title="Where money goes when nothing says which account"></td>
       <td><button class="icon-btn" data-act="fin-acct-del" data-i="${i}" aria-label="Remove">${I.x}</button></td></tr>`).join('')}</tbody></table></div>` : '<p class="small muted">No accounts yet — importing a statement creates one, or add it here.</p>'}
     <button class="btn sm" data-act="fin-acct-add">${I.plus} Account</button>
-    <p class="small muted">The opening balance is optional: it lets the app calculate a balance between statements (shown as an estimate). Statement balances are always preferred.</p></section>
+    <p class="small muted">The default account is where money goes when nothing says which account: what you tell the canvas, a transaction you add, a statement with no number. The opening balance is optional: it lets the app calculate a balance between statements (shown as an estimate). Statement balances are always preferred.</p></section>
   ${p.accounts.map(a => { const r = rec[a.id], st = r.status; const card = a.kind === 'credit_card' ? FIN.cardOwed(a, r, tx) : null;
     return `<section class="card fin-card"><div class="row"><h2>${esc(a.name)} <small class="muted">${esc(a.currency)}</small></h2><span class="fin-tag ${st === 'reconciled' ? 'ok' : st === 'differences' ? 'crit' : ''}">${st === 'reconciled' ? '✓ reconciled' : st === 'differences' ? 'differences found' : 'not enough data'}</span><span class="spacer"></span><button class="btn sm ghost" data-act="fin-acct-ledger" data-id="${esc(a.id)}">${r.count} transactions</button></div>
       <div class="fin-grid2"><div>
@@ -15168,6 +15175,7 @@ function finRestore(how) {
 Object.assign(ACT, {
   'fin-acct-add': () => { finSave(p => { p.accounts.push({ id: E.uid('ac'), name: 'New account', bank: '', kind: 'current', currency: p.base, number: '', owner: 'me', holder: 'me', createdAt: nowISO() }); }); render(); },
   'fin-acct-del': el => { const p = finP(), a = p.accounts[+el.dataset.i]; if (!a) return; const n = finTx().filter(t => t.acct === a.id).length; if (n) { toast(`${a.name} has ${n} transactions — delete or move them first.`, { err: true }); return; } finSave(q => { q.accounts.splice(+el.dataset.i, 1); }); render(); },
+  'fin-acct-def': el => { finSave(q => { q.defaultAcct = el.dataset.id; q.defaultSet = true; }); render(); },
   'fin-acct-ledger': el => { UI.fin.l = { ...UI.fin.l, acct: el.dataset.id, ids: null, page: 0 }; UI.fin.jump = UI.fin.sec = 'ledger'; render(); },
   'fin-dup-ok': el => { const ch = el.dataset.ids.split(',').map(id => FS.by.get(id)).filter(Boolean).map(o => { const t = clone(o); t.flags = [...new Set([...(t.flags || []), 'dup_ok'])]; finHist(t, 'duplicate check', null, 'both are real', 'you confirmed'); return t; }); finWrite(ch); render(); },
   'fin-template': () => { const t = finTemplate(); finSave(p => { p.templateAdded = true; for (const x of t.parties) if (!p.parties.find(y => y.id === x.id)) p.parties.push(x); for (const h of t.holdings) if (!p.holdings.find(y => y.id === h.id)) p.holdings.push(h); }); render(); toast('Added — check each record against your documents.'); },
@@ -15258,8 +15266,15 @@ function finPresetsV2() {
     q.presetsV2 = true;
   });
 }
+function finDefaultV1() {
+  if (St.mode === 'viewer' || (St.mode === 'db' && !St.colsLoaded.has('prefs'))) return;
+  const p = finP(); if (!p.presetsV1 || p.defaultSet) return;
+  finSave(q => { const m = q.accounts.find(a => FIN.last4(a.number) === '0012' && a.kind === 'current'); if (m && !q.defaultAcct) q.defaultAcct = m.id; q.defaultSet = true; });
+}
 HOOKS.ready.push(() => setTimeout(finEnsurePresets, 800));
 HOOKS.ready.push(() => setTimeout(finPresetsV2, 1200));
+HOOKS.ready.push(() => setTimeout(finDefaultV1, 1400));
+HOOKS.beforeRender.push(() => { if (UI.view === 'finance' && St.ready && finP().presetsV1 && !finP().defaultSet) setTimeout(finDefaultV1, 0); });
 HOOKS.beforeRender.push(() => { if (UI.view === 'finance' && St.ready && finP().presetsV1 && !finP().presetsV2) setTimeout(finPresetsV2, 0); });
 
 /* --- one account saved twice: joined into one ---
@@ -15404,7 +15419,7 @@ function finDraftContext() {
   const p = finP(), n = finNow(), today = finToday(), from = FIN.addDays(today, -90);
   return {
     today, baseCurrency: p.base,
-    accounts: n.accts.map(x => ({ id: x.a.id, name: x.a.name, kind: x.a.kind, number: x.a.number || '', limit: x.a.limit || null, holder: x.a.holder || 'me', last: { balance: x.l.balance ?? null, available: x.l.available ?? null, outstanding: x.l.owed ?? null, date: x.l.date } })),
+    accounts: n.accts.map(x => ({ id: x.a.id, name: x.a.name, kind: x.a.kind, number: x.a.number || '', default: x.a.id === (finDefAcct() || {}).id || undefined, limit: x.a.limit || null, holder: x.a.holder || 'me', last: { balance: x.l.balance ?? null, available: x.l.available ?? null, outstanding: x.l.owed ?? null, date: x.l.date } })),
     holdings: p.holdings.filter(h => h.kind !== 'property').map(h => ({ id: h.id, name: h.name, principal: h.principal || null, myShareMonthly: h.myShareMonthly || null, rate: h.rate || null, owner: h.owner || 'me', heldBy: h.custodian || 'me' })),
     inputs: (p.inputs || []).filter(i => !i.to || i.to >= today).map(i => ({ key: i.key, label: i.label, kind: i.kind, amount: i.amount, from: i.from })),
     statementIncome: { salary: FIN.incomeBase(finAll(), today).salary },
@@ -15738,7 +15753,7 @@ function finCvModel() {
   B.push(branch('accts', '🏦', 'Accounts', 210, 'accounts', `cash ${fk(n.cash)}${n.cashKnown < n.cashAccts ? ` · ${n.cashAccts - n.cashKnown} without a balance` : ''}`, n.accts.map(({ a, l }) => {
     const credit = a.kind === 'credit_card' || a.kind === 'bnpl', when = l.date ? `${l.source === 'you' ? 'your update' : 'statement'} · ${fday(l.date)}` : 'no balance yet';
     if (credit) return leaf('a:' + a.id, a.name, typeof l.owed === 'number' ? `owes ${fk(l.owed)}` : '—', l.available !== null && l.available !== undefined ? `${fk(l.available)} available · ${when}` : a.kind === 'bnpl' ? 'tell the canvas what the app shows' : when, { act: 'fin-acct-ledger', id: a.id }, typeof l.owed === 'number' && l.owed > 0 ? 'neg' : '');
-    return leaf('a:' + a.id, a.name, typeof l.balance === 'number' ? fk(l.balance) : '—', when, { act: 'fin-acct-ledger', id: a.id }, typeof l.balance === 'number' && l.balance < 0 ? 'neg' : '');
+    return leaf('a:' + a.id, a.name, typeof l.balance === 'number' ? fk(l.balance) : '—', (a.id === (finDefAcct() || {}).id ? 'default · ' : '') + when, { act: 'fin-acct-ledger', id: a.id }, typeof l.balance === 'number' && l.balance < 0 ? 'neg' : '');
   }), [tool('import', '🏦', 'Statements', batches.length ? `${batches.length} read${lastB ? ' · latest ' + fday(lastB.slice(0, 10)) : ''}` : 'add one below or here'),
     tool('ledger', '📒', 'All transactions', `${tx.length} recorded`), tool('update', '✍️', 'Balances & history', 'today’s balances, what changed')]));
 
@@ -16352,7 +16367,7 @@ async function finTalkSend() {
 /* --- Claude reads your words and screenshots; the change is applied straight away --- */
 const FIN_TALK_RULES = `
 YOU ARE TALKING WITH THE OWNER THROUGH THEIR MONEY CANVAS. Besides the fields above, the JSON may also have:
-"transactions":[{"account":"id from accounts or null for cash","date":"YYYY-MM-DD","amount":number (negative = money out),"desc":"","category":"id from categories"}] — money the owner says they spent or received that no statement shows yet,
+"transactions":[{"account":"id from accounts; when the owner names no account use the one marked default; null only when it was paid in cash","cash":true when paid in cash,"date":"YYYY-MM-DD","amount":number (negative = money out),"desc":"","category":"id from categories"}] — money the owner says they spent or received that no statement shows yet,
 "goalUpdates":[{"id":"id from purchaseGoals","bought":true or false,"delete":true or false,"price":number or null,"wantBy":"YYYY-MM-DD or null","priority":1-3 or null}],
 "view":{"open":"dash|update|import|ledger|exp|inc|budget|sim|forecast|buy|credit|accounts|own|settings or null","focus":"accts|inc|exp|com|own|third|buy or null","dir":"h|v|null"},
 "notes":["one short line for each thing you assumed or could not do"],
@@ -16386,6 +16401,8 @@ function finTalkExtras(r) {
   for (const x of Array.isArray(r.transactions) ? r.transactions : []) {
     const amount = num(x.amount); if (!amount) continue;
     let acct = x.account && finAcct(x.account) ? x.account : null;
+    // no account named: cash when it says cash, otherwise your default account
+    if (!acct && !x.cash && !/\bcash\b|كاش|نقد|نقدا|نقدي/i.test(String(x.desc || ''))) { const d = finDefAcct(); if (d) acct = d.id; }
     if (!acct) { const cash = finP().accounts.find(a => a.kind === 'cash'); if (cash) acct = cash.id; else { acct = E.uid('ac'); finSave(q => { q.accounts.push({ id: acct, name: 'Cash', kind: 'cash', currency: q.base, owner: 'me', holder: 'me', createdAt: at }); }); } }
     const date = FIN.validDate(x.date) ? x.date : today, desc = String(x.desc || 'From what you told the canvas').slice(0, 140);
     if (finTx().some(t => t.acct === acct && t.date === date && Math.abs(t.amount - amount) < 0.01 && FIN.norm(t.desc || '') === FIN.norm(desc))) continue;

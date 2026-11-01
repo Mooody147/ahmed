@@ -45,8 +45,15 @@ function finPresetsV2() {
     q.presetsV2 = true;
   });
 }
+function finDefaultV1() {
+  if (St.mode === 'viewer' || (St.mode === 'db' && !St.colsLoaded.has('prefs'))) return;
+  const p = finP(); if (!p.presetsV1 || p.defaultSet) return;
+  finSave(q => { const m = q.accounts.find(a => FIN.last4(a.number) === '0012' && a.kind === 'current'); if (m && !q.defaultAcct) q.defaultAcct = m.id; q.defaultSet = true; });
+}
 HOOKS.ready.push(() => setTimeout(finEnsurePresets, 800));
 HOOKS.ready.push(() => setTimeout(finPresetsV2, 1200));
+HOOKS.ready.push(() => setTimeout(finDefaultV1, 1400));
+HOOKS.beforeRender.push(() => { if (UI.view === 'finance' && St.ready && finP().presetsV1 && !finP().defaultSet) setTimeout(finDefaultV1, 0); });
 HOOKS.beforeRender.push(() => { if (UI.view === 'finance' && St.ready && finP().presetsV1 && !finP().presetsV2) setTimeout(finPresetsV2, 0); });
 
 /* --- one account saved twice: joined into one ---
@@ -191,7 +198,7 @@ function finDraftContext() {
   const p = finP(), n = finNow(), today = finToday(), from = FIN.addDays(today, -90);
   return {
     today, baseCurrency: p.base,
-    accounts: n.accts.map(x => ({ id: x.a.id, name: x.a.name, kind: x.a.kind, number: x.a.number || '', limit: x.a.limit || null, holder: x.a.holder || 'me', last: { balance: x.l.balance ?? null, available: x.l.available ?? null, outstanding: x.l.owed ?? null, date: x.l.date } })),
+    accounts: n.accts.map(x => ({ id: x.a.id, name: x.a.name, kind: x.a.kind, number: x.a.number || '', default: x.a.id === (finDefAcct() || {}).id || undefined, limit: x.a.limit || null, holder: x.a.holder || 'me', last: { balance: x.l.balance ?? null, available: x.l.available ?? null, outstanding: x.l.owed ?? null, date: x.l.date } })),
     holdings: p.holdings.filter(h => h.kind !== 'property').map(h => ({ id: h.id, name: h.name, principal: h.principal || null, myShareMonthly: h.myShareMonthly || null, rate: h.rate || null, owner: h.owner || 'me', heldBy: h.custodian || 'me' })),
     inputs: (p.inputs || []).filter(i => !i.to || i.to >= today).map(i => ({ key: i.key, label: i.label, kind: i.kind, amount: i.amount, from: i.from })),
     statementIncome: { salary: FIN.incomeBase(finAll(), today).salary },
