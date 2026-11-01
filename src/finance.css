@@ -388,3 +388,64 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 .fin-pop-h { flex-wrap: wrap; row-gap: 4px; }
 .fin-pop-t { min-width: min(60%, 220px); }
 .fin-pop-t b, .fin-pop-t small { white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; }
+
+/* ---------- a livelier canvas ---------- */
+.fin-room { box-shadow: 0 1px 0 rgba(255,255,255,.6) inset, 0 18px 40px -30px color-mix(in srgb, hsl(var(--h) 60% 35%) 60%, transparent), var(--elev-1); overflow: visible; }
+.fin-room::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 64px; border-radius: 21px 21px 0 0; pointer-events: none;
+  background: linear-gradient(180deg, color-mix(in srgb, hsl(var(--h) 70% 85%) 55%, transparent), transparent); }
+.fin-room-h { position: relative; }
+.fin-room-ic { background: linear-gradient(145deg, var(--surface), color-mix(in srgb, hsl(var(--h) 70% 88%) 70%, var(--surface))); }
+.mnode.fin-leaf { overflow: hidden; transition: transform .16s ease, box-shadow .16s ease; }
+.mnode.fin-leaf:hover { transform: translateY(-2px); box-shadow: 0 10px 22px -12px rgba(30, 10, 30, .35), var(--elev-1); }
+.mnode.fin-leaf .mtxt, .mnode.fin-leaf .fin-cv-v { position: relative; z-index: 1; }
+.fin-spark { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: 22px; pointer-events: none; opacity: .55; }
+.fin-spark .a { fill: color-mix(in srgb, hsl(var(--h) 60% 55%) 16%, transparent); } .fin-spark .l { fill: none; stroke: hsl(var(--h) 55% 50%); stroke-width: 1.4; vector-effect: non-scaling-stroke; }
+.fin-spark.exp .l { stroke: var(--fin-s2); } .fin-spark.exp .a { fill: color-mix(in srgb, var(--fin-s2) 14%, transparent); }
+.fin-spark.inc .l { stroke: var(--fin-s1); } .fin-spark.inc .a { fill: color-mix(in srgb, var(--fin-s1) 14%, transparent); }
+.fin-prog { position: absolute; left: 0; bottom: 0; height: 4px; border-radius: 0 4px 0 0; background: linear-gradient(90deg, var(--fin-s3), color-mix(in srgb, var(--fin-s3) 60%, #fff)); }
+.fin-leaf.trend-up .mtxt small { color: var(--crit); } .fin-leaf.trend-down .mtxt small { color: var(--ok); }
+@media (prefers-reduced-motion: no-preference) {
+  .fin-canvas-page .fin-room { animation: finRoomIn .5s cubic-bezier(.2, .8, .2, 1) both; }
+  .fin-canvas-page .fin-room:nth-child(2) { animation-delay: .04s; } .fin-canvas-page .fin-room:nth-child(3) { animation-delay: .08s; } .fin-canvas-page .fin-room:nth-child(n+4) { animation-delay: .12s; }
+  @keyframes finRoomIn { from { opacity: 0; transform: translateY(10px) scale(.985); } to { opacity: 1; transform: none; } }
+  .fin-leaf.alert.crit { animation: finAlertPulse 2.4s ease-in-out 2; }
+  @keyframes finAlertPulse { 50% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--crit) 25%, transparent), var(--elev-1); } }
+}
+/* attention cards */
+.mnode.fin-leaf.alert { border-left-width: 5px; }
+.fin-leaf.alert.crit { border-left-color: var(--crit); background: color-mix(in srgb, var(--crit-soft) 70%, var(--surface)); }
+.fin-leaf.alert.warn { border-left-color: var(--warn); background: color-mix(in srgb, var(--warn-soft) 70%, var(--surface)); }
+.fin-leaf.alert.info { border-left-color: var(--med); }
+.fin-leaf.alert.ok { border-left-color: var(--ok); background: color-mix(in srgb, var(--ok-soft) 70%, var(--surface)); }
+.fin-leaf.alert .fin-cv-ic { width: 30px; height: 30px; font-size: 16px; }
+.fin-al-sub { margin: 0; }
+/* the next 60 days */
+.fin-up-grid { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 18px; }
+@container (max-width: 760px) { .fin-up-grid { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 760px) { .fin-up-grid { grid-template-columns: minmax(0, 1fr); } }
+.fin-up-list { display: grid; gap: 4px; align-content: start; }
+.fin-up-list h4 { margin: 8px 0 2px; }
+.fin-up-ev { display: grid; grid-template-columns: 56px 22px minmax(0, 1fr) auto; gap: 6px; align-items: center; font-size: 12.5px; padding: 4px 6px; border-radius: 8px; }
+.fin-up-ev:hover { background: var(--bg); }
+.fin-up-ev.in b { color: var(--ok); } .fin-up-ev.out b { color: var(--ink); } .fin-up-ev.info { color: var(--ink-2); }
+.fin-up-d { color: var(--ink-3); }
+.fin-up-l { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* find, go to, keys */
+.fin-cv-find { display: flex; align-items: center; gap: 6px; }
+.fin-cv-find .input { width: 210px; }
+.fin-cv-goto { width: auto; max-width: 180px; }
+.fin-cv-world.searching .fin-cvn:not(.hit):not(.fin-room-t) { opacity: .25; transition: opacity .2s; }
+.fin-cv-world .fin-cvn.hit { box-shadow: 0 0 0 3px var(--warn), 0 12px 26px -14px rgba(0,0,0,.4); z-index: 4; }
+.fin-cv-keys { position: absolute; right: 12px; bottom: 12px; z-index: 7; width: min(340px, calc(100% - 24px)); padding: 12px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--elev-3, 0 16px 40px rgba(0,0,0,.25)); }
+.fin-cv-keys dl { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 12px; margin: 8px 0 0; font-size: 12.5px; }
+.fin-cv-keys dt { font-weight: 700; } .fin-cv-keys dd { margin: 0; color: var(--ink-2); }
+/* the minimap */
+.fin-mini { position: absolute; left: 12px; bottom: 12px; z-index: 5; padding: 6px; box-sizing: content-box; background: color-mix(in srgb, var(--surface) 90%, transparent); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--elev-2); cursor: crosshair; backdrop-filter: blur(6px); }
+.fin-mini svg { display: block; }
+.fin-mini rect { fill: color-mix(in srgb, hsl(var(--h) 60% 75%) 70%, var(--surface)); stroke: color-mix(in srgb, hsl(var(--h) 50% 45%) 50%, transparent); stroke-width: .6; }
+.fin-mini rect.vpr { fill: color-mix(in srgb, var(--accent) 12%, transparent); stroke: var(--accent); stroke-width: 1.5; }
+.fin-mini-x { position: absolute; top: -8px; right: -8px; width: 20px; height: 20px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); font-size: 13px; line-height: 1; padding: 0; color: var(--ink-2); }
+.fin-mini-show { position: absolute; left: 12px; bottom: 12px; z-index: 5; }
+@media (max-width: 700px) { .fin-mini { display: none; } .fin-cv-find .input { width: 140px; } }
+.fin-mini { opacity: .92; } .fin-mini:hover { opacity: 1; }
+.fin-cv-bar { row-gap: 6px; }

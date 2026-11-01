@@ -212,7 +212,7 @@ async def main():
         await pg.click('[data-act="fin-cv-focus"][data-id=""]'); await pg.wait_for_timeout(250)
         k0 = await ev(f"{U}.cv.k"); await pg.click('[data-act="fin-cv-zoom"][data-v="in"]'); assert await ev(f"{U}.cv.k") > k0
         vp = await pg.locator('#fin-cv-vp').bounding_box(); x0 = await ev(f"{U}.cv.x")
-        await pg.mouse.move(vp['x'] + 20, vp['y'] + vp['height'] - 20); await pg.mouse.down(); await pg.mouse.move(vp['x'] + 120, vp['y'] + vp['height'] - 10, steps=5); await pg.mouse.up()
+        await pg.mouse.move(vp['x'] + vp['width'] - 160, vp['y'] + vp['height'] - 20); await pg.mouse.down(); await pg.mouse.move(vp['x'] + vp['width'] - 60, vp['y'] + vp['height'] - 10, steps=5); await pg.mouse.up()   # away from the minimap in the corner
         assert abs(await ev(f"{U}.cv.x") - x0 - 100) < 2, 'dragging moves the canvas'
         await pg.click('[data-act="fin-cv-fit"]')
         await pg.click('[data-act="fin-cv-full"]'); await pg.wait_for_timeout(250)
@@ -272,6 +272,38 @@ async def main():
         last = await ev("window.__prompts.filter(p => /^You update a personal finance tool/.test(p.prompt)).pop().prompt")
         assert '38000' in last and '45000' in last, 'Claude sees the canvas edits'
         await pg.screenshot(path=os.path.join(HERE, 'shots', 'finance-canvas-edit.png'))
+
+        # a complete board: what is coming up and needs attention, find, go to, minimap, keys, trends
+        assert await ev("!!document.querySelector('.fin-room[data-room=\"next\"]')"), 'the Coming up & attention room'
+        up = await ev("window.__FIN.upcoming()"); kinds = {e['kind'] for e in up['events']}; print('UPCOMING', len(up['events']), sorted(kinds), up['low'])
+        assert 'card' in kinds and 'instalment' in kinds and up['points'], 'the card bill and instalments ahead, with the cash they leave'
+        assert await ev("!!document.querySelector('.fin-det[data-det=\"up\"] .fin-chart')") and await ev("document.querySelectorAll('.fin-up-ev').length") >= 3
+        al = await ev("window.__FIN.alerts()"); print('ALERTS', [(a['sev'], a['label']) for a in al]); assert al and await ev("document.querySelectorAll('.fin-leaf.alert').length") == len(al)
+        await tap(al[0]['id']); await pg.wait_for_selector(f'#fin-pop[data-pop="{al[0]["id"]}"]'); await pg.keyboard.press('Escape'); await pg.wait_for_timeout(300)
+        await pg.click('[data-act="fin-cv-all"][data-v="open"]'); await pg.wait_for_timeout(300)
+        assert await ev("document.querySelectorAll('.fin-spark').length") >= 3 and await ev("document.querySelectorAll('.fin-leaf.goal .fin-prog').length") >= 1, 'trend lines and goal progress on the cards'
+        await ev("window.__FIN.show('exp')"); await pg.click('.fin-room[data-room="exp"] [data-act="fin-cv-tog"]'); await pg.wait_for_timeout(200)   # folded again, as before
+        await pg.fill('#fin-cv-q', 'shop one'); await pg.wait_for_timeout(200)
+        hits = await ev(f"{U}.cvHits"); print('FIND', hits, await pg.text_content('#fin-cv-qn')); assert hits and 'transaction' in await pg.text_content('#fin-cv-qn')
+        x0 = await ev(f"{U}.cv.x"); await pg.press('#fin-cv-q', 'Enter'); await pg.wait_for_timeout(500); assert await ev(f"{U}.cv.x") != x0 or await ev(f"document.querySelector('.fin-cvn[data-node=\"{hits[0]}\"]').classList.contains('fresh')"), 'Enter goes to it'
+        await pg.click('#fin-cv-qn [data-act="fin-cv-q-tx"]'); await pg.wait_for_timeout(500); assert await opened('ledger') and await ev(f"{U}.l.q") == 'shop one', 'its transactions as a room'
+        await pg.fill('#fin-cv-q', ''); await pg.wait_for_timeout(100); await pg.click('[data-act="fin-cv-close-all"]'); await pg.wait_for_timeout(200)
+        await pg.select_option('select[data-chg="fin-cv-goto-room"]', 'own'); await pg.wait_for_timeout(500)
+        inroom = await ev("(() => { const r = document.querySelector('.fin-room[data-room=\"own\"]').getBoundingClientRect(), v = document.getElementById('fin-cv-vp').getBoundingClientRect(); return r.top >= v.top - 2 && r.left >= v.left - 2 && r.right <= v.right + 2; })()"); assert inroom, 'Go to shows the whole room'
+        await pg.mouse.click(10, 10); await pg.keyboard.press('1'); await pg.wait_for_timeout(500)
+        assert await ev("(() => { const r = document.querySelector('.fin-room[data-room=\"ov\"]').getBoundingClientRect(), v = document.getElementById('fin-cv-vp').getBoundingClientRect(); return r.top >= v.top - 2 && r.left >= v.left - 2; })()"), 'key 1: the first room'
+        k1 = await ev(f"{U}.cv.k"); await pg.keyboard.press('+'); await pg.wait_for_timeout(450); assert await ev(f"{U}.cv.k") > k1
+        await pg.keyboard.press('0'); await pg.wait_for_timeout(450); assert await ev(f"{U}.cv.k") < k1 + 0.01, 'key 0: fit'
+        await pg.keyboard.press('?'); await pg.wait_for_timeout(250); assert await ev("!!document.querySelector('.fin-cv-keys')") and await ev("document.getElementById('modal').hidden"), 'the canvas keys, not the app’s'
+        await pg.keyboard.press('?'); await pg.wait_for_timeout(200)
+        await pg.keyboard.press('f'); await pg.wait_for_timeout(300); assert await ev("!!document.querySelector('.fin-cvwrap.full')"); await pg.keyboard.press('Escape'); await pg.wait_for_timeout(300)
+        mb = await pg.locator('#fin-mini').bounding_box(); x0 = await ev(f"{U}.cv.x")
+        await pg.mouse.click(mb['x'] + mb['width'] * 0.8, mb['y'] + mb['height'] * 0.8); await pg.wait_for_timeout(200); assert await ev(f"{U}.cv.x") != x0, 'the minimap takes you there'
+        # double-click a room's title: zoom to the room, nothing opens
+        await ev("window.__FIN.show('com')"); await pg.wait_for_timeout(300); n_open = await ev(f"{U}.cvOpen.length")
+        await pg.dblclick('.fin-room-t[data-node="com"] b'); await pg.wait_for_timeout(600)
+        assert await ev(f"{U}.cvOpen.length") == n_open, 'a double-click zooms, it does not open the part'
+        await pg.screenshot(path=os.path.join(HERE, 'shots', 'finance-complete.png'))
 
         # questions are answered and change nothing; asking to see something opens it
         t0 = await ev("window.__FIN.tx().length"); m = await say('How much did I spend on food in September?')

@@ -365,6 +365,18 @@ eq(F.health({ income: 30000, spending: 24000, essential: 10000, cash: 40000, ins
 const both = F.planPurchases([{ id: 'l', name: 'Laptop', price: 40000, priority: 1 }, { id: 'p', name: 'Phone', price: 15000, priority: 2 }], { cash: 0, capacity: 45000, card: { available: 42440 } }, '2026-10-30');
 eq(both.items.map(i => [i.id, i.rec]), [['l', 'card_full'], ['p', 'save']], 'together: the card covers the laptop; the phone no longer fits the limit left');
 eq(both.items.find(i => i.id === 'p').ready, '2026-12', 'November: 40,000 repays the card, 5,000 towards the phone; ready in December');
+/* coming up: events in the next days and the cash they leave */
+eq([F.addMonthsDate('2026-01-31', 1), F.addMonthsDate('2026-11-15', 2)], ['2026-02-28', '2027-01-15'], 'same day next month; the 31st becomes the month end');
+const up = F.upcoming({ today: '2026-11-01', days: 45, cash: 20000,
+  recurring: [{ name: 'Salary', dir: 1, amount: 30000, freq: 'monthly', next: '2026-11-25' }, { name: 'Netflix', dir: -1, amount: 250, freq: 'monthly', next: '2026-11-10', onCard: true }, { name: 'Gym', dir: -1, amount: 1500, freq: 'monthly', next: '2026-11-03' }, { name: 'Odd', dir: -1, amount: 99, freq: 'weekly', next: '2026-11-02' }],
+  installments: [{ name: 'Shop One', amount: 3000, last: '2026-10-30', end: '2027-03', status: 'active', onCard: true }, { name: 'Done', amount: 500, last: '2026-10-05', status: 'completed' }],
+  card: { dueDate: '2026-11-27', amount: 7960, minDue: 400 }, dated: [{ date: '2026-11-20', label: 'Laptop affordable', kind: 'goal' }] });
+eq(up.events.map(e => [e.date, e.kind, e.label, e.amount]), [['2026-11-03', 'bill', 'Gym', -1500], ['2026-11-10', 'bill', 'Netflix', -250], ['2026-11-20', 'goal', 'Laptop affordable', 0], ['2026-11-25', 'income', 'Salary', 30000], ['2026-11-27', 'card', 'Card bill', -7960], ['2026-11-30', 'instalment', 'Shop One', -3000], ['2026-12-03', 'bill', 'Gym', -1500], ['2026-12-10', 'bill', 'Netflix', -250]],
+  'monthly bills and income on their dates, instalments after their last payment, the card bill on its due date; weekly and finished ones left out');
+eq([up.low, up.last, up.cashIn, up.cashOut], [{ date: '2026-11-03', bal: 18500 }, 39040, 30000, 10960], 'card purchases reach cash only through the card bill; the lowest point and the end');
+eq(F.upcoming({ today: '2026-11-01', incomes: [{ label: 'Salary', amount: 36000, day: 25 }] }).events.map(e => e.date), ['2026-11-25', '2026-12-25'], 'income you entered, on its day');
+eq(F.upcoming({ today: '2026-11-01', incomes: [{ label: 'Salary', amount: 36000, day: 1, from: '2026-12' }] }).events.map(e => e.date), ['2026-12-01'], 'a salary already in this month is expected from next month');
+eq(F.upcoming({ today: '2026-11-01', installments: [{ name: 'X', amount: 100, last: '2026-10-15', end: '2026-11', status: 'active' }] }).events.length, 1, 'an instalment stops after its last month');
 /* 15. backups */
 eq(F.validateBackup({ app: 'action-register-money', tx: [{ id: 'a', acct: 'A' }], prefs: {} }).ok, true, 'a backup is accepted');
 eq(F.validateBackup({ tx: 'x' }).ok, false, 'a damaged file is refused');

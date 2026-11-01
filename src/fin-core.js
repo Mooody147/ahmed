@@ -754,6 +754,32 @@ function monthControl(an, plan, o) {
     disposable: expected !== null ? r2(Math.max(expected, b.inc) - b.exp - committed) : r2(b.inc - b.exp - committed), committed, upcoming, over, pace,
     saveTarget: o.saveTarget ? +o.saveTarget : null, saved: r2(b.inc - b.exp), savedMoved: b.save, perDay: left > 0 ? r2(flexLeft / left) : null, flexLeft };
 }
+// the same day a number of months later (the 31st becomes the month's last day)
+const addMonthsDate = (d, n) => { const m = addMonths(ym(d), n), day = Math.min(+d.slice(8, 10), dim(m)); return `${m}-${String(day).padStart(2, '0')}`; };
+// money coming up in the next days: repeating income and bills, instalments, the card bill and dated events, each on
+// its date; and the cash they leave day by day (card purchases and card instalments reach cash only through the card
+// bill). Everything is an estimate from what was seen before.
+function upcoming(o) {
+  const today = o.today, end = addDays(today, o.days || 60), ev = [];
+  const add = (date, kind, label, amount, x = {}) => { if (date >= today && date <= end) ev.push({ date, kind, label, amount: r2(amount), ...x }); };
+  for (const r of o.recurring || []) {
+    if (r.freq !== 'monthly' || !r.next) continue;
+    for (let d = r.next, i = 0; d <= end && i < 24; d = addMonthsDate(d, 1), i++) add(d, r.dir > 0 ? 'income' : 'bill', r.name, r.dir * r.amount, { onCard: !!r.onCard, cat: r.cat || '' });
+  }
+  for (const i of o.installments || []) {
+    if (!(i.status === 'active' || i.status === 'missing') || !i.last || !i.amount) continue;
+    for (let d = addMonthsDate(i.last, 1), k = 0; d <= end && k < 36; d = addMonthsDate(d, 1), k++) { if (i.end && ym(d) > i.end) break; add(d, 'instalment', i.name, -Math.abs(i.amount), { onCard: !!i.onCard }); }
+  }
+  for (const x of o.incomes || []) { if (!x.amount) continue; const day = Math.min(Math.max(1, +x.day || 1), 28); for (let m = x.from && x.from > ym(today) ? x.from : ym(today), k = 0; k < 4; m = addMonths(m, 1), k++) add(`${m}-${String(day).padStart(2, '0')}`, 'income', x.label, Math.abs(x.amount), { manual: true }); }
+  if (o.card && o.card.dueDate && o.card.amount > 0) add(o.card.dueDate, 'card', o.card.label || 'Card bill', -Math.abs(o.card.amount), { min: o.card.minDue || null });
+  for (const x of o.dated || []) add(x.date, x.kind || 'event', x.label, x.amount || 0, { info: !x.amount });
+  ev.sort((a, b) => a.date.localeCompare(b.date) || a.amount - b.amount);
+  // the cash line: today's cash, then every event that moves cash
+  let bal = typeof o.cash === 'number' ? o.cash : null; const points = bal === null ? [] : [{ date: today, bal }]; let low = bal === null ? null : { date: today, bal };
+  if (bal !== null) for (const e of ev) { if (e.onCard || e.info || !e.amount) continue; bal = r2(bal + e.amount); points.push({ date: e.date, bal }); if (bal < low.bal) low = { date: e.date, bal }; }
+  const cashIn = r2(sum(ev.filter(e => !e.onCard && e.amount > 0).map(e => e.amount))), cashOut = r2(sum(ev.filter(e => !e.onCard && e.amount < 0).map(e => -e.amount)));
+  return { events: ev, points, low, end, cashIn, cashOut, last: points.length ? points[points.length - 1].bal : null };
+}
 // spending far above what this category usually costs: above Q3 + 3×IQR of its own history and at least twice
 // its median, with at least 5 earlier transactions to compare with
 function unusual(list) {
@@ -1178,6 +1204,6 @@ function validateBackup(o) {
 
 return { EPS, r2, norm, AR, CURRENCIES, validDate, dnum, addDays, spanDays, ym, addMonths, monthList, dim, monthEnd, parseDate, dateOrder, parseNum, cleanDesc, payeeKey,
   detectBank, looksLikeCard, last4, DEFAULT_CATS, catMap, classify, learnRule, refundOf, pairMoves, CODE_CAT, detectGrid, rowsFromGrid, rowsFromText, rowsFromLayout, statementFacts, instOf, chainBest, statementCheck, matchImport, importCounts, similar, overlaps, fp, quant, median, entries, analyze, series,
-  recurring, incomeBase, STRATEGY, budgetPlan, monthControl, unusual, SCEN, monthFactor, simulate, sensitivity, shiftDate, allocate, thirdParty, holdingReturns, propertyShare, rentForecast, cardOwed, position, monthsTo, forecast, goalPlan, reconcile, validateBackup, financeQuote, detectInstallments, installmentLoad, activeInput, setInput, balanceChange, health, planPurchases };
+  recurring, incomeBase, STRATEGY, budgetPlan, monthControl, unusual, upcoming, addMonthsDate, SCEN, monthFactor, simulate, sensitivity, shiftDate, allocate, thirdParty, holdingReturns, propertyShare, rentForecast, cardOwed, position, monthsTo, forecast, goalPlan, reconcile, validateBackup, financeQuote, detectInstallments, installmentLoad, activeInput, setInput, balanceChange, health, planPurchases };
 })();
 if (typeof module !== 'undefined') module.exports = FIN;

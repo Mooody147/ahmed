@@ -54,7 +54,12 @@ function finCvModel() {
   for (const b of done) for (const [k, v] of Object.entries(b.byCat || {})) if ((finCat(k) || {}).kind === 'expense') byCat[k] = (byCat[k] || 0) + v / done.length;
   const cats = Object.entries(byCat).filter(([, v]) => v > 0.5).sort((a, b) => b[1] - a[1]);
   const rec = FIN.recurring(all.entries || []).filter(r => r.dir < 0 && r.fixed);
-  const sp = cats.map(([k, v]) => leaf('c:' + k, (finCat(k) || { name: k }).name, fk(v), 'a month · last ' + done.length + ' complete month' + (done.length === 1 ? '' : 's'), { act: 'fin-drill-cat', k }));
+  // each category: its average, how the last month compares with the months before, and a small trend line
+  const sp = cats.map(([k, v]) => {
+    const last = done.length ? (done[done.length - 1].byCat || {})[k] || 0 : 0, prev = done.slice(0, -1), pAvg = prev.length ? prev.reduce((s2, b) => s2 + ((b.byCat || {})[k] || 0), 0) / prev.length : 0;
+    const pct = pAvg > 0 && last > 0 ? Math.round((last - pAvg) / pAvg * 100) : null, trend = pct === null ? '' : Math.abs(pct) < 5 ? '≈ as usual · ' : `${pct > 0 ? '▲' : '▼'} ${Math.abs(pct)}% last month · `;
+    const l = leaf('c:' + k, (finCat(k) || { name: k }).name, fk(v), trend + 'a month on average', { act: 'fin-drill-cat', k }, pct !== null && pct >= 15 ? 'trend-up' : pct !== null && pct <= -15 ? 'trend-down' : '');
+    l.spark = all.months.slice(-8).map(b => (b.byCat || {})[k] || 0); l.sparkCls = 'exp'; return l; });
   const spB = branch('exp', '🧾', 'Spending', 20, 'exp', `${fk(n.spending)} usual a month`, sp.length ? sp : [leaf('c:none', 'No complete month yet', '', 'add statements to see where money goes', { act: 'fin-sec', s: 'import' }, 'muted')], [tool('budget', '🎯', 'Budget & control', 'limits, this month, savings plan')]);
   if (rec.length) spB.children.push(branch('rec', '🔁', 'Repeating payments', 20, 'exp', `${fk(rec.reduce((s, r) => s + r.perMonth, 0))} a month`, rec.map(r => leaf('r:' + r.key, FIN.cleanDesc(r.name), fk(r.amount), `${r.freq || 'monthly'} · next about ${fday(r.next)}`, { act: 'fin-sec', s: 'budget' }))));
   B.push(spB);
@@ -93,6 +98,11 @@ function finCvModel() {
   else if (log.length) B.push(branch('auto', '🤖', 'Sorted by Claude', 260, 'update', `${(typeof finAutoLog === 'function' ? finAutoLog() : []).length} decision${(typeof finAutoLog === 'function' ? finAutoLog() : []).length === 1 ? '' : 's'} · change any`, log.map(x => leaf('d:' + x.id, x.label, '', x.how + (x.why ? ' · ' + x.why : ''), { act: 'fin-sec', s: x.sec || 'update' }))));
 
 
+  // trend lines inside the cards: an account's money in minus out by month, the salary month by month
+  if (typeof finAcctSpark === 'function') for (const br of B) for (const c of br.children) {
+    if (c.id.startsWith('a:')) { const a = finAcct(c.id.slice(2)); if (a && !['credit_card', 'bnpl'].includes(a.kind)) c.spark = finAcctSpark(a.id); }
+    else if (c.id === 'in:salary' || (c.id.startsWith('in:') && c.id !== 'in:cib')) { c.spark = all.months.slice(-8).map(b => b.inc || 0); c.sparkCls = 'inc'; }
+  }
   const root = { id: 'root', type: 'root', label: 'My money', sec: 'dash', sum: `net worth ${own.net !== null ? fk(own.net) : '—'} · free cash ${fk(n.free)} · saving ${fk(n.capacity)} a month`, children: B };
   const f = UI.fin.cv.focus && B.find(b => b.id === UI.fin.cv.focus);
   if (f) root.children = [f]; else UI.fin.cv.focus = null;
@@ -113,6 +123,7 @@ const finSecOpen = k => finIsOpen('sec:' + k);
 
 function finCvRooms(root) {
   const R = [{ id: 'ov', kind: 'ov', full: true, icon: '💰', title: 'My money', sum: root.sum, hue: 340, sec: 'dash' }];
+  if (typeof finNextLayout === 'function') R.push({ id: 'next', kind: 'next', full: true, icon: '🔔', title: 'Coming up & attention', sum: finNextSum(), hue: 28 });
   const buy = root.children.find(b => b.id === 'buy');
   if (buy) R.push({ id: 'buy', kind: 'goals', full: true, node: buy, icon: buy.icon, title: buy.label, sum: buy.sum, hue: buy.hue });
   for (const b of root.children) if (b.id !== 'buy') R.push({ id: b.id, kind: 'room', node: b, icon: b.icon, title: b.label, sum: b.sum, hue: b.hue, sec: b.sec });
@@ -143,6 +154,7 @@ function finCvLayout(rooms, plan, n) {
     if (UI.fin.cvCol.has(r.id)) { r.h = HEAD + 6; }
     else if (r.kind === 'ov') { const h = finDetH('ov', 420); dets.push({ id: 'ov', x: x0, y, w: iw, h }); y += h; r.h = y + PAD - r.y; }
     else if (r.kind === 'sec') { const h = finDetH(r.id, 640); dets.push({ id: r.id, x: x0, y, w: iw, h }); y += h; r.h = y + PAD - r.y; }
+    else if (r.kind === 'next') { y = finNextLayout(r, x0, y, iw, cards, dets, subs, grid); r.h = y + PAD - r.y; }
     else if (r.kind === 'goals') { y = finGoalsLayout(r, plan, n, x0, y, iw, cards, dets, edges, subs, grid); r.h = y + PAD - r.y; }
     else { grid(r.node.children, x0, y, iw); y = subs.y2; r.h = Math.max(y - CG, r.y + HEAD + 20) + PAD - r.y; }
     if (r.full) col = col.map(() => r.y + r.h + GAP); else { const c = Math.round(r.x / (W + GAP)); col[c] = r.y + r.h + GAP; }
@@ -150,6 +162,7 @@ function finCvLayout(rooms, plan, n) {
   const w = FR.FULL, h = Math.max(...rooms.map(r => r.y + r.h), 200);
   UI.fin.cvPos = new Map([...rooms.map(r => [r.id, { x: r.x, y: r.y, w: r.w, h: r.h }]), ...cards.map(c => [c.id, { x: c.x, y: c.y, w: c.w, h: c.h }]), ...dets.map(d => [d.id + ':det', d])]);
   UI.fin.cvRoot = UI.fin.cvPos.get('ov');
+  UI.fin.cvRoomsList = rooms.map(r => ({ id: r.id, kind: r.kind, x: r.x, y: r.y, w: r.w, h: r.h, hue: r.hue, icon: r.icon, title: r.title }));
   return { rooms, cards, dets, edges, subs, w, h };
 }
 // goals and purchases: where the money comes from on the left, each goal on the right, joined by how it is best paid;
@@ -163,7 +176,7 @@ function finGoalsLayout(r, plan, n, x0, y, iw, cards, dets, edges, subs, grid) {
     ['src:halan', '🛒', 'Halan', n.halan && n.halan.available !== null && n.halan.available !== undefined ? fk(n.halan.available) + ' free' : '—', n.halan && n.halan.terms && n.halan.terms.method ? 'terms set' : 'tell the canvas its limit and terms']];
   const ix = x0 + iw - IW, top = y; let iy = y;
   const items = plan.items.map(it => {
-    const c = { id: 'b:' + it.id, type: 'leaf', kind: 'goal', label: it.name + (it.focus ? ' ★' : ''), val: fk(it.price), sub: `${FIN_REC[it.rec][0]}${it.ready ? ' · ' + fmon(it.ready) : ''}${it.monthly ? ' · ' + fk(it.monthly) + '/mo' : ''}`, cls: 'goal ' + (it.late ? 'warn' : it.rec === 'not_yet' ? 'muted' : ''), x: ix, y: iy, w: IW, h: IH, it, act: { act: 'fin-cv-det', id: 'b:' + it.id } };
+    const c = { id: 'b:' + it.id, type: 'leaf', kind: 'goal', label: it.name + (it.focus ? ' ★' : ''), val: fk(it.price), sub: `${FIN_REC[it.rec][0]}${it.ready ? ' · ' + fmon(it.ready) : ''}${it.monthly ? ' · ' + fk(it.monthly) + '/mo' : ''}`, cls: 'goal ' + (it.late ? 'warn' : it.rec === 'not_yet' ? 'muted' : ''), prog: it.price ? Math.min(1, (it.fromCash || 0) / it.price) : 0, x: ix, y: iy, w: IW, h: IH, it, act: { act: 'fin-cv-det', id: 'b:' + it.id } };
     cards.push(c); iy += IH + 14;
     return c;
   });
@@ -250,6 +263,7 @@ function finCardDetail(id) {
     const map = { cash: [['Free cash now', fk(n.free), `cash ${fk(n.cash)} − reserve ${fk(n.reserve)} − others’ ${fk(n.held)}`]], save: [['Income', fk(n.income), esc(n.incomeBasis)], ['Usual spending', fk(n.spending), esc(n.spendBasis)], ['Instalments', fk(n.instMonthly), ''], ['Left to save', fk(n.capacity), 'a month']], card: [['Available', n.card ? fk(n.card.available) : '—', n.card ? 'limit ' + fk(n.card.limit) : '']], halan: [['Available', n.halan && n.halan.available !== null && n.halan.available !== undefined ? fk(n.halan.available) : '—', '']] }[key] || [];
     return finKv(map) + (key === 'card' || key === 'halan' ? `<div class="row">${finBtn('fin-cv-sec', '💳 Terms', { s: 'credit' })}</div>` : '');
   }
+  if (kind === 'al') return finAlertDetail(id);
   if (kind === 'd') { const x = (typeof finAutoLog === 'function' ? finAutoLog() : []).find(z => z.id === key); if (!x) return ''; return `<p><b>${esc(x.label)}</b></p><p>Decided: <b>${esc(x.how)}</b> ${x.by === 'rule' ? '<span class="fin-tag">rule</span>' : '<span class="fin-tag">Claude</span>'}</p>${x.why ? `<p class="small muted">${esc(x.why)}</p>` : ''}<p class="small">${fmtDateTime(x.at)} · tell the canvas if it is wrong.</p>`; }
   if (kind === 'q') { const q = finQuestions().find(z => z.id === key); return q ? `<p>${q.text}</p>${finBtn('fin-cv-sec', '✍️ Answer', { s: 'update' })}` : ''; }
   return '';
@@ -258,6 +272,7 @@ function finOverviewHTML() {
   const n = finNow(), own = finPosition(), all = finAll();
   return finKv([['Net worth', own.net !== null ? fk(own.net) : '—', own.estimated ? 'includes estimates' : 'own money only'], ['Cash', fk(n.cash), `${n.cashKnown} of ${n.cashAccts} accounts known`], ['Free cash', fk(n.free), `after a ${fk(n.reserve)} reserve`], ['Income', fk(n.income) + '/mo', esc(n.incomeBasis)], ['Usual spending', fk(n.spending) + '/mo', esc(n.spendBasis)], ['Saving', fk(n.capacity) + '/mo', 'what is left'], ['Instalments', fk(n.instMonthly) + '/mo', `${n.inst.filter(i => i.status === 'active' || i.status === 'missing').length} running`], n.card && ['Card', 'owes ' + fk(n.card.owed), fk(n.card.available) + ' free'], n.health.score !== null && ['Health', n.health.score + '/100', '']])
     + `<div class="fin-ov-chart"><h4>Income and spending by month</h4>${finBars(finMonthsRows(all.months, b => ({ a: b.inc, b: b.exp, net: b.covered ? FIN.r2(b.inc - b.exp) : null })), { title: 'overview months', h: 190, net: true })}</div>`
+    + (typeof finCashMonthsHTML === 'function' ? finCashMonthsHTML() : '')
     + `<div class="row">${finBtn('fin-cv-sec', '📊 Full dashboard', { s: 'dash' })}${finBtn('fin-cv-sec', '🎯 Budget', { s: 'budget' })}${finBtn('fin-cv-sec', '🔭 Forecast', { s: 'forecast' })}${finBtn('fin-cv-sec', '✍️ Balances', { s: 'update' })}</div>`;
 }
 function finGoalsHead(plan, n) {
@@ -273,6 +288,7 @@ function finDetBody(id, plan, n) {
   if (id === 'ov') return finOverviewHTML();
   if (id === 'gk') return finGoalsHead(plan, n);
   if (id === 'gt') return finGoalsTimeline(plan);
+  if (id === 'up') return finUpcomingHTML();
   if (id.startsWith('sec:')) { const k = id.slice(4); try { return (['dash', 'ledger', 'exp', 'inc'].includes(k) ? finFilterBar() : '') + FIN_VIEW[k](); } catch (e) { console.error(e); return `<p class="small muted">This part could not be drawn (${esc(e.message || String(e))}).</p>`; } }
   try { return finCardDetail(id) || '<p class="small muted">Nothing more to show.</p>'; } catch (e) { console.error(e); return `<p class="small muted">Could not show this (${esc(e.message || String(e))}).</p>`; }
 }
@@ -323,11 +339,11 @@ function finCvCard(c, hue) {
   const act = tool || c.cls.includes('more') ? { act: 'fin-cv-sec', s: (c.act && c.act.s) || 'ledger' } : c.act && c.act.act === 'fin-cv-add' ? c.act : { act: 'fin-cv-det', id: c.id };
   const editable = typeof finCvSpec === 'function' && !tool && !c.cls.includes('more') && !!finCvSpec(c.id);
   return `<div class="mnode fin-cvn fin-leaf ${c.cls}${open}${fresh}${editable ? ' editable' : ''}" role="button" tabindex="0" aria-expanded="${!!open}" ${finCvAttrs(act)} data-node="${esc(c.id)}" title="${esc(c.label)}${c.val ? ' — ' + esc(c.val) : ''}${c.sub ? '\n' + esc(c.sub) : ''}" style="${st}">
-    ${c.icon ? `<span class="gicon fin-cv-ic" aria-hidden="true">${c.icon}</span>` : ''}<div class="mtxt"><b>${tool ? '<span class="fin-tool-i" aria-hidden="true">' + (FIN_ICON[act.s] || '') + '</span>' : ''}${esc(c.label)}</b>${c.sub ? `<small>${esc(c.sub)}</small>` : ''}</div>${c.val ? `<span class="fin-cv-v num">${esc(c.val)}</span>` : ''}${editable ? `<button class="fin-cv-btn ed" data-act="fin-cv-edit" data-id="${esc(c.id)}" title="Edit (or double-tap, F2)" aria-label="Edit ${esc(c.label)}">✎</button>` : ''}</div>`;
+    ${c.icon ? `<span class="gicon fin-cv-ic" aria-hidden="true">${c.icon}</span>` : ''}<div class="mtxt"><b>${tool ? '<span class="fin-tool-i" aria-hidden="true">' + (FIN_ICON[act.s] || '') + '</span>' : ''}${esc(c.label)}</b>${c.sub ? `<small>${esc(c.sub)}</small>` : ''}</div>${c.val ? `<span class="fin-cv-v num">${esc(c.val)}</span>` : ''}${c.spark && typeof finSparkSVG === 'function' ? finSparkSVG(c.spark, c.sparkCls) : ''}${c.prog ? `<i class="fin-prog" style="width:${Math.round(c.prog * 100)}%" title="${Math.round(c.prog * 100)}% from cash now"></i>` : ''}${editable ? `<button class="fin-cv-btn ed" data-act="fin-cv-edit" data-id="${esc(c.id)}" title="Edit (or double-tap, F2)" aria-label="Edit ${esc(c.label)}">✎</button>` : ''}</div>`;
 }
 function finCvRoom(r) {
   const folded = UI.fin.cvCol.has(r.id), fresh = Date.now() < UI.fin.flash.until && UI.fin.flash.ids.has(r.id) ? ' fresh' : '';
-  const hasKids = r.kind === 'room' ? r.node.children.length : r.kind !== 'sec';
+  const hasKids = r.kind === 'room' ? r.node.children.length : r.kind !== 'sec';   // overview, coming up and goals fold too
   const titleAct = r.kind === 'sec' ? `data-act="fin-cv-sec" data-s="${esc(r.sec)}"` : r.sec ? `data-act="fin-cv-sec" data-s="${esc(r.sec)}"` : '';
   return `<section class="fin-room ${r.kind}${fresh}" data-room="${esc(r.id)}" style="left:${r.x}px;top:${r.y}px;width:${r.w}px;height:${r.h}px;--h:${r.hue ?? 200}">
     <div class="fin-room-h">
@@ -358,8 +374,8 @@ VIEW_FN.finance = () => {
   const cv = UI.fin.cv;
   // full screen: the canvas alone — no title, no description, no talk box; a few controls float in its corner
   if (cv.full) return `<div class="wrap fin fin-canvas-page"><section class="fin-cvwrap full" id="fin-s-map" aria-label="Money canvas, full screen">
-    <div class="fin-cv-stage">${finCvBoard()}${finPopHTML()}${typeof finCvEditorHTML === 'function' ? finCvEditorHTML() : ''}
-      <div class="fin-cv-float" role="toolbar" aria-label="Canvas controls">
+    <div class="fin-cv-stage">${finCvBoard()}${finPopHTML()}${typeof finCvMiniHTML === 'function' ? finCvMiniHTML() + finCvHelpHTML() : ''}${typeof finCvEditorHTML === 'function' ? finCvEditorHTML() : ''}
+      <div class="fin-cv-float" role="toolbar" aria-label="Canvas controls">${typeof finCvToolsHTML === 'function' ? finCvToolsHTML() : ''}
         ${UI.fin.cvOpen.length || UI.fin.pop ? `<button class="btn sm" data-act="fin-cv-close-all" title="Fold every opened detail and part">Close details</button>` : ''}
         <div class="seg zoom" role="group" aria-label="Zoom"><button data-act="fin-cv-zoom" data-v="out" aria-label="Zoom out">−</button><button data-act="fin-cv-fit" title="Fit to the screen"><span id="fin-cv-z">${Math.round(cv.k * 100)}%</span></button><button data-act="fin-cv-zoom" data-v="in" aria-label="Zoom in">+</button></div>
         <button class="btn sm" data-act="fin-cv-full" aria-pressed="true" title="Back (Esc)">✕ Exit full screen</button>
@@ -368,14 +384,15 @@ VIEW_FN.finance = () => {
   if (UI.fin.tab === 'settings') return `<div class="wrap fin fin-settings-page"><div class="fin-cv-bar"><h1>Money</h1>${finTabs()}</div>${FIN_VIEW.settings()}</div>`;
   return `<div class="wrap fin fin-canvas-page">
   <section class="fin-cvwrap ${cv.full ? 'full' : ''}" id="fin-s-map" aria-label="Money canvas">
-    <div class="fin-cv-bar"><h1>Money</h1>${finTabs()}<span class="small muted fin-cv-hint">Tap a card for its details · a room’s title opens it fully · ✎ to edit · or tell the canvas below</span><span class="spacer"></span>
+    <div class="fin-cv-bar"><h1>Money</h1>${finTabs()}<span class="spacer"></span>
+      ${typeof finCvToolsHTML === 'function' ? finCvToolsHTML() : ''}
       ${cv.focus ? `<button class="btn sm" data-act="fin-cv-focus" data-id="">Show everything</button>` : ''}
       ${UI.fin.cvOpen.length || UI.fin.pop ? `<button class="btn sm" data-act="fin-cv-close-all" title="Fold every opened detail and part">Close details</button>` : ''}
       <button class="btn sm" data-act="fin-new-tx" title="Add a transaction by hand">${I.plus} Transaction</button>
       <button class="btn sm" data-act="fin-cv-all" data-v="open" title="Unfold every room">Unfold all</button><button class="btn sm" data-act="fin-cv-all" data-v="fold" title="Fold every room to its title">Fold all</button>
       <div class="seg zoom" role="group" aria-label="Zoom"><button data-act="fin-cv-zoom" data-v="out" aria-label="Zoom out">−</button><button data-act="fin-cv-fit" title="Fit to the screen"><span id="fin-cv-z">${Math.round(cv.k * 100)}%</span></button><button data-act="fin-cv-zoom" data-v="in" aria-label="Zoom in">+</button></div>
       <button class="btn sm" data-act="fin-cv-full" aria-pressed="${cv.full}" title="${cv.full ? 'Back (Esc)' : 'Full screen'}">${cv.full ? '✕ Close' : '⤢ Full screen'}</button></div>
-    <div class="fin-cv-stage">${finCvBoard()}${finPopHTML()}${typeof finCvEditorHTML === 'function' ? finCvEditorHTML() : ''}</div>
+    <div class="fin-cv-stage">${finCvBoard()}${finPopHTML()}${typeof finCvMiniHTML === 'function' ? finCvMiniHTML() + finCvHelpHTML() : ''}${typeof finCvEditorHTML === 'function' ? finCvEditorHTML() : ''}</div>
     ${typeof finTalkHTML === 'function' ? finTalkHTML() : ''}
   </section>
 </div>`;
@@ -386,7 +403,7 @@ function finCvGlide() { const w = $('#fin-cv-world'); if (!w) return; w.classLis
 function finCvApply() {
   const w = $('#fin-cv-world'), cv = UI.fin.cv; if (w) w.style.transform = `translate(${cv.x}px,${cv.y}px) scale(${cv.k})`;
   const z = $('#fin-cv-z'); if (z) z.textContent = Math.round(cv.k * 100) + '%';
-  finPopPlace();
+  finPopPlace(); if (typeof finMiniPlace === 'function') finMiniPlace();
   if (typeof finCvEditorPlace === 'function') finCvEditorPlace();
 }
 // on opening: as wide as the screen allows (readable), from the top; Fit shows all of it
@@ -473,7 +490,8 @@ HOOKS.afterRender.push(() => {
 
 Object.assign(ACT, {
   'fin-sec': el => { UI.fin.sel.clear(); finOpen(el.dataset.s); },
-  'fin-cv-sec': el => { const k = el.dataset.s; if (k === 'buy') return finOpen('buy'); if (finSetOpen('sec:' + k)) UI.fin.goto = 'sec:' + k; render(); },
+  'fin-cv-sec': (el, e) => { const k = el.dataset.s;
+    if (el.classList.contains('fin-room-t')) { clearTimeout(UI.fin.secT); if (e && e.detail > 1) return; UI.fin.secT = setTimeout(() => { if (k === 'buy') return finOpen('buy'); if (finSetOpen('sec:' + k)) UI.fin.goto = 'sec:' + k; render(); }, 240); return; } if (k === 'buy') return finOpen('buy'); if (finSetOpen('sec:' + k)) UI.fin.goto = 'sec:' + k; render(); },
   'fin-cv-det': el => { const id = el.dataset.id; if (UI.fin.pop === id) finPopClose(); else finPopOpen(id); },
   'fin-pop-x': () => finPopClose(),
   'fin-cv-close-all': () => { UI.fin.cvOpen = []; UI.fin.pop = null; render(); },
