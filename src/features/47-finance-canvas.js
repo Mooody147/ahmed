@@ -319,6 +319,15 @@ function finCvBoard() {
 const finTabs = () => `<div class="seg fin-tabs" role="tablist" aria-label="Money">${[['canvas', '🧭 Canvas'], ['settings', '⚙️ Settings']].map(([k, l]) => `<button role="tab" data-act="fin-tab" data-v="${k}" aria-selected="${(UI.fin.tab || 'canvas') === k}" aria-pressed="${(UI.fin.tab || 'canvas') === k}">${l}</button>`).join('')}</div>`;
 VIEW_FN.finance = () => {
   const cv = UI.fin.cv;
+  // full screen: the canvas alone — no title, no description, no talk box; a few controls float in its corner
+  if (cv.full) return `<div class="wrap fin fin-canvas-page"><section class="fin-cvwrap full" id="fin-s-map" aria-label="Money canvas, full screen">
+    <div class="fin-cv-stage">${finCvBoard()}${typeof finCvEditorHTML === 'function' ? finCvEditorHTML() : ''}
+      <div class="fin-cv-float" role="toolbar" aria-label="Canvas controls">
+        ${UI.fin.cvOpen.length ? `<button class="btn sm" data-act="fin-cv-close-all" title="Fold every opened detail and part">Close details</button>` : ''}
+        <div class="seg zoom" role="group" aria-label="Zoom"><button data-act="fin-cv-zoom" data-v="out" aria-label="Zoom out">−</button><button data-act="fin-cv-fit" title="Fit to the screen"><span id="fin-cv-z">${Math.round(cv.k * 100)}%</span></button><button data-act="fin-cv-zoom" data-v="in" aria-label="Zoom in">+</button></div>
+        <button class="btn sm" data-act="fin-cv-full" aria-pressed="true" title="Back (Esc)">✕ Exit full screen</button>
+      </div></div>
+  </section></div>`;
   if (UI.fin.tab === 'settings') return `<div class="wrap fin fin-settings-page"><div class="fin-cv-bar"><h1>Money</h1>${finTabs()}</div>${FIN_VIEW.settings()}</div>`;
   return `<div class="wrap fin fin-canvas-page">
   <section class="fin-cvwrap ${cv.full ? 'full' : ''}" id="fin-s-map" aria-label="Money canvas">
@@ -346,7 +355,7 @@ function finCvFit(all) {
   const vp = $('#fin-cv-vp'), s = UI.fin.cvSize, cv = UI.fin.cv; if (!vp || !s) return;
   const W = vp.clientWidth, H = vp.clientHeight; if (!W || !H) return;
   if (all) { cv.k = Math.max(0.1, Math.min(1, (W - 32) / s.w, (H - 32) / s.h)); cv.x = (W - s.w * cv.k) / 2; cv.y = Math.max(16, (H - s.h * cv.k) / 2); }
-  else { cv.k = Math.min(1, Math.max(0.42, (W - 32) / s.w)); cv.x = Math.max(16, (W - s.w * cv.k) / 2); cv.y = 16; }
+  else { cv.k = Math.min(1, Math.max(0.42, (W - 32) / s.w)); cv.x = Math.max(16, (W - s.w * cv.k) / 2); cv.y = cv.full ? 64 : 16; }   // full screen: below the floating controls
   cv.fitted = true; finCvApply();
 }
 function finCvZoomAt(f, cx, cy) {

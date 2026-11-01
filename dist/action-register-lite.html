@@ -2095,6 +2095,12 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 /* inside the canvas a part is as long as it needs: the canvas itself is what you move */
 .fin-det .fin-ledger, .fin-det .fin-mini, .fin-det .fin-rev { max-height: none; overflow: visible; }
 
+/* full screen: only the canvas */
+.fin-cvwrap.full { padding: 0; gap: 0; height: auto; min-height: 0; }
+.fin-cvwrap.full .fin-cv-stage { flex: 1; height: auto; border-radius: 0; }
+.fin-cvwrap.full .fin-cv-vp { border-radius: 0; border: 0; }
+.fin-cv-float { position: absolute; top: max(10px, env(safe-area-inset-top, 0px)); right: max(10px, env(safe-area-inset-right, 0px)); z-index: 8; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; padding: 6px; border-radius: 14px; background: color-mix(in srgb, var(--surface) 88%, transparent); box-shadow: var(--elev-2); backdrop-filter: blur(6px); }
+
 </style>
 <div class="titlestrip" id="titlestrip"><span class="ts-brand"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c3.3 4 6 7.2 6 10.4a6 6 0 0 1-12 0C6 10.2 8.7 7 12 3z"/><path d="m9.3 13.6 1.9 1.9 3.6-4.1"/></svg> Action Register</span><button class="ts-search" data-act="palette" title="Search and commands (Ctrl+K)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg><span>Search or type a command</span><kbd>Ctrl K</kbd></button><span class="ts-space"></span></div>
 <div class="app">
@@ -15741,6 +15747,15 @@ function finCvBoard() {
 const finTabs = () => `<div class="seg fin-tabs" role="tablist" aria-label="Money">${[['canvas', '🧭 Canvas'], ['settings', '⚙️ Settings']].map(([k, l]) => `<button role="tab" data-act="fin-tab" data-v="${k}" aria-selected="${(UI.fin.tab || 'canvas') === k}" aria-pressed="${(UI.fin.tab || 'canvas') === k}">${l}</button>`).join('')}</div>`;
 VIEW_FN.finance = () => {
   const cv = UI.fin.cv;
+  // full screen: the canvas alone — no title, no description, no talk box; a few controls float in its corner
+  if (cv.full) return `<div class="wrap fin fin-canvas-page"><section class="fin-cvwrap full" id="fin-s-map" aria-label="Money canvas, full screen">
+    <div class="fin-cv-stage">${finCvBoard()}${typeof finCvEditorHTML === 'function' ? finCvEditorHTML() : ''}
+      <div class="fin-cv-float" role="toolbar" aria-label="Canvas controls">
+        ${UI.fin.cvOpen.length ? `<button class="btn sm" data-act="fin-cv-close-all" title="Fold every opened detail and part">Close details</button>` : ''}
+        <div class="seg zoom" role="group" aria-label="Zoom"><button data-act="fin-cv-zoom" data-v="out" aria-label="Zoom out">−</button><button data-act="fin-cv-fit" title="Fit to the screen"><span id="fin-cv-z">${Math.round(cv.k * 100)}%</span></button><button data-act="fin-cv-zoom" data-v="in" aria-label="Zoom in">+</button></div>
+        <button class="btn sm" data-act="fin-cv-full" aria-pressed="true" title="Back (Esc)">✕ Exit full screen</button>
+      </div></div>
+  </section></div>`;
   if (UI.fin.tab === 'settings') return `<div class="wrap fin fin-settings-page"><div class="fin-cv-bar"><h1>Money</h1>${finTabs()}</div>${FIN_VIEW.settings()}</div>`;
   return `<div class="wrap fin fin-canvas-page">
   <section class="fin-cvwrap ${cv.full ? 'full' : ''}" id="fin-s-map" aria-label="Money canvas">
@@ -15768,7 +15783,7 @@ function finCvFit(all) {
   const vp = $('#fin-cv-vp'), s = UI.fin.cvSize, cv = UI.fin.cv; if (!vp || !s) return;
   const W = vp.clientWidth, H = vp.clientHeight; if (!W || !H) return;
   if (all) { cv.k = Math.max(0.1, Math.min(1, (W - 32) / s.w, (H - 32) / s.h)); cv.x = (W - s.w * cv.k) / 2; cv.y = Math.max(16, (H - s.h * cv.k) / 2); }
-  else { cv.k = Math.min(1, Math.max(0.42, (W - 32) / s.w)); cv.x = Math.max(16, (W - s.w * cv.k) / 2); cv.y = 16; }
+  else { cv.k = Math.min(1, Math.max(0.42, (W - 32) / s.w)); cv.x = Math.max(16, (W - s.w * cv.k) / 2); cv.y = cv.full ? 64 : 16; }   // full screen: below the floating controls
   cv.fitted = true; finCvApply();
 }
 function finCvZoomAt(f, cx, cy) {

@@ -342,3 +342,9 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 
 /* inside the canvas a part is as long as it needs: the canvas itself is what you move */
 .fin-det .fin-ledger, .fin-det .fin-mini, .fin-det .fin-rev { max-height: none; overflow: visible; }
+
+/* full screen: only the canvas */
+.fin-cvwrap.full { padding: 0; gap: 0; height: auto; min-height: 0; }
+.fin-cvwrap.full .fin-cv-stage { flex: 1; height: auto; border-radius: 0; }
+.fin-cvwrap.full .fin-cv-vp { border-radius: 0; border: 0; }
+.fin-cv-float { position: absolute; top: max(10px, env(safe-area-inset-top, 0px)); right: max(10px, env(safe-area-inset-right, 0px)); z-index: 8; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; padding: 6px; border-radius: 14px; background: color-mix(in srgb, var(--surface) 88%, transparent); box-shadow: var(--elev-2); backdrop-filter: blur(6px); }

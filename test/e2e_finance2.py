@@ -206,7 +206,11 @@ async def main():
         assert abs(await ev(f"{U}.cv.x") - x0 - 100) < 2, 'dragging moves the canvas'
         await pg.click('[data-act="fin-cv-fit"]')
         await pg.click('[data-act="fin-cv-full"]'); await pg.wait_for_timeout(250)
-        assert await ev("document.querySelector('.fin-cvwrap').classList.contains('full') && !!document.querySelector('.fin-cvwrap.full #fin-talk-in')"), 'full screen keeps the talk box'
+        assert await ev("document.querySelector('.fin-cvwrap').classList.contains('full')")
+        assert not await ev("!!document.querySelector('#fin-talk-in, .fin-cv-hint, .fin-tabs, .fin-cv-bar')"), 'full screen: the canvas only'
+        st = await ev("(() => { const r = document.querySelector('.fin-cv-stage').getBoundingClientRect(); return [Math.round(r.width), Math.round(r.height), innerWidth, innerHeight]; })()")
+        assert st[0] >= st[2] - 2 and st[1] >= st[3] - 2, ('the canvas fills the screen', st)
+        await pg.screenshot(path=os.path.join(HERE, 'shots', 'finance-fullscreen.png'))
         await pg.keyboard.press('Escape'); await pg.wait_for_timeout(250); assert not await ev("document.querySelector('.fin-cvwrap').classList.contains('full')")
 
         # only two tabs above the canvas: Canvas and Settings
