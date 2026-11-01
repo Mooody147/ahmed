@@ -785,3 +785,28 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 .fin-cur { width: auto; min-width: 66px; padding-inline: 6px; }
 .fin-cur-rate { width: 116px; }
 .fin-bal-f { align-content: start; } .fin-bal-f .fin-cur-pick { display: flex; }
+
+/* How can I manage the rest of this month? (66-finance-month) */
+.fin-mo { display: grid; gap: 10px; max-width: 1060px; container-type: inline-size; }
+.fin-mo h4 { margin: 6px 0 0; }
+.fin-mo-top { display: flex; gap: 12px; align-items: center; padding: 12px 14px; border-radius: 14px; border: 1px solid var(--line); }
+.fin-mo-top .ic { font-size: 28px; line-height: 1; flex: none; } .fin-mo-top > div { display: grid; gap: 3px; min-width: 0; } .fin-mo-top b { font-size: 18px; }
+.fin-mo.ok .fin-mo-top { background: color-mix(in srgb, #2e9e5b 11%, var(--surface)); border-color: color-mix(in srgb, #2e9e5b 45%, var(--line)); }
+.fin-mo.tight .fin-mo-top { background: color-mix(in srgb, #e0a030 13%, var(--surface)); border-color: color-mix(in srgb, #e0a030 50%, var(--line)); }
+.fin-mo.short .fin-mo-top { background: color-mix(in srgb, #d9534f 11%, var(--surface)); border-color: color-mix(in srgb, #d9534f 50%, var(--line)); }
+.fin-mo.unknown .fin-mo-top { border-style: dashed; }
+.fin-mo-stale { margin: 0; padding: 8px 10px; border-radius: 10px; background: color-mix(in srgb, #e0a030 9%, var(--surface)); display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.fin-mo-k { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+@container (max-width: 520px) { .fin-mo-k { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@container (min-width: 900px) { .fin-mo-k { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+.fin-mo-k > div { display: grid; gap: 2px; align-content: start; padding: 9px 11px; border-radius: 12px; border: 1px solid var(--line); border-top-width: 4px; min-width: 0; }
+.fin-mo-k span { font-size: 12px; color: var(--ink-2); } .fin-mo-k b { font-size: 17px; overflow-wrap: anywhere; } .fin-mo-k small { font-size: 11px; color: var(--ink-3); overflow-wrap: anywhere; }
+.fin-mo-k .fact { border-top-color: #3b82c4; } .fin-mo-k .est { border-top-color: var(--ink-3); border-top-style: dashed; } .fin-mo-k .est.neg b { color: #d9534f; }
+.fin-mo-k .key { border-top-color: #2e9e5b; background: color-mix(in srgb, #2e9e5b 8%, var(--surface)); } .fin-mo-k .key b { font-size: 20px; }
+.fin-mo.tight .fin-mo-k .key { border-top-color: #e0a030; background: color-mix(in srgb, #e0a030 9%, var(--surface)); } .fin-mo.short .fin-mo-k .key { border-top-color: #d9534f; background: color-mix(in srgb, #d9534f 8%, var(--surface)); }
+.fin-mo-pay { margin: 0; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--line); border-left: 4px solid #3b82c4; }
+.fin-mo-pace { margin: 0; } .fin-mo-pace.warn { color: #b7791f; } .fin-mo-pace.good { color: #2e9e5b; }
+.fin-mo-chart .fin-chart { width: 100%; height: auto; max-height: 220px; }
+.fin-mo-do { margin: 0; padding-left: 22px; display: grid; gap: 6px; } .fin-mo-do li { line-height: 1.45; } .fin-mo-do .btn { margin-left: 4px; vertical-align: middle; }
+.fin-mo-wk td:nth-child(2) { display: flex; flex-wrap: wrap; gap: 4px; } .fin-mo-cat tr.cut td { background: color-mix(in srgb, #e0a030 8%, transparent); }
+.fin-mo-basis { margin: 4px 0 0; line-height: 1.45; }

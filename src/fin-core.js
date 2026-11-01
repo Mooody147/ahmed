@@ -793,6 +793,70 @@ function upcoming(o) {
   const cashIn = r2(sum(ev.filter(e => !e.onCard && e.amount > 0).map(e => e.amount))), cashOut = r2(sum(ev.filter(e => !e.onCard && e.amount < 0).map(e => -e.amount)));
   return { events: ev, points, low, end, cashIn, cashOut, last: points.length ? points[points.length - 1].bal : null };
 }
+// the rest of this month: from the day after your money is known (asOf) to the month's last day — the money you have,
+// the dated bills and income still to come (facts), and what your own past months say the remaining days usually cost
+// (an estimate: the same stretch of each complete month, aligned to its end, the median month; the quarter on either
+// side gives the range). With no complete month to learn from, the spending is "not known" — never invented.
+// o: { today, asOf, cash (null: not known), reserve, events: [{date, kind, label, amount}], spend: [{date, amount (spent,
+// a refund negative), cat}], months: ['YYYY-MM' complete months to learn from], prio: {cat: priority} }
+function restOfMonth(o) {
+  const today = o.today, cur = ym(today), end = monthEnd(cur), reserve = Math.max(0, +o.reserve || 0);
+  const start = validDate(o.asOf) && o.asOf < today ? addDays(o.asOf, 1) : today;    // days your figures do not cover yet are estimated too
+  const segs = []; for (let m = ym(start); m <= cur; m = addMonths(m, 1)) segs.push({ m, a: m === ym(start) ? +start.slice(8, 10) : 1 });
+  const from = (s, n) => Math.min(n, Math.floor((s.a - 1) / dim(s.m) * n) + 1);       // the same point of a past month of n days
+  const months = (o.months || []).filter(m => m < ym(start)), byM = {};
+  for (const m of months) byM[m] = { m, n: dim(m), day: new Array(32).fill(0), cat: {} };
+  const curDay = new Array(32).fill(0);
+  for (const s of o.spend || []) { if (!validDate(s.date) || typeof s.amount !== 'number') continue; const d = +s.date.slice(8, 10);
+    if (ym(s.date) === cur && s.date < start) curDay[d] += s.amount;
+    const h = byM[ym(s.date)]; if (!h) continue; h.day[d] += s.amount; (h.cat[s.cat] = h.cat[s.cat] || new Array(32).fill(0))[d] += s.amount; }
+  const H = months.map(m => byM[m]), win = (arr, n) => sum(segs.map(s => { let t = 0; for (let d = from(s, n); d <= n; d++) t += arr[d] || 0; return t; }));
+  const per = H.map(h => Math.max(0, win(h.day, h.n))), known = per.length > 0;
+  const expected = known ? r2(median(per)) : null, lowS = known ? r2(quant(per, 0.25)) : null, highS = known ? r2(quant(per, 0.75)) : null;
+  const cats = [...new Set(H.flatMap(h => Object.keys(h.cat)))].map(c => { const v = H.map(h => Math.max(0, h.cat[c] ? win(h.cat[c], h.n) : 0)); return { cat: c, usual: r2(median(v)), low: r2(quant(v, 0.25)), prio: (o.prio || {})[c] || '' }; })
+    .filter(c => c.usual >= 1).sort((a, b) => b.usual - a.usual);
+  // the usual spending spread over the days: how your past months spent around each day (smoothed), with a steady part
+  const days = []; for (let d = start; d <= end; d = addDays(d, 1)) days.push(d);
+  const w = days.map(d => { if (!H.length) return 1; const N = dim(ym(d)), dd = +d.slice(8, 10);
+    return sum(H.map(h => { const k = Math.min(h.n, Math.max(1, Math.round(dd / N * h.n))); return Math.max(0, ((h.day[k - 1] || 0) + h.day[k] * 2 + (h.day[k + 1] || 0)) / 4); })) / H.length; });
+  const wS = sum(w), wn = w.map(x => wS > 0 ? 0.7 * x / wS + 0.3 / days.length : 1 / days.length), daily = days.map((_, i) => expected === null ? 0 : expected * wn[i]);
+  // facts: the bills and income still to come, on their dates
+  // income dated the day of a balance you gave today may already be in it: not counted again (the safer reading)
+  const inBal = e => o.asOf === today && e.date === today && e.amount > 0;
+  const ev = (o.events || []).filter(e => e.date >= start && e.date <= end && e.amount && !inBal(e)).sort((a, b) => a.date.localeCompare(b.date) || a.amount - b.amount);
+  const assumedIn = (o.events || []).filter(e => e.amount && inBal(e));
+  const income = r2(sum(ev.filter(e => e.amount > 0).map(e => e.amount))), bills = r2(sum(ev.filter(e => e.amount < 0).map(e => -e.amount)));
+  const cash = typeof o.cash === 'number' ? o.cash : null, leftDays = days.filter(d => d >= today).length;
+  const gapSpend = r2(sum(daily.filter((_, i) => days[i] < today))), usualFromToday = expected === null ? null : r2(expected - gapSpend);
+  // day by day, at your usual pace
+  const points = []; let bal = cash, lowPoint = null, firstNeg = null;
+  if (cash !== null) for (let i = 0; i < days.length; i++) {
+    bal = r2(bal + sum(ev.filter(e => e.date === days[i]).map(e => e.amount)) - daily[i]); points.push({ date: days[i], bal, spend: r2(daily[i]) });
+    if (!lowPoint || bal < lowPoint.bal) lowPoint = { date: days[i], bal }; if (bal < 0 && !firstNeg) firstNeg = days[i];
+  }
+  const endBal = cash === null ? null : r2(cash + income - bills - (expected || 0));   // exact (the day-by-day line rounds each day)
+  // what you can spend from today to the month end: money now + what comes − what is due (− the days already gone but not in your figures)
+  const room = cash === null ? null : r2(cash + income - bills - gapSpend), L = Math.max(1, leftDays);
+  const perDay = room === null ? null : r2(Math.max(0, room - reserve) / L), perDayAll = room === null ? null : r2(Math.max(0, room) / L);
+  // until the next income arrives, the money has to last on its own
+  const pay = ev.find(e => e.amount > 0 && e.date > today);
+  let untilPay = null;
+  if (pay && cash !== null) { const dd = days.filter(d => d >= today && d < pay.date).length, rm = r2(cash + sum(ev.filter(e => e.date < pay.date).map(e => e.amount)) - gapSpend);
+    untilPay = { date: pay.date, label: pay.label, amount: pay.amount, days: dd, room: rm, perDay: dd ? r2(Math.max(0, rm) / dd) : null, usual: r2(sum(daily.filter((_, i) => days[i] >= today && days[i] < pay.date))) }; }
+  // this month so far, against the same days of your usual month
+  let pace = null; const asDom = +start.slice(8, 10) - 1;
+  if (ym(start) === cur && asDom >= 3 && H.length) { const spent = r2(sum(curDay)), usual = r2(median(H.map(h => { const k = Math.floor(asDom / dim(cur) * h.n); let t = 0; for (let d = 1; d <= k; d++) t += h.day[d]; return Math.max(0, t); })));
+    pace = { spent, usual, days: asDom, ratio: usual > 0 ? r2(spent / usual) : null }; }
+  // week by week from today: the bills in each, and what you can spend in it
+  const weeks = []; const fut = days.filter(d => d >= today);
+  for (let i = 0; i < fut.length; i += 7) { const wk = fut.slice(i, i + 7), a = wk[0], b = wk[wk.length - 1], inW = ev.filter(e => e.date >= a && e.date <= b);
+    weeks.push({ from: a, to: b, days: wk.length, bills: inW.filter(e => e.amount < 0), income: inW.filter(e => e.amount > 0), usual: r2(sum(daily.filter((_, k) => days[k] >= a && days[k] <= b))), cap: perDay === null ? null : r2(perDay * wk.length) }); }
+  const verdict = cash === null || expected === null ? 'unknown' : (lowPoint && lowPoint.bal < 0) || endBal < 0 ? 'short' : endBal < reserve ? 'tight' : 'ok';
+  const need = verdict === 'short' ? r2(Math.max(-endBal, lowPoint ? -lowPoint.bal : 0)) : verdict === 'tight' ? r2(reserve - endBal) : 0;
+  return { today, start, end, asOf: o.asOf || null, gapDays: days.filter(d => d < today).length, leftDays, months: H.length, cash, reserve, events: ev, income, bills,
+    expected, lowS, highS, gapSpend, usualFromToday, cats, points, lowPoint, firstNeg, endBal, endIfLow: endBal === null || lowS === null ? null : r2(endBal + expected - lowS), endIfHigh: endBal === null || highS === null ? null : r2(endBal + expected - highS),
+    room, perDay, perDayAll, untilPay, pace, weeks, verdict, need, assumedIn };
+}
 // spending far above what this category usually costs: above Q3 + 3×IQR of its own history and at least twice
 // its median, with at least 5 earlier transactions to compare with
 function unusual(list) {
@@ -1225,6 +1289,6 @@ function validateBackup(o) {
 
 return { EPS, r2, norm, AR, CURRENCIES, validDate, dnum, addDays, spanDays, ym, addMonths, monthList, dim, monthEnd, parseDate, dateOrder, parseNum, cleanDesc, payeeKey,
   detectBank, looksLikeCard, last4, DEFAULT_CATS, catMap, classify, learnRule, refundOf, pairMoves, CODE_CAT, detectGrid, rowsFromGrid, rowsFromText, rowsFromLayout, statementFacts, instOf, chainBest, statementCheck, matchImport, importCounts, similar, overlaps, fp, quant, median, entries, analyze, series,
-  recurring, recurringStatus, incomeBase, STRATEGY, budgetPlan, monthControl, unusual, upcoming, addMonthsDate, SCEN, monthFactor, simulate, sensitivity, shiftDate, allocate, thirdParty, holdingReturns, propertyShare, rentForecast, cardOwed, position, monthsTo, forecast, goalPlan, reconcile, validateBackup, financeQuote, detectInstallments, installmentLoad, activeInput, setInput, balanceChange, health, planPurchases };
+  recurring, recurringStatus, incomeBase, STRATEGY, budgetPlan, monthControl, unusual, upcoming, restOfMonth, addMonthsDate, SCEN, monthFactor, simulate, sensitivity, shiftDate, allocate, thirdParty, holdingReturns, propertyShare, rentForecast, cardOwed, position, monthsTo, forecast, goalPlan, reconcile, validateBackup, financeQuote, detectInstallments, installmentLoad, activeInput, setInput, balanceChange, health, planPurchases };
 })();
 if (typeof module !== 'undefined') module.exports = FIN;

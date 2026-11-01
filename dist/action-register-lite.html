@@ -2596,6 +2596,31 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 .fin-cur-rate { width: 116px; }
 .fin-bal-f { align-content: start; } .fin-bal-f .fin-cur-pick { display: flex; }
 
+/* How can I manage the rest of this month? (66-finance-month) */
+.fin-mo { display: grid; gap: 10px; max-width: 1060px; container-type: inline-size; }
+.fin-mo h4 { margin: 6px 0 0; }
+.fin-mo-top { display: flex; gap: 12px; align-items: center; padding: 12px 14px; border-radius: 14px; border: 1px solid var(--line); }
+.fin-mo-top .ic { font-size: 28px; line-height: 1; flex: none; } .fin-mo-top > div { display: grid; gap: 3px; min-width: 0; } .fin-mo-top b { font-size: 18px; }
+.fin-mo.ok .fin-mo-top { background: color-mix(in srgb, #2e9e5b 11%, var(--surface)); border-color: color-mix(in srgb, #2e9e5b 45%, var(--line)); }
+.fin-mo.tight .fin-mo-top { background: color-mix(in srgb, #e0a030 13%, var(--surface)); border-color: color-mix(in srgb, #e0a030 50%, var(--line)); }
+.fin-mo.short .fin-mo-top { background: color-mix(in srgb, #d9534f 11%, var(--surface)); border-color: color-mix(in srgb, #d9534f 50%, var(--line)); }
+.fin-mo.unknown .fin-mo-top { border-style: dashed; }
+.fin-mo-stale { margin: 0; padding: 8px 10px; border-radius: 10px; background: color-mix(in srgb, #e0a030 9%, var(--surface)); display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.fin-mo-k { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+@container (max-width: 520px) { .fin-mo-k { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@container (min-width: 900px) { .fin-mo-k { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+.fin-mo-k > div { display: grid; gap: 2px; align-content: start; padding: 9px 11px; border-radius: 12px; border: 1px solid var(--line); border-top-width: 4px; min-width: 0; }
+.fin-mo-k span { font-size: 12px; color: var(--ink-2); } .fin-mo-k b { font-size: 17px; overflow-wrap: anywhere; } .fin-mo-k small { font-size: 11px; color: var(--ink-3); overflow-wrap: anywhere; }
+.fin-mo-k .fact { border-top-color: #3b82c4; } .fin-mo-k .est { border-top-color: var(--ink-3); border-top-style: dashed; } .fin-mo-k .est.neg b { color: #d9534f; }
+.fin-mo-k .key { border-top-color: #2e9e5b; background: color-mix(in srgb, #2e9e5b 8%, var(--surface)); } .fin-mo-k .key b { font-size: 20px; }
+.fin-mo.tight .fin-mo-k .key { border-top-color: #e0a030; background: color-mix(in srgb, #e0a030 9%, var(--surface)); } .fin-mo.short .fin-mo-k .key { border-top-color: #d9534f; background: color-mix(in srgb, #d9534f 8%, var(--surface)); }
+.fin-mo-pay { margin: 0; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--line); border-left: 4px solid #3b82c4; }
+.fin-mo-pace { margin: 0; } .fin-mo-pace.warn { color: #b7791f; } .fin-mo-pace.good { color: #2e9e5b; }
+.fin-mo-chart .fin-chart { width: 100%; height: auto; max-height: 220px; }
+.fin-mo-do { margin: 0; padding-left: 22px; display: grid; gap: 6px; } .fin-mo-do li { line-height: 1.45; } .fin-mo-do .btn { margin-left: 4px; vertical-align: middle; }
+.fin-mo-wk td:nth-child(2) { display: flex; flex-wrap: wrap; gap: 4px; } .fin-mo-cat tr.cut td { background: color-mix(in srgb, #e0a030 8%, transparent); }
+.fin-mo-basis { margin: 4px 0 0; line-height: 1.45; }
+
 </style>
 <div class="titlestrip" id="titlestrip"><span class="ts-brand"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c3.3 4 6 7.2 6 10.4a6 6 0 0 1-12 0C6 10.2 8.7 7 12 3z"/><path d="m9.3 13.6 1.9 1.9 3.6-4.1"/></svg> Action Register</span><button class="ts-search" data-act="palette" title="Search and commands (Ctrl+K)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg><span>Search or type a command</span><kbd>Ctrl K</kbd></button><span class="ts-space"></span></div>
 <div class="app">
@@ -5494,6 +5519,70 @@ function upcoming(o) {
   const cashIn = r2(sum(ev.filter(e => !e.onCard && e.amount > 0).map(e => e.amount))), cashOut = r2(sum(ev.filter(e => !e.onCard && e.amount < 0).map(e => -e.amount)));
   return { events: ev, points, low, end, cashIn, cashOut, last: points.length ? points[points.length - 1].bal : null };
 }
+// the rest of this month: from the day after your money is known (asOf) to the month's last day — the money you have,
+// the dated bills and income still to come (facts), and what your own past months say the remaining days usually cost
+// (an estimate: the same stretch of each complete month, aligned to its end, the median month; the quarter on either
+// side gives the range). With no complete month to learn from, the spending is "not known" — never invented.
+// o: { today, asOf, cash (null: not known), reserve, events: [{date, kind, label, amount}], spend: [{date, amount (spent,
+// a refund negative), cat}], months: ['YYYY-MM' complete months to learn from], prio: {cat: priority} }
+function restOfMonth(o) {
+  const today = o.today, cur = ym(today), end = monthEnd(cur), reserve = Math.max(0, +o.reserve || 0);
+  const start = validDate(o.asOf) && o.asOf < today ? addDays(o.asOf, 1) : today;    // days your figures do not cover yet are estimated too
+  const segs = []; for (let m = ym(start); m <= cur; m = addMonths(m, 1)) segs.push({ m, a: m === ym(start) ? +start.slice(8, 10) : 1 });
+  const from = (s, n) => Math.min(n, Math.floor((s.a - 1) / dim(s.m) * n) + 1);       // the same point of a past month of n days
+  const months = (o.months || []).filter(m => m < ym(start)), byM = {};
+  for (const m of months) byM[m] = { m, n: dim(m), day: new Array(32).fill(0), cat: {} };
+  const curDay = new Array(32).fill(0);
+  for (const s of o.spend || []) { if (!validDate(s.date) || typeof s.amount !== 'number') continue; const d = +s.date.slice(8, 10);
+    if (ym(s.date) === cur && s.date < start) curDay[d] += s.amount;
+    const h = byM[ym(s.date)]; if (!h) continue; h.day[d] += s.amount; (h.cat[s.cat] = h.cat[s.cat] || new Array(32).fill(0))[d] += s.amount; }
+  const H = months.map(m => byM[m]), win = (arr, n) => sum(segs.map(s => { let t = 0; for (let d = from(s, n); d <= n; d++) t += arr[d] || 0; return t; }));
+  const per = H.map(h => Math.max(0, win(h.day, h.n))), known = per.length > 0;
+  const expected = known ? r2(median(per)) : null, lowS = known ? r2(quant(per, 0.25)) : null, highS = known ? r2(quant(per, 0.75)) : null;
+  const cats = [...new Set(H.flatMap(h => Object.keys(h.cat)))].map(c => { const v = H.map(h => Math.max(0, h.cat[c] ? win(h.cat[c], h.n) : 0)); return { cat: c, usual: r2(median(v)), low: r2(quant(v, 0.25)), prio: (o.prio || {})[c] || '' }; })
+    .filter(c => c.usual >= 1).sort((a, b) => b.usual - a.usual);
+  // the usual spending spread over the days: how your past months spent around each day (smoothed), with a steady part
+  const days = []; for (let d = start; d <= end; d = addDays(d, 1)) days.push(d);
+  const w = days.map(d => { if (!H.length) return 1; const N = dim(ym(d)), dd = +d.slice(8, 10);
+    return sum(H.map(h => { const k = Math.min(h.n, Math.max(1, Math.round(dd / N * h.n))); return Math.max(0, ((h.day[k - 1] || 0) + h.day[k] * 2 + (h.day[k + 1] || 0)) / 4); })) / H.length; });
+  const wS = sum(w), wn = w.map(x => wS > 0 ? 0.7 * x / wS + 0.3 / days.length : 1 / days.length), daily = days.map((_, i) => expected === null ? 0 : expected * wn[i]);
+  // facts: the bills and income still to come, on their dates
+  // income dated the day of a balance you gave today may already be in it: not counted again (the safer reading)
+  const inBal = e => o.asOf === today && e.date === today && e.amount > 0;
+  const ev = (o.events || []).filter(e => e.date >= start && e.date <= end && e.amount && !inBal(e)).sort((a, b) => a.date.localeCompare(b.date) || a.amount - b.amount);
+  const assumedIn = (o.events || []).filter(e => e.amount && inBal(e));
+  const income = r2(sum(ev.filter(e => e.amount > 0).map(e => e.amount))), bills = r2(sum(ev.filter(e => e.amount < 0).map(e => -e.amount)));
+  const cash = typeof o.cash === 'number' ? o.cash : null, leftDays = days.filter(d => d >= today).length;
+  const gapSpend = r2(sum(daily.filter((_, i) => days[i] < today))), usualFromToday = expected === null ? null : r2(expected - gapSpend);
+  // day by day, at your usual pace
+  const points = []; let bal = cash, lowPoint = null, firstNeg = null;
+  if (cash !== null) for (let i = 0; i < days.length; i++) {
+    bal = r2(bal + sum(ev.filter(e => e.date === days[i]).map(e => e.amount)) - daily[i]); points.push({ date: days[i], bal, spend: r2(daily[i]) });
+    if (!lowPoint || bal < lowPoint.bal) lowPoint = { date: days[i], bal }; if (bal < 0 && !firstNeg) firstNeg = days[i];
+  }
+  const endBal = cash === null ? null : r2(cash + income - bills - (expected || 0));   // exact (the day-by-day line rounds each day)
+  // what you can spend from today to the month end: money now + what comes − what is due (− the days already gone but not in your figures)
+  const room = cash === null ? null : r2(cash + income - bills - gapSpend), L = Math.max(1, leftDays);
+  const perDay = room === null ? null : r2(Math.max(0, room - reserve) / L), perDayAll = room === null ? null : r2(Math.max(0, room) / L);
+  // until the next income arrives, the money has to last on its own
+  const pay = ev.find(e => e.amount > 0 && e.date > today);
+  let untilPay = null;
+  if (pay && cash !== null) { const dd = days.filter(d => d >= today && d < pay.date).length, rm = r2(cash + sum(ev.filter(e => e.date < pay.date).map(e => e.amount)) - gapSpend);
+    untilPay = { date: pay.date, label: pay.label, amount: pay.amount, days: dd, room: rm, perDay: dd ? r2(Math.max(0, rm) / dd) : null, usual: r2(sum(daily.filter((_, i) => days[i] >= today && days[i] < pay.date))) }; }
+  // this month so far, against the same days of your usual month
+  let pace = null; const asDom = +start.slice(8, 10) - 1;
+  if (ym(start) === cur && asDom >= 3 && H.length) { const spent = r2(sum(curDay)), usual = r2(median(H.map(h => { const k = Math.floor(asDom / dim(cur) * h.n); let t = 0; for (let d = 1; d <= k; d++) t += h.day[d]; return Math.max(0, t); })));
+    pace = { spent, usual, days: asDom, ratio: usual > 0 ? r2(spent / usual) : null }; }
+  // week by week from today: the bills in each, and what you can spend in it
+  const weeks = []; const fut = days.filter(d => d >= today);
+  for (let i = 0; i < fut.length; i += 7) { const wk = fut.slice(i, i + 7), a = wk[0], b = wk[wk.length - 1], inW = ev.filter(e => e.date >= a && e.date <= b);
+    weeks.push({ from: a, to: b, days: wk.length, bills: inW.filter(e => e.amount < 0), income: inW.filter(e => e.amount > 0), usual: r2(sum(daily.filter((_, k) => days[k] >= a && days[k] <= b))), cap: perDay === null ? null : r2(perDay * wk.length) }); }
+  const verdict = cash === null || expected === null ? 'unknown' : (lowPoint && lowPoint.bal < 0) || endBal < 0 ? 'short' : endBal < reserve ? 'tight' : 'ok';
+  const need = verdict === 'short' ? r2(Math.max(-endBal, lowPoint ? -lowPoint.bal : 0)) : verdict === 'tight' ? r2(reserve - endBal) : 0;
+  return { today, start, end, asOf: o.asOf || null, gapDays: days.filter(d => d < today).length, leftDays, months: H.length, cash, reserve, events: ev, income, bills,
+    expected, lowS, highS, gapSpend, usualFromToday, cats, points, lowPoint, firstNeg, endBal, endIfLow: endBal === null || lowS === null ? null : r2(endBal + expected - lowS), endIfHigh: endBal === null || highS === null ? null : r2(endBal + expected - highS),
+    room, perDay, perDayAll, untilPay, pace, weeks, verdict, need, assumedIn };
+}
 // spending far above what this category usually costs: above Q3 + 3×IQR of its own history and at least twice
 // its median, with at least 5 earlier transactions to compare with
 function unusual(list) {
@@ -5926,7 +6015,7 @@ function validateBackup(o) {
 
 return { EPS, r2, norm, AR, CURRENCIES, validDate, dnum, addDays, spanDays, ym, addMonths, monthList, dim, monthEnd, parseDate, dateOrder, parseNum, cleanDesc, payeeKey,
   detectBank, looksLikeCard, last4, DEFAULT_CATS, catMap, classify, learnRule, refundOf, pairMoves, CODE_CAT, detectGrid, rowsFromGrid, rowsFromText, rowsFromLayout, statementFacts, instOf, chainBest, statementCheck, matchImport, importCounts, similar, overlaps, fp, quant, median, entries, analyze, series,
-  recurring, recurringStatus, incomeBase, STRATEGY, budgetPlan, monthControl, unusual, upcoming, addMonthsDate, SCEN, monthFactor, simulate, sensitivity, shiftDate, allocate, thirdParty, holdingReturns, propertyShare, rentForecast, cardOwed, position, monthsTo, forecast, goalPlan, reconcile, validateBackup, financeQuote, detectInstallments, installmentLoad, activeInput, setInput, balanceChange, health, planPurchases };
+  recurring, recurringStatus, incomeBase, STRATEGY, budgetPlan, monthControl, unusual, upcoming, restOfMonth, addMonthsDate, SCEN, monthFactor, simulate, sensitivity, shiftDate, allocate, thirdParty, holdingReturns, propertyShare, rentForecast, cardOwed, position, monthsTo, forecast, goalPlan, reconcile, validateBackup, financeQuote, detectInstallments, installmentLoad, activeInput, setInput, balanceChange, health, planPurchases };
 })();
 if (typeof module !== 'undefined') module.exports = FIN;
 
@@ -16328,6 +16417,7 @@ function finCvRooms(root) {
   const buy = root.children.find(b => b.id === 'buy');
   if (buy) R.push({ id: 'buy', kind: 'goals', full: true, node: buy, icon: buy.icon, title: buy.label, sum: buy.sum, hue: buy.hue });
   for (const b of root.children) if (b.id !== 'buy') R.push({ id: b.id, kind: 'room', node: b, icon: b.icon, title: b.label, sum: b.sum, hue: b.hue, sec: b.sec });
+  if (typeof finMonthRoom === 'function') R.push(finMonthRoom());   // how to manage the rest of this month (66-finance-month)
   if (typeof finBoxRooms === 'function') R.push(...finBoxRooms());   // your own boxes, made with Tell the canvas
   // parts opened as rooms, each right after the room it belongs to
   const out = [];
@@ -16485,6 +16575,7 @@ function finDetBody(id, plan, n) {
   if (id === 'ov') return finOverviewHTML();
   if (id === 'free' && typeof finFreeHTML === 'function') return finFreeHTML();
   if ((id.startsWith('rc:') || id === 'rc~months') && typeof finRecDetail === 'function') return finRecDetail(id);
+  if (id === 'month' && typeof finMonthHTML === 'function') return finMonthHTML();
   if (id.startsWith('box:') && typeof finBoxHTML === 'function') return finBoxHTML(id);
   if (id === 'gk') return finGoalsHead(plan, n);
   if (id === 'gt') return finGoalsTimeline(plan);
@@ -16584,7 +16675,7 @@ function finCvRoom(r) {
       <span class="spacer"></span>
       ${typeof finCvAddSpec === 'function' && aid && finCvAddSpec(aid) ? `<button class="btn sm ghost" data-act="fin-cv-add" data-id="${esc(aid)}" title="Add" aria-label="Add to ${esc(r.title)}">＋</button>` : ''}
       ${r.kind === 'sec' ? `<button class="btn sm ghost" data-act="fin-cv-sec" data-s="${esc(r.sec)}" aria-label="Close ${esc(r.title)}">✕</button>`
-        : `${r.kind === 'box' ? `<button class="btn sm ghost" data-act="fin-box-del" data-id="${esc(r.id)}" title="Remove this box" aria-label="Remove ${esc(r.title)}">✕</button>` : ''}${hasKids ? `<button class="btn sm ghost" data-act="fin-cv-tog" data-id="${esc(r.id)}" aria-expanded="${!folded}" title="${folded ? 'Unfold' : 'Fold'}" aria-label="${folded ? 'Unfold' : 'Fold'} ${esc(r.title)}">${folded ? '▸' : '▾'}</button>` : ''}${solo ? `<button class="btn sm ghost" data-act="fin-cv-focus" data-id="${esc(r.id)}" title="${UI.fin.cv.focus === r.id ? 'Show everything' : 'Show only this room'}" aria-label="${UI.fin.cv.focus === r.id ? 'Show everything' : 'Show only ' + esc(r.title)}">⤢</button>` : ''}`}
+        : `${r.kind === 'box' && !r.sys ? `<button class="btn sm ghost" data-act="fin-box-del" data-id="${esc(r.id)}" title="Remove this box" aria-label="Remove ${esc(r.title)}">✕</button>` : ''}${hasKids ? `<button class="btn sm ghost" data-act="fin-cv-tog" data-id="${esc(r.id)}" aria-expanded="${!folded}" title="${folded ? 'Unfold' : 'Fold'}" aria-label="${folded ? 'Unfold' : 'Fold'} ${esc(r.title)}">${folded ? '▸' : '▾'}</button>` : ''}${solo ? `<button class="btn sm ghost" data-act="fin-cv-focus" data-id="${esc(r.id)}" title="${UI.fin.cv.focus === r.id ? 'Show everything' : 'Show only this room'}" aria-label="${UI.fin.cv.focus === r.id ? 'Show everything' : 'Show only ' + esc(r.title)}">⤢</button>` : ''}`}
     </div></section>`;
 }
 function finCvBoard() {
@@ -16897,11 +16988,12 @@ YOU ARE TALKING WITH THE OWNER THROUGH THEIR MONEY CANVAS. Besides the fields ab
 "view":{"open":"dash|update|import|ledger|exp|inc|budget|sim|forecast|buy|credit|accounts|own|settings or null","focus":"accts|inc|exp|com|own|third|buy or null","dir":"h|v|null"},
 "notes":["one short line for each thing you assumed or could not do"],
 "reply":"one or two sentences to the owner, in the language they wrote in"
-Rules for talking: never ask the owner anything back and leave "questions" empty — when a sentence can be read more than one way, take the most likely reading, apply it and say what you assumed in "notes". Never make up an amount or a date the owner did not give or show. A question about their money ("how much did I spend on food in September?") is answered in "reply" from CURRENT RECORDS and changes nothing. When they ask to see or open a part, use "view".`;
+Rules for talking: never ask the owner anything back and leave "questions" empty — when a sentence can be read more than one way, take the most likely reading, apply it and say what you assumed in "notes". Never make up an amount or a date the owner did not give or show. A question about their money ("how much did I spend on food in September?", "how can I manage the rest of this month?") is answered in "reply" from CURRENT RECORDS (restOfMonth holds the forecast for the days left) and changes nothing. When they ask to see or open a part, use "view".`;
 function finTalkContext() {
   const n = finNow(), all = finAll(), own = finPosition();
   return { ...finDraftContext(), categories: finCats().map(c => ({ id: c.id, name: c.name, kind: c.kind })),
     position: { cash: n.cash, freeCash: n.free, incomeMonthly: n.income, usualSpendingMonthly: n.spending, savingMonthly: n.capacity, instalmentsMonthly: n.instMonthly, card: n.card ? { owed: n.card.owed ?? null, available: n.card.available ?? null, limit: n.card.limit ?? null } : null, netWorth: own.net },
+    restOfMonth: typeof finMonth === 'function' ? (R => ({ from: R.start, to: R.end, daysLeft: R.leftDays, moneyNow: R.cash, stillComingIn: R.income, billsStillDue: R.bills, usualSpendingToMonthEnd: R.usualFromToday, monthEnd: R.endBal, canSpendPerDay: R.perDay, reserve: R.reserve, verdict: R.verdict, shortBy: R.need || 0, untilNextIncome: R.untilPay ? { date: R.untilPay.date, perDay: R.untilPay.perDay } : null, holdBack: R.cuts.list.map(c => ({ category: finMoCat(c.cat), aimFor: c.cap })) }))(finMonth()) : null,
     months: all.months.slice(-6).map(b => ({ month: b.m, income: b.inc, expenses: b.exp, byCategory: Object.fromEntries(Object.entries(b.byCat || {}).sort((x, y) => y[1] - x[1]).slice(0, 10).map(([k, v]) => [(finCat(k) || { name: k }).name, FIN.r2(v)])) })) };
 }
 async function finTalkClaude(m, text, imgs, about) {
@@ -17308,13 +17400,20 @@ Object.assign(window.__FIN, { edit: (id, v) => { if (!finCvEditOpen(id)) return 
 function finUpcoming() {
   const n = finNow(), key = finNow.k + '|' + (St.cols.fintalk && (St.cols.fintalk.get('log') || {}).updatedAt);
   if (finUpcoming.k === key) return finUpcoming.v;
-  const p = finP(), today = finToday(), all = finAll(), cur = today.slice(0, 7);
+  const A = finUpcomingArgs(), today = finToday();
+  const v = { ...FIN.upcoming({ today, days: 60, cash: n.cashKnown ? FIN.r2(n.cash - n.held) : null, ...A }), reserve: n.reserve };
+  finUpcoming.k = key; finUpcoming.v = v; return v;
+}
+// what is expected, and when: repeating income and bills running today, instalments, the card bill, dated events
+// (shared with "How can I manage the rest of this month?")
+function finUpcomingArgs() {
+  const n = finNow(), p = finP(), today = finToday(), all = finAll(), cur = today.slice(0, 7);
   const cardIds = new Set(p.accounts.filter(a => a.kind === 'credit_card' || a.kind === 'bnpl').map(a => a.id));
   const ins = (p.inputs || []).filter(i => i.kind === 'income' && (!i.from || i.from <= today) && (!i.to || i.to >= today));
   const instKeys = n.inst.map(i => FIN.norm(i.name).slice(0, 10));
   const byId = new Map((all.entries || []).map(e => [e.id, e]));
   const recNow = typeof finRec === 'function' ? new Map(finRec().items.map(i => [i.key, i.status])) : null;   // only payments running today — not every one an old statement shows
-  const rec = FIN.recurring(all.entries || []).filter(r => r.freq === 'monthly' && !(ins.length && r.dir > 0) && !instKeys.some(k => k && FIN.norm(FIN.cleanDesc(r.name)).startsWith(k)) && (r.dir > 0 || !recNow || !recNow.has('r:' + r.key) || recNow.get('r:' + r.key) === 'active'))
+  const rec = FIN.recurring(all.entries || []).filter(r => r.freq === 'monthly' && !(ins.length && r.dir > 0) && !instKeys.some(k => k && FIN.norm(FIN.cleanDesc(r.name)).startsWith(k)) && (r.dir > 0 || !recNow || recNow.get('r:' + r.key) === 'active'))   // a payment counts only when the recurring audit finds it running (shopping that varies is spending, not a bill)
     .map(r => ({ ...r, name: FIN.cleanDesc(r.name), onCard: r.ids.length > 0 && r.ids.every(id => cardIds.has((byId.get(id) || {}).acct)) }));
   // income you entered arrives on the day the salary usually comes in
   const salDay = (() => { const s = (all.entries || []).filter(e => e.cat === 'salary').map(e => e.date).sort().pop(); return s ? +s.slice(8, 10) : 1; })();
@@ -17331,8 +17430,7 @@ function finUpcoming() {
   for (const h of p.holdings) if (h.handover && h.handover >= today) dated.push({ date: h.handover.slice(0, 10), label: `${h.name}: handover`, kind: 'event' });
   for (const g of p.goals || []) if (g.date && g.date >= today) dated.push({ date: g.date, label: `${g.name}: goal date`, kind: 'goal' });
   const insts = n.inst.map(i => ({ ...i, onCard: i.acct ? cardIds.has(i.acct) : !!n.card }));
-  const v = { ...FIN.upcoming({ today, days: 60, cash: n.cashKnown ? FIN.r2(n.cash - n.held) : null, recurring: rec, installments: insts, incomes, card, dated }), reserve: n.reserve };
-  finUpcoming.k = key; finUpcoming.v = v; return v;
+  return { recurring: rec, installments: insts, incomes, card, dated };
 }
 
 /* --- what needs your attention --- */
@@ -17885,15 +17983,17 @@ function finFlowLayout(rooms, plan, n) {
   let y = 0;
   const ov = by('ov'); if (ov) y = fill(ov, 0, 0, FULL) + FFL.TOP;
   // the river: four lanes side by side
-  const lanes = { A: [], B: [], C: [], D: [] }, rest = [], boxLane = { 'mm-earn': 'A', 'mm-pass': 'A', 'mm-assets': 'B', exp: 'C', 'mm-liab': 'C' }, below = [];
+  const lanes = { A: [], B: [], C: [], D: [] }, rest = [], boxLane = { 'mm-earn': 'A', 'mm-pass': 'A', 'mm-assets': 'B', exp: 'C', 'mm-liab': 'C' }, below = []; let monthR = null;
   for (const r of rooms) {
     if (r.id === 'ov' || r.kind === 'goals' || r.kind === 'sec') continue;
+    if (r.id === 'month') { monthR = r; continue; }   // the rest of this month: right under the river, wide enough to read
     if (r.kind === 'box') { if (boxLane[r.branch]) lanes[boxLane[r.branch]].push(r); else below.push(r); continue; }
     (lanes[FIN_FLOW_COL[r.id] || 'D'] || rest).push(r);
   }
   const riverTop = y, bottoms = {};
   for (const [k, list] of Object.entries(lanes)) { let yy = riverTop; for (const r of list) yy = fill(r, FFL[k].x, yy, FFL[k].w) + 40; bottoms[k] = yy - 40; }
   y = Math.max(riverTop, ...Object.values(bottoms)) + FFL.LANE;
+  if (monthR) y = fill(monthR, FFL.C.x, y, Math.min(FULL - FFL.C.x, 1100)) + 60;
   const buy = rooms.find(r => r.kind === 'goals'); if (buy) y = fill(buy, 0, y, FULL) + 60;
   for (const r of below) y = fill(r, 0, y, FULL) + 44;
   for (const r of rooms) if (r.kind === 'sec') y = fill(r, 0, y, FULL) + 44;
@@ -18104,8 +18204,9 @@ function finMindRooms(rooms) {
   const buy = by('buy'); if (buy) out.push({ ...buy, title: 'Your choices — goals & purchases', sum: W.doodads.length ? `${W.doodads.length} doodad${W.doodads.length === 1 ? '' : 's'} · ${fk(W.plan.total)} · assets first` : buy.sum });
   // your own boxes hang under the branch you put them on; the rest go under the map
   const used = new Set(['inc', 'accts', 'own', 'com', 'exp', 'buy']), ids = new Set(out.map(r => r.id)), boxes = new Map();
-  if (by('recur') && ids.has('exp')) { boxes.set('exp', [by('recur')]); used.add('recur'); }   // your recurring payments hang under Spending
-  for (const r of rooms) if (r.kind === 'box' && ids.has(r.branch)) { if (!boxes.has(r.branch)) boxes.set(r.branch, []); boxes.get(r.branch).push(r); used.add(r.id); }
+  // under Spending: how to manage the rest of this month, then your recurring payments
+  for (const id of ['month', 'recur']) if (by(id) && ids.has('exp')) { boxes.set('exp', [...(boxes.get('exp') || []), by(id)]); used.add(id); }
+  for (const r of rooms) if (r.kind === 'box' && !used.has(r.id) && ids.has(r.branch)) { if (!boxes.has(r.branch)) boxes.set(r.branch, []); boxes.get(r.branch).push(r); used.add(r.id); }
   const rest = rooms.filter(r => !used.has(r.id));
   const left = new Set(['mm-earn', 'mm-pass', 'mm-assets']);
   return { side: { L: out.filter(r => left.has(r.id)), R: out.filter(r => !left.has(r.id)) }, rest, W, boxes };
@@ -18497,6 +18598,7 @@ const FPR_STEP = 1300, FPR_MAX = 14;
 function finChangeIndex() {
   const m = finCvIndex();
   if (typeof finCanvasP === 'function') for (const b of finCanvasP().boxes) m.set('box:' + b.id, [b.title || '', '', JSON.stringify(b.show || {}) + (b.note || '') + (b.branch || ''), ''].join('|'));
+  if (typeof finMonthRoom === 'function') m.set('month', ['', '', finMonthRoom().sum, ''].join('|'));   // the rest of this month moves with every change
   m.pos = new Map(UI.fin.cvPos || []); m.mode = UI.fin.cv.mode;
   return m;
 }
@@ -19075,6 +19177,126 @@ Object.assign(CHG, { 'fin-cur': el => {
   else if (scope.startsWith('bal:')) { UI.fin.balCur = { ...(UI.fin.balCur || {}), [scope.slice(4) + ':' + k]: el.value }; }
   render(); setTimeout(() => { const r = document.querySelector(`[data-rate-scope="${CSS.escape(scope)}"][data-rate-k="${CSS.escape(k)}"]`); if (r && !r.value) r.focus(); }, 30);
 } });
+
+/* ===== features/66-finance-month.js ===== */
+// Money canvas — "How can I manage the rest of this month?". A section on every canvas (under Spending on the Mind map
+// and in Rich Dad, in the "Goes out" lane of Flow) that forecasts the days left in this month from two things only:
+// your current balances (the money that is yours — other people's money set aside) and your own spending history.
+//   Facts: the money in your accounts on the day your figures reach, and the bills, instalments, card bill and income
+//   still due this month, each on its date (only payments running today — the same list as everywhere else).
+//   Estimates: what the remaining days usually cost you — the same stretch of each recent complete month, the median
+//   month, with a range — spread over the days the way you usually spend (FIN.restOfMonth).
+// From them: what you can spend a day and keep your safety reserve, how long the money must last until the next
+// income, the lowest point, the month end, a week-by-week plan, where to hold back, and what to do. Anything not
+// known (no balance, no complete month) is said, never guessed. Card purchases are counted when you make them.
+
+function finMonth() {
+  const n = finNow(), key = finNow.k;
+  if (finMonth.k === key) return finMonth.v;
+  const p = finP(), today = finToday(), cur = today.slice(0, 7), all = finAll(), rec = n.rec || { items: [] };
+  // the day your money is known to: the oldest of your own accounts' latest figures (a balance, or transactions after it)
+  const cov = typeof finCoverage === 'function' ? finCoverage(finTx()) : {};
+  const mine = n.accts.filter(x => ['current', 'savings', 'cash'].includes(x.a.kind) && (!x.a.owner || x.a.owner === 'me') && typeof x.l.balance === 'number');
+  const eff = mine.map(x => [x.l.date, cov[x.a.id]].filter(Boolean).sort().pop()).filter(Boolean).map(d => d > today ? today : d);
+  const asOf = eff.length ? eff.sort()[0] : null, start = asOf && asOf < today ? FIN.addDays(asOf, 1) : today, end = FIN.monthEnd(cur);
+  // what is still due and still coming, from the day after your figures to the month end
+  let events = [];
+  try { const A = finUpcomingArgs(); events = FIN.upcoming({ today: start, days: FIN.dnum(end) - FIN.dnum(start), recurring: A.recurring, installments: A.installments, incomes: A.incomes, card: A.card }).events.filter(e => ['income', 'bill', 'instalment', 'card'].includes(e.kind) && e.amount); } catch (e) { console.error(e); }
+  // your spending, as it varies: every expense except the recurring payments and instalments (those come as dated bills),
+  // purchases on instalment financing (they come as instalments) and card payments standing in for unread card statements
+  const recIds = new Set(rec.items.flatMap(i => i.ids || [])), bnpl = new Set(p.accounts.filter(a => a.kind === 'bnpl').map(a => a.id));
+  const spend = (all.entries || []).filter(e => e.flow === 'exp' && !recIds.has(e.id) && !bnpl.has(e.acct) && e.cat !== 'cc_unitem').map(e => ({ date: e.date, amount: -e.v, cat: e.cat }));
+  const months = all.months.filter(b => b.covered && b.m < cur).slice(-6).map(b => b.m);
+  const prio = Object.fromEntries([...new Set(spend.map(s => s.cat))].map(c => [c, (finCat(c) || {}).prio || '']));
+  const cash = n.cashKnown ? FIN.r2(n.cash - n.held) : null;
+  const R = FIN.restOfMonth({ today, asOf, cash, reserve: n.reserve, events, spend, months, prio });
+  R.held = n.held; R.noBalance = n.cashAccts - n.cashKnown; R.verify = (rec.verify || []).length; R.verifyMonthly = FIN.r2((rec.verify || []).reduce((s, i) => s + (i.perMonth || 0), 0));
+  R.subs = rec.items.filter(i => i.status === 'active' && i.group === 'subs'); R.goalsMonthly = n.goalsMonthly || 0; R.card = n.card;
+  R.cuts = finMonthCuts(R);
+  finMonth.k = key; finMonth.v = R; return R;
+}
+// where to hold back when the money is short or tight: the flexible categories down to your cheaper months
+function finMonthCuts(R) {
+  if (!(R.verdict === 'short' || R.verdict === 'tight')) return { list: [], saves: 0, enough: true };
+  const order = { optional: 0, discretionary: 1, important: 2 }, list = []; let saves = 0;
+  for (const c of R.cats.filter(c => c.prio in order && c.usual - c.low >= 1).sort((a, b) => order[a.prio] - order[b.prio] || (b.usual - b.low) - (a.usual - a.low))) {
+    if (saves >= R.need) break; const cut = FIN.r2(c.usual - c.low); list.push({ ...c, cap: c.low, cut }); saves = FIN.r2(saves + cut);
+  }
+  return { list, saves, enough: saves >= R.need };
+}
+const finMoCat = c => (finCat(c) || { name: c }).name;
+const finMoDay = d => fday(d).replace(/\s\d{4}$/, '');
+
+// the section, as a room
+function finMonthRoom() {
+  const R = finMonth();
+  const sum = R.cash === null ? 'enter your balances to see it'
+    : R.verdict === 'unknown' ? `${R.leftDays} day${R.leftDays === 1 ? '' : 's'} left · add statements to learn your spending`
+    : R.verdict === 'short' ? `${R.leftDays} day${R.leftDays === 1 ? '' : 's'} left · short by about ${fkr(R.need)}${R.firstNeg ? ' · runs out around ' + finMoDay(R.firstNeg) : ''}`
+    : `${R.leftDays} day${R.leftDays === 1 ? '' : 's'} left · about ${fkr(R.perDay)} a day · month ends near ${fkr(R.endBal)}`;
+  return { id: 'month', kind: 'box', sys: true, icon: '🗓️', title: 'How can I manage the rest of this month?', sum, hue: 190, branch: 'exp' };
+}
+
+function finMonthHTML() {
+  const R = finMonth(), today = finToday(), stale = R.asOf && R.gapDays > 0;
+  const V = {
+    ok: ['✅', 'You can manage the rest of the month', R.endBal !== null ? `At your usual pace you end ${fmon(today.slice(0, 7))} with about ${fkr(R.endBal)} — ${fkr(Math.max(0, R.endBal - R.reserve))} above your safety reserve.` : ''],
+    tight: ['⚠️', 'Tight — your safety reserve gets used', `At your usual pace the month ends at about ${fkr(R.endBal)}, ${fkr(R.need)} inside your ${fkr(R.reserve)} reserve. Spend at most ${fkr(R.perDayAll)} a day to stay above zero, ${fkr(R.perDay)} to keep the reserve.`],
+    short: ['🛑', `Short by about ${fkr(R.need)}`, R.firstNeg ? `At your usual pace the money runs out around ${finMoDay(R.firstNeg)}${R.untilPay && R.firstNeg < R.untilPay.date ? `, before ${esc(R.untilPay.label)} on ${finMoDay(R.untilPay.date)}` : ''}. The plan below shows where to hold back.` : 'At your usual pace the month ends below zero. The plan below shows where to hold back.'],
+    unknown: ['❔', 'Not known yet', R.cash === null ? 'Enter today’s balances so the forecast can start from the money you have.' : 'There is no complete month in your statements to learn your spending from — add statements (or tell the canvas what a month costs you).'],
+  }[R.verdict];
+  const k = (l, v, s, cls = '') => `<div class="${cls}"><span>${l}</span><b class="num">${v}</b><small>${s}</small></div>`;
+  const tiles = [
+    k('Money to live on now', R.cash === null ? '—' : fkr(R.cash), R.cash === null ? 'no balance yet' : `${R.asOf ? 'as of ' + finMoDay(R.asOf) : ''}${R.held > 0 ? ` · ${fkr(R.held)} of others’ money set aside` : ''}`, 'fact'),
+    k('Still coming in', fkr(R.income), [...R.events.filter(e => e.amount > 0).map(e => `${esc(e.label)} ${finMoDay(e.date)}`), ...R.assumedIn.map(e => `${esc(e.label)} of today taken as already in your balance`)].join(' · ') || 'nothing expected this month', 'fact'),
+    k('Bills still due', fkr(R.bills), `${R.events.filter(e => e.amount < 0).length} bill${R.events.filter(e => e.amount < 0).length === 1 ? '' : 's'}, instalments & card`, 'fact'),
+    k('Usual spending to month end', R.usualFromToday === null ? '—' : fkr(R.usualFromToday), R.expected === null ? 'not known yet' : `estimate · usually ${fkr(R.lowS - R.gapSpend > 0 ? R.lowS - R.gapSpend : R.lowS)}–${fkr(R.highS - R.gapSpend > 0 ? R.highS - R.gapSpend : R.highS)}`, 'est'),
+    k('End of the month', R.endBal === null ? '—' : fkr(R.endBal), R.endIfHigh !== null ? `estimate · ${fkr(R.endIfHigh)} to ${fkr(R.endIfLow)}` : R.endBal !== null ? 'before your day-to-day spending' : '', `est ${R.endBal !== null && R.endBal < 0 ? 'neg' : ''}`),
+    k('You can spend a day', R.perDay === null ? '—' : fkr(R.perDay), R.perDay === null ? '' : `for ${R.leftDays} day${R.leftDays === 1 ? '' : 's'}, keeping your ${fkr(R.reserve)} reserve`, 'key'),
+  ].join('');
+  // the line: your money day by day at your usual pace, against the reserve
+  const chart = R.points.length > 1 ? finLines([{ name: 'Your money (estimate)', pts: R.points.map(p => ({ k: p.date, v: p.bal, est: true, label: fday(p.date) })) }, { name: 'Safety reserve', cls: 'muted', pts: R.points.map(p => ({ k: p.date, v: R.reserve, label: fday(p.date) })) }], { title: 'rest of month', h: 180, label: k2 => finMoDay(k2) }) : '';
+  const pay = R.untilPay && R.perDay !== null && R.untilPay.perDay !== null && R.untilPay.perDay < R.perDay
+    ? `<p class="fin-mo-pay">💼 <b>Until ${esc(R.untilPay.label)} on ${finMoDay(R.untilPay.date)}:</b> at most <b>${fkr(R.untilPay.perDay)} a day</b> — ${fkr(Math.max(0, R.untilPay.room))} has to last ${R.untilPay.days} day${R.untilPay.days === 1 ? '' : 's'} (you usually spend ${fkr(R.untilPay.usual)} in them).</p>` : '';
+  const pace = R.pace && R.pace.ratio !== null ? `<p class="small fin-mo-pace ${R.pace.ratio > 1.15 ? 'warn' : R.pace.ratio < 0.85 ? 'good' : ''}">So far this month: ${fkr(R.pace.spent)} in ${R.pace.days} days — ${Math.round(R.pace.ratio * 100)}% of what you usually spend by this day (${fkr(R.pace.usual)}).</p>` : '';
+  const logo = t => typeof finLogo === 'function' ? finLogo(t, 'sm') : '';
+  const weeks = R.weeks.length ? `<h4>Week by week</h4><div class="fin-box-scroll"><table class="fin-box-t fin-mo-wk"><thead><tr><th>Days</th><th>Due</th><th class="num">Spend up to</th><th class="num">Usual</th></tr></thead><tbody>${R.weeks.map(w => `<tr><td>${finMoDay(w.from)}${w.days > 1 ? ' – ' + finMoDay(w.to) : ''}</td><td>${[...w.income.map(e => `<span class="fin-rec-chip add">${esc(e.label)} +${fkr(e.amount)}</span>`), ...w.bills.map(e => `<span class="fin-rec-chip">${logo(e.label)}${esc(e.label)} ${fkr(-e.amount)}</span>`)].join(' ') || '<span class="muted">—</span>'}</td><td class="num">${w.cap === null ? '—' : fkr(w.cap)}</td><td class="num muted">${R.expected === null ? '—' : fkr(w.usual)}</td></tr>`).join('')}</tbody></table></div>` : '';
+  const cut = new Map(R.cuts.list.map(c => [c.cat, c]));
+  const cats = R.cats.length ? `<h4>${R.cuts.list.length ? 'Where to hold back' : 'What these days usually cost'}</h4><div class="fin-box-scroll"><table class="fin-box-t fin-mo-cat"><thead><tr><th>Category</th><th class="num">Usual for these days</th><th class="num">Aim for</th></tr></thead><tbody>${R.cats.slice(0, 8).map(c => { const x = cut.get(c.cat);
+      return `<tr class="${x ? 'cut' : ''}"><td>${esc(finMoCat(c.cat))}${c.prio ? ` <small class="muted">${esc(c.prio)}</small>` : ''}</td><td class="num">${fkr(c.usual)}</td><td class="num">${x ? `<b>${fkr(x.cap)}</b><br><small>saves ${fkr(x.cut)}</small>` : fkr(c.usual)}</td></tr>`; }).join('')}</tbody></table></div>` : '';
+  const ev = R.events.length ? `<h4>Still due and still coming</h4><div class="fin-box-list">${R.events.map(e => `<div>${logo(e.label)}<span><b>${esc(e.label)}</b><small>${finMoDay(e.date)} · ${{ income: 'income', bill: 'bill', instalment: 'instalment', card: 'card bill' }[e.kind] || e.kind}${e.onCard ? ' · on the card' : ''}${e.date < today ? ' · may already be paid (after your latest figures)' : ''}</small></span><b class="num ${e.amount < 0 ? 'fin-neg' : ''}">${fm(e.amount, null, { plus: true, dec: 0 })}</b></div>`).join('')}</div>` : '';
+  const todo = finMonthActions(R);
+  return `<div class="fin-mo ${R.verdict}">
+    <div class="fin-mo-top"><span class="ic" aria-hidden="true">${V[0]}</span><div><b>${esc(V[1])}</b><span class="small">${V[2]}</span></div></div>
+    ${stale ? `<p class="fin-mo-stale small">Your figures stop on ${finMoDay(R.asOf)}: the ${R.gapDays} day${R.gapDays === 1 ? '' : 's'} since are estimated (${fkr(R.gapSpend)} of usual spending). <button class="btn sm" data-act="fin-bal-win">🏦 Enter today’s balances</button></p>` : ''}
+    <div class="fin-mo-k">${tiles}</div>${pay}${pace}
+    ${chart ? `<div class="fin-mo-chart">${chart}</div>` : ''}
+    ${todo.length ? `<h4>What to do</h4><ol class="fin-mo-do">${todo.map(t => `<li>${t}</li>`).join('')}</ol>` : ''}
+    ${weeks}${cats}${ev}
+    <p class="small muted fin-mo-basis"><b>Facts:</b> your balances${R.asOf ? ` (to ${finMoDay(R.asOf)})` : ''}, and the bills, instalments, card bill and income still due — only payments running today. <b>Estimates:</b> the usual spending, from the same days of your last ${R.months} complete month${R.months === 1 ? '' : 's'} (the median month; the range is your cheaper and dearer quarter), with recurring payments and instalments taken out because they are counted as bills. Card purchases count when you make them. Dates of bills and income are estimated from when they came before.</p>
+  </div>`;
+}
+// what to do, in order
+function finMonthActions(R) {
+  const out = [], b = (act, label) => ` <button class="btn sm ghost" data-act="${act}">${label}</button>`;
+  if (R.cash === null || R.noBalance > 0) out.push(`<b>Enter your balances</b>${R.noBalance > 0 && R.cash !== null ? ` — ${R.noBalance} account${R.noBalance === 1 ? ' has' : 's have'} none, so the money now may be more than shown` : ''}.${b('fin-bal-win', '🏦 Balances')}`);
+  else if (R.gapDays > 1) out.push(`<b>Update today’s balances</b> — the forecast then starts from what your bank shows now, not from ${finMoDay(R.asOf)}.${b('fin-bal-win', '🏦 Balances')}`);
+  if (R.verdict === 'short') {
+    out.push(`<b>Find about ${fkr(R.need)} by the month end</b>${R.firstNeg ? ` — at your usual pace the money runs out around ${finMoDay(R.firstNeg)}` : ''}: hold back below, put off anything that can wait until next month, or move money from savings.`);
+    const ess = FIN.r2(R.cats.filter(c => c.prio === 'essential').reduce((t, c) => t + c.usual, 0));
+    if (ess > 0) out.push(`<b>Keep to essentials</b> — they usually cost about ${fkr(ess)} in these days (${fkr(ess / Math.max(1, R.leftDays))} a day).`);
+    if (R.untilPay) out.push(`<b>Until ${esc(R.untilPay.label)} (${finMoDay(R.untilPay.date)}), spend at most ${fkr(R.untilPay.perDay || 0)} a day.</b>`);
+  } else if (R.verdict === 'tight') out.push(`<b>Spend at most ${fkr(R.perDay)} a day</b> to keep your safety reserve — you usually spend about ${fkr(R.usualFromToday / Math.max(1, R.leftDays))} a day in these days.`);
+  else if (R.verdict === 'ok') out.push(`<b>Keep to about ${fkr(R.perDay)} a day</b> and your reserve stays whole${R.untilPay && R.untilPay.perDay !== null && R.untilPay.perDay < R.perDay ? ` — less (${fkr(R.untilPay.perDay)}) until ${finMoDay(R.untilPay.date)}` : ''}.`);
+  if (R.cuts.list.length) out.push(`<b>Hold back on ${R.cuts.list.map(c => esc(finMoCat(c.cat))).join(', ')}</b> to your cheaper months: saves about ${fkr(R.cuts.saves)}${R.cuts.enough ? '' : ` — not the whole ${fkr(R.need)}; the rest needs bigger changes or money from savings`}.`);
+  if ((R.verdict === 'short' || R.verdict === 'tight') && R.subs.length) out.push(`<b>Pause a subscription you do not use</b>: ${R.subs.slice(0, 4).map(s => `${esc(s.name)} ${fkr(s.perMonth)}`).join(', ')}.`);
+  if ((R.verdict === 'short' || R.verdict === 'tight') && R.card && (R.card.owed > 0 || R.card.available > 0)) out.push('<b>Use the card only for what you can pay in full</b> — card spending is still spending, and next month’s bill pays for it.');
+  if (R.pace && R.pace.ratio > 1.15) out.push(`<b>You are spending faster than usual</b> this month (${Math.round(R.pace.ratio * 100)}% of your usual by this day).`);
+  if (R.verdict === 'ok' && R.endBal - R.reserve > 1) out.push(`<b>Put the spare ${fkr(R.endBal - R.reserve)} to work</b> — into savings or a goal${R.goalsMonthly ? ` (your goals plan ${fkr(R.goalsMonthly)} a month)` : ''}, or into an asset that pays you.`);
+  if (R.verify) out.push(`<b>${R.verify} recurring payment${R.verify === 1 ? ' is' : 's are'} waiting for you to confirm</b> — not counted; if still running ${R.verify === 1 ? 'it adds' : 'they add'} up to ${fkr(R.verifyMonthly)} a month. Check them in Recurring payments.`);
+  return out;
+}
+Object.assign(window.__FIN, { month: () => { const R = finMonth(); return { start: R.start, end: R.end, asOf: R.asOf, leftDays: R.leftDays, gapDays: R.gapDays, months: R.months, cash: R.cash, income: R.income, bills: R.bills, expected: R.expected, usualFromToday: R.usualFromToday, endBal: R.endBal, perDay: R.perDay, perDayAll: R.perDayAll, verdict: R.verdict, need: R.need, lowPoint: R.lowPoint, untilPay: R.untilPay, events: R.events.map(e => [e.date, e.kind, e.label, e.amount]), cats: R.cats.map(c => [c.cat, c.usual, c.low, c.prio]), cuts: R.cuts.list.map(c => [c.cat, c.cap]), weeks: R.weeks.map(w => [w.from, w.to, w.cap]), actions: finMonthActions(R).map(finTxt) }; } });
 
 /* ---------- boot ---------- */
 const startView = (location.hash || '').replace('#', '');

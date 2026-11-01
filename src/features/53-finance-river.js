@@ -36,15 +36,17 @@ function finFlowLayout(rooms, plan, n) {
   let y = 0;
   const ov = by('ov'); if (ov) y = fill(ov, 0, 0, FULL) + FFL.TOP;
   // the river: four lanes side by side
-  const lanes = { A: [], B: [], C: [], D: [] }, rest = [], boxLane = { 'mm-earn': 'A', 'mm-pass': 'A', 'mm-assets': 'B', exp: 'C', 'mm-liab': 'C' }, below = [];
+  const lanes = { A: [], B: [], C: [], D: [] }, rest = [], boxLane = { 'mm-earn': 'A', 'mm-pass': 'A', 'mm-assets': 'B', exp: 'C', 'mm-liab': 'C' }, below = []; let monthR = null;
   for (const r of rooms) {
     if (r.id === 'ov' || r.kind === 'goals' || r.kind === 'sec') continue;
+    if (r.id === 'month') { monthR = r; continue; }   // the rest of this month: right under the river, wide enough to read
     if (r.kind === 'box') { if (boxLane[r.branch]) lanes[boxLane[r.branch]].push(r); else below.push(r); continue; }
     (lanes[FIN_FLOW_COL[r.id] || 'D'] || rest).push(r);
   }
   const riverTop = y, bottoms = {};
   for (const [k, list] of Object.entries(lanes)) { let yy = riverTop; for (const r of list) yy = fill(r, FFL[k].x, yy, FFL[k].w) + 40; bottoms[k] = yy - 40; }
   y = Math.max(riverTop, ...Object.values(bottoms)) + FFL.LANE;
+  if (monthR) y = fill(monthR, FFL.C.x, y, Math.min(FULL - FFL.C.x, 1100)) + 60;
   const buy = rooms.find(r => r.kind === 'goals'); if (buy) y = fill(buy, 0, y, FULL) + 60;
   for (const r of below) y = fill(r, 0, y, FULL) + 44;
   for (const r of rooms) if (r.kind === 'sec') y = fill(r, 0, y, FULL) + 44;

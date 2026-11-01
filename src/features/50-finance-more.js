@@ -5,13 +5,20 @@
 function finUpcoming() {
   const n = finNow(), key = finNow.k + '|' + (St.cols.fintalk && (St.cols.fintalk.get('log') || {}).updatedAt);
   if (finUpcoming.k === key) return finUpcoming.v;
-  const p = finP(), today = finToday(), all = finAll(), cur = today.slice(0, 7);
+  const A = finUpcomingArgs(), today = finToday();
+  const v = { ...FIN.upcoming({ today, days: 60, cash: n.cashKnown ? FIN.r2(n.cash - n.held) : null, ...A }), reserve: n.reserve };
+  finUpcoming.k = key; finUpcoming.v = v; return v;
+}
+// what is expected, and when: repeating income and bills running today, instalments, the card bill, dated events
+// (shared with "How can I manage the rest of this month?")
+function finUpcomingArgs() {
+  const n = finNow(), p = finP(), today = finToday(), all = finAll(), cur = today.slice(0, 7);
   const cardIds = new Set(p.accounts.filter(a => a.kind === 'credit_card' || a.kind === 'bnpl').map(a => a.id));
   const ins = (p.inputs || []).filter(i => i.kind === 'income' && (!i.from || i.from <= today) && (!i.to || i.to >= today));
   const instKeys = n.inst.map(i => FIN.norm(i.name).slice(0, 10));
   const byId = new Map((all.entries || []).map(e => [e.id, e]));
   const recNow = typeof finRec === 'function' ? new Map(finRec().items.map(i => [i.key, i.status])) : null;   // only payments running today — not every one an old statement shows
-  const rec = FIN.recurring(all.entries || []).filter(r => r.freq === 'monthly' && !(ins.length && r.dir > 0) && !instKeys.some(k => k && FIN.norm(FIN.cleanDesc(r.name)).startsWith(k)) && (r.dir > 0 || !recNow || !recNow.has('r:' + r.key) || recNow.get('r:' + r.key) === 'active'))
+  const rec = FIN.recurring(all.entries || []).filter(r => r.freq === 'monthly' && !(ins.length && r.dir > 0) && !instKeys.some(k => k && FIN.norm(FIN.cleanDesc(r.name)).startsWith(k)) && (r.dir > 0 || !recNow || recNow.get('r:' + r.key) === 'active'))   // a payment counts only when the recurring audit finds it running (shopping that varies is spending, not a bill)
     .map(r => ({ ...r, name: FIN.cleanDesc(r.name), onCard: r.ids.length > 0 && r.ids.every(id => cardIds.has((byId.get(id) || {}).acct)) }));
   // income you entered arrives on the day the salary usually comes in
   const salDay = (() => { const s = (all.entries || []).filter(e => e.cat === 'salary').map(e => e.date).sort().pop(); return s ? +s.slice(8, 10) : 1; })();
@@ -28,8 +35,7 @@ function finUpcoming() {
   for (const h of p.holdings) if (h.handover && h.handover >= today) dated.push({ date: h.handover.slice(0, 10), label: `${h.name}: handover`, kind: 'event' });
   for (const g of p.goals || []) if (g.date && g.date >= today) dated.push({ date: g.date, label: `${g.name}: goal date`, kind: 'goal' });
   const insts = n.inst.map(i => ({ ...i, onCard: i.acct ? cardIds.has(i.acct) : !!n.card }));
-  const v = { ...FIN.upcoming({ today, days: 60, cash: n.cashKnown ? FIN.r2(n.cash - n.held) : null, recurring: rec, installments: insts, incomes, card, dated }), reserve: n.reserve };
-  finUpcoming.k = key; finUpcoming.v = v; return v;
+  return { recurring: rec, installments: insts, incomes, card, dated };
 }
 
 /* --- what needs your attention --- */

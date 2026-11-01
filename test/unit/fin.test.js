@@ -391,6 +391,37 @@ eq([up.low, up.last, up.cashIn, up.cashOut], [{ date: '2026-11-03', bal: 18500 }
 eq(F.upcoming({ today: '2026-11-01', incomes: [{ label: 'Salary', amount: 36000, day: 25 }] }).events.map(e => e.date), ['2026-11-25', '2026-12-25'], 'income you entered, on its day');
 eq(F.upcoming({ today: '2026-11-01', incomes: [{ label: 'Salary', amount: 36000, day: 1, from: '2026-12' }] }).events.map(e => e.date), ['2026-12-01'], 'a salary already in this month is expected from next month');
 eq(F.upcoming({ today: '2026-11-01', installments: [{ name: 'X', amount: 100, last: '2026-10-15', end: '2026-11', status: 'active' }] }).events.length, 1, 'an instalment stops after its last month');
+/* the rest of this month: money now, bills and income still to come, and what the remaining days usually cost */
+{ const hist = []; for (const m of ['2026-08', '2026-09', '2026-10']) { for (let d = 1; d <= F.dim(m); d++) hist.push({ date: `${m}-${String(d).padStart(2, '0')}`, amount: 100, cat: 'food' }); hist.push({ date: m + '-28', amount: 500, cat: 'fun' }); }
+  const now = []; for (let d = 1; d <= 15; d++) now.push({ date: `2026-11-${String(d).padStart(2, '0')}`, amount: 200, cat: 'food' });
+  const ev = [{ date: '2026-11-10', kind: 'bill', label: 'Before', amount: -999 }, { date: '2026-11-20', kind: 'bill', label: 'Gym', amount: -3000 }, { date: '2026-11-25', kind: 'income', label: 'Salary', amount: 20000 }, { date: '2026-12-01', kind: 'bill', label: 'Next month', amount: -50 }];
+  const base = { today: '2026-11-16', asOf: '2026-11-15', reserve: 2000, spend: [...hist, ...now], months: ['2026-08', '2026-09', '2026-10'], prio: { fun: 'optional', food: 'essential' } };
+  const R = F.restOfMonth({ ...base, cash: 5000, events: ev });
+  eq([R.start, R.end, R.leftDays, R.gapDays, R.months], ['2026-11-16', '2026-11-30', 15, 0, 3], 'from the day after the balances to the month end');
+  eq([R.expected, R.lowS, R.highS], [2100, 2050, 2100], 'the same stretch of each past month (aligned to its end): 16 days of a 31-day month, 15 of a 30-day one, and the 28th');
+  eq(R.cats.map(c => [c.cat, c.usual, c.prio]), [['food', 1600, 'essential'], ['fun', 500, 'optional']], 'what the remaining days usually cost, by category');
+  eq(R.events.map(e => e.label), ['Gym', 'Salary'], 'only bills and income inside the rest of the month');
+  eq([R.income, R.bills, R.endBal, R.verdict], [20000, 3000, 19900, 'ok'], 'money now + income − bills − the usual spending = the month end');
+  eq(Math.round(R.points.reduce((s, p) => s + p.spend, 0)), 2100, 'the usual spending spread over the days adds up');
+  eq([R.room, R.perDay, R.perDayAll], [22000, 1333.33, 1466.67], 'what you can spend a day from today, keeping the reserve (and without it)');
+  eq([R.untilPay.date, R.untilPay.days, R.untilPay.room, R.untilPay.perDay], ['2026-11-25', 9, 2000, 222.22], 'until the salary comes, the money has to last on its own');
+  eq(R.lowPoint.date, '2026-11-24', 'the lowest point is the day before the salary');
+  eq([R.pace.spent, R.pace.usual, R.pace.ratio], [3000, 1500, 2], 'this month so far: twice the usual by this day');
+  eq([R.weeks.length, R.weeks[0].from, R.weeks[0].to, R.weeks[0].bills.map(e => e.label), R.weeks[1].income.map(e => e.label), R.weeks[2].days], [3, '2026-11-16', '2026-11-22', ['Gym'], ['Salary'], 1], 'week by week from today, with the bills and income in each');
+  const S = F.restOfMonth({ ...base, cash: 1000, events: ev });
+  eq([S.verdict, S.firstNeg], ['short', '2026-11-20'], 'short: the money runs out on the day the gym is paid, before the salary');
+  eq(S.need, F.r2(-S.lowPoint.bal), 'short by the lowest point');
+  const T = F.restOfMonth({ ...base, cash: 6000, events: ev.filter(e => e.amount < 0) });
+  eq([T.verdict, T.endBal, T.need], ['tight', 900, 1100], 'tight: no salary this month — the month ends inside the reserve, by this much');
+  eq(F.restOfMonth({ ...base, cash: 5000, events: ev.filter(e => e.amount < 0) }).verdict, 'short', 'and with less money, short');
+  const U = F.restOfMonth({ ...base, months: [], cash: 5000, events: ev });
+  eq([U.expected, U.verdict, U.endBal, U.cats.length], [null, 'unknown', 22000, 0], 'no complete month to learn from: the spending is not known, never invented');
+  eq(F.restOfMonth({ ...base, cash: null, events: ev }).verdict, 'unknown', 'no balance: not known');
+  const P = F.restOfMonth({ ...base, today: '2026-11-25', asOf: '2026-11-25', cash: 5000, events: ev });
+  eq([P.income, P.assumedIn.map(e => e.label)], [0, ['Salary']], 'a balance given on payday: the salary of that day is taken as already in it, not counted twice');
+  const G = F.restOfMonth({ ...base, asOf: '2026-11-10', cash: 5000, events: ev });
+  eq([G.start, G.gapDays, G.gapSpend > 0, G.room], ['2026-11-11', 5, true, F.r2(5000 + 20000 - 3000 - G.gapSpend)], 'balances from 10 Nov: the five days since are estimated too, and taken off what you can spend');
+}
 /* 15. backups */
 eq(F.validateBackup({ app: 'action-register-money', tx: [{ id: 'a', acct: 'A' }], prefs: {} }).ok, true, 'a backup is accepted');
 eq(F.validateBackup({ tx: 'x' }).ok, false, 'a damaged file is refused');

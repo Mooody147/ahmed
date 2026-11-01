@@ -128,6 +128,7 @@ function finCvRooms(root) {
   const buy = root.children.find(b => b.id === 'buy');
   if (buy) R.push({ id: 'buy', kind: 'goals', full: true, node: buy, icon: buy.icon, title: buy.label, sum: buy.sum, hue: buy.hue });
   for (const b of root.children) if (b.id !== 'buy') R.push({ id: b.id, kind: 'room', node: b, icon: b.icon, title: b.label, sum: b.sum, hue: b.hue, sec: b.sec });
+  if (typeof finMonthRoom === 'function') R.push(finMonthRoom());   // how to manage the rest of this month (66-finance-month)
   if (typeof finBoxRooms === 'function') R.push(...finBoxRooms());   // your own boxes, made with Tell the canvas
   // parts opened as rooms, each right after the room it belongs to
   const out = [];
@@ -285,6 +286,7 @@ function finDetBody(id, plan, n) {
   if (id === 'ov') return finOverviewHTML();
   if (id === 'free' && typeof finFreeHTML === 'function') return finFreeHTML();
   if ((id.startsWith('rc:') || id === 'rc~months') && typeof finRecDetail === 'function') return finRecDetail(id);
+  if (id === 'month' && typeof finMonthHTML === 'function') return finMonthHTML();
   if (id.startsWith('box:') && typeof finBoxHTML === 'function') return finBoxHTML(id);
   if (id === 'gk') return finGoalsHead(plan, n);
   if (id === 'gt') return finGoalsTimeline(plan);
@@ -384,7 +386,7 @@ function finCvRoom(r) {
       <span class="spacer"></span>
       ${typeof finCvAddSpec === 'function' && aid && finCvAddSpec(aid) ? `<button class="btn sm ghost" data-act="fin-cv-add" data-id="${esc(aid)}" title="Add" aria-label="Add to ${esc(r.title)}">＋</button>` : ''}
       ${r.kind === 'sec' ? `<button class="btn sm ghost" data-act="fin-cv-sec" data-s="${esc(r.sec)}" aria-label="Close ${esc(r.title)}">✕</button>`
-        : `${r.kind === 'box' ? `<button class="btn sm ghost" data-act="fin-box-del" data-id="${esc(r.id)}" title="Remove this box" aria-label="Remove ${esc(r.title)}">✕</button>` : ''}${hasKids ? `<button class="btn sm ghost" data-act="fin-cv-tog" data-id="${esc(r.id)}" aria-expanded="${!folded}" title="${folded ? 'Unfold' : 'Fold'}" aria-label="${folded ? 'Unfold' : 'Fold'} ${esc(r.title)}">${folded ? '▸' : '▾'}</button>` : ''}${solo ? `<button class="btn sm ghost" data-act="fin-cv-focus" data-id="${esc(r.id)}" title="${UI.fin.cv.focus === r.id ? 'Show everything' : 'Show only this room'}" aria-label="${UI.fin.cv.focus === r.id ? 'Show everything' : 'Show only ' + esc(r.title)}">⤢</button>` : ''}`}
+        : `${r.kind === 'box' && !r.sys ? `<button class="btn sm ghost" data-act="fin-box-del" data-id="${esc(r.id)}" title="Remove this box" aria-label="Remove ${esc(r.title)}">✕</button>` : ''}${hasKids ? `<button class="btn sm ghost" data-act="fin-cv-tog" data-id="${esc(r.id)}" aria-expanded="${!folded}" title="${folded ? 'Unfold' : 'Fold'}" aria-label="${folded ? 'Unfold' : 'Fold'} ${esc(r.title)}">${folded ? '▸' : '▾'}</button>` : ''}${solo ? `<button class="btn sm ghost" data-act="fin-cv-focus" data-id="${esc(r.id)}" title="${UI.fin.cv.focus === r.id ? 'Show everything' : 'Show only this room'}" aria-label="${UI.fin.cv.focus === r.id ? 'Show everything' : 'Show only ' + esc(r.title)}">⤢</button>` : ''}`}
     </div></section>`;
 }
 function finCvBoard() {
