@@ -95,7 +95,7 @@ function finAgentContext() {
   const C = finCanvasP(), root = finCvModel(), branches = root.children.map(b => ({ id: b.id, title: b.label, cards: (function leaves(l) { return l.flatMap(c => c.type === 'branch' ? leaves(c.children) : [c]); })(b.children).filter(c => !c.cls.includes('tool') && !c.cls.includes('more')).slice(0, 14).map(c => ({ id: c.id, label: c.label, shows: c.val || '' })) }));
   const feed = finTalkFeed().slice(-10).map(x => x.who === 'you' ? { you: E.clip(x.text || '', 400) } : { canvas: E.clip(x.reply || '', 300), did: (x.done || []).slice(0, 6) });
   return { view: UI.fin.cv.mode || 'mind', mapBranches: ['mm-earn (Earned income)', 'mm-pass (Passive income)', 'mm-assets (Assets)', 'exp (Spending)', 'mm-liab (Liabilities)', 'buy (Your choices — goals & purchases)', 'below (under the map)'],
-    people: FIN.thirdParty(finTx(), finP().parties).map(x => ({ id: x.id, name: x.name, held: x.held, cameIn: x.in, wentOut: x.out, settledTo: x.settledTo || null })), rooms: branches, myBoxes: C.boxes.map(b => ({ id: b.id, title: b.title, branch: b.branch, show: b.show, note: b.note || '' })), renamed: C.labels, hidden: C.hidden, conversationSoFar: feed };
+    recurring: (typeof finRec === 'function' ? finRec().items : []).map(i => ({ key: i.key, name: i.name, group: i.group, status: i.status, perMonth: i.perMonth, since: i.since })), people: FIN.thirdParty(finTx(), finP().parties).map(x => ({ id: x.id, name: x.name, held: x.held, cameIn: x.in, wentOut: x.out, settledTo: x.settledTo || null })), rooms: branches, myBoxes: C.boxes.map(b => ({ id: b.id, title: b.title, branch: b.branch, show: b.show, note: b.note || '' })), renamed: C.labels, hidden: C.hidden, conversationSoFar: feed };
 }
 const FIN_AGENT_RULES = () => `
 
@@ -110,6 +110,7 @@ To change the canvas, add "canvas":[operations] to the JSON (the canvas checks e
 {"op":"renameBranch","room":"room or branch id (also free for Financial freedom)","title":""}
 {"op":"category","action":"create|rename|merge","id":"category id (rename, merge)","name":"","kind":"expense|income","into":"category id (merge)"}
 {"op":"recategorize","filter":FILTER,"to":"category id, or the name of a category created in the same answer","remember":true when new transactions like these should get it too}
+{"op":"setRecurring","item":"name or key from recurring","status":"stopped|active|clear","since":"YYYY-MM (stopped from)"} — when the owner says they no longer pay something (or still do); stopped payments leave their current obligations
 {"op":"settleParty","party":"person id or name from people","to":"YYYY-MM-DD (default today)","note":"","clear":false} — when the owner says everything someone sent until a date was given back or paid out for them (their transactions stay; they are no longer counted as held)
 {"op":"fold","room":""}   {"op":"unfold","room":""}   {"op":"view","mode":"mind|rich|flow"}   {"op":"show","node":"card, room or box id to bring into view"}
 SHOW = {"what":"transactions|recurring|categories|months|accounts|instalments|goals|holdings|cards|text","filter":FILTER,"sort":"date-desc|date-asc|amount-desc|amount-asc|name","limit":1-200,"group":"none|category|month|account|merchant","format":"table|list|bars|total","columns":["date","desc","amount","category","account","balance"],"nodes":["card ids — for what:cards"]}
@@ -186,6 +187,11 @@ function finAgentApply(ops, about) {
         const id = str(op.room, 40); if (!id) continue; if (op.op === 'fold') UI.fin.cvCol.add(id); else UI.fin.cvCol.delete(id); finCvKeep(); done.push(`${op.op === 'fold' ? 'folded' : 'unfolded'} ${id}`);
       } else if (op.op === 'view' && FIN_CV_MODES.includes(op.mode)) { if (UI.fin.cv.mode !== op.mode) { UI.fin.agentMode = op.mode; done.push(`switched to ${op.mode === 'rich' ? 'Rich Dad' : op.mode === 'flow' ? 'Flow' : 'the Mind map'}`); } }
       else if (op.op === 'show' && op.node) UI.fin.goto = str(op.node, 60);
+      else if (op.op === 'setRecurring') {
+        const q = FIN.norm(String(op.item || '')), R = finRec().items, it = R.find(i => i.key === op.item) || R.find(i => FIN.norm(i.name) === q) || R.find(i => q && (FIN.norm(i.name).includes(q) || q.includes(FIN.norm(i.name))));
+        if (!it) { notes.push(`No recurring payment or instalment “${str(op.item, 30)}”.`); continue; }
+        const line = finRecMark(it.key, op.status === 'active' ? 'active' : op.status === 'clear' ? 'clear' : 'stopped', /^\d{4}-\d{2}$/.test(op.since || '') ? op.since : null); if (line) done.push(line);
+      }
       else if (op.op === 'settleParty') {
         const p = finP(), q = String(op.party || ''), x = (p.parties || []).find(z => z.id === q) || (p.parties || []).find(z => FIN.norm(z.name) === FIN.norm(q)) || (p.parties || []).find(z => q && FIN.norm(z.name).includes(FIN.norm(q)));
         if (!x) { notes.push(`No person “${str(op.party, 30)}” among others' money.`); continue; }

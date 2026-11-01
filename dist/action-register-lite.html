@@ -2520,6 +2520,21 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 #fin-cv-ed .fin-cv-ed-t::after, #fin-pop .fin-pop-h::after { content: "⠿"; margin-left: auto; color: var(--ink-3); font-size: 14px; letter-spacing: -1px; opacity: .6; }
 #fin-pop .fin-pop-h::after { order: 9; margin-left: 4px; }
 
+/* ---------- a goal's honest check ---------- */
+.fin-gc { display: grid; gap: 8px; }
+.fin-gc h4 { margin: 6px 0 0; }
+.fin-gc-v { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 14px; border: 1px solid var(--line); }
+.fin-gc-v .ic { font-size: 26px; } .fin-gc-v small { display: block; color: var(--ink-2); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; } .fin-gc-v b { font-size: 20px; }
+.fin-gc.good .fin-gc-v { background: color-mix(in srgb, #2e9e5b 12%, var(--surface)); border-color: color-mix(in srgb, #2e9e5b 40%, var(--line)); }
+.fin-gc.warn .fin-gc-v { background: color-mix(in srgb, #e0a030 14%, var(--surface)); border-color: color-mix(in srgb, #e0a030 45%, var(--line)); }
+.fin-gc.bad .fin-gc-v { background: color-mix(in srgb, #d9534f 12%, var(--surface)); border-color: color-mix(in srgb, #d9534f 45%, var(--line)); }
+.fin-gc-why, .fin-gc-fix { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: 13px; line-height: 1.45; } .fin-gc-why li, .fin-gc-fix li { overflow-wrap: anywhere; }
+.fin-gc-fix li { display: flex; gap: 8px; align-items: center; justify-content: space-between; } .fin-gc-fix li .btn { flex: none; }
+.fin-gc-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; border-left: 2px solid color-mix(in srgb, var(--accent) 40%, var(--line)); margin-left: 6px; }
+.fin-gc-steps li { position: relative; display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 8px; padding: 6px 0 6px 14px; font-size: 13px; }
+.fin-gc-steps li::before { content: ""; position: absolute; left: -6px; top: 11px; width: 10px; height: 10px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 3px var(--surface); }
+.fin-gc-steps .d { font-weight: 700; color: var(--ink-2); white-space: nowrap; }
+
 </style>
 <div class="titlestrip" id="titlestrip"><span class="ts-brand"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c3.3 4 6 7.2 6 10.4a6 6 0 0 1-12 0C6 10.2 8.7 7 12 3z"/><path d="m9.3 13.6 1.9 1.9 3.6-4.1"/></svg> Action Register</span><button class="ts-search" data-act="palette" title="Search and commands (Ctrl+K)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg><span>Search or type a command</span><kbd>Ctrl K</kbd></button><span class="ts-space"></span></div>
 <div class="app">
@@ -5308,6 +5323,19 @@ function recurring(list, o = {}) {
   }
   return out.sort((a, b) => b.perMonth - a.perMonth);
 }
+// is a repeating payment still running today? Judged against what the statements cover — an old statement alone never
+// makes it current: seen in the latest covered period → active; due again inside what the statements cover but it did
+// not come → one missed: to verify, two or more: ended (from the month it stopped); the statements stop before it was
+// due again and they are old → to verify. What you said (still paying / stopped) always wins.
+function recurringStatus(r, coveredTo, today, mark) {
+  if (mark && (mark.status === 'stopped' || mark.status === 'active')) return { status: mark.status === 'stopped' ? 'ended' : 'active', since: mark.status === 'stopped' ? mark.since || ym(addDays(r.last, 30)) : null, by: 'you', missed: 0 };
+  const period = r.freq === 'weekly' ? 7 : r.freq === 'quarterly' ? 91 : r.freq === 'yearly' ? 365 : 30.5, cov = validDate(coveredTo) ? coveredTo : r.last;
+  const missed = Math.max(0, Math.floor((dnum(cov) - dnum(r.last)) / period - 0.35));   // whole periods covered after it was last seen (a few days' grace)
+  if (missed >= 2) return { status: 'ended', since: ym(addDays(r.last, Math.round(period))), missed, by: 'statements' };
+  if (missed === 1) return { status: 'verify', why: 'one payment missed in your statements', missed, by: 'statements' };
+  const stale = dnum(today) - dnum(cov) > period * 1.5;
+  return stale ? { status: 'verify', why: `your statements stop on ${cov}`, missed: 0, by: 'statements' } : { status: 'active', missed: 0, by: 'statements' };
+}
 // what I earn now: a salary counts as "verified recurring" only when it arrived in at least 3 of the last 4
 // covered months; the latest income is never assumed to be the salary
 function incomeBase(an, today) {
@@ -5714,7 +5742,7 @@ function detectInstallments(txs, today, known) {
   return Object.values(out).sort((a, b) => (b.status === 'active') - (a.status === 'active') || b.amount - a.amount);
 }
 // what instalments will cost each coming month (active and missing-but-not-ended ones, until their end)
-const installmentLoad = (list, month) => r2(sum((list || []).filter(i => i.status !== 'completed' && i.status !== 'discontinued' && (!i.end || month <= i.end)).map(i => i.amount)));
+const installmentLoad = (list, month) => r2(sum((list || []).filter(i => i.status !== 'completed' && i.status !== 'discontinued' && i.status !== 'stopped' && (!i.end || month <= i.end)).map(i => i.amount)));
 
 /* ---------- my inputs (salary, returns, expenses…) with the dates they apply from ---------- */
 // an input: {id, key, label, kind: income|expense|saving|commitment, amount, from, to, permanent, history: [...]}
@@ -5837,7 +5865,7 @@ function validateBackup(o) {
 
 return { EPS, r2, norm, AR, CURRENCIES, validDate, dnum, addDays, spanDays, ym, addMonths, monthList, dim, monthEnd, parseDate, dateOrder, parseNum, cleanDesc, payeeKey,
   detectBank, looksLikeCard, last4, DEFAULT_CATS, catMap, classify, learnRule, refundOf, pairMoves, CODE_CAT, detectGrid, rowsFromGrid, rowsFromText, rowsFromLayout, statementFacts, instOf, chainBest, statementCheck, matchImport, importCounts, similar, overlaps, fp, quant, median, entries, analyze, series,
-  recurring, incomeBase, STRATEGY, budgetPlan, monthControl, unusual, upcoming, addMonthsDate, SCEN, monthFactor, simulate, sensitivity, shiftDate, allocate, thirdParty, holdingReturns, propertyShare, rentForecast, cardOwed, position, monthsTo, forecast, goalPlan, reconcile, validateBackup, financeQuote, detectInstallments, installmentLoad, activeInput, setInput, balanceChange, health, planPurchases };
+  recurring, recurringStatus, incomeBase, STRATEGY, budgetPlan, monthControl, unusual, upcoming, addMonthsDate, SCEN, monthFactor, simulate, sensitivity, shiftDate, allocate, thirdParty, holdingReturns, propertyShare, rentForecast, cardOwed, position, monthsTo, forecast, goalPlan, reconcile, validateBackup, financeQuote, detectInstallments, installmentLoad, activeInput, setInput, balanceChange, health, planPurchases };
 })();
 if (typeof module !== 'undefined') module.exports = FIN;
 
@@ -15747,13 +15775,17 @@ function finNow() {
   else { income = FIN.r2((ib.salary || 0) + ib.otherRecurringMonthly); incomeBasis = ib.salary !== null ? `salary ${fm(ib.salary)} (${ib.verified ? 'verified' : 'not verified'}) from the statements` : 'no salary found yet'; }
   if (mom && +mom.myShareMonthly && !ins.some(i => i.key === 'cib_share') && !tx.some(t => t.holding === 'mom' && t.amount > 0)) { income = FIN.r2(income + +mom.myShareMonthly); incomeBasis += ` + CIB share ${fm(+mom.myShareMonthly)}`; }
   const expIn = FIN.activeInput(p.inputs, 'expenses', today);
-  const spending = expIn ? +expIn.amount : FIN.median(done.map(b => b.exp)) || 0;
+  // your CURRENT spending: what varies (past months with every recurring payment taken out) + the recurring payments that
+  // are running today — a payment that stopped no longer counts, however often it appears in old statements
+  const rec = typeof finRecurringModel === 'function' ? finRecurringModel({ tx, all, inst, today, p }) : null;
+  const variable = rec ? FIN.median(done.map(b => Math.max(0, b.exp - (rec.byMonth[b.m] || 0)))) || 0 : null;
+  const spending = expIn ? +expIn.amount : rec ? FIN.r2(variable + rec.activeNonInst) : FIN.median(done.map(b => b.exp)) || 0;
   const essential = FIN.median(done.map(b => Object.entries(b.byCat).filter(([k]) => (finCat(k) || {}).prio === 'essential').reduce((s, [, v]) => s + v, 0))) || 0;
   const goalsMonthly = FIN.r2(FIN.goalPlan(p.goals || [], 0, today).reduce((s, g) => s + (+g.monthly || (g.required || 0)), 0));
   const reserve = FIN.r2(essential * (+p.emergencyMonths || 3));
-  const capacity = FIN.r2(Math.max(0, income - spending - goalsMonthly));
+  const capacity = FIN.r2(Math.max(0, income - spending - (rec && !expIn ? instMonthly : 0) - goalsMonthly));   // instalments apart from spending: counted once
   const free = FIN.r2(Math.max(0, cash - held - reserve));
-  const v = { today, accts, cash, cashKnown: cashKnown.length, cashAccts: personal.length, held, free, reserve, essential, income, incomeBasis, spending: FIN.r2(spending), spendBasis: expIn ? 'your input' : `median of the last ${done.length} complete months`, goalsMonthly, capacity,
+  const v = { today, accts, cash, cashKnown: cashKnown.length, cashAccts: personal.length, held, free, reserve, essential, income, incomeBasis, spending: FIN.r2(spending), variable, rec, spendBasis: expIn ? 'your input' : rec ? `${fm(variable || 0)} varying (median of ${done.length} months, recurring taken out) + ${fm(rec.activeNonInst)} recurring running now` : `median of the last ${done.length} complete months`, goalsMonthly, capacity,
     card: card ? { a: card.a, ...card.l, terms: card.a.terms || {} } : null, halan: halan ? { a: halan.a, ...halan.l, terms: halan.a.terms || {} } : null, inst, instMonthly,
     health: FIN.health({ income, spending, essential, cash: Math.max(0, cash - held), installments: instMonthly, cardOwed: card ? card.l.owed : null, cardLimit: card ? card.l.limit : null }) };
   finNow.k = key; finNow.v = v; return v;
@@ -16168,8 +16200,9 @@ function finCvModel() {
     const l = leaf('c:' + k, (finCat(k) || { name: k }).name, fk(v), trend + 'a month on average', { act: 'fin-drill-cat', k }, pct !== null && pct >= 15 ? 'trend-up' : pct !== null && pct <= -15 ? 'trend-down' : '');
     l.spark = all.months.slice(-8).map(b => (b.byCat || {})[k] || 0); l.sparkCls = 'exp'; return l; });
   const spB = branch('exp', '🧾', 'Spending', 20, 'exp', `${fk(n.spending)} usual a month`, sp.length ? sp : [leaf('c:none', 'No complete month yet', '', 'add statements to see where money goes', { act: 'fin-sec', s: 'import' }, 'muted')], [tool('budget', '🎯', 'Budget & control', 'limits, this month, savings plan')]);
-  if (rec.length) spB.children.push(branch('rec', '🔁', 'Repeating payments', 20, 'exp', `${fk(rec.reduce((s, r) => s + r.perMonth, 0))} a month`, rec.map(r => leaf('r:' + r.key, FIN.cleanDesc(r.name), fk(r.amount), `${r.freq || 'monthly'} · next about ${fday(r.next)}`, { act: 'fin-sec', s: 'budget' }))));
   B.push(spB);
+  // recurring payments as they stand today: by group, what to verify, what you stopped (see 62-finance-recurring)
+  if (typeof finRecBranch === 'function' && finRec().items.length) B.push(finRecBranch(leaf, branch));
 
   // card, Halan and instalments
   const com = [];
@@ -16356,7 +16389,7 @@ function finCardDetail(id) {
   if (kind === 'b') {
     const it = finBuyPlan().items.find(z => z.id === key); if (!it) return ''; const o = it.options || {};
     const opt = (label, ok, q) => `<tr class="${it.rec === label[1] ? 'on' : ''}"><td>${label[0]}</td><td>${ok ? '✓' : '—'}</td><td class="num">${q ? fm(q.monthly) + ' × ' + q.months : ''}</td><td class="num">${q ? fm(q.cost) : ''}</td></tr>`;
-    return finKv([['Price', fk(it.price), it.wantBy ? 'wanted by ' + fday(it.wantBy) : 'no date'], ['Best way', FIN_REC[it.rec][0], it.ready ? 'ready ' + fmon(it.ready) : ''], ['From cash now', fk(it.fromCash), ''], ['A month', it.monthly ? fk(it.monthly) : '—', it.months ? it.months + ' months' : '']])
+    return (typeof finGoalCheckHTML === 'function' ? finGoalCheckHTML(key) + '<h4>How to pay</h4>' : '') + finKv([['Price', fk(it.price), it.wantBy ? 'wanted by ' + fday(it.wantBy) : 'no date'], ['Best way', FIN_REC[it.rec][0], it.ready ? 'ready ' + fmon(it.ready) : ''], ['From cash now', fk(it.fromCash), ''], ['A month', it.monthly ? fk(it.monthly) : '—', it.months ? it.months + ' months' : '']])
       + finBar(it.fromCash || 0, it.price, 's3') + `<p class="small">${esc(it.why)}</p>`
       + `<table class="tbl fin-det-opt"><thead><tr><th>Way to pay</th><th>Fits</th><th class="num">A month</th><th class="num">Extra cost</th></tr></thead><tbody>${opt(['Cash now', 'cash'], o.cash)}${opt(['Card, paid in full', 'card_full'], o.cardFull)}${opt(['Card instalments', 'card_plan'], !!o.cardPlan, o.cardPlan)}${opt(['Halan instalments', 'halan'], !!o.halan, o.halan)}</tbody></table>`
       + `<div class="row">${edit}${finBtn('fin-buy-star', it.focus ? '☆ Not first' : '★ Do this first', { id: key })}${finBtn('fin-buy-done', '✓ Bought', { id: key })}</div>`;
@@ -16390,6 +16423,7 @@ function finGoalsTimeline(plan) {
 function finDetBody(id, plan, n) {
   if (id === 'ov') return finOverviewHTML();
   if (id === 'free' && typeof finFreeHTML === 'function') return finFreeHTML();
+  if ((id.startsWith('rc:') || id === 'rc~months') && typeof finRecDetail === 'function') return finRecDetail(id);
   if (id.startsWith('box:') && typeof finBoxHTML === 'function') return finBoxHTML(id);
   if (id === 'gk') return finGoalsHead(plan, n);
   if (id === 'gt') return finGoalsTimeline(plan);
@@ -17212,7 +17246,8 @@ function finUpcoming() {
   const ins = (p.inputs || []).filter(i => i.kind === 'income' && (!i.from || i.from <= today) && (!i.to || i.to >= today));
   const instKeys = n.inst.map(i => FIN.norm(i.name).slice(0, 10));
   const byId = new Map((all.entries || []).map(e => [e.id, e]));
-  const rec = FIN.recurring(all.entries || []).filter(r => r.freq === 'monthly' && !(ins.length && r.dir > 0) && !instKeys.some(k => k && FIN.norm(FIN.cleanDesc(r.name)).startsWith(k)))
+  const recNow = typeof finRec === 'function' ? new Map(finRec().items.map(i => [i.key, i.status])) : null;   // only payments running today — not every one an old statement shows
+  const rec = FIN.recurring(all.entries || []).filter(r => r.freq === 'monthly' && !(ins.length && r.dir > 0) && !instKeys.some(k => k && FIN.norm(FIN.cleanDesc(r.name)).startsWith(k)) && (r.dir > 0 || !recNow || !recNow.has('r:' + r.key) || recNow.get('r:' + r.key) === 'active'))
     .map(r => ({ ...r, name: FIN.cleanDesc(r.name), onCard: r.ids.length > 0 && r.ids.every(id => cardIds.has((byId.get(id) || {}).acct)) }));
   // income you entered arrives on the day the salary usually comes in
   const salDay = (() => { const s = (all.entries || []).filter(e => e.cat === 'salary').map(e => e.date).sort().pop(); return s ? +s.slice(8, 10) : 1; })();
@@ -17446,6 +17481,7 @@ function finMenuItems(id) {
   if (act.act === 'fin-acct-ledger' || act.act === 'fin-drill-cat') items.push(['tx', '📒', 'Its transactions']);
   if (act.act === 'fin-sec' && act.s && FIN_VIEW[act.s]) items.push(['part', FIN_ICON[act.s] || '📂', 'Open ' + ((FIN_SECS.find(s => s[0] === act.s) || [])[1] || 'its part')]);
   if (act.act === 'fin-buy-edit') items.push(['buy', '🛍️', 'Plan this purchase']);
+  if (id.startsWith('rc:') && typeof finRec === 'function') { const it = finRec().items.find(i => 'rc:' + i.key === id); if (it && it.status !== 'ended') items.push(['rcstop', '✂️', 'Stopped — I no longer pay it']); if (it && it.status !== 'active') items.push(['rcgo', '✓', 'Still paying']); }
   if (id.startsWith('t:') && (finP().parties || []).some(z => 't:' + z.id === id)) items.push(['settle', '✓', 'All settled — given back or paid out for them']);
   items.push(['zoom', '🎯', 'Zoom to it']);
   if (n.val) items.push(['copy', '📋', 'Copy “' + E.clip(n.val, 24) + '”']);
@@ -17477,6 +17513,7 @@ function finMenuDo(k) {
   if (k === 'det') return finPopOpen(id);
   if (k === 'edit') return finCvEditOpen(id);
   if (k === 'settle') return finPartySettle(id.slice(2));
+  if (k === 'rcstop' || k === 'rcgo') return finRecMark(id.slice(3), k === 'rcstop' ? 'stopped' : 'active');
   if (k === 'zoom') { finCvGoto(id); UI.fin.flash = { ids: new Set([id]), until: Date.now() + 1800 }; return render(); }
   if (k === 'copy') { try { navigator.clipboard.writeText(n.val); toast('Copied ' + n.val); } catch { toast(n.val); } return; }
   if (k === 'rm') { const s = finCvSpec(id); if (s && s.remove) { const snap = finSnapshot(), line = s.remove(); finCvEditDone(line, snap, []); } return; }
@@ -17665,7 +17702,8 @@ function finRichLayout(rooms0, plan, n) {
   const up = P || E;
   if (up && A) flows.push({ id: 'save', cls: W.toAssets > 0 ? 'save' : 'save none', a: { x: up.x + up.w * 0.28, y: up.y + up.h }, b: { x: A.x + A.w * 0.28, y: A.y }, t: th(W.toAssets), label: [fk(W.toAssets).replace(/\.00$/, ''), ' a month'], line: W.toAssets > 0 ? 'into assets' : 'into assets — purchases take all your surplus', v: true });
   if (up && A) flows.push({ id: 'passive', cls: 'passive', a: { x: A.x + A.w * 0.72, y: A.y }, b: { x: up.x + up.w * 0.72, y: up.y + up.h }, t: th(R.passive), label: [fk(R.passive), ' a month'], line: R.passive ? 'your assets pay you' : 'no asset pays you yet', v: true });
-  if (Lb && exp) flows.push({ id: 'debt', cls: 'liability', a: { x: Lb.x + Lb.w * 0.5, y: Lb.y }, b: { x: exp.x + exp.w * 0.5, y: exp.y + exp.h }, t: th(n.instMonthly || 0), label: [fk(n.instMonthly || 0), ' a month'], line: `your liabilities cost you · ${pc(n.instMonthly) ?? '—'}% of income`, v: true });
+  const expEnd = [exp, ...bx('exp')].filter(Boolean).pop();   // the bottom of the whole expenses column (recurring payments hang there)
+  if (Lb && expEnd) flows.push({ id: 'debt', cls: 'liability', a: { x: Lb.x + Lb.w * 0.5, y: Lb.y }, b: { x: expEnd.x + expEnd.w * 0.5, y: expEnd.y + expEnd.h }, t: th(n.instMonthly || 0), label: [fk(n.instMonthly || 0), ' a month'], line: `your liabilities cost you · ${pc(n.instMonthly) ?? '—'}% of income`, v: true });
   if (A && Lb && W.payLiab > 0) flows.push({ id: 'assetpays', cls: 'save', a: { x: A.x + A.w, y: A.y + 70 }, b: { x: Lb.x, y: Lb.y + 70 }, t: th(W.payLiab), label: [fk(Math.round(W.payLiab)), ' a month'], line: 'your assets pay a liability (estimate)' });
   const frames = [
     E || exp ? { x: L0 - 30, y: y1 - FRD.FRAME, w: Wd - L0 + 60, h: isB - y1 + FRD.FRAME + 30, title: 'INCOME STATEMENT', cols: [[L0, 'Income — earned and passive'], [C2, 'Expenses']] } : null,
@@ -17994,6 +18032,7 @@ function finMindRooms(rooms) {
   const buy = by('buy'); if (buy) out.push({ ...buy, title: 'Your choices — goals & purchases', sum: W.doodads.length ? `${W.doodads.length} doodad${W.doodads.length === 1 ? '' : 's'} · ${fk(W.plan.total)} · assets first` : buy.sum });
   // your own boxes hang under the branch you put them on; the rest go under the map
   const used = new Set(['inc', 'accts', 'own', 'com', 'exp', 'buy']), ids = new Set(out.map(r => r.id)), boxes = new Map();
+  if (by('recur') && ids.has('exp')) { boxes.set('exp', [by('recur')]); used.add('recur'); }   // your recurring payments hang under Spending
   for (const r of rooms) if (r.kind === 'box' && ids.has(r.branch)) { if (!boxes.has(r.branch)) boxes.set(r.branch, []); boxes.get(r.branch).push(r); used.add(r.id); }
   const rest = rooms.filter(r => !used.has(r.id));
   const left = new Set(['mm-earn', 'mm-pass', 'mm-assets']);
@@ -18220,7 +18259,7 @@ function finAgentContext() {
   const C = finCanvasP(), root = finCvModel(), branches = root.children.map(b => ({ id: b.id, title: b.label, cards: (function leaves(l) { return l.flatMap(c => c.type === 'branch' ? leaves(c.children) : [c]); })(b.children).filter(c => !c.cls.includes('tool') && !c.cls.includes('more')).slice(0, 14).map(c => ({ id: c.id, label: c.label, shows: c.val || '' })) }));
   const feed = finTalkFeed().slice(-10).map(x => x.who === 'you' ? { you: E.clip(x.text || '', 400) } : { canvas: E.clip(x.reply || '', 300), did: (x.done || []).slice(0, 6) });
   return { view: UI.fin.cv.mode || 'mind', mapBranches: ['mm-earn (Earned income)', 'mm-pass (Passive income)', 'mm-assets (Assets)', 'exp (Spending)', 'mm-liab (Liabilities)', 'buy (Your choices — goals & purchases)', 'below (under the map)'],
-    people: FIN.thirdParty(finTx(), finP().parties).map(x => ({ id: x.id, name: x.name, held: x.held, cameIn: x.in, wentOut: x.out, settledTo: x.settledTo || null })), rooms: branches, myBoxes: C.boxes.map(b => ({ id: b.id, title: b.title, branch: b.branch, show: b.show, note: b.note || '' })), renamed: C.labels, hidden: C.hidden, conversationSoFar: feed };
+    recurring: (typeof finRec === 'function' ? finRec().items : []).map(i => ({ key: i.key, name: i.name, group: i.group, status: i.status, perMonth: i.perMonth, since: i.since })), people: FIN.thirdParty(finTx(), finP().parties).map(x => ({ id: x.id, name: x.name, held: x.held, cameIn: x.in, wentOut: x.out, settledTo: x.settledTo || null })), rooms: branches, myBoxes: C.boxes.map(b => ({ id: b.id, title: b.title, branch: b.branch, show: b.show, note: b.note || '' })), renamed: C.labels, hidden: C.hidden, conversationSoFar: feed };
 }
 const FIN_AGENT_RULES = () => `
 
@@ -18235,6 +18274,7 @@ To change the canvas, add "canvas":[operations] to the JSON (the canvas checks e
 {"op":"renameBranch","room":"room or branch id (also free for Financial freedom)","title":""}
 {"op":"category","action":"create|rename|merge","id":"category id (rename, merge)","name":"","kind":"expense|income","into":"category id (merge)"}
 {"op":"recategorize","filter":FILTER,"to":"category id, or the name of a category created in the same answer","remember":true when new transactions like these should get it too}
+{"op":"setRecurring","item":"name or key from recurring","status":"stopped|active|clear","since":"YYYY-MM (stopped from)"} — when the owner says they no longer pay something (or still do); stopped payments leave their current obligations
 {"op":"settleParty","party":"person id or name from people","to":"YYYY-MM-DD (default today)","note":"","clear":false} — when the owner says everything someone sent until a date was given back or paid out for them (their transactions stay; they are no longer counted as held)
 {"op":"fold","room":""}   {"op":"unfold","room":""}   {"op":"view","mode":"mind|rich|flow"}   {"op":"show","node":"card, room or box id to bring into view"}
 SHOW = {"what":"transactions|recurring|categories|months|accounts|instalments|goals|holdings|cards|text","filter":FILTER,"sort":"date-desc|date-asc|amount-desc|amount-asc|name","limit":1-200,"group":"none|category|month|account|merchant","format":"table|list|bars|total","columns":["date","desc","amount","category","account","balance"],"nodes":["card ids — for what:cards"]}
@@ -18311,6 +18351,11 @@ function finAgentApply(ops, about) {
         const id = str(op.room, 40); if (!id) continue; if (op.op === 'fold') UI.fin.cvCol.add(id); else UI.fin.cvCol.delete(id); finCvKeep(); done.push(`${op.op === 'fold' ? 'folded' : 'unfolded'} ${id}`);
       } else if (op.op === 'view' && FIN_CV_MODES.includes(op.mode)) { if (UI.fin.cv.mode !== op.mode) { UI.fin.agentMode = op.mode; done.push(`switched to ${op.mode === 'rich' ? 'Rich Dad' : op.mode === 'flow' ? 'Flow' : 'the Mind map'}`); } }
       else if (op.op === 'show' && op.node) UI.fin.goto = str(op.node, 60);
+      else if (op.op === 'setRecurring') {
+        const q = FIN.norm(String(op.item || '')), R = finRec().items, it = R.find(i => i.key === op.item) || R.find(i => FIN.norm(i.name) === q) || R.find(i => q && (FIN.norm(i.name).includes(q) || q.includes(FIN.norm(i.name))));
+        if (!it) { notes.push(`No recurring payment or instalment “${str(op.item, 30)}”.`); continue; }
+        const line = finRecMark(it.key, op.status === 'active' ? 'active' : op.status === 'clear' ? 'clear' : 'stopped', /^\d{4}-\d{2}$/.test(op.since || '') ? op.since : null); if (line) done.push(line);
+      }
       else if (op.op === 'settleParty') {
         const p = finP(), q = String(op.party || ''), x = (p.parties || []).find(z => z.id === q) || (p.parties || []).find(z => FIN.norm(z.name) === FIN.norm(q)) || (p.parties || []).find(z => q && FIN.norm(z.name).includes(FIN.norm(q)));
         if (!x) { notes.push(`No person “${str(op.party, 30)}” among others' money.`); continue; }
@@ -18602,6 +18647,226 @@ function finWinKeep() {
 }
 HOOKS.afterRender.push(finWinKeep);
 Object.assign(window.__FIN, { winPos: () => UI.fin.winPos || {} });
+
+/* ===== features/61-finance-goalcheck.js ===== */
+// Money canvas — every goal gets an honest check. When you add a goal (on the canvas or in words), the canvas does not
+// simply approve it: it weighs it against your real numbers — free cash after your safety reserve, what you can save
+// each month after spending and instalments, the goals already ahead of it, what the card or Halan would cost — and
+// tells you, in this order:
+//   1. Feasibility — achievable, a stretch, or not now;
+//   2. Assessment — why, with the constraints and risks;
+//   3. Requirements — the money, the monthly amount and the time it takes;
+//   4. Execution plan — step by step, with milestones and dates (when it is achievable or a stretch);
+//   5. Optimisation — what to change to make it achievable (a later date, saving more and where it could come from, a
+//      smaller budget, putting it first), with one-tap buttons.
+// Only numbers from your records are used; when something is not known (income, spending) the check says so instead of
+// guessing. The check opens beside the new goal, and stays in the goal's details.
+
+const FIN_GC_VERDICT = { yes: ['✅', 'Achievable', 'good'], stretch: ['⚠️', 'A stretch', 'warn'], no: ['⛔', 'Not now', 'bad'] };
+const finMonthsTo = (from, to) => { const [a, b] = [from, to].map(s => s.slice(0, 7).split('-').map(Number)); return (b[0] - a[0]) * 12 + (b[1] - a[1]); };
+const finMonAdd = (m, k) => { const [y, mo] = m.split('-').map(Number), t = y * 12 + (mo - 1) + k; return `${Math.floor(t / 12)}-${String(t % 12 + 1).padStart(2, '0')}`; };
+
+function finGoalAssess(id) {
+  const plan = finBuyPlan(), n = finNow(), it = plan.items.find(z => z.id === id); if (!it) return null;
+  const today = finToday(), cur = today.slice(0, 7), cap = Math.max(0, n.capacity || 0), inc = n.income || 0, idx = plan.items.indexOf(it), ahead = plan.items.slice(0, idx);
+  const aheadNeed = ahead.reduce((s, x) => s + (x.need || 0), 0), want = it.wantBy ? it.wantBy.slice(0, 7) : null, monthsTo = want ? Math.max(0, finMonthsTo(cur, want)) : null;
+  const lateBy = want && it.ready ? finMonthsTo(want, it.ready) : null, credit = it.rec === 'card_plan' || it.rec === 'halan', q = it.rec === 'card_plan' ? it.options.cardPlan : it.rec === 'halan' ? it.options.halan : null;
+  const unknown = []; if (!inc) unknown.push('your income is not known yet'); if (!n.spending) unknown.push('your usual spending is not known yet');
+  // 1. the verdict
+  let v = 'yes';
+  if (it.rec === 'not_yet' || !it.ready || cap <= 0 && it.need > 0 || (lateBy !== null && lateBy > 6)) v = 'no';
+  else if (credit || (lateBy !== null && lateBy > 0) || (it.required && it.required > cap * 0.5) || (it.months !== null && it.months > 24) || unknown.length) v = 'stretch';
+  // 2. why
+  const why = [];
+  why.push(it.fromCash >= it.price ? `Your free cash (${fk(n.free)}, after a ${fk(n.reserve)} safety reserve) covers it today.` : it.fromCash > 0 ? `Your free cash covers ${fk(it.fromCash)} of it (${Math.round(it.fromCash / it.price * 100)}%); ${fk(it.need)} is still needed.` : `There is no free cash for it now (free cash ${fk(n.free)} after the ${fk(n.reserve)} reserve${ahead.length ? ' and the goals ahead of it' : ''}).`);
+  if (it.need > 0) why.push(cap > 0 ? `You can save about ${fk(cap)} a month (income ${fk(inc)} − spending ${fk(n.spending)} − instalments ${fk(n.instMonthly || 0)}${n.goalsMonthly ? ' − other savings goals' : ''}).` : `Nothing is left to save each month: spending ${fk(n.spending)} and instalments ${fk(n.instMonthly || 0)} take ${inc ? fk(inc) + ' of income' : 'everything'}.`);
+  if (ahead.length) why.push(`${ahead.length} goal${ahead.length === 1 ? '' : 's'} ahead of it (${ahead.map(x => x.name).slice(0, 3).join(', ')}${ahead.length > 3 ? '…' : ''}) still need ${fk(aheadNeed)} first.`);
+  if (want && it.ready) why.push(lateBy > 0 ? `At this pace it is ready in ${fmon(it.ready)} — ${lateBy} month${lateBy === 1 ? '' : 's'} after the ${fmon(want)} you want.` : `It is ready by ${fmon(it.ready)}, in time for ${fmon(want)}.`);
+  if (credit && q) why.push(`On time only with ${it.rec === 'halan' ? 'Halan' : 'card'} instalments: ${fk(q.monthly)} a month for ${q.months} months, ${fk(q.cost)} extra cost — a new liability (money out of your pocket every month).`);
+  if (inc && n.instMonthly / inc > 0.2) why.push(`Instalments already take ${Math.round(n.instMonthly / inc * 100)}% of your income — more debt is a risk.`);
+  if (inc && it.price > inc * 3) why.push(`It costs ${(it.price / inc).toFixed(1)} months of income.`);
+  why.push('It is a purchase, not an asset: it will not pay you back — the Rich Dad way is to buy it from what your assets earn, or after them.');
+  for (const u of unknown) why.push(`Uncertain: ${u} — tell the canvas, and the check gets sharper.`);
+  // 3. requirements
+  const need = [['Price', fk(it.price), it.wantBy ? 'by ' + fday(it.wantBy) : 'no date'], ['From cash now', fk(it.fromCash), ''], ['Still to save', fk(it.need), ''],
+    ['A month', it.need > 0 ? fk(it.required || it.monthly || 0) : '—', it.required && want ? `to be on time` : it.monthly ? 'planned' : ''], ['Ready', it.ready ? fmon(it.ready) : 'not within reach', it.months ? `${it.months} month${it.months === 1 ? '' : 's'}` : it.ready ? 'now' : '']];
+  // 4. the plan, with milestones
+  const steps = [];
+  if (v !== 'no') {
+    if (it.fromCash > 0) steps.push([fday(today), `Set aside ${fk(it.fromCash)} from your free cash for ${it.name}.`]);
+    if (it.rec === 'card_full') steps.push([fmon(cur), `Buy it with the card; pay the full ${fk(it.need)} at the next due date — no interest.`]);
+    else if (credit && q) { steps.push([fmon(cur), `Buy it on ${it.rec === 'halan' ? 'Halan' : 'the card'} instalments.`]); steps.push([fmon(finMonAdd(cur, q.months)), `Last of ${q.months} payments of ${fk(q.monthly)} — then that money goes back to your assets.`]); }
+    else if (it.need > 0) {
+      const m = it.monthly || it.required || 0;
+      if (m > 0) { steps.push([fmon(finMonAdd(cur, 1)), `Start saving ${fk(m)} a month for it — on payday, before spending.`]);
+        for (const pct of [25, 50, 75]) { const k = Math.ceil(Math.max(0, it.price * pct / 100 - it.fromCash) / m); if (k > 0 && k < (it.months || 999)) steps.push([fmon(finMonAdd(cur, k)), `${pct}% saved (${fk(Math.round(it.price * pct / 100))}).`]); } }
+      if (it.ready) steps.push([fmon(it.ready), `100% saved — buy ${it.name} with cash.`]);
+    } else steps.push([fday(today), `Buy it — the money is there, and your safety reserve stays untouched.`]);
+  }
+  // 5. what would make it achievable
+  const fix = [];
+  if (v !== 'yes') {
+    if (it.ready && want && lateBy > 0) fix.push({ t: `Move the date to ${fmon(it.ready)} — reachable by saving, no debt.`, act: { k: 'wantBy', v: it.ready + '-28' } });
+    if (want && monthsTo > 0 && it.need > 0) { const req = Math.ceil(it.need / monthsTo), extra = Math.max(0, req - (it.monthly || 0));
+      if (extra > 0 && cap > 0 && req > cap * 1.5) fix.push({ t: `Being on time would take ${fk(req)} a month — ${(req / cap).toFixed(1)}× what you can save. Not realistic by cutting spending: change the date or the budget.` });
+      else if (extra > 0) { const cuts = finGoalCuts(extra); fix.push({ t: `Save ${fk(extra)} more a month to be on time${cuts ? ` — for example from ${cuts}` : ''}.` }); }
+      const afford = Math.max(0, it.fromCash + (it.monthly || 0) * monthsTo); if (afford > 0 && afford < it.price) fix.push({ t: `Or set a budget of ${fk(Math.floor(afford / 100) * 100)} — what you can have by ${fmon(want)} without debt.` }); }
+    if (ahead.length) fix.push({ t: `Put it first — the ${ahead.length} goal${ahead.length === 1 ? '' : 's'} ahead of it wait instead.`, act: { k: 'first' } });
+    if (cap <= 0) fix.push({ t: 'First make room each month: see Budget & control for the categories to cut.' });
+    if (credit) fix.push({ t: `Avoid the ${fk(q ? q.cost : 0)} interest: wait until ${it.ready ? fmon(it.ready) : 'you have saved it'} and pay cash.` });
+  }
+  return { it, v, why, need, steps, fix };
+}
+// where extra savings could come from: the biggest discretionary categories of the last three months
+function finGoalCuts(extra) {
+  const all = finAll(), cur = finToday().slice(0, 7), done = all.months.filter(b => b.covered && b.m < cur).slice(-3); if (!done.length) return '';
+  const byCat = {}; for (const b of done) for (const [k, v] of Object.entries(b.byCat || {})) { const c = finCat(k); if (c && c.kind === 'expense' && (c.prio || 'discretionary') === 'discretionary') byCat[k] = (byCat[k] || 0) + v / done.length; }
+  const top = Object.entries(byCat).filter(([, v]) => v > 1).sort((a, b) => b[1] - a[1]).slice(0, 3); if (!top.length) return '';
+  return top.map(([k, v]) => `${finCat(k).name} (${fk(Math.round(v))} a month)`).join(', ');
+}
+function finGoalCheckHTML(id) {
+  const A = finGoalAssess(id); if (!A) return '';
+  const [ic, word, cls] = FIN_GC_VERDICT[A.v];
+  return `<div class="fin-gc ${cls}">
+    <div class="fin-gc-v"><span class="ic" aria-hidden="true">${ic}</span><div><small>1 · Feasibility</small><b>${word}</b></div></div>
+    <h4>2 · Assessment</h4><ul class="fin-gc-why">${A.why.map(w => `<li>${esc(w)}</li>`).join('')}</ul>
+    <h4>3 · Requirements</h4>${finKv(A.need)}
+    ${A.steps.length ? `<h4>4 · Execution plan</h4><ol class="fin-gc-steps">${A.steps.map(([d, t]) => `<li><span class="d">${esc(d)}</span><span>${esc(t)}</span></li>`).join('')}</ol>` : `<h4>4 · Execution plan</h4><p class="small muted">Not yet — first make it achievable (below).</p>`}
+    ${A.fix.length ? `<h4>5 · To make it achievable</h4><ul class="fin-gc-fix">${A.fix.map(f => `<li><span>${esc(f.t)}</span>${f.act ? `<button class="btn sm" data-act="fin-gc-apply" data-id="${esc(id)}" data-k="${f.act.k}" data-v="${esc(f.act.v || '')}">${f.act.k === 'first' ? 'Put it first' : 'Use this date'}</button>` : ''}</li>`).join('')}</ul>` : ''}
+  </div>`;
+}
+// the one-line summary that goes in the conversation
+function finGoalCheckLine(id) { const A = finGoalAssess(id); if (!A) return ''; const [ic, word] = FIN_GC_VERDICT[A.v]; return `${ic} ${A.it.name} (${fk(A.it.price)}): ${word} — ${A.why[A.why.length > 2 ? 1 : 0]}`; }
+
+const FGC = { touch: 0 }; document.addEventListener('pointerdown', () => { FGC.touch = Date.now(); }, true); document.addEventListener('keydown', () => { FGC.touch = Date.now(); }, true);
+// a goal you just added: checked, the check opened beside it, and said in the conversation (after any presentation)
+HOOKS.afterRender.push(() => {
+  if (UI.view !== 'finance') return;
+  const ids = (finP().buys || []).filter(b => !b.done).map(b => b.id);
+  if (!UI.fin.goalSeen) { UI.fin.goalSeen = new Set(ids); return; }   // the goals you already had are not "new"
+  const fresh = ids.filter(id => !UI.fin.goalSeen.has(id)); ids.forEach(id => UI.fin.goalSeen.add(id)); if (!fresh.length) return;
+  for (const id of fresh) { const line = finGoalCheckLine(id); if (line) finTalkPush({ id: E.uid('tk'), at: nowISO(), who: 'claude', reply: 'Goal check — ' + line, notes: [], done: [], changes: [] }); }
+  // opened beside the goal only while you are not busy with something else: within a few seconds, and only if you have
+  // not touched the page since (otherwise it waits in the conversation and in the goal's details)
+  const id = fresh[fresh.length - 1], at = Date.now(), open = () => { if (!finBuyPlan().items.some(z => z.id === id) || (FGC.touch > at) || UI.fin.pop || UI.fin.cvEdit) return; UI.fin.pop = 'b:' + id; UI.fin.popAt = Date.now(); render(); };
+  let tries = 0; const wait = () => { if (Date.now() - at > 15000 || FGC.touch > at) return; const P = window.__FIN.presentation && window.__FIN.presentation(); if (P && P.on && tries++ < 60) return setTimeout(wait, 400); open(); };
+  setTimeout(wait, 600);
+});
+Object.assign(ACT, { 'fin-gc-apply': el => {
+  const id = el.dataset.id, k = el.dataset.k, snap = finSnapshot(), before = typeof finChangeIndex === 'function' ? finChangeIndex() : null, b = (finP().buys || []).find(x => x.id === id); if (!b) return;
+  finSave(q => { const x = q.buys.find(z => z.id === id); if (!x) return; if (k === 'wantBy' && FIN.validDate(el.dataset.v)) x.wantBy = el.dataset.v; if (k === 'first') { q.buys.forEach(z => { if (z.id !== id && (+z.priority || 2) <= 1) z.priority = 2; }); x.priority = 1; } });
+  const m = { id: E.uid('tk'), at: nowISO(), who: 'edit', text: k === 'first' ? `${b.name}: now first in line` : `${b.name}: wanted by ${fday(el.dataset.v)}`, undoable: true }; UI.fin.undo.set(m.id, snap); finTalkPush(m);
+  if (before && typeof finPresent === 'function') finPresent(before, ['b:' + id]); UI.fin.pop = 'b:' + id; UI.fin.popAt = Date.now(); render();
+} });
+Object.assign(window.__FIN, { goalCheck: id => { const A = finGoalAssess(id); return A && { verdict: A.v, why: A.why, need: A.need, steps: A.steps, fix: A.fix.map(f => f.t) }; } });
+
+/* ===== features/62-finance-recurring.js ===== */
+// Money — recurring payments, as they stand TODAY. Old statements are for finding what repeats and how it behaved; they
+// never make a payment current by themselves. Every repeating payment and instalment found in your statements is checked
+// against what your statements actually cover (and against what you said): active, to verify, or stopped — and only the
+// active ones count in your current obligations, spending and savings, on every canvas.
+// Grouped as: Subscriptions (YouTube, Spotify and other digital services), Fixed commitments (your monthly الجمعية,
+// instalments, rent, loans) and Other recurring payments. Month by month you see what was running, what was added,
+// what you stopped — and how much each stopped payment saves you.
+
+const FIN_REC_GROUPS = { subs: ['📺', 'Subscriptions', 'YouTube, Spotify and other digital services'], fixed: ['📌', 'Fixed commitments', 'الجمعية, instalments, rent, loans and other regular obligations'], other: ['🔁', 'Other recurring payments', 'everything else that repeats'] };
+const FIN_REC_DIGITAL = /youtube|spotify|netflix|shahid|osn|anghami|deezer|apple|icloud|google|microsoft|xbox|playstation|psn|steam|adobe|openai|chat ?gpt|anthropic|claude|canva|notion|dropbox|zoom|linkedin|duolingo|coursera|udemy|disney|hbo|crunchyroll|watch ?it|tik ?tok|snapchat|x premium|telegram premium|subscription|اشتراك/i;
+const FIN_REC_FIXED = /جمعي|جمعيه|جمعية|gam'?e?y[ae]|gamaeya|association|قسط|اقساط|أقساط|install?ment|loan|قرض|\brent\b|إيجار|ايجار|mortgage|valu|souhoola|sympl|halan|حالا|aman|premium finance/i;
+function finRecGroup(name, cat, inst) {
+  if (inst || ['debt', 'prop_inst', 'housing'].includes(cat) || FIN_REC_FIXED.test(name)) return 'fixed';
+  if (cat === 'subs' || FIN_REC_DIGITAL.test(name)) return 'subs';
+  return 'other';
+}
+// how far your statements reach, per account (the newest statement end, or the newest transaction)
+function finCoverage(tx) {
+  const m = {}; for (const t of tx) if (t.acct && t.date && (!m[t.acct] || t.date > m[t.acct])) m[t.acct] = t.date;
+  for (const b of colList('finbatch')) if (!b.undone && b.acct && FIN.validDate(b.to) && (!m[b.acct] || b.to > m[b.acct])) m[b.acct] = b.to;
+  return m;
+}
+// the model every canvas reads: computed once per change of your data (called from finNow)
+function finRecurringModel({ tx, all, inst, today, p }) {
+  const by = new Map(tx.map(t => [t.id, t])), cov = finCoverage(tx), marks = p.recMarks || {}, cur = today.slice(0, 7), items = [];
+  const instIds = new Set((inst || []).flatMap(i => i.ids || []));
+  const months = ids => [...new Set(ids.map(id => by.get(id)).filter(Boolean).map(t => t.date.slice(0, 7)))].sort();
+  const covOf = ids => ids.map(id => by.get(id)).filter(Boolean).map(t => cov[t.acct]).filter(Boolean).sort().pop() || null;
+  for (const r of FIN.recurring((all.entries || []).filter(e => e.flow === 'exp'))) {
+    if ((r.ids || []).some(id => instIds.has(id))) continue;   // an instalment: listed once, as an instalment
+    const grp = finRecGroup(r.name, r.cat, false); if (grp === 'other' && !r.fixed) continue;   // shopping somewhere every month (a varying amount) is spending, not a recurring payment
+    const covered = covOf(r.ids || []), st = FIN.recurringStatus(r, covered, today, marks['r:' + r.key]), ms = months(r.ids || []);
+    items.push({ key: 'r:' + r.key, kind: 'rec', name: r.name, cat: r.cat, amount: r.amount, perMonth: r.perMonth, freq: r.freq, first: ms[0] || null, last: r.last, next: r.next, n: r.n, ids: r.ids || [], months: ms, covered,
+      group: grp, status: st.status, since: st.since || null, why: st.why || '', by: st.by });
+  }
+  for (const i of inst || []) {
+    if (i.status === 'completed' || i.status === 'discontinued') continue;
+    const k = (p.installments || []).find(x => x.key === i.key) || {}, ms = months(i.ids || []);
+    const status = i.status === 'stopped' ? 'ended' : i.status === 'missing' ? 'verify' : 'active';
+    items.push({ key: 'i:' + i.key, kind: 'inst', name: i.name, cat: 'debt', amount: i.amount, perMonth: i.amount, freq: 'monthly', first: ms[0] || i.first || null, last: i.last, next: null, n: i.n, of: i.of, remaining: i.remaining, end: i.end, ids: i.ids || [], months: ms,
+      group: 'fixed', status, since: status === 'ended' ? (k.since || (i.last ? FIN.addMonths(i.last.slice(0, 7), 1) : cur)) : null, why: status === 'verify' ? 'not seen in your latest statements' : '', by: i.status === 'stopped' || k.status ? 'you' : 'statements' });
+  }
+  items.sort((a, b) => ({ active: 0, verify: 1, ended: 2 })[a.status] - ({ active: 0, verify: 1, ended: 2 })[b.status] || b.perMonth - a.perMonth);
+  // what each month paid in recurring payments (to take them out of past spending: they are counted at today's value)
+  const byMonth = {}; for (const it of items) for (const id of it.ids) { const t = by.get(id); if (t && typeof t.amount === 'number' && t.amount < 0) byMonth[t.date.slice(0, 7)] = FIN.r2((byMonth[t.date.slice(0, 7)] || 0) - t.amount); }
+  const act = items.filter(i => i.status === 'active'), sumOf = l => FIN.r2(l.reduce((s, i) => s + i.perMonth, 0));
+  const monthly = { subs: sumOf(act.filter(i => i.group === 'subs')), fixed: sumOf(act.filter(i => i.group === 'fixed')), other: sumOf(act.filter(i => i.group === 'other')) };
+  monthly.total = FIN.r2(monthly.subs + monthly.fixed + monthly.other);
+  return { items, byMonth, monthly, activeNonInst: sumOf(act.filter(i => i.kind !== 'inst')), activeInst: sumOf(act.filter(i => i.kind === 'inst')), verify: items.filter(i => i.status === 'verify'), ended: items.filter(i => i.status === 'ended') };
+}
+const finRec = () => finNow().rec || { items: [], monthly: { subs: 0, fixed: 0, other: 0, total: 0 }, verify: [], ended: [] };
+
+// month by month: what was running, what was added, what you stopped, and what stopping saves
+function finRecTimeline(n = 12) {
+  const R = finRec(), cur = finToday().slice(0, 7), first = R.items.map(i => i.first).filter(Boolean).sort()[0]; if (!first) return [];
+  const list = []; for (let m = FIN.addMonths(cur, -(n - 1)); m <= cur; m = FIN.addMonths(m, 1)) if (m >= first) list.push(m);
+  return list.map(m => {
+    const running = R.items.filter(i => i.months.includes(m) || (i.status !== 'ended' && i.first && i.first <= m && m > (i.months[i.months.length - 1] || '') && i.status === 'active'));
+    const added = R.items.filter(i => i.first === m && m > first), stopped = R.items.filter(i => i.status === 'ended' && i.since === m);
+    const savedSoFar = FIN.r2(R.ended.filter(i => i.since && i.since <= m).reduce((s, i) => s + i.perMonth, 0));
+    return { m, running, added, stopped, total: FIN.r2(running.reduce((s, i) => s + i.perMonth, 0)), stoppedMonthly: FIN.r2(stopped.reduce((s, i) => s + i.perMonth, 0)), savedSoFar };
+  });
+}
+function finRecTimelineHTML() {
+  const T = finRecTimeline(), R = finRec(); if (!T.length) return '<p class="small muted">No recurring payments found in your statements yet.</p>';
+  const cur = finToday().slice(0, 7), savedTotal = FIN.r2(R.ended.reduce((s, i) => s + i.perMonth * Math.max(0, i.since ? finMonthsTo(i.since, cur) + 1 : 1), 0));
+  return finKv([['Committed now', fk(R.monthly.total) + '/mo', 'active recurring payments'], ['Stopped', String(R.ended.length), `saves ${fk(FIN.r2(R.ended.reduce((s, i) => s + i.perMonth, 0)))} a month`], ['Saved so far', fk(savedTotal), 'since each was stopped'], ['To verify', String(R.verify.length), R.verify.length ? 'not counted until you confirm' : 'none']])
+    + `<div class="fin-box-scroll"><table class="fin-box-t fin-rec-t"><thead><tr><th>Month</th><th class="num">Recurring</th><th>Added</th><th>Stopped</th><th class="num">Less a month</th></tr></thead><tbody>
+    ${T.slice().reverse().map((r, i, a) => { const prev = a[i + 1]; const d = prev ? FIN.r2(r.total - prev.total) : 0;
+      return `<tr><td>${fmon(r.m)}</td><td class="num">${fk(r.total)}<br><small class="muted">${r.running.length} running${d ? ` · ${d > 0 ? '▲' : '▼'} ${fk(Math.abs(d))}` : ''}</small></td><td>${r.added.map(x => `<span class="fin-rec-chip add">${typeof finLogo === 'function' ? finLogo(x.name, 'sm') : ''}${esc(x.name)} +${fk(x.perMonth)}</span>`).join(' ') || '<span class="muted">—</span>'}</td>
+        <td>${r.stopped.map(x => `<span class="fin-rec-chip stop">${typeof finLogo === 'function' ? finLogo(x.name, 'sm') : ''}${esc(x.name)} −${fk(x.perMonth)}</span>`).join(' ') || '<span class="muted">—</span>'}</td><td class="num">${r.stoppedMonthly ? fk(r.stoppedMonthly) : ''}${r.savedSoFar ? `<br><small class="muted">${fk(r.savedSoFar)}/mo less than before</small>` : ''}</td></tr>`; }).join('')}</tbody></table></div>`;
+}
+
+// the canvas: one room for your recurring payments, by group, with what to verify and what you stopped
+function finRecBranch(leaf, branch) {
+  const R = finRec(), cur = finToday().slice(0, 7);
+  const card = it => leaf('rc:' + it.key, it.name, `${fk(it.perMonth)}/mo`, it.status === 'active' ? (it.kind === 'inst' ? `instalment${it.of ? ` · ${it.n} of ${it.of}` : ''}${it.end ? ' · ends ' + fmon(it.end) : ''}` : `${it.freq}${it.first ? ' · since ' + fmon(it.first) : ''}${it.next && it.next.slice(0, 7) >= cur ? ' · next ~' + fday(it.next) : ''}`)
+    : it.status === 'verify' ? `to verify — ${it.why}` : `stopped ${it.since ? fmon(it.since) : ''} · saves ${fk(it.perMonth)} a month`, { act: 'fin-cv-det', id: 'rc:' + it.key }, it.status === 'verify' ? 'warn' : it.status === 'ended' ? 'muted' : '');
+  const kids = [leaf('rc~months', 'Month by month', '', 'what runs, what was added, what you stopped and saved', { act: 'fin-cv-det', id: 'rc~months' }, '')];
+  for (const [g, [ic, label]] of Object.entries(FIN_REC_GROUPS)) { const l = R.items.filter(i => i.status === 'active' && i.group === g); if (l.length) kids.push(branch('rc-' + g, ic, label, 20, 'exp', `${fk(R.monthly[g])}/mo`, l.map(card))); }
+  if (R.verify.length) kids.push(branch('rc-verify', '❔', 'To verify', 40, 'exp', 'not counted yet', R.verify.map(card)));
+  if (R.ended.length) kids.push(branch('rc-ended', '✂️', 'Stopped', 140, 'exp', `saves ${fk(R.ended.reduce((s, i) => s + i.perMonth, 0))}/mo`, R.ended.map(card)));
+  return branch('recur', '🔁', 'Recurring payments', 20, 'exp', `${fk(R.monthly.total)} a month now · ${R.items.filter(i => i.status === 'active').length} running${R.verify.length ? ` · ${R.verify.length} to verify` : ''}`, kids);
+}
+function finRecDetail(id) {
+  if (id === 'rc~months') return finRecTimelineHTML();
+  const key = id.slice(3), it = finRec().items.find(i => i.key === key); if (!it) return '';
+  const txs = it.ids.map(i => FS.by.get(i)).filter(Boolean).sort((a, b) => b.date.localeCompare(a.date));
+  const [gi, gl] = FIN_REC_GROUPS[it.group];
+  return finKv([['A month', fk(it.perMonth), it.freq], ['Status', it.status === 'active' ? 'Active' : it.status === 'verify' ? 'To verify' : 'Stopped', it.status === 'ended' ? `since ${it.since ? fmon(it.since) : '—'} · saves ${fk(it.perMonth)}/mo` : it.why || (it.by === 'you' ? 'as you said' : 'seen in your latest statements')], ['Group', `${gi} ${gl}`, ''], ['Seen', `${it.months.length} month${it.months.length === 1 ? '' : 's'}`, it.first ? `${fmon(it.first)} – ${fmon(it.last.slice(0, 7))}` : '']])
+    + `<p class="small muted">${it.status === 'active' ? 'Counted in your current obligations on every canvas.' : it.status === 'verify' ? 'Not counted in your current obligations until you confirm it is still running.' : 'No longer counted — only kept as history.'}</p>`
+    + `<div class="row">${it.status !== 'active' ? finBtn('fin-rec-mark', '✓ Still paying', { id: it.key, v: 'active' }) : ''}${it.status !== 'ended' ? finBtn('fin-rec-mark', '✂️ Stopped — I no longer pay it', { id: it.key, v: 'stopped' }) : ''}${it.by === 'you' ? finBtn('fin-rec-mark', 'Let the statements decide', { id: it.key, v: 'clear' }) : ''}</div>`
+    + `<h4>Payments</h4>${finTxList(txs, 8)}`;
+}
+// still paying / stopped: what you say is kept, with Undo, and shown on the canvas
+function finRecMark(key, v, since) {
+  const it = finRec().items.find(i => i.key === key || i.key === 'r:' + key || i.key === 'i:' + key); if (!it) return '';
+  const before = typeof finChangeIndex === 'function' ? finChangeIndex() : null, snap = finSnapshot(), cur = finToday().slice(0, 7), when = /^\d{4}-\d{2}$/.test(since || '') ? since : cur;
+  if (it.kind === 'inst') finSave(q => { const k = it.key.slice(2), old = (q.installments || []).find(x => x.key === k) || {}; q.installments = (q.installments || []).filter(x => x.key !== k); if (v !== 'clear') q.installments.push({ ...old, key: k, status: v === 'stopped' ? 'stopped' : 'active', since: v === 'stopped' ? when : null, at: nowISO(), by: 'you' }); else if (old.remaining !== undefined) q.installments.push({ key: k, remaining: old.remaining, at: nowISO() }); });
+  else finSave(q => { q.recMarks = { ...(q.recMarks || {}) }; if (v === 'clear') delete q.recMarks[it.key]; else q.recMarks[it.key] = { status: v === 'stopped' ? 'stopped' : 'active', since: v === 'stopped' ? when : null, at: nowISO() }; });
+  const line = v === 'clear' ? `${it.name}: back to what the statements show` : v === 'stopped' ? `${it.name}: stopped from ${fmon(when)} — ${fk(it.perMonth)} a month less in your obligations` : `${it.name}: still paying — counted in your current obligations`;
+  const m = { id: E.uid('tk'), at: nowISO(), who: 'edit', text: line, undoable: true }; UI.fin.undo.set(m.id, snap); finTalkPush(m);
+  UI.fin.pop = null; if (before && typeof finPresent === 'function') finPresent(before, ['rc:' + it.key]); render(); return line;
+}
+Object.assign(ACT, { 'fin-rec-mark': el => finRecMark(el.dataset.id, el.dataset.v) });
+Object.assign(window.__FIN, { rec: () => finRec(), recTimeline: () => finRecTimeline().map(r => ({ m: r.m, total: r.total, running: r.running.map(i => i.name), added: r.added.map(i => i.name), stopped: r.stopped.map(i => i.name), stoppedMonthly: r.stoppedMonthly, savedSoFar: r.savedSoFar })), recMark: (k, v, s) => finRecMark(k, v, s) });
 
 /* ---------- boot ---------- */
 const startView = (location.hash || '').replace('#', '');

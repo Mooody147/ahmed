@@ -683,6 +683,19 @@ function recurring(list, o = {}) {
   }
   return out.sort((a, b) => b.perMonth - a.perMonth);
 }
+// is a repeating payment still running today? Judged against what the statements cover — an old statement alone never
+// makes it current: seen in the latest covered period → active; due again inside what the statements cover but it did
+// not come → one missed: to verify, two or more: ended (from the month it stopped); the statements stop before it was
+// due again and they are old → to verify. What you said (still paying / stopped) always wins.
+function recurringStatus(r, coveredTo, today, mark) {
+  if (mark && (mark.status === 'stopped' || mark.status === 'active')) return { status: mark.status === 'stopped' ? 'ended' : 'active', since: mark.status === 'stopped' ? mark.since || ym(addDays(r.last, 30)) : null, by: 'you', missed: 0 };
+  const period = r.freq === 'weekly' ? 7 : r.freq === 'quarterly' ? 91 : r.freq === 'yearly' ? 365 : 30.5, cov = validDate(coveredTo) ? coveredTo : r.last;
+  const missed = Math.max(0, Math.floor((dnum(cov) - dnum(r.last)) / period - 0.35));   // whole periods covered after it was last seen (a few days' grace)
+  if (missed >= 2) return { status: 'ended', since: ym(addDays(r.last, Math.round(period))), missed, by: 'statements' };
+  if (missed === 1) return { status: 'verify', why: 'one payment missed in your statements', missed, by: 'statements' };
+  const stale = dnum(today) - dnum(cov) > period * 1.5;
+  return stale ? { status: 'verify', why: `your statements stop on ${cov}`, missed: 0, by: 'statements' } : { status: 'active', missed: 0, by: 'statements' };
+}
 // what I earn now: a salary counts as "verified recurring" only when it arrived in at least 3 of the last 4
 // covered months; the latest income is never assumed to be the salary
 function incomeBase(an, today) {
@@ -1089,7 +1102,7 @@ function detectInstallments(txs, today, known) {
   return Object.values(out).sort((a, b) => (b.status === 'active') - (a.status === 'active') || b.amount - a.amount);
 }
 // what instalments will cost each coming month (active and missing-but-not-ended ones, until their end)
-const installmentLoad = (list, month) => r2(sum((list || []).filter(i => i.status !== 'completed' && i.status !== 'discontinued' && (!i.end || month <= i.end)).map(i => i.amount)));
+const installmentLoad = (list, month) => r2(sum((list || []).filter(i => i.status !== 'completed' && i.status !== 'discontinued' && i.status !== 'stopped' && (!i.end || month <= i.end)).map(i => i.amount)));
 
 /* ---------- my inputs (salary, returns, expenses…) with the dates they apply from ---------- */
 // an input: {id, key, label, kind: income|expense|saving|commitment, amount, from, to, permanent, history: [...]}
@@ -1212,6 +1225,6 @@ function validateBackup(o) {
 
 return { EPS, r2, norm, AR, CURRENCIES, validDate, dnum, addDays, spanDays, ym, addMonths, monthList, dim, monthEnd, parseDate, dateOrder, parseNum, cleanDesc, payeeKey,
   detectBank, looksLikeCard, last4, DEFAULT_CATS, catMap, classify, learnRule, refundOf, pairMoves, CODE_CAT, detectGrid, rowsFromGrid, rowsFromText, rowsFromLayout, statementFacts, instOf, chainBest, statementCheck, matchImport, importCounts, similar, overlaps, fp, quant, median, entries, analyze, series,
-  recurring, incomeBase, STRATEGY, budgetPlan, monthControl, unusual, upcoming, addMonthsDate, SCEN, monthFactor, simulate, sensitivity, shiftDate, allocate, thirdParty, holdingReturns, propertyShare, rentForecast, cardOwed, position, monthsTo, forecast, goalPlan, reconcile, validateBackup, financeQuote, detectInstallments, installmentLoad, activeInput, setInput, balanceChange, health, planPurchases };
+  recurring, recurringStatus, incomeBase, STRATEGY, budgetPlan, monthControl, unusual, upcoming, addMonthsDate, SCEN, monthFactor, simulate, sensitivity, shiftDate, allocate, thirdParty, holdingReturns, propertyShare, rentForecast, cardOwed, position, monthsTo, forecast, goalPlan, reconcile, validateBackup, financeQuote, detectInstallments, installmentLoad, activeInput, setInput, balanceChange, health, planPurchases };
 })();
 if (typeof module !== 'undefined') module.exports = FIN;

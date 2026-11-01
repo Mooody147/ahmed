@@ -92,7 +92,8 @@ function finRichLayout(rooms0, plan, n) {
   const up = P || E;
   if (up && A) flows.push({ id: 'save', cls: W.toAssets > 0 ? 'save' : 'save none', a: { x: up.x + up.w * 0.28, y: up.y + up.h }, b: { x: A.x + A.w * 0.28, y: A.y }, t: th(W.toAssets), label: [fk(W.toAssets).replace(/\.00$/, ''), ' a month'], line: W.toAssets > 0 ? 'into assets' : 'into assets — purchases take all your surplus', v: true });
   if (up && A) flows.push({ id: 'passive', cls: 'passive', a: { x: A.x + A.w * 0.72, y: A.y }, b: { x: up.x + up.w * 0.72, y: up.y + up.h }, t: th(R.passive), label: [fk(R.passive), ' a month'], line: R.passive ? 'your assets pay you' : 'no asset pays you yet', v: true });
-  if (Lb && exp) flows.push({ id: 'debt', cls: 'liability', a: { x: Lb.x + Lb.w * 0.5, y: Lb.y }, b: { x: exp.x + exp.w * 0.5, y: exp.y + exp.h }, t: th(n.instMonthly || 0), label: [fk(n.instMonthly || 0), ' a month'], line: `your liabilities cost you · ${pc(n.instMonthly) ?? '—'}% of income`, v: true });
+  const expEnd = [exp, ...bx('exp')].filter(Boolean).pop();   // the bottom of the whole expenses column (recurring payments hang there)
+  if (Lb && expEnd) flows.push({ id: 'debt', cls: 'liability', a: { x: Lb.x + Lb.w * 0.5, y: Lb.y }, b: { x: expEnd.x + expEnd.w * 0.5, y: expEnd.y + expEnd.h }, t: th(n.instMonthly || 0), label: [fk(n.instMonthly || 0), ' a month'], line: `your liabilities cost you · ${pc(n.instMonthly) ?? '—'}% of income`, v: true });
   if (A && Lb && W.payLiab > 0) flows.push({ id: 'assetpays', cls: 'save', a: { x: A.x + A.w, y: A.y + 70 }, b: { x: Lb.x, y: Lb.y + 70 }, t: th(W.payLiab), label: [fk(Math.round(W.payLiab)), ' a month'], line: 'your assets pay a liability (estimate)' });
   const frames = [
     E || exp ? { x: L0 - 30, y: y1 - FRD.FRAME, w: Wd - L0 + 60, h: isB - y1 + FRD.FRAME + 30, title: 'INCOME STATEMENT', cols: [[L0, 'Income — earned and passive'], [C2, 'Expenses']] } : null,

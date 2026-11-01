@@ -242,6 +242,15 @@ eq([goals[0].months, goals[0].eta, goals[0].ok], [10, '2027-09', false], '50,000
 eq([goals[0].monthsLeft, goals[0].required, goals[0].extra], [7, 7142.86, 2142.86], '7 months left: 7,142.86 a month needed, 2,142.86 more');
 eq(F.goalPlan([{ id: 'g', target: 60000, saved: 10000, date: '2027-06-30' }], 7500, '2026-11-10')[0].ok, true, 'with 7,500 a month it is reached in time');
 
+/* a repeating payment: running today, ended, or to verify — judged against what the statements cover */
+{ const R = { freq: 'monthly', last: '2026-09-05' };
+  eq(F.recurringStatus(R, '2026-09-30', '2026-10-10').status, 'active', 'seen in the latest covered month: active');
+  eq(F.recurringStatus(R, '2026-10-31', '2026-11-05').status, 'verify', 'one payment missed inside the statements: to verify');
+  const e = F.recurringStatus(R, '2026-11-30', '2026-12-05'); eq([e.status, e.since], ['ended', '2026-10'], 'two missed: ended, from the month it stopped');
+  eq(F.recurringStatus(R, '2026-09-30', '2027-01-10').status, 'verify', 'statements end long ago: cannot tell, to verify');
+  eq(F.recurringStatus(R, '2026-09-30', '2026-10-10', { status: 'stopped', since: '2026-10' }).status, 'ended', 'you said stopped: ended');
+  eq(F.recurringStatus(R, '2026-11-30', '2026-12-05', { status: 'active' }).status, 'active', 'you said still paying: active');
+  eq(F.installmentLoad([{ amount: 500, status: 'stopped' }, { amount: 300, status: 'active' }], '2026-10'), 300, 'a stopped instalment no longer counts'); }
 /* reconciliation */
 const rec = F.reconcile({ id: 'A', opening: 20000, openingDate: '2026-08-01' }, ledger.filter(t => t.date), [{ id: 'b1', acct: 'A', from: '2026-08-01', to: '2026-09-05', opening: 20000, closing: 104590, diff: 0 }]);
 eq([rec.confirmed.balance, rec.computed, rec.diff, rec.status], [104590, 104590, 0, 'reconciled'], 'calculated balance agrees with the statement');

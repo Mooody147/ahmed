@@ -731,3 +731,18 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 #fin-cv-ed .fin-cv-ed-t { display: flex; align-items: center; gap: 6px; padding-bottom: 2px; }
 #fin-cv-ed .fin-cv-ed-t::after, #fin-pop .fin-pop-h::after { content: "⠿"; margin-left: auto; color: var(--ink-3); font-size: 14px; letter-spacing: -1px; opacity: .6; }
 #fin-pop .fin-pop-h::after { order: 9; margin-left: 4px; }
+
+/* ---------- a goal's honest check ---------- */
+.fin-gc { display: grid; gap: 8px; }
+.fin-gc h4 { margin: 6px 0 0; }
+.fin-gc-v { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 14px; border: 1px solid var(--line); }
+.fin-gc-v .ic { font-size: 26px; } .fin-gc-v small { display: block; color: var(--ink-2); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; } .fin-gc-v b { font-size: 20px; }
+.fin-gc.good .fin-gc-v { background: color-mix(in srgb, #2e9e5b 12%, var(--surface)); border-color: color-mix(in srgb, #2e9e5b 40%, var(--line)); }
+.fin-gc.warn .fin-gc-v { background: color-mix(in srgb, #e0a030 14%, var(--surface)); border-color: color-mix(in srgb, #e0a030 45%, var(--line)); }
+.fin-gc.bad .fin-gc-v { background: color-mix(in srgb, #d9534f 12%, var(--surface)); border-color: color-mix(in srgb, #d9534f 45%, var(--line)); }
+.fin-gc-why, .fin-gc-fix { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: 13px; line-height: 1.45; } .fin-gc-why li, .fin-gc-fix li { overflow-wrap: anywhere; }
+.fin-gc-fix li { display: flex; gap: 8px; align-items: center; justify-content: space-between; } .fin-gc-fix li .btn { flex: none; }
+.fin-gc-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; border-left: 2px solid color-mix(in srgb, var(--accent) 40%, var(--line)); margin-left: 6px; }
+.fin-gc-steps li { position: relative; display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 8px; padding: 6px 0 6px 14px; font-size: 13px; }
+.fin-gc-steps li::before { content: ""; position: absolute; left: -6px; top: 11px; width: 10px; height: 10px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 3px var(--surface); }
+.fin-gc-steps .d { font-weight: 700; color: var(--ink-2); white-space: nowrap; }

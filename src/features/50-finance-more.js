@@ -10,7 +10,8 @@ function finUpcoming() {
   const ins = (p.inputs || []).filter(i => i.kind === 'income' && (!i.from || i.from <= today) && (!i.to || i.to >= today));
   const instKeys = n.inst.map(i => FIN.norm(i.name).slice(0, 10));
   const byId = new Map((all.entries || []).map(e => [e.id, e]));
-  const rec = FIN.recurring(all.entries || []).filter(r => r.freq === 'monthly' && !(ins.length && r.dir > 0) && !instKeys.some(k => k && FIN.norm(FIN.cleanDesc(r.name)).startsWith(k)))
+  const recNow = typeof finRec === 'function' ? new Map(finRec().items.map(i => [i.key, i.status])) : null;   // only payments running today — not every one an old statement shows
+  const rec = FIN.recurring(all.entries || []).filter(r => r.freq === 'monthly' && !(ins.length && r.dir > 0) && !instKeys.some(k => k && FIN.norm(FIN.cleanDesc(r.name)).startsWith(k)) && (r.dir > 0 || !recNow || !recNow.has('r:' + r.key) || recNow.get('r:' + r.key) === 'active'))
     .map(r => ({ ...r, name: FIN.cleanDesc(r.name), onCard: r.ids.length > 0 && r.ids.every(id => cardIds.has((byId.get(id) || {}).acct)) }));
   // income you entered arrives on the day the salary usually comes in
   const salDay = (() => { const s = (all.entries || []).filter(e => e.cat === 'salary').map(e => e.date).sort().pop(); return s ? +s.slice(8, 10) : 1; })();

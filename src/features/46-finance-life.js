@@ -198,13 +198,17 @@ function finNow() {
   else { income = FIN.r2((ib.salary || 0) + ib.otherRecurringMonthly); incomeBasis = ib.salary !== null ? `salary ${fm(ib.salary)} (${ib.verified ? 'verified' : 'not verified'}) from the statements` : 'no salary found yet'; }
   if (mom && +mom.myShareMonthly && !ins.some(i => i.key === 'cib_share') && !tx.some(t => t.holding === 'mom' && t.amount > 0)) { income = FIN.r2(income + +mom.myShareMonthly); incomeBasis += ` + CIB share ${fm(+mom.myShareMonthly)}`; }
   const expIn = FIN.activeInput(p.inputs, 'expenses', today);
-  const spending = expIn ? +expIn.amount : FIN.median(done.map(b => b.exp)) || 0;
+  // your CURRENT spending: what varies (past months with every recurring payment taken out) + the recurring payments that
+  // are running today — a payment that stopped no longer counts, however often it appears in old statements
+  const rec = typeof finRecurringModel === 'function' ? finRecurringModel({ tx, all, inst, today, p }) : null;
+  const variable = rec ? FIN.median(done.map(b => Math.max(0, b.exp - (rec.byMonth[b.m] || 0)))) || 0 : null;
+  const spending = expIn ? +expIn.amount : rec ? FIN.r2(variable + rec.activeNonInst) : FIN.median(done.map(b => b.exp)) || 0;
   const essential = FIN.median(done.map(b => Object.entries(b.byCat).filter(([k]) => (finCat(k) || {}).prio === 'essential').reduce((s, [, v]) => s + v, 0))) || 0;
   const goalsMonthly = FIN.r2(FIN.goalPlan(p.goals || [], 0, today).reduce((s, g) => s + (+g.monthly || (g.required || 0)), 0));
   const reserve = FIN.r2(essential * (+p.emergencyMonths || 3));
-  const capacity = FIN.r2(Math.max(0, income - spending - goalsMonthly));
+  const capacity = FIN.r2(Math.max(0, income - spending - (rec && !expIn ? instMonthly : 0) - goalsMonthly));   // instalments apart from spending: counted once
   const free = FIN.r2(Math.max(0, cash - held - reserve));
-  const v = { today, accts, cash, cashKnown: cashKnown.length, cashAccts: personal.length, held, free, reserve, essential, income, incomeBasis, spending: FIN.r2(spending), spendBasis: expIn ? 'your input' : `median of the last ${done.length} complete months`, goalsMonthly, capacity,
+  const v = { today, accts, cash, cashKnown: cashKnown.length, cashAccts: personal.length, held, free, reserve, essential, income, incomeBasis, spending: FIN.r2(spending), variable, rec, spendBasis: expIn ? 'your input' : rec ? `${fm(variable || 0)} varying (median of ${done.length} months, recurring taken out) + ${fm(rec.activeNonInst)} recurring running now` : `median of the last ${done.length} complete months`, goalsMonthly, capacity,
     card: card ? { a: card.a, ...card.l, terms: card.a.terms || {} } : null, halan: halan ? { a: halan.a, ...halan.l, terms: halan.a.terms || {} } : null, inst, instMonthly,
     health: FIN.health({ income, spending, essential, cash: Math.max(0, cash - held), installments: instMonthly, cardOwed: card ? card.l.owed : null, cardLimit: card ? card.l.limit : null }) };
   finNow.k = key; finNow.v = v; return v;

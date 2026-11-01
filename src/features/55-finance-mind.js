@@ -89,6 +89,7 @@ function finMindRooms(rooms) {
   const buy = by('buy'); if (buy) out.push({ ...buy, title: 'Your choices — goals & purchases', sum: W.doodads.length ? `${W.doodads.length} doodad${W.doodads.length === 1 ? '' : 's'} · ${fk(W.plan.total)} · assets first` : buy.sum });
   // your own boxes hang under the branch you put them on; the rest go under the map
   const used = new Set(['inc', 'accts', 'own', 'com', 'exp', 'buy']), ids = new Set(out.map(r => r.id)), boxes = new Map();
+  if (by('recur') && ids.has('exp')) { boxes.set('exp', [by('recur')]); used.add('recur'); }   // your recurring payments hang under Spending
   for (const r of rooms) if (r.kind === 'box' && ids.has(r.branch)) { if (!boxes.has(r.branch)) boxes.set(r.branch, []); boxes.get(r.branch).push(r); used.add(r.id); }
   const rest = rooms.filter(r => !used.has(r.id));
   const left = new Set(['mm-earn', 'mm-pass', 'mm-assets']);

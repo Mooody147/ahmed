@@ -61,8 +61,9 @@ function finCvModel() {
     const l = leaf('c:' + k, (finCat(k) || { name: k }).name, fk(v), trend + 'a month on average', { act: 'fin-drill-cat', k }, pct !== null && pct >= 15 ? 'trend-up' : pct !== null && pct <= -15 ? 'trend-down' : '');
     l.spark = all.months.slice(-8).map(b => (b.byCat || {})[k] || 0); l.sparkCls = 'exp'; return l; });
   const spB = branch('exp', '🧾', 'Spending', 20, 'exp', `${fk(n.spending)} usual a month`, sp.length ? sp : [leaf('c:none', 'No complete month yet', '', 'add statements to see where money goes', { act: 'fin-sec', s: 'import' }, 'muted')], [tool('budget', '🎯', 'Budget & control', 'limits, this month, savings plan')]);
-  if (rec.length) spB.children.push(branch('rec', '🔁', 'Repeating payments', 20, 'exp', `${fk(rec.reduce((s, r) => s + r.perMonth, 0))} a month`, rec.map(r => leaf('r:' + r.key, FIN.cleanDesc(r.name), fk(r.amount), `${r.freq || 'monthly'} · next about ${fday(r.next)}`, { act: 'fin-sec', s: 'budget' }))));
   B.push(spB);
+  // recurring payments as they stand today: by group, what to verify, what you stopped (see 62-finance-recurring)
+  if (typeof finRecBranch === 'function' && finRec().items.length) B.push(finRecBranch(leaf, branch));
 
   // card, Halan and instalments
   const com = [];
@@ -249,7 +250,7 @@ function finCardDetail(id) {
   if (kind === 'b') {
     const it = finBuyPlan().items.find(z => z.id === key); if (!it) return ''; const o = it.options || {};
     const opt = (label, ok, q) => `<tr class="${it.rec === label[1] ? 'on' : ''}"><td>${label[0]}</td><td>${ok ? '✓' : '—'}</td><td class="num">${q ? fm(q.monthly) + ' × ' + q.months : ''}</td><td class="num">${q ? fm(q.cost) : ''}</td></tr>`;
-    return finKv([['Price', fk(it.price), it.wantBy ? 'wanted by ' + fday(it.wantBy) : 'no date'], ['Best way', FIN_REC[it.rec][0], it.ready ? 'ready ' + fmon(it.ready) : ''], ['From cash now', fk(it.fromCash), ''], ['A month', it.monthly ? fk(it.monthly) : '—', it.months ? it.months + ' months' : '']])
+    return (typeof finGoalCheckHTML === 'function' ? finGoalCheckHTML(key) + '<h4>How to pay</h4>' : '') + finKv([['Price', fk(it.price), it.wantBy ? 'wanted by ' + fday(it.wantBy) : 'no date'], ['Best way', FIN_REC[it.rec][0], it.ready ? 'ready ' + fmon(it.ready) : ''], ['From cash now', fk(it.fromCash), ''], ['A month', it.monthly ? fk(it.monthly) : '—', it.months ? it.months + ' months' : '']])
       + finBar(it.fromCash || 0, it.price, 's3') + `<p class="small">${esc(it.why)}</p>`
       + `<table class="tbl fin-det-opt"><thead><tr><th>Way to pay</th><th>Fits</th><th class="num">A month</th><th class="num">Extra cost</th></tr></thead><tbody>${opt(['Cash now', 'cash'], o.cash)}${opt(['Card, paid in full', 'card_full'], o.cardFull)}${opt(['Card instalments', 'card_plan'], !!o.cardPlan, o.cardPlan)}${opt(['Halan instalments', 'halan'], !!o.halan, o.halan)}</tbody></table>`
       + `<div class="row">${edit}${finBtn('fin-buy-star', it.focus ? '☆ Not first' : '★ Do this first', { id: key })}${finBtn('fin-buy-done', '✓ Bought', { id: key })}</div>`;
@@ -283,6 +284,7 @@ function finGoalsTimeline(plan) {
 function finDetBody(id, plan, n) {
   if (id === 'ov') return finOverviewHTML();
   if (id === 'free' && typeof finFreeHTML === 'function') return finFreeHTML();
+  if ((id.startsWith('rc:') || id === 'rc~months') && typeof finRecDetail === 'function') return finRecDetail(id);
   if (id.startsWith('box:') && typeof finBoxHTML === 'function') return finBoxHTML(id);
   if (id === 'gk') return finGoalsHead(plan, n);
   if (id === 'gt') return finGoalsTimeline(plan);

@@ -60,6 +60,7 @@ function finMenuItems(id) {
   if (act.act === 'fin-acct-ledger' || act.act === 'fin-drill-cat') items.push(['tx', '📒', 'Its transactions']);
   if (act.act === 'fin-sec' && act.s && FIN_VIEW[act.s]) items.push(['part', FIN_ICON[act.s] || '📂', 'Open ' + ((FIN_SECS.find(s => s[0] === act.s) || [])[1] || 'its part')]);
   if (act.act === 'fin-buy-edit') items.push(['buy', '🛍️', 'Plan this purchase']);
+  if (id.startsWith('rc:') && typeof finRec === 'function') { const it = finRec().items.find(i => 'rc:' + i.key === id); if (it && it.status !== 'ended') items.push(['rcstop', '✂️', 'Stopped — I no longer pay it']); if (it && it.status !== 'active') items.push(['rcgo', '✓', 'Still paying']); }
   if (id.startsWith('t:') && (finP().parties || []).some(z => 't:' + z.id === id)) items.push(['settle', '✓', 'All settled — given back or paid out for them']);
   items.push(['zoom', '🎯', 'Zoom to it']);
   if (n.val) items.push(['copy', '📋', 'Copy “' + E.clip(n.val, 24) + '”']);
@@ -91,6 +92,7 @@ function finMenuDo(k) {
   if (k === 'det') return finPopOpen(id);
   if (k === 'edit') return finCvEditOpen(id);
   if (k === 'settle') return finPartySettle(id.slice(2));
+  if (k === 'rcstop' || k === 'rcgo') return finRecMark(id.slice(3), k === 'rcstop' ? 'stopped' : 'active');
   if (k === 'zoom') { finCvGoto(id); UI.fin.flash = { ids: new Set([id]), until: Date.now() + 1800 }; return render(); }
   if (k === 'copy') { try { navigator.clipboard.writeText(n.val); toast('Copied ' + n.val); } catch { toast(n.val); } return; }
   if (k === 'rm') { const s = finCvSpec(id); if (s && s.remove) { const snap = finSnapshot(), line = s.remove(); finCvEditDone(line, snap, []); } return; }
