@@ -286,6 +286,7 @@ function finGoalsTimeline(plan) {
 }
 function finDetBody(id, plan, n) {
   if (id === 'ov') return finOverviewHTML();
+  if (id === 'rd' && typeof finRdScoreHTML === 'function') return finRdScoreHTML();
   if (id === 'gk') return finGoalsHead(plan, n);
   if (id === 'gt') return finGoalsTimeline(plan);
   if (id === 'up') return finUpcomingHTML();
@@ -338,8 +339,7 @@ function finCvCard(c, hue) {
   const tool = c.cls.includes('tool'), open = UI.fin.pop === c.id || (tool && c.act && finSecOpen(c.act.s)) ? ' sel' : '', fresh = Date.now() < UI.fin.flash.until && UI.fin.flash.ids.has(c.id) ? ' fresh' : '';
   const act = tool || c.cls.includes('more') ? { act: 'fin-cv-sec', s: (c.act && c.act.s) || 'ledger' } : c.act && c.act.act === 'fin-cv-add' ? c.act : { act: 'fin-cv-det', id: c.id };
   const editable = typeof finCvSpec === 'function' && !tool && !c.cls.includes('more') && !!finCvSpec(c.id);
-  const tank = c.tank ? `<i class="fin-tank ${c.tank.kind}" aria-hidden="true" style="--lvl:${c.tank.lvl.toFixed(3)}"><i class="w"></i><i class="scale"></i></i>` : '';
-  return `<div class="mnode fin-cvn fin-leaf ${c.cls}${c.tank ? ' tank ' + c.tank.kind : ''}${open}${fresh}${editable ? ' editable' : ''}" role="button" tabindex="0" aria-expanded="${!!open}" ${finCvAttrs(act)} data-node="${esc(c.id)}" title="${esc(c.label)}${c.val ? ' — ' + esc(c.val) : ''}${c.sub ? '\n' + esc(c.sub) : ''}" style="${st}">${tank}
+  return `<div class="mnode fin-cvn fin-leaf ${c.cls}${open}${fresh}${editable ? ' editable' : ''}" role="button" tabindex="0" aria-expanded="${!!open}" ${finCvAttrs(act)} data-node="${esc(c.id)}" title="${esc(c.label)}${c.val ? ' — ' + esc(c.val) : ''}${c.sub ? '\n' + esc(c.sub) : ''}" style="${st}">
     ${c.icon ? `<span class="gicon fin-cv-ic" aria-hidden="true">${c.icon}</span>` : ''}<div class="mtxt"><b>${tool ? '<span class="fin-tool-i" aria-hidden="true">' + (FIN_ICON[act.s] || '') + '</span>' : ''}${esc(c.label)}</b>${c.sub ? `<small>${esc(c.sub)}</small>` : ''}</div>${c.val ? `<span class="fin-cv-v num">${esc(c.val)}</span>` : ''}${c.spark && typeof finSparkSVG === 'function' ? finSparkSVG(c.spark, c.sparkCls) : ''}${c.prog ? `<i class="fin-prog" style="width:${Math.round(c.prog * 100)}%" title="${Math.round(c.prog * 100)}% from cash now"></i>` : ''}${editable ? `<button class="fin-cv-btn ed" data-act="fin-cv-edit" data-id="${esc(c.id)}" title="Edit (or double-tap, F2)" aria-label="Edit ${esc(c.label)}">✎</button>` : ''}</div>`;
 }
 function finCvRoom(r) {
@@ -356,15 +356,15 @@ function finCvRoom(r) {
     </div></section>`;
 }
 function finCvBoard() {
-  const cv = UI.fin.cv, root = finCvModel(), n = finNow(), plan = finBuyPlan(), rooms = finCvRooms(root), res = cv.mode === 'res' && typeof finResLayout === 'function', flow = cv.mode === 'flow' && typeof finFlowLayout === 'function', mind = cv.mode === 'mind' && typeof finMindLayout === 'function', L = res ? finResLayout(rooms, plan, n) : flow ? finFlowLayout(rooms, plan, n) : mind ? finMindLayout(rooms, plan, n) : finCvLayout(rooms, plan, n);
+  const cv = UI.fin.cv, root = finCvModel(), n = finNow(), plan = finBuyPlan(), rooms = finCvRooms(root), rich = cv.mode === 'rich' && typeof finRichLayout === 'function', flow = cv.mode === 'flow' && typeof finFlowLayout === 'function', mind = cv.mode === 'mind' && typeof finMindLayout === 'function', L = rich ? finRichLayout(rooms, plan, n) : flow ? finFlowLayout(rooms, plan, n) : mind ? finMindLayout(rooms, plan, n) : finCvLayout(rooms, plan, n);
   const hueOf = new Map(); for (const r of rooms) { const walk = k => { hueOf.set(k.id, r.hue); (k.children || []).forEach(walk); }; if (r.node) walk(r.node); }
   UI.fin.cvSize = { w: L.w, h: L.h }; UI.fin.cvCards = new Map(L.cards.map(c => [c.id, c]));
   if (UI.fin.pop && !UI.fin.cvCards.has(UI.fin.pop)) UI.fin.pop = null;
   const path = e => { const mx = (e.x0 + e.x1) / 2; return `M${e.x0},${e.y0} C${mx},${e.y0} ${mx},${e.y1} ${e.x1},${e.y1}`; };
   // the entrance plays when you open the canvas (within its first moment), not on every redraw after
   const now = Date.now(); if (!UI.fin.cvShownAt) UI.fin.cvShownAt = now; const intro = now - UI.fin.cvShownAt < 700;
-  return `<div class="fin-cv-vp${res ? ' mode-res' : flow ? ' mode-flow' : mind ? ' mode-mind' : ''}${intro ? ' intro' : ''}${cv.k < 0.62 ? ' z-far' : ''}" id="fin-cv-vp">${flow ? finFlowSky() : ''}<div class="fin-cv-world" id="fin-cv-world" style="width:${L.w}px;height:${L.h}px;transform:translate(${cv.x}px,${cv.y}px) scale(${cv.k})">
-      ${res ? finResSVG(L) : flow ? finFlowSVG(L) : mind ? finMindSVG(L) : ''}${L.rooms.map(finCvRoom).join('')}
+  return `<div class="fin-cv-vp${rich ? ' mode-rich' : flow ? ' mode-flow' : mind ? ' mode-mind' : ''}${intro ? ' intro' : ''}${cv.k < 0.62 ? ' z-far' : ''}" id="fin-cv-vp">${flow ? finFlowSky() : ''}<div class="fin-cv-world" id="fin-cv-world" style="width:${L.w}px;height:${L.h}px;transform:translate(${cv.x}px,${cv.y}px) scale(${cv.k})">
+      ${rich ? finRichSVG(L) : flow ? finFlowSVG(L) : mind ? finMindSVG(L) : ''}${L.rooms.map(finCvRoom).join('')}
       <svg class="fin-cv-edges" width="${L.w}" height="${L.h}" aria-hidden="true">${L.edges.map(e => `<path class="${e.cls}" d="${path(e)}"><title>${esc(e.title)}</title></path>`).join('')}</svg>
       ${L.subs.map(s => `<div class="fin-room-sub" style="left:${s.x}px;top:${s.y}px;width:${s.w}px"><b>${esc(s.label)}</b>${s.sum ? ` <small>${esc(s.sum)}</small>` : ''}</div>`).join('')}
       ${L.cards.map(c => finCvCard(c, hueOf.get(c.id) ?? (c.id.startsWith('b:') || c.id.startsWith('src:') || c.id.startsWith('g:') ? 190 : 200))).join('')}
@@ -418,7 +418,7 @@ function finCvApply() {
 }
 // on opening: as wide as the screen allows (readable), from the top; Fit shows all of it
 function finCvFit(all) {
-  if (UI.fin.cv.mode === 'res' || UI.fin.cv.mode === 'mind') all = true;   // the whole system of tanks and pipes at once
+  if (UI.fin.cv.mode === 'rich' || UI.fin.cv.mode === 'mind') all = true;   // the whole system of tanks and pipes at once
   const vp = $('#fin-cv-vp'), s = UI.fin.cvSize, cv = UI.fin.cv; if (!vp || !s) return;
   const W = vp.clientWidth, H = vp.clientHeight; if (!W || !H) return;
   if (all) { const top = cv.full ? 64 : 16; cv.k = Math.max(0.1, Math.min(1, (W - 32) / s.w, (H - top - 16) / s.h)); cv.x = (W - s.w * cv.k) / 2; cv.y = Math.max(top, top + (H - top - 16 - s.h * cv.k) / 2); }   // full screen: below the floating controls
