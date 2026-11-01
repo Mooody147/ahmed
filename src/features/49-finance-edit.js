@@ -135,15 +135,17 @@ function finCvEditorPlace() {
 }
 function finCvEditOpen(id, add) {
   const sp = add ? finCvAddSpec(add) : finCvSpec(id); if (!sp) return false;
-  UI.fin.cvEdit = { id: id || null, add: add || null, v: {} }; UI.fin.goto = id || add; render();
+  UI.fin.cvEdit = { id: id || null, add: add || null, v: {}, before: typeof finChangeIndex === 'function' ? finChangeIndex() : null }; UI.fin.goto = id || add; render();
   setTimeout(() => { const i = $('#fin-cv-ed-0'); if (i) { i.focus(); try { i.select(); } catch {} } }, 0); return true;
 }
 // a change on the canvas is a line in the conversation, with Undo — the same as a change said in words
 function finCvEditDone(line, snap, ids) {
-  UI.fin.cvEdit = null; if (!line) { render(); return; }
+  const before = UI.fin.cvEdit && UI.fin.cvEdit.before; UI.fin.cvEdit = null; if (!line) { render(); return; }
   const m = { id: E.uid('tk'), at: nowISO(), who: 'edit', text: line, undoable: true };
   UI.fin.undo.set(m.id, snap); finTalkPush(m);
-  UI.fin.flash = { ids: new Set(ids.filter(Boolean)), until: Date.now() + 5000 }; UI.fin.fixTried.clear(); render();
+  UI.fin.flash = { ids: new Set(ids.filter(Boolean)), until: Date.now() + 5000 }; UI.fin.fixTried.clear();
+  if (before && typeof finPresent === 'function') finPresent(before, ids.filter(Boolean));   // shown step by step, the whole canvas in view
+  render();
 }
 const finCvEditIds = E0 => E0.add ? [E0.add] : [E0.id, E0.id.split(':')[0] === 'a' ? 'accts' : null];
 

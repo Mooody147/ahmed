@@ -2461,6 +2461,25 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
    smooth; it flows again the moment you stop */
 #fin-cv-world.moving .flow, .fin-cv-vp.panning .flow, #fin-cv-world.moving .dots, .fin-cv-vp.panning .dots { animation-play-state: paused; }
 
+/* ---------- a change, presented: the whole canvas in view, each change spotlit in turn ---------- */
+.fin-cv-vp.presenting .fin-leaf:not(.fin-spot), .fin-cv-vp.presenting .fin-room:not(.fin-spot), .fin-cv-vp.presenting .fin-det:not(.fin-spot) { transition: opacity .35s ease, filter .35s ease; opacity: .55; filter: saturate(.7); }
+.fin-cv-vp.presenting .fin-spot { opacity: 1; filter: none; }
+.fin-cv-vp.presenting .fin-leaf.fin-spot { box-shadow: 0 0 0 3px #ffd34d, 0 0 40px 6px rgba(255, 211, 77, .55); z-index: 3; }
+.fin-cv-vp.presenting .fin-room.fin-spot { box-shadow: 0 0 0 4px #ffd34d, 0 0 60px 10px rgba(255, 211, 77, .45); }
+#fin-show { position: fixed; inset: 0; pointer-events: none; z-index: 60; }
+.fin-show-ring { position: fixed; border-radius: 16px; border: 3px solid #ffd34d; box-shadow: 0 0 0 6px rgba(255, 211, 77, .25), 0 0 36px rgba(255, 211, 77, .6);
+  transition: left .45s cubic-bezier(.2,.8,.2,1), top .45s cubic-bezier(.2,.8,.2,1), width .45s cubic-bezier(.2,.8,.2,1), height .45s cubic-bezier(.2,.8,.2,1), opacity .3s; }
+.fin-show-ring.new { border-color: #5be39a; box-shadow: 0 0 0 6px rgba(91, 227, 154, .25), 0 0 36px rgba(91, 227, 154, .6); }
+.fin-show-ring.ghost { border-style: dashed; border-color: #ff7a7a; background: rgba(255, 122, 122, .12); box-shadow: none; display: grid; place-items: center; color: #ffb4b4; font: 700 12px/1.2 var(--font, system-ui); text-decoration: line-through; overflow: hidden; animation: finGhost 1.3s ease forwards; }
+@keyframes finGhost { 0% { opacity: 1; transform: scale(1); } 100% { opacity: .15; transform: scale(.94); } }
+.fin-show-cap { position: fixed; max-width: min(460px, 80vw); padding: 9px 14px; border-radius: 12px; background: rgba(18, 12, 38, .94); color: #fff; font: 600 14px/1.35 var(--font, system-ui);
+  box-shadow: 0 14px 40px -12px rgba(0, 0, 0, .6), 0 0 0 1px rgba(255, 211, 77, .5); transition: left .45s cubic-bezier(.2,.8,.2,1), top .45s cubic-bezier(.2,.8,.2,1), opacity .3s; overflow-wrap: anywhere; }
+.fin-show-cap.new { box-shadow: 0 14px 40px -12px rgba(0, 0, 0, .6), 0 0 0 1px rgba(91, 227, 154, .6); } .fin-show-cap.gone { box-shadow: 0 14px 40px -12px rgba(0, 0, 0, .6), 0 0 0 1px rgba(255, 122, 122, .6); }
+.fin-show-bar { position: fixed; pointer-events: auto; display: flex; align-items: center; gap: 8px; padding: 6px 8px 6px 14px; border-radius: 999px; background: rgba(18, 12, 38, .92); color: #fff; box-shadow: 0 10px 30px -10px rgba(0, 0, 0, .6); font: 600 13px/1 var(--font, system-ui); }
+.fin-show-bar .btn { color: #fff; min-width: 30px; } .fin-show-bar .btn:hover { background: rgba(255, 255, 255, .14); }
+.fin-show-dots { display: flex; gap: 4px; } .fin-show-dots i { width: 7px; height: 7px; border-radius: 50%; background: rgba(255, 255, 255, .25); } .fin-show-dots i.done { background: rgba(255, 211, 77, .6); } .fin-show-dots i.on { background: #ffd34d; box-shadow: 0 0 8px #ffd34d; }
+@media (prefers-reduced-motion: reduce) { .fin-show-ring, .fin-show-cap { transition: none; } .fin-show-ring.ghost { animation: none; } }
+
 </style>
 <div class="titlestrip" id="titlestrip"><span class="ts-brand"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c3.3 4 6 7.2 6 10.4a6 6 0 0 1-12 0C6 10.2 8.7 7 12 3z"/><path d="m9.3 13.6 1.9 1.9 3.6-4.1"/></svg> Action Register</span><button class="ts-search" data-act="palette" title="Search and commands (Ctrl+K)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg><span>Search or type a command</span><kbd>Ctrl K</kbd></button><span class="ts-space"></span></div>
 <div class="app">
@@ -16627,6 +16646,8 @@ function finTalkFinish(m, before) {
   const moved = [...after.keys()].filter(id => before && before.get(id) !== after.get(id) && id !== 'root');
   m.changes = moved.map(id => model.get(id)).filter(n => n && n.type === 'leaf' && !n.cls.includes('tool') && !n.cls.includes('more')).slice(0, 12).map(n => ({ id: n.id, label: E.clip(n.label, 40), val: n.val || '' }));
   UI.fin.flash = { ids: new Set(moved), until: Date.now() + 7000 };
+  // the change, presented across the whole canvas, step by step
+  if (typeof finPresent === 'function' && (moved.length || (m.done || []).length)) finPresent(before, m.changes.map(c => c.id));
   m.undoable = !!(m.changes.length || m.done.length || m.decided);
   delete m.status; UI.fin.talk.live = null; UI.fin.talk.busy = false;
   finTalkPush(m);
@@ -16641,7 +16662,7 @@ async function finTalkSend() {
   const about = T.about ? { ...T.about } : null;
   finTalkPush({ id: E.uid('tk'), at: nowISO(), who: 'you', text, files: files.map(f => f.name), ...(about ? { about: about.label } : {}) });
   await finTalkWait();
-  const snap = finSnapshot(), before = finCvIndex(), m = finTalkLive(files.length ? 'Reading what you added…' : 'Claude is reading…');
+  const snap = finSnapshot(), before = (typeof finChangeIndex === 'function' ? finChangeIndex() : finCvIndex()), m = finTalkLive(files.length ? 'Reading what you added…' : 'Claude is reading…');
   UI.fin.undo.set(m.id, snap);
   try {
     const stm = about ? [] : files.filter(f => !finIsImage(f)), imgs = files.filter(finIsImage);
@@ -16846,7 +16867,7 @@ HOOKS.afterRender.push(() => {
     UI.fin.rereadTried = true;
     UI.fin.autoQ = setTimeout(async () => {
       UI.fin.autoQ = null; if (UI.fin.talk.busy || UI.fin.fixing) { UI.fin.rereadTried = false; return; }
-      const before = finCvIndex(), snap = finSnapshot(), m = finTalkLive(`Reading your ${stale.length} statement${stale.length === 1 ? '' : 's'} again with the better reader…`); UI.fin.undo.set(m.id, snap);
+      const before = (typeof finChangeIndex === 'function' ? finChangeIndex() : finCvIndex()), snap = finSnapshot(), m = finTalkLive(`Reading your ${stale.length} statement${stale.length === 1 ? '' : 's'} again with the better reader…`); UI.fin.undo.set(m.id, snap);
       try { await finReread(stale.map(b => b.id), true); m.done.push(`${stale.length} statement${stale.length === 1 ? '' : 's'} read again — debits and credits by column, one account per card`); const dec = await finAutoFix(true); if (dec.length) { m.decided = dec.length; m.notes.push(...dec.slice(0, 6).map(d => `${d.label}: ${d.how}`)); } }
       catch (e) { m.notes.push('Reading them again did not finish (' + (e.message || e) + '). They stay as they were.'); }
       finTalkFinish(m, before);
@@ -16856,7 +16877,7 @@ HOOKS.afterRender.push(() => {
   if (!finOpenItems().length) return;
   UI.fin.autoQ = setTimeout(async () => {
     UI.fin.autoQ = null; if (UI.fin.talk.busy || UI.fin.fixing || UI.view !== 'finance' || !finOpenItems().length) return;
-    const before = finCvIndex(), snap = finSnapshot(), m = finTalkLive('Sorting out what is unclear…'); UI.fin.undo.set(m.id, snap);
+    const before = (typeof finChangeIndex === 'function' ? finChangeIndex() : finCvIndex()), snap = finSnapshot(), m = finTalkLive('Sorting out what is unclear…'); UI.fin.undo.set(m.id, snap);
     const dec = await finAutoFix(true);
     if (dec.length) { m.decided = dec.length; m.reply = `I sorted out ${dec.length} thing${dec.length === 1 ? '' : 's'} by myself:`; m.notes.push(...dec.slice(0, 8).map(d => `${d.label}: ${d.how}`)); if (dec.length > 8) m.notes.push(`and ${dec.length - 8} more — see “Sorted by Claude”`); finTalkFinish(m, before); }
     else { UI.fin.talk.live = null; UI.fin.talk.busy = false; UI.fin.undo.delete(m.id); render(); }
@@ -16874,10 +16895,11 @@ Object.assign(ACT, {
   'fin-talk-file-x': el => { UI.fin.talk.text = ($('#fin-talk-in') || {}).value ?? UI.fin.talk.text; UI.fin.talk.files.splice(+el.dataset.i, 1); render(); },
   'fin-talk-undo': el => {
     const id = el.dataset.id, s = UI.fin.undo.get(id); if (!s) return;
+    const before = typeof finChangeIndex === 'function' ? finChangeIndex() : null;
     finUndoTo(s); UI.fin.undo.delete(id);
     { const d = clone(finTalkDoc('feed')), m = d.items.find(x => x.id === id); if (m) { m.undone = true; colPut('fintalk', d); }
       if (m && m.joined) for (const c of m.joined) (UI.fin.joinSkip = UI.fin.joinSkip || new Set()).add(c); }   // a join you undid is not done again by itself
-    UI.fin.fixTried.clear(); UI.fin.flash = { ids: new Set(), until: 0 }; render(); toast('Undone — everything is as it was before.');
+    UI.fin.fixTried.clear(); UI.fin.flash = { ids: new Set(), until: 0 }; if (before && typeof finPresent === 'function') finPresent(before); render(); toast('Undone — everything is as it was before.');
   },
   'fin-daily-check': () => { finDailyCheck(); if (finP().autoFix !== false && (UI.fin.daily.preview || []).length) finDailySave(); },
 });
@@ -17022,15 +17044,17 @@ function finCvEditorPlace() {
 }
 function finCvEditOpen(id, add) {
   const sp = add ? finCvAddSpec(add) : finCvSpec(id); if (!sp) return false;
-  UI.fin.cvEdit = { id: id || null, add: add || null, v: {} }; UI.fin.goto = id || add; render();
+  UI.fin.cvEdit = { id: id || null, add: add || null, v: {}, before: typeof finChangeIndex === 'function' ? finChangeIndex() : null }; UI.fin.goto = id || add; render();
   setTimeout(() => { const i = $('#fin-cv-ed-0'); if (i) { i.focus(); try { i.select(); } catch {} } }, 0); return true;
 }
 // a change on the canvas is a line in the conversation, with Undo — the same as a change said in words
 function finCvEditDone(line, snap, ids) {
-  UI.fin.cvEdit = null; if (!line) { render(); return; }
+  const before = UI.fin.cvEdit && UI.fin.cvEdit.before; UI.fin.cvEdit = null; if (!line) { render(); return; }
   const m = { id: E.uid('tk'), at: nowISO(), who: 'edit', text: line, undoable: true };
   UI.fin.undo.set(m.id, snap); finTalkPush(m);
-  UI.fin.flash = { ids: new Set(ids.filter(Boolean)), until: Date.now() + 5000 }; UI.fin.fixTried.clear(); render();
+  UI.fin.flash = { ids: new Set(ids.filter(Boolean)), until: Date.now() + 5000 }; UI.fin.fixTried.clear();
+  if (before && typeof finPresent === 'function') finPresent(before, ids.filter(Boolean));   // shown step by step, the whole canvas in view
+  render();
 }
 const finCvEditIds = E0 => E0.add ? [E0.add] : [E0.id, E0.id.split(':')[0] === 'a' ? 'accts' : null];
 
@@ -18131,7 +18155,7 @@ function finAgentApply(ops, about) {
         const b = { ...(old || {}), id: old ? old.id : slug(op.id || op.title), title: op.title ? str(op.title) : old ? old.title : 'My box', icon: op.icon ? str(op.icon, 4) : old ? old.icon : '🧩', branch: FIN_BRANCHES.includes(op.branch) ? op.branch : old ? old.branch : 'below', show: 'show' in op ? cleanShow(op.show, op.op === 'updateBox' ? old.show : null) : old ? old.show : cleanShow({}), ...('note' in op ? { note: str(op.note, 2000) } : {}), at: nowISO() };
         if (!old && C.boxes.some(x => x.id === b.id)) b.id = b.id + '-' + E.uid('').slice(-4);
         finCanvasSave(c => { const i = c.boxes.findIndex(x => x.id === b.id); if (i >= 0) c.boxes[i] = b; else c.boxes.push(b); });
-        done.push(`${old ? 'changed' : 'added'} the box “${b.title}”`); UI.fin.goto = 'box:' + b.id; UI.fin.flash = { ids: new Set(['box:' + b.id]), until: Date.now() + 7000 };
+        done.push(`${old ? 'changed' : 'added'} the box “${b.title}”`); UI.fin.flash = { ids: new Set(['box:' + b.id]), until: Date.now() + 7000 };
       } else if (op.op === 'removeBox') {
         const b = C.boxes.find(x => x.id === op.id); if (!b) continue; finCanvasSave(c => { c.boxes = c.boxes.filter(x => x.id !== b.id); }); done.push(`removed the box “${b.title}”`);
       } else if (op.op === 'renameCard' || op.op === 'hideCard' || op.op === 'showCard' || op.op === 'moveCard') {
@@ -18196,6 +18220,142 @@ function finLogo(text, cls) {
 // own accounts, categories, people or holdings
 function finCardBrand(c) { if (!c || !c.id || /^(a|c|t|th|h|l|q|d|cm|g):/.test(c.id) || /tool|more/.test(c.cls || '')) return null; return finBrand(c.label); }
 Object.assign(window.__FIN, { brand: t => { const b = finBrand(t); return b ? { id: b.id, name: b.name, official: !!b.d } : null; } });
+
+/* ===== features/58-finance-present.js ===== */
+// Money canvas — every change, shown as a short live presentation. After you ask for a change (in words, with the
+// card menu, by editing, or with Undo) the canvas keeps the WHOLE canvas in view (it glides out to fit, never zooms in
+// on one thing); whatever moved because of the change slides from where it was to where it is now; then each change
+// is spotlit in turn — the rest dims a little, a caption says what changed ("Salary: EGP 30,000 → EGP 36,000",
+// "New box: Subscriptions", "Removed: Phone" over the place it used to be) — step by step, like a presenter
+// walking through it. A small player shows "Change 2 of 5" with pause, next and skip; Esc ends it. At the end
+// everything that changed keeps a soft glow for a moment. Reduced motion: no sliding, the steps still play.
+
+const FPR = { steps: [], i: -1, timer: 0, paused: false, raf: 0, until: 0 };
+const FPR_STEP = 1300, FPR_MAX = 14;
+
+// what the canvas showed: every card and branch (label, value, line), your boxes, and where everything stood
+function finChangeIndex() {
+  const m = finCvIndex();
+  if (typeof finCanvasP === 'function') for (const b of finCanvasP().boxes) m.set('box:' + b.id, [b.title || '', '', JSON.stringify(b.show || {}) + (b.note || '') + (b.branch || ''), ''].join('|'));
+  m.pos = new Map(UI.fin.cvPos || []); m.mode = UI.fin.cv.mode;
+  return m;
+}
+// ask for the presentation of what changed since "before" (it plays after the next drawing of the canvas)
+function finPresent(before, ids) {
+  if (!before || UI.view !== 'finance') return;
+  UI.fin.present = { before, ids: [...(ids || [])] };
+  UI.fin.goto = null; UI.fin.cv.fitted = false; UI.fin.cv.user = false;   // the whole canvas, not one part of it
+}
+function finPresentEnd(keepGlow) {
+  clearTimeout(FPR.timer); cancelAnimationFrame(FPR.raf); FPR.raf = 0;
+  const ids = FPR.steps.filter(s => !s.gone).map(s => s.id);
+  FPR.steps = []; FPR.i = -1; FPR.paused = false;
+  for (const el of document.querySelectorAll('.fin-spot')) el.classList.remove('fin-spot');
+  const vp = $('#fin-cv-vp'); if (vp) vp.classList.remove('presenting');
+  const o = document.getElementById('fin-show'); if (o) o.remove();
+  if (keepGlow && ids.length) { UI.fin.flash = { ids: new Set(ids), until: Date.now() + 4000 }; for (const id of ids) { const el = finPresentEl(id); if (el) el.classList.add('fresh'); } clearTimeout(UI.fin.flashT); UI.fin.flashT = setTimeout(() => document.querySelectorAll('.fin-cvn.fresh, .fin-room.fresh').forEach(n => n.classList.remove('fresh')), 4000); }
+}
+const finPresentEl = id => document.querySelector(`#fin-cv-world .fin-leaf[data-node="${CSS.escape(id)}"], #fin-cv-world .fin-room[data-room="${CSS.escape(id)}"]`);
+
+// the spotlight: the card or room of the step (and a box's own content)
+function finPresentSpot(s) { if (!s || !s.id || s.gone) return; const el = finPresentEl(s.id); if (el) el.classList.add('fin-spot'); const d = document.querySelector(`#fin-cv-world .fin-det[data-det="${CSS.escape(s.id)}"]`); if (d) d.classList.add('fin-spot'); }
+// the steps: what changed, in reading order across the canvas
+function finPresentSteps(before, extra) {
+  const after = finChangeIndex(), split = s => String(s || '').split('|'), steps = [], seen = new Set();
+  const label = (id, parts) => parts[0] || id;
+  const add = s => { if (seen.has(s.id) || steps.length >= 60) return; seen.add(s.id); steps.push(s); };
+  for (const [id, v] of after) {
+    if (id === 'root') continue;
+    const was = before.get(id); if (was === v) continue;
+    if (!finPresentEl(id)) continue;   // not drawn in this layout
+    const a = split(v), b = was === undefined ? null : split(was), box = id.startsWith('box:');
+    let text;
+    if (!b) text = box ? `New box: ${a[0]}` : `New: ${label(id, a)}${a[1] ? ' · ' + a[1] : ''}`;
+    else if (a[0] !== b[0] && a[1] === b[1]) text = `Renamed: ${b[0]} → ${a[0]}`;
+    else if (a[1] !== b[1] && a[1] && b[1]) text = `${label(id, a)}: ${b[1]} → ${a[1]}`;
+    else if (box) text = `Changed box: ${a[0]}`;
+    else text = `${label(id, a)}: ${a[1] || a[3] || a[2] || 'updated'}`;
+    add({ id, text, kind: b ? 'changed' : 'new' });
+  }
+  for (const id of extra || []) if (!seen.has(id) && finPresentEl(id)) { const a = split(after.get(id)); add({ id, text: `${a[0] || id}: ${a[1] || 'updated'}`, kind: 'changed' }); }
+  // removed: shown over the place it used to be
+  for (const [id, v] of before) if (!after.has(id) && id !== 'root' && before.pos && before.pos.get(id) && before.mode === UI.fin.cv.mode) { const b = split(v); add({ id, text: `Removed: ${b[0] || id}`, kind: 'gone', gone: before.pos.get(id) }); }
+  // reading order: rows from the top, left to right within a row
+  const P = UI.fin.cvPos || new Map(), at = s => s.gone || P.get(s.id) || { x: 0, y: 0 };
+  steps.sort((p, q) => Math.round(at(p).y / 260) - Math.round(at(q).y / 260) || at(p).x - at(q).x);
+  // a change that is only a room's total moving with the cards inside it is left out when its cards are shown
+  return steps.length > FPR_MAX ? steps.slice(0, FPR_MAX).concat([{ id: '', text: `and ${steps.length - FPR_MAX} more — all glowing`, kind: 'more' }]) : steps;
+}
+
+// where a step is on the screen now (the canvas may be moving)
+function finPresentRect(s) {
+  if (!s || !s.id) return null;
+  if (s.gone) { const vp = $('#fin-cv-vp'); if (!vp) return null; const r = vp.getBoundingClientRect(), cv = UI.fin.cv; return { left: r.left + cv.x + s.gone.x * cv.k, top: r.top + cv.y + s.gone.y * cv.k, width: s.gone.w * cv.k, height: s.gone.h * cv.k }; }
+  const el = finPresentEl(s.id); return el ? el.getBoundingClientRect() : null;
+}
+function finPresentHUD() {
+  let o = document.getElementById('fin-show');
+  if (!o) { o = document.createElement('div'); o.id = 'fin-show'; o.innerHTML = '<div class="fin-show-ring"></div><div class="fin-show-cap"></div><div class="fin-show-bar"></div>'; document.body.appendChild(o); }
+  const s = FPR.steps[FPR.i], n = FPR.steps.filter(x => x.kind !== 'more').length;
+  o.querySelector('.fin-show-bar').innerHTML = `<span class="fin-show-n">✨ Change ${Math.min(FPR.i + 1, n)} of ${n}</span><span class="fin-show-dots">${FPR.steps.map((x, j) => `<i class="${j < FPR.i ? 'done' : j === FPR.i ? 'on' : ''}"></i>`).join('')}</span>
+    <button class="btn sm ghost" data-act="fin-show" data-v="${FPR.paused ? 'play' : 'pause'}" aria-label="${FPR.paused ? 'Play' : 'Pause'}">${FPR.paused ? '▶' : '⏸'}</button><button class="btn sm ghost" data-act="fin-show" data-v="next" aria-label="Next change">⏭</button><button class="btn sm ghost" data-act="fin-show" data-v="end" aria-label="Skip the presentation">✕</button>`;
+  const cap = o.querySelector('.fin-show-cap'); cap.textContent = s ? s.text : ''; cap.className = 'fin-show-cap ' + (s ? s.kind : '');
+  o.querySelector('.fin-show-ring').className = 'fin-show-ring ' + (s ? s.kind : '') + (s && s.gone ? ' ghost' : '');
+  if (s && s.gone) o.querySelector('.fin-show-ring').textContent = s.text.replace(/^Removed: /, ''); else o.querySelector('.fin-show-ring').textContent = '';
+  finPresentPlace();
+}
+// the ring around the step, the caption beside it, the player at the top of the canvas — kept in place every frame
+function finPresentPlace() {
+  const o = document.getElementById('fin-show'), vp = $('#fin-cv-vp'); if (!o || !vp) return;
+  // only the part of the canvas you can see: not under the sticky bar at the top, not below the window
+  const R = vp.getBoundingClientRect(), rail = document.querySelector('.rail'), railB = rail && getComputedStyle(rail).position === 'sticky' ? rail.getBoundingClientRect().bottom : 0;
+  const V = { left: R.left, right: R.right, top: Math.max(R.top, railB, 0), bottom: Math.min(R.bottom, innerHeight) }; V.width = V.right - V.left;
+  const s = FPR.steps[FPR.i], r = finPresentRect(s), ring = o.querySelector('.fin-show-ring'), cap = o.querySelector('.fin-show-cap'), bar = o.querySelector('.fin-show-bar');
+  bar.style.left = Math.round(V.left + V.width / 2 - bar.offsetWidth / 2) + 'px'; bar.style.top = Math.round(V.bottom - bar.offsetHeight - 12) + 'px';
+  if (!r) { ring.style.opacity = 0; cap.style.opacity = s && s.kind === 'more' ? 1 : 0; if (s && s.kind === 'more') { cap.style.left = Math.round(V.left + V.width / 2 - cap.offsetWidth / 2) + 'px'; cap.style.top = Math.round(V.top + 16) + 'px'; } return; }
+  const pad = 6; ring.style.opacity = 1;
+  Object.assign(ring.style, { left: r.left - pad + 'px', top: r.top - pad + 'px', width: r.width + 2 * pad + 'px', height: r.height + 2 * pad + 'px' });
+  cap.style.opacity = 1; const cw = cap.offsetWidth, ch = cap.offsetHeight;
+  let cx = r.left + r.width / 2 - cw / 2, cy = r.top - ch - 14; if (cy < V.top + 8) cy = r.top + r.height + 14;
+  cx = Math.max(V.left + 8, Math.min(V.right - cw - 8, cx)); cy = Math.max(V.top + 8, Math.min(V.bottom - ch - 64, cy));
+  cap.style.left = Math.round(cx) + 'px'; cap.style.top = Math.round(cy) + 'px';
+}
+function finPresentLoop() { cancelAnimationFrame(FPR.raf); const tick = () => { if (!FPR.steps.length) return; finPresentPlace(); FPR.raf = requestAnimationFrame(tick); }; FPR.raf = requestAnimationFrame(tick); }
+function finPresentGo(i) {
+  clearTimeout(FPR.timer);
+  for (const el of document.querySelectorAll('.fin-spot')) el.classList.remove('fin-spot');
+  if (i >= FPR.steps.length) return finPresentEnd(true);
+  FPR.i = i; const s = FPR.steps[i]; finPresentSpot(s);
+  finPresentHUD();
+  if (!FPR.paused) FPR.timer = setTimeout(() => finPresentGo(FPR.i + 1), s.kind === 'more' ? 1600 : FPR_STEP);
+}
+function finPresentStart(P) {
+  finPresentEnd(false);
+  const steps = finPresentSteps(P.before, P.ids); if (!steps.length) return;
+  const reduce = (() => { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch { return true; } })();
+  // the whole canvas in view, gliding there
+  if (typeof finCvGlide === 'function') finCvGlide(); finCvFit(true);
+  // what moved because of the change slides from where it was
+  if (!reduce && P.before.pos && P.before.mode === UI.fin.cv.mode) {
+    const moved = [];
+    for (const el of document.querySelectorAll('#fin-cv-world .fin-leaf[data-node], #fin-cv-world .fin-room[data-room]')) {
+      const id = el.dataset.node || el.dataset.room, b = P.before.pos.get(id), x = parseFloat(el.style.left) || 0, y = parseFloat(el.style.top) || 0;
+      if (b && (Math.abs(b.x - x) > 1 || Math.abs(b.y - y) > 1)) { el.style.transition = 'none'; el.style.transform = `translate(${b.x - x}px, ${b.y - y}px)`; moved.push(el); }
+    }
+    if (moved.length) { void document.body.offsetWidth; requestAnimationFrame(() => { for (const el of moved) { el.style.transition = 'transform .8s cubic-bezier(.2,.8,.2,1)'; el.style.transform = ''; } setTimeout(() => moved.forEach(el => { el.style.transition = ''; }), 900); }); }
+  }
+  FPR.steps = steps; const vp = $('#fin-cv-vp'); if (vp) vp.classList.add('presenting');
+  finPresentLoop(); FPR.i = -1; FPR.timer = setTimeout(() => finPresentGo(0), reduce ? 150 : 850);
+}
+// after every drawing: start a presentation that was asked for; keep the spotlight on its step (a redraw replaces the cards)
+HOOKS.afterRender.push(() => {
+  if (UI.view !== 'finance' || !$('#fin-cv-world')) { if (FPR.steps.length) finPresentEnd(false); return; }
+  if (UI.fin.present) { const P = UI.fin.present; UI.fin.present = null; setTimeout(() => finPresentStart(P), 0); return; }
+  if (FPR.steps.length) { const vp = $('#fin-cv-vp'); if (vp) vp.classList.add('presenting'); finPresentSpot(FPR.steps[FPR.i]); }
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && FPR.steps.length) finPresentEnd(true); }, true);
+Object.assign(ACT, { 'fin-show': el => { const v = el.dataset.v; if (v === 'end') return finPresentEnd(true); if (v === 'next') return finPresentGo(FPR.i + 1); FPR.paused = v === 'pause'; if (FPR.paused) { clearTimeout(FPR.timer); finPresentHUD(); } else finPresentGo(FPR.i + 1); } });
+Object.assign(window.__FIN, { presentEnd: () => finPresentEnd(true), presentation: () => ({ on: FPR.steps.length > 0, i: FPR.i, steps: FPR.steps.map(s => ({ id: s.id, text: s.text, kind: s.kind })) }) });
 
 /* ---------- boot ---------- */
 const startView = (location.hash || '').replace('#', '');

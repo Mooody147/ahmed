@@ -72,6 +72,31 @@ async def main():
         det = await ev("document.querySelector('.fin-det[data-det=\"box:recurring\"]').textContent")
         assert (all(r['label'] in det for r in rows) and rows) or 'Nothing matches yet' in det, 'it shows the recurring payments found in the records'
 
+        # 1b. the change, presented: the whole canvas in view (never zoomed in on one thing), each change spotlit in turn
+        # with a caption, a player (Change n of N, pause, next, skip), then a soft glow on what changed
+        await pg.wait_for_timeout(300); pr = await ev("window.__FIN.presentation()"); print('PRESENT', pr)
+        assert pr['on'] and any(st['id'] == 'box:recurring' and st['text'] == 'New box: Recurring payments' and st['kind'] == 'new' for st in pr['steps']), 'the new box is one of the steps'
+        await pg.wait_for_timeout(900)
+        fit = await ev("(() => { const v = document.getElementById('fin-cv-vp').getBoundingClientRect(), w = document.getElementById('fin-cv-world').getBoundingClientRect(); return [w.left >= v.left - 1, w.right <= v.right + 1, w.top >= v.top - 1, w.bottom <= v.bottom + 1]; })()")
+        assert all(fit), ('the whole canvas stays in view', fit)
+        assert await ev("document.getElementById('fin-cv-vp').classList.contains('presenting') && /Change 1 of/.test(document.querySelector('#fin-show .fin-show-bar').textContent)"), 'the player'
+        cap = await ev("document.querySelector('#fin-show .fin-show-cap').textContent"); spot = await ev("[...document.querySelectorAll('.fin-spot')].map(e => e.dataset.node || e.dataset.room || e.dataset.det)"); print('STEP 1', cap, spot)
+        assert cap == pr['steps'][0]['text'] and pr['steps'][0]['id'] in spot, 'the first change spotlit, with its caption'
+        ring = await ev("(() => { const r = document.querySelector('#fin-show .fin-show-ring').getBoundingClientRect(), id = window.__FIN.presentation().steps[0].id, e = document.querySelector(`.fin-leaf[data-node=\"${id}\"], .fin-room[data-room=\"${id}\"]`).getBoundingClientRect(); return Math.abs(r.left + 6 - e.left) < 30 && Math.abs(r.top + 6 - e.top) < 30; })()")
+        assert ring, 'the ring sits around it'
+        await pg.screenshot(path=os.path.join(HERE, 'shots', 'finance-present.png'))
+        for _ in range(40):
+            if not (await ev("window.__FIN.presentation()"))['on']: break
+            await pg.wait_for_timeout(150)
+        assert not (await ev("window.__FIN.presentation()"))['on'] and not await ev("!!document.getElementById('fin-show')") and not await ev("document.getElementById('fin-cv-vp').classList.contains('presenting')"), 'it ends by itself'
+        assert await ev("!!document.querySelector('.fin-room.fresh[data-room=\"box:recurring\"]')"), 'what changed keeps a soft glow'
+        # Undo is presented too: what came back, what went
+        await pg.click('#fin-talk-feed .fin-msg:last-child [data-act="fin-talk-undo"]'); await pg.wait_for_timeout(500)
+        pu = await ev("window.__FIN.presentation()"); print('UNDO PRESENT', pu)
+        assert pu['on'] and any(st['kind'] == 'gone' and 'Recurring payments' in st['text'] for st in pu['steps']), 'the removed box is shown where it was'
+        await ev("window.__FIN.presentEnd()")
+        await say('add a box for my recurring payments'); await ev("window.__FIN.presentEnd()")
+
         # 2. my latest five transactions, as a table
         m = await say('show my latest 5 transactions as a table with date, description and amount'); print('M2', m.get('reply'))
         heads = await ev("[...document.querySelectorAll('.fin-det[data-det=\"box:latest\"] th')].map(t => t.textContent)")
@@ -114,6 +139,17 @@ async def main():
         for t, name, official in [('GOOGLE *YouTubePremium', 'YouTube', True), ('NETFLIX.COM', 'Netflix', True), ('UBER *TRIP', 'Uber', True), ('TALABAT CAIRO', 'Talabat', False), ('AMAZON.EG', 'Amazon', False), ('Orange juice', None, None), ('DEBIT CARD PAYMENT SPINNEYS', None, None)]:
             br = await ev(f"window.__FIN.brand({json.dumps(t)})"); assert (br or {}).get('name') == name and (not br or br['official'] == official), (t, br)
         m = await say('i paid youtube and spotify today, and i want an iphone'); print('M6b', m.get('done'))
+        # several changes at once: presented one after another; pause, next and skip work
+        pr = await ev("window.__FIN.presentation()"); print('PRESENT 6b', [st['text'] for st in pr['steps']])
+        assert pr['on'] and len(pr['steps']) >= 3 and any(st['id'] == 'box:subs' for st in pr['steps']) and any(st['id'].startswith('b:') and st['kind'] == 'new' for st in pr['steps'])
+        await pg.wait_for_timeout(900); await pg.click('#fin-show [data-act="fin-show"][data-v="pause"]'); i0 = (await ev("window.__FIN.presentation()"))['i']; await pg.wait_for_timeout(1800)
+        assert (await ev("window.__FIN.presentation()"))['i'] == i0, 'paused'
+        await pg.click('#fin-show [data-act="fin-show"][data-v="next"]'); await pg.wait_for_timeout(250)
+        assert (await ev("window.__FIN.presentation()"))['i'] == i0 + 1, 'next'
+        assert await ev("document.querySelector('#fin-show .fin-show-cap').textContent") == pr['steps'][i0 + 1]['text']
+        await pg.screenshot(path=os.path.join(HERE, 'shots', 'finance-present-steps.png'))
+        await pg.click('#fin-show [data-act="fin-show"][data-v="end"]'); await pg.wait_for_timeout(200)
+        assert not (await ev("window.__FIN.presentation()"))['on'] and await ev("document.querySelectorAll('.fin-cvn.fresh, .fin-room.fresh').length") >= 3, 'skipped: everything that changed glows'
         logos = await ev("[...document.querySelectorAll('.fin-det[data-det=\"box:subs\"] .fin-logo')].map(l => [l.getAttribute('aria-label'), !!l.querySelector('svg path')])"); print('SUB LOGOS', logos)
         assert ['YouTube', True] in logos and ['Spotify', True] in logos, 'the official YouTube and Spotify logos in the Subscriptions box'
         assert await ev("!!document.querySelector('.fin-leaf[data-node^=\"b:\"] .fin-logo.card[aria-label=\"Apple\"]')"), 'the iPhone goal card shows the Apple logo'

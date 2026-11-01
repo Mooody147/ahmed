@@ -154,7 +154,7 @@ function finAgentApply(ops, about) {
         const b = { ...(old || {}), id: old ? old.id : slug(op.id || op.title), title: op.title ? str(op.title) : old ? old.title : 'My box', icon: op.icon ? str(op.icon, 4) : old ? old.icon : '🧩', branch: FIN_BRANCHES.includes(op.branch) ? op.branch : old ? old.branch : 'below', show: 'show' in op ? cleanShow(op.show, op.op === 'updateBox' ? old.show : null) : old ? old.show : cleanShow({}), ...('note' in op ? { note: str(op.note, 2000) } : {}), at: nowISO() };
         if (!old && C.boxes.some(x => x.id === b.id)) b.id = b.id + '-' + E.uid('').slice(-4);
         finCanvasSave(c => { const i = c.boxes.findIndex(x => x.id === b.id); if (i >= 0) c.boxes[i] = b; else c.boxes.push(b); });
-        done.push(`${old ? 'changed' : 'added'} the box “${b.title}”`); UI.fin.goto = 'box:' + b.id; UI.fin.flash = { ids: new Set(['box:' + b.id]), until: Date.now() + 7000 };
+        done.push(`${old ? 'changed' : 'added'} the box “${b.title}”`); UI.fin.flash = { ids: new Set(['box:' + b.id]), until: Date.now() + 7000 };
       } else if (op.op === 'removeBox') {
         const b = C.boxes.find(x => x.id === op.id); if (!b) continue; finCanvasSave(c => { c.boxes = c.boxes.filter(x => x.id !== b.id); }); done.push(`removed the box “${b.title}”`);
       } else if (op.op === 'renameCard' || op.op === 'hideCard' || op.op === 'showCard' || op.op === 'moveCard') {

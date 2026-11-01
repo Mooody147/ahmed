@@ -77,6 +77,8 @@ function finTalkFinish(m, before) {
   const moved = [...after.keys()].filter(id => before && before.get(id) !== after.get(id) && id !== 'root');
   m.changes = moved.map(id => model.get(id)).filter(n => n && n.type === 'leaf' && !n.cls.includes('tool') && !n.cls.includes('more')).slice(0, 12).map(n => ({ id: n.id, label: E.clip(n.label, 40), val: n.val || '' }));
   UI.fin.flash = { ids: new Set(moved), until: Date.now() + 7000 };
+  // the change, presented across the whole canvas, step by step
+  if (typeof finPresent === 'function' && (moved.length || (m.done || []).length)) finPresent(before, m.changes.map(c => c.id));
   m.undoable = !!(m.changes.length || m.done.length || m.decided);
   delete m.status; UI.fin.talk.live = null; UI.fin.talk.busy = false;
   finTalkPush(m);
@@ -91,7 +93,7 @@ async function finTalkSend() {
   const about = T.about ? { ...T.about } : null;
   finTalkPush({ id: E.uid('tk'), at: nowISO(), who: 'you', text, files: files.map(f => f.name), ...(about ? { about: about.label } : {}) });
   await finTalkWait();
-  const snap = finSnapshot(), before = finCvIndex(), m = finTalkLive(files.length ? 'Reading what you added…' : 'Claude is reading…');
+  const snap = finSnapshot(), before = (typeof finChangeIndex === 'function' ? finChangeIndex() : finCvIndex()), m = finTalkLive(files.length ? 'Reading what you added…' : 'Claude is reading…');
   UI.fin.undo.set(m.id, snap);
   try {
     const stm = about ? [] : files.filter(f => !finIsImage(f)), imgs = files.filter(finIsImage);
@@ -296,7 +298,7 @@ HOOKS.afterRender.push(() => {
     UI.fin.rereadTried = true;
     UI.fin.autoQ = setTimeout(async () => {
       UI.fin.autoQ = null; if (UI.fin.talk.busy || UI.fin.fixing) { UI.fin.rereadTried = false; return; }
-      const before = finCvIndex(), snap = finSnapshot(), m = finTalkLive(`Reading your ${stale.length} statement${stale.length === 1 ? '' : 's'} again with the better reader…`); UI.fin.undo.set(m.id, snap);
+      const before = (typeof finChangeIndex === 'function' ? finChangeIndex() : finCvIndex()), snap = finSnapshot(), m = finTalkLive(`Reading your ${stale.length} statement${stale.length === 1 ? '' : 's'} again with the better reader…`); UI.fin.undo.set(m.id, snap);
       try { await finReread(stale.map(b => b.id), true); m.done.push(`${stale.length} statement${stale.length === 1 ? '' : 's'} read again — debits and credits by column, one account per card`); const dec = await finAutoFix(true); if (dec.length) { m.decided = dec.length; m.notes.push(...dec.slice(0, 6).map(d => `${d.label}: ${d.how}`)); } }
       catch (e) { m.notes.push('Reading them again did not finish (' + (e.message || e) + '). They stay as they were.'); }
       finTalkFinish(m, before);
@@ -306,7 +308,7 @@ HOOKS.afterRender.push(() => {
   if (!finOpenItems().length) return;
   UI.fin.autoQ = setTimeout(async () => {
     UI.fin.autoQ = null; if (UI.fin.talk.busy || UI.fin.fixing || UI.view !== 'finance' || !finOpenItems().length) return;
-    const before = finCvIndex(), snap = finSnapshot(), m = finTalkLive('Sorting out what is unclear…'); UI.fin.undo.set(m.id, snap);
+    const before = (typeof finChangeIndex === 'function' ? finChangeIndex() : finCvIndex()), snap = finSnapshot(), m = finTalkLive('Sorting out what is unclear…'); UI.fin.undo.set(m.id, snap);
     const dec = await finAutoFix(true);
     if (dec.length) { m.decided = dec.length; m.reply = `I sorted out ${dec.length} thing${dec.length === 1 ? '' : 's'} by myself:`; m.notes.push(...dec.slice(0, 8).map(d => `${d.label}: ${d.how}`)); if (dec.length > 8) m.notes.push(`and ${dec.length - 8} more — see “Sorted by Claude”`); finTalkFinish(m, before); }
     else { UI.fin.talk.live = null; UI.fin.talk.busy = false; UI.fin.undo.delete(m.id); render(); }
@@ -324,10 +326,11 @@ Object.assign(ACT, {
   'fin-talk-file-x': el => { UI.fin.talk.text = ($('#fin-talk-in') || {}).value ?? UI.fin.talk.text; UI.fin.talk.files.splice(+el.dataset.i, 1); render(); },
   'fin-talk-undo': el => {
     const id = el.dataset.id, s = UI.fin.undo.get(id); if (!s) return;
+    const before = typeof finChangeIndex === 'function' ? finChangeIndex() : null;
     finUndoTo(s); UI.fin.undo.delete(id);
     { const d = clone(finTalkDoc('feed')), m = d.items.find(x => x.id === id); if (m) { m.undone = true; colPut('fintalk', d); }
       if (m && m.joined) for (const c of m.joined) (UI.fin.joinSkip = UI.fin.joinSkip || new Set()).add(c); }   // a join you undid is not done again by itself
-    UI.fin.fixTried.clear(); UI.fin.flash = { ids: new Set(), until: 0 }; render(); toast('Undone — everything is as it was before.');
+    UI.fin.fixTried.clear(); UI.fin.flash = { ids: new Set(), until: 0 }; if (before && typeof finPresent === 'function') finPresent(before); render(); toast('Undone — everything is as it was before.');
   },
   'fin-daily-check': () => { finDailyCheck(); if (finP().autoFix !== false && (UI.fin.daily.preview || []).length) finDailySave(); },
 });

@@ -679,3 +679,22 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 /* while you move or zoom the canvas, the money on the channels holds still (it is costly to redraw), so moving stays
    smooth; it flows again the moment you stop */
 #fin-cv-world.moving .flow, .fin-cv-vp.panning .flow, #fin-cv-world.moving .dots, .fin-cv-vp.panning .dots { animation-play-state: paused; }
+
+/* ---------- a change, presented: the whole canvas in view, each change spotlit in turn ---------- */
+.fin-cv-vp.presenting .fin-leaf:not(.fin-spot), .fin-cv-vp.presenting .fin-room:not(.fin-spot), .fin-cv-vp.presenting .fin-det:not(.fin-spot) { transition: opacity .35s ease, filter .35s ease; opacity: .55; filter: saturate(.7); }
+.fin-cv-vp.presenting .fin-spot { opacity: 1; filter: none; }
+.fin-cv-vp.presenting .fin-leaf.fin-spot { box-shadow: 0 0 0 3px #ffd34d, 0 0 40px 6px rgba(255, 211, 77, .55); z-index: 3; }
+.fin-cv-vp.presenting .fin-room.fin-spot { box-shadow: 0 0 0 4px #ffd34d, 0 0 60px 10px rgba(255, 211, 77, .45); }
+#fin-show { position: fixed; inset: 0; pointer-events: none; z-index: 60; }
+.fin-show-ring { position: fixed; border-radius: 16px; border: 3px solid #ffd34d; box-shadow: 0 0 0 6px rgba(255, 211, 77, .25), 0 0 36px rgba(255, 211, 77, .6);
+  transition: left .45s cubic-bezier(.2,.8,.2,1), top .45s cubic-bezier(.2,.8,.2,1), width .45s cubic-bezier(.2,.8,.2,1), height .45s cubic-bezier(.2,.8,.2,1), opacity .3s; }
+.fin-show-ring.new { border-color: #5be39a; box-shadow: 0 0 0 6px rgba(91, 227, 154, .25), 0 0 36px rgba(91, 227, 154, .6); }
+.fin-show-ring.ghost { border-style: dashed; border-color: #ff7a7a; background: rgba(255, 122, 122, .12); box-shadow: none; display: grid; place-items: center; color: #ffb4b4; font: 700 12px/1.2 var(--font, system-ui); text-decoration: line-through; overflow: hidden; animation: finGhost 1.3s ease forwards; }
+@keyframes finGhost { 0% { opacity: 1; transform: scale(1); } 100% { opacity: .15; transform: scale(.94); } }
+.fin-show-cap { position: fixed; max-width: min(460px, 80vw); padding: 9px 14px; border-radius: 12px; background: rgba(18, 12, 38, .94); color: #fff; font: 600 14px/1.35 var(--font, system-ui);
+  box-shadow: 0 14px 40px -12px rgba(0, 0, 0, .6), 0 0 0 1px rgba(255, 211, 77, .5); transition: left .45s cubic-bezier(.2,.8,.2,1), top .45s cubic-bezier(.2,.8,.2,1), opacity .3s; overflow-wrap: anywhere; }
+.fin-show-cap.new { box-shadow: 0 14px 40px -12px rgba(0, 0, 0, .6), 0 0 0 1px rgba(91, 227, 154, .6); } .fin-show-cap.gone { box-shadow: 0 14px 40px -12px rgba(0, 0, 0, .6), 0 0 0 1px rgba(255, 122, 122, .6); }
+.fin-show-bar { position: fixed; pointer-events: auto; display: flex; align-items: center; gap: 8px; padding: 6px 8px 6px 14px; border-radius: 999px; background: rgba(18, 12, 38, .92); color: #fff; box-shadow: 0 10px 30px -10px rgba(0, 0, 0, .6); font: 600 13px/1 var(--font, system-ui); }
+.fin-show-bar .btn { color: #fff; min-width: 30px; } .fin-show-bar .btn:hover { background: rgba(255, 255, 255, .14); }
+.fin-show-dots { display: flex; gap: 4px; } .fin-show-dots i { width: 7px; height: 7px; border-radius: 50%; background: rgba(255, 255, 255, .25); } .fin-show-dots i.done { background: rgba(255, 211, 77, .6); } .fin-show-dots i.on { background: #ffd34d; box-shadow: 0 0 8px #ffd34d; }
+@media (prefers-reduced-motion: reduce) { .fin-show-ring, .fin-show-cap { transition: none; } .fin-show-ring.ghost { animation: none; } }
