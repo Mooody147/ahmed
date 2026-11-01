@@ -1466,9 +1466,66 @@ function renderWorld() {
   const c = $('#cv-ctx-slot'); if (c) c.innerHTML = deco(ctxHTML());
 }
 function renderWorldSoon() { if (worldRaf) return; worldRaf = requestAnimationFrame(() => { worldRaf = null; renderWorld(); }); }
+/* --- smooth movement, shared by the to-do map and the Money canvas ---
+   Every move eases toward where it should end, frame by frame, at the same speed on any screen: zoom glides around
+   the point under the pointer, a wheel notch or an arrow key glides the distance, and a drag let go while moving
+   keeps sliding a little and slows to a stop. o.cam() is the camera {x, y, k}; o.apply() draws it; o.min/o.max
+   bound the zoom. */
+function smoothCam(o) {
+  const S = { tk: null, ax: 0, ay: 0, px: 0, py: 0, vx: 0, vy: 0, raf: 0, t: 0, samples: [] };
+  const reduce = () => { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch { return false; } };
+  const clampK = k => Math.max(o.min, Math.min(o.max, k));
+  function frame(t) {
+    S.raf = 0; const c = o.cam(), dt = Math.min(48, S.t ? t - S.t : 16.7); S.t = t;
+    const ease = 1 - Math.pow(1 - 0.24, dt / 16.7);    // about a quarter of the way each frame at 60 Hz
+    let busy = false;
+    if (S.tk != null) {
+      const d = S.tk - c.k, k2 = Math.abs(d) < 0.0015 * c.k ? S.tk : c.k + d * ease;
+      c.x = S.ax - (S.ax - c.x) * (k2 / c.k); c.y = S.ay - (S.ay - c.y) * (k2 / c.k); c.k = k2;
+      if (k2 === S.tk) S.tk = null; else busy = true;
+    }
+    if (S.px || S.py) {
+      const mx = Math.abs(S.px) < 0.4 ? S.px : S.px * ease, my = Math.abs(S.py) < 0.4 ? S.py : S.py * ease;
+      c.x += mx; c.y += my; S.px -= mx; S.py -= my; if (S.px || S.py) busy = true;
+    }
+    if (S.vx || S.vy) {
+      c.x += S.vx * dt; c.y += S.vy * dt; const f = Math.pow(0.94, dt / 16.7); S.vx *= f; S.vy *= f;
+      if (Math.hypot(S.vx, S.vy) < 0.015) S.vx = S.vy = 0; else busy = true;
+    }
+    o.apply();
+    if (busy) S.raf = requestAnimationFrame(frame); else S.t = 0;
+  }
+  const kick = () => { if (!S.raf) { S.t = 0; S.raf = requestAnimationFrame(frame); } };
+  return {
+    // zoom by f around (ax, ay), in viewport pixels; quick steps add up
+    zoom(f, ax, ay) {
+      const c = o.cam(); S.tk = clampK((S.tk == null ? c.k : S.tk) * f); S.ax = ax; S.ay = ay;
+      if (reduce()) { const k2 = S.tk; c.x = ax - (ax - c.x) * (k2 / c.k); c.y = ay - (ay - c.y) * (k2 / c.k); c.k = k2; S.tk = null; o.apply(); return; }
+      kick();
+    },
+    // move by (dx, dy) screen pixels, gliding
+    pan(dx, dy) { if (reduce()) { const c = o.cam(); c.x += dx; c.y += dy; o.apply(); return; } S.vx = S.vy = 0; S.px += dx; S.py += dy; kick(); },
+    // while dragging: remember the last moments of movement, so letting go keeps the speed
+    track(x, y) { const now = performance.now(); S.samples.push({ x, y, t: now }); while (S.samples.length > 2 && now - S.samples[0].t > 90) S.samples.shift(); },
+    release() {
+      const a = S.samples[0], b = S.samples[S.samples.length - 1]; S.samples = [];
+      if (!a || !b || b.t - a.t < 10 || performance.now() - b.t > 70 || reduce()) return;
+      let vx = (b.x - a.x) / (b.t - a.t), vy = (b.y - a.y) / (b.t - a.t); const sp = Math.hypot(vx, vy);
+      if (sp < 0.25) return; if (sp > 3.5) { vx *= 3.5 / sp; vy *= 3.5 / sp; }
+      S.vx = vx; S.vy = vy; kick();
+    },
+    stop() { if (S.raf) cancelAnimationFrame(S.raf); S.raf = 0; S.t = 0; S.tk = null; S.px = S.py = S.vx = S.vy = 0; S.samples = []; },
+    target: () => S.tk,
+    busy: () => !!S.raf,
+  };
+}
+// a mouse wheel moves in notches (big, whole steps); a trackpad sends many small ones that are already smooth
+const wheelNotch = e => e.deltaMode !== 0 || (Math.abs(e.deltaY) >= 50 && Number.isInteger(e.deltaY) && !e.deltaX);
+const wheelPx = (e, v) => v * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? 400 : 1);
 /* --- camera --- */
 function applyCam(animate) {
   const w = $('#map-world'); if (!w) return;
+  if (animate) MCAM.stop();   // a fit or a jump to a task takes over from a glide
   w.classList.toggle('anim', !!animate);
   w.style.transform = `translate(${UI.map.x}px,${UI.map.y}px) scale(${UI.map.k})`;
   // sharp at every zoom: the canvas is a fast moving layer only while you pan or zoom; a moment after you stop,
@@ -1492,6 +1549,14 @@ function mapFit(smart) {
   UI.map.fitted = true; applyCam(true);
 }
 // two-finger zoom ends on 25 %, 50 %, 100 %… when it stops close to one (Touch & stylus › Zoom snap)
+const MCAM = smoothCam({ cam: () => UI.map, apply: () => applyCam(false), min: 0.15, max: 5 });
+// zoom that glides (wheel, buttons): same lock rule as mapZoom
+function mapZoomSmooth(f, cx, cy) {
+  const vp = $('#map-vp'); if (!vp) return;
+  if (zoomLocked()) return mapZoom(f, cx, cy);
+  $('#map-world')?.classList.remove('anim');
+  MCAM.zoom(f, cx ?? vp.clientWidth / 2, cy ?? vp.clientHeight / 2);
+}
 function zoomSnapEnd() {
   if (!touchCfg().zoomSnap || zoomLocked()) return;
   const k = UI.map.k, t = [0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4].find(v => Math.abs(k / v - 1) < 0.1);
@@ -1549,8 +1614,10 @@ function afterMapRender() {
   vp.addEventListener('wheel', e => {
     e.preventDefault();
     // with the zoom locked the wheel (or a two-finger trackpad swipe) moves the canvas instead
-    if (zoomLocked()) { if (!e.ctrlKey) { UI.map.x -= e.deltaX; UI.map.y -= e.deltaY; applyCam(false); } return; }
-    const r = vp.getBoundingClientRect(); mapZoom(Math.exp(-e.deltaY * (e.ctrlKey ? 0.01 : 0.0015)), e.clientX - r.left, e.clientY - r.top);
+    if (zoomLocked()) { if (!e.ctrlKey) { const dx = -wheelPx(e, e.deltaX), dy = -wheelPx(e, e.deltaY); if (wheelNotch(e)) MCAM.pan(dx, dy); else { MCAM.stop(); UI.map.x += dx; UI.map.y += dy; applyCam(false); } } return; }
+    // a wheel notch zooms about 12% and glides; a trackpad pinch (Ctrl + small steps) follows the fingers
+    const r = vp.getBoundingClientRect(), dy = Math.max(-60, Math.min(60, wheelPx(e, e.deltaY)));
+    mapZoomSmooth(Math.exp(-dy * (e.ctrlKey && !wheelNotch(e) ? 0.01 : 0.0022)), e.clientX - r.left, e.clientY - r.top);
   }, { passive: false });
 }
 
@@ -1669,6 +1736,7 @@ document.addEventListener('pointerdown', e => {
       MP.ptrs.clear(); MP.mode = null; MP.pinch = null; UI.cvTemp = null; live('');
     }
   }
+  MCAM.stop();
   if (UI.cvEditing) commitEdit();
   MP.ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY, type: e.pointerType });
   if (MP.ptrs.size === 1) MP.downAt = Date.now();
@@ -1761,7 +1829,7 @@ document.addEventListener('pointermove', e => {
   const w = toWorld(e.clientX, e.clientY), w0 = MP.w0;
   switch (MP.mode) {
     case 'press-empty': if (!MP.far) return; MP.mode = 'pan'; // falls through
-    case 'pan': UI.map.x = MP.mx + dx; UI.map.y = MP.my + dy; applyCam(false); return;
+    case 'pan': UI.map.x = MP.mx + dx; UI.map.y = MP.my + dy; MCAM.track(e.clientX, e.clientY); applyCam(false); return;
     case 'draw': {
       const l = MP.pts[MP.pts.length - 1]; if (Math.hypot(w.x - l[0], w.y - l[1]) * k < 2) return;
       MP.pts.push(MP.press ? [Math.round(w.x * 10) / 10, Math.round(w.y * 10) / 10, pval(e)] : [Math.round(w.x * 10) / 10, Math.round(w.y * 10) / 10]);
@@ -1822,7 +1890,7 @@ function finishPointer(mode, e, w, tmp, drop) {
   const w0 = MP.w0, k = UI.map.k;
   switch (mode) {
     case 'press-empty': if (UI.cvSel.size || UI.mapSel) { UI.cvSel.clear(); UI.mapSel = null; renderWorld(); } return true;
-    case 'pan': return true;
+    case 'pan': MCAM.release(); return true;
     case 'draw': {
       // the stylus without the pen chosen: a tap (no stroke) on a task or note selects or opens it, as a click would
       if (MP.auto && !MP.far) {
@@ -3545,7 +3613,7 @@ const ACT = {
   'day-sug-add': el => { const sg = (UI.daySuggest || [])[+el.dataset.i]; if (!sg) return; putDaily({ id: E.uid('d'), kind: 'achievement', date: UI.dayDate || T(), text: sg.text, taskId: sg.taskId || null, createdAt: nowISO(), by: St.sample ? 'ai' : 'auto' }); UI.daySuggest = UI.daySuggest.filter((_, i) => i !== +el.dataset.i); if (!UI.daySuggest.length) UI.daySuggest = null; render(); },
   'day-sug-clear': () => { UI.daySuggest = null; render(); },
   'day-map': () => { const D = UI.dayDate || T(); UI.mapDay = D; UI.mapAsOf = D < T() ? D : ''; UI.mapShowDone = true; UI.map.fitted = false; UI.todoMode = 'map'; saveTodoPrefs(); go('todo'); },
-  'map-zoom': el => mapZoom(+el.dataset.z > 0 ? 1.2 : 1 / 1.2),
+  'map-zoom': el => mapZoomSmooth(+el.dataset.z > 0 ? 1.15 : 1 / 1.15),
   'map-fit': () => mapFit(false),
   'map-goto': el => centerOnTask(el.dataset.id),
   'show-on-map': el => centerOnTask(el.dataset.id),

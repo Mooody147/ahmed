@@ -17,7 +17,7 @@
 .fin-note { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; padding: 8px 12px; border-radius: 10px; background: var(--warn-soft); color: var(--ink); font-size: 13px; }
 .fin-note.bad { background: var(--crit-soft); }
 .fin-banner { padding: 10px 14px; border-radius: 12px; background: var(--med-soft); margin-bottom: 12px; font-size: 13.5px; }
-.fin-card { margin-bottom: 14px; display: grid; gap: 10px; align-content: start; grid-template-columns: minmax(0, 1fr); min-width: 0; }
+.fin-card { margin-bottom: 14px; padding: 16px; display: grid; gap: 10px; align-content: start; grid-template-columns: minmax(0, 1fr); min-width: 0; }
 .fin-card > * { min-width: 0; }
 .fin-party .row > .small { overflow-wrap: anywhere; }
 .fin-card h2 { font-size: 17px; }
@@ -229,7 +229,10 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 
 /* ---------- the Money canvas is the page ---------- */
 .fin-canvas-page { max-width: none; }
-.fin-cvwrap { display: flex; flex-direction: column; gap: 10px; height: calc(100dvh - var(--fin-top, 64px) - 70px); min-height: 600px; }
+.fin-cvwrap { display: flex; flex-direction: column; gap: 10px; height: calc(100dvh - var(--fin-top, 64px) - 230px); min-height: 520px; }
+/* the draft is part of the page, under the canvas — not inside it */
+.fin-talk-card { margin-top: 16px; margin-bottom: 0; }
+.fin-talk-card h2 { margin: 0; }
 .fin-cv-bar h1 { font-size: 24px; margin: 0 6px 0 0; }
 .fin-cv-stage { position: relative; flex: 1; min-height: 320px; border-radius: 16px; overflow: hidden; }
 .fin-cvn.sel { box-shadow: 0 0 0 3px var(--accent), var(--elev-2); z-index: 2; }
@@ -271,7 +274,6 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 #fin-talk-in { min-height: 46px; max-height: 160px; resize: vertical; line-height: 1.45; }
 .fin-talk-att, .fin-talk-send { flex: none; height: 46px; }
 .fin-talk-att { width: 46px; padding: 0; font-size: 18px; cursor: pointer; }
-.fin-cvwrap.full .fin-talk-feed { max-height: 160px; }
 @media (max-width: 700px) {
   .fin-cvwrap { height: auto; min-height: 0; }
   .fin-cv-stage { flex: none; height: 64vh; }
@@ -368,6 +370,7 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 .fin-pop-v { font-weight: 800; font-size: 16px; white-space: nowrap; }
 .fin-pop-b { overflow: auto; padding: 12px 16px 16px; display: grid; gap: 10px; overscroll-behavior: contain; }
 .fin-pop-b h4 { margin: 4px 0 0; font-size: 13px; color: var(--ink-2); }
+.fin-cv-world.moving { will-change: transform; }
 .fin-cv-world.glide { transition: transform .4s cubic-bezier(.2, .8, .2, 1); }
 .fin-leaf.sel { z-index: 3; }
 @media (prefers-reduced-motion: no-preference) {

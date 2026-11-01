@@ -65,6 +65,8 @@ async def main():
         opened = lambda part: ev(f"window.__AR.UI.fin.cvOpen.includes('sec:{part}') && !!document.getElementById('fin-sec-{part}')")
         await pg.click('[data-nav="finance"]'); await pg.wait_for_timeout(600)
         assert await ev("!!document.getElementById('fin-cv-vp') && !!document.getElementById('fin-talk-in')"), 'the canvas with the talk box under it'
+        assert await ev("!document.querySelector('.fin-cvwrap #fin-talk') && !!document.querySelector('.fin-canvas-page > .fin-talk-card #fin-talk')"), 'the draft is part of the page, under the canvas — not inside it'
+        assert await ev("document.querySelector('.fin-talk-card').getBoundingClientRect().top >= document.querySelector('.fin-cvwrap').getBoundingClientRect().bottom"), 'below the canvas'
         assert not await ev("!!document.querySelector('.fin-nav, .fin-sec')"), 'no tabs to scroll through'
 
         # your five accounts are there without asking
@@ -217,9 +219,21 @@ async def main():
         await pg.keyboard.down('Control'); await pg.mouse.wheel(0, -100); await pg.keyboard.up('Control')
         mid = await ev(f"new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r({U}.cv.k))))"); await pg.wait_for_timeout(600); k2 = await ev(f"{U}.cv.k")
         print('ZOOM', round(k0, 3), round(k1, 3), round(mid, 3), round(k2, 3)); assert 1.08 < k2 / k1 < 1.16 and k1 < mid < k2, 'a smooth, small step'
+        # moving around is smooth too: a wheel notch glides, a quick drag let go slides on and slows down, arrows glide
+        frame2 = f"new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r({U}.cv.y))))"
+        y0 = await ev(f"{U}.cv.y"); await pg.mouse.wheel(0, 100); ym = await ev(frame2); await pg.wait_for_timeout(600); y1 = await ev(f"{U}.cv.y")
+        print('PAN', round(y0), round(ym), round(y1)); assert abs((y0 - y1) - 100) < 2 and y1 < ym < y0, 'a wheel notch glides 100px'
+        cx0, cy0 = vpb['x'] + vpb['width'] * 0.75, vpb['y'] + vpb['height'] - 40
+        await pg.mouse.move(cx0, cy0); await pg.mouse.down()
+        for i in range(1, 9): await pg.mouse.move(cx0 - i * 25, cy0, steps=1); await pg.wait_for_timeout(8)
+        await pg.mouse.up(); xr = await ev(f"{U}.cv.x"); await pg.wait_for_timeout(700); xs = await ev(f"{U}.cv.x")
+        print('FLING', round(xr), round(xs)); assert xs < xr - 15, 'let go while moving: it slides on'
+        x0 = await ev(f"{U}.cv.x")
+        await ev("document.activeElement && document.activeElement.blur()"); await pg.keyboard.press('ArrowRight'); await pg.wait_for_timeout(700)
+        assert abs((x0 - await ev(f"{U}.cv.x")) - 160) < 2, 'an arrow key glides 160px'
         vp = await pg.locator('#fin-cv-vp').bounding_box(); x0 = await ev(f"{U}.cv.x")
         await pg.mouse.move(vp['x'] + vp['width'] - 160, vp['y'] + vp['height'] - 20); await pg.mouse.down(); await pg.mouse.move(vp['x'] + vp['width'] - 60, vp['y'] + vp['height'] - 10, steps=5); await pg.mouse.up()   # away from the minimap in the corner
-        assert abs(await ev(f"{U}.cv.x") - x0 - 100) < 2, 'dragging moves the canvas'
+        await pg.wait_for_timeout(700); assert await ev(f"{U}.cv.x") - x0 >= 98, 'dragging moves the canvas (and a quick drag slides on a little)'
         await pg.click('[data-act="fin-cv-fit"]')
         await pg.click('[data-act="fin-cv-full"]'); await pg.wait_for_timeout(250)
         assert await ev("document.querySelector('.fin-cvwrap').classList.contains('full')")

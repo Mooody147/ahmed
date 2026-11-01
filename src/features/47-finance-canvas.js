@@ -393,15 +393,20 @@ VIEW_FN.finance = () => {
       <div class="seg zoom" role="group" aria-label="Zoom"><button data-act="fin-cv-zoom" data-v="out" aria-label="Zoom out">−</button><button data-act="fin-cv-fit" title="Fit to the screen"><span id="fin-cv-z">${Math.round(cv.k * 100)}%</span></button><button data-act="fin-cv-zoom" data-v="in" aria-label="Zoom in">+</button></div>
       <button class="btn sm" data-act="fin-cv-full" aria-pressed="${cv.full}" title="${cv.full ? 'Back (Esc)' : 'Full screen'}">${cv.full ? '✕ Close' : '⤢ Full screen'}</button></div>
     <div class="fin-cv-stage">${finCvBoard()}${finPopHTML()}${typeof finCvMiniHTML === 'function' ? finCvMiniHTML() + finCvHelpHTML() : ''}${typeof finCvEditorHTML === 'function' ? finCvEditorHTML() : ''}</div>
-    ${typeof finTalkHTML === 'function' ? finTalkHTML() : ''}
   </section>
+  ${typeof finTalkHTML === 'function' ? `<section class="card fin-card fin-talk-card" aria-label="Tell the canvas"><h2>Tell the canvas</h2>${finTalkHTML()}</section>` : ''}
 </div>`;
 };
 
 /* --- moving around --- */
-function finCvGlide() { const w = $('#fin-cv-world'); if (!w) return; w.classList.add('glide'); clearTimeout(UI.fin.glideT); UI.fin.glideT = setTimeout(() => { const x = $('#fin-cv-world'); if (x) x.classList.remove('glide'); finPopPlace(); }, 420); }
+function finCvGlide() { FCAM.stop(); const w = $('#fin-cv-world'); if (!w) return; w.classList.add('glide'); clearTimeout(UI.fin.glideT); UI.fin.glideT = setTimeout(() => { const x = $('#fin-cv-world'); if (x) x.classList.remove('glide'); finPopPlace(); }, 420); }
+// drawn once per screen frame however many pointer or trackpad events arrive
+let finCvRaf = 0;
+function finCvApplySoon() { if (!finCvRaf) finCvRaf = requestAnimationFrame(() => { finCvRaf = 0; finCvApply(); }); }
 function finCvApply() {
   const w = $('#fin-cv-world'), cv = UI.fin.cv; if (w) w.style.transform = `translate(${cv.x}px,${cv.y}px) scale(${cv.k})`;
+  // a fast moving layer only while it moves; a moment after, text and lines are drawn sharp at the new size
+  if (w) { w.classList.add('moving'); clearTimeout(UI.fin.sharpT); UI.fin.sharpT = setTimeout(() => { const x = $('#fin-cv-world'); if (x) x.classList.remove('moving'); }, 160); }
   const z = $('#fin-cv-z'); if (z) z.textContent = Math.round(cv.k * 100) + '%';
   finPopPlace(); if (typeof finMiniPlace === 'function') finMiniPlace();
   if (typeof finCvEditorPlace === 'function') finCvEditorPlace();
@@ -414,18 +419,11 @@ function finCvFit(all) {
   else { cv.k = Math.min(1, Math.max(0.42, (W - 32) / s.w)); cv.x = Math.max(16, (W - s.w * cv.k) / 2); cv.y = cv.full ? 64 : 16; }   // full screen: below the floating controls
   cv.fitted = true; finCvApply();
 }
-// smooth zoom: each wheel notch, key or button sets where the zoom should go; it glides there frame by frame,
-// around the same point, so it never jumps (quick notches simply add up)
-const FZ = { k: null, cx: undefined, cy: undefined, raf: 0 };
+// smooth movement (smoothCam): zoom glides around the pointer, wheel notches glide, a drag let go keeps sliding
+const FCAM = smoothCam({ cam: () => UI.fin.cv, apply: () => { UI.fin.cv.user = true; $('#fin-cv-world')?.classList.remove('glide'); finCvApply(); }, min: 0.1, max: 2.5 });
 function finCvZoomSmooth(f, cx, cy) {
-  const cv = UI.fin.cv; FZ.k = Math.max(0.1, Math.min(2.5, (FZ.raf ? FZ.k : cv.k) * f)); FZ.cx = cx; FZ.cy = cy;
-  if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) { finCvZoomAt(FZ.k / cv.k, cx, cy); return; }
-  if (!FZ.raf) FZ.raf = requestAnimationFrame(finCvZoomStep);
-}
-function finCvZoomStep() {
-  const cv = UI.fin.cv, d = FZ.k - cv.k;
-  if (Math.abs(d) < 0.002) { finCvZoomAt(FZ.k / cv.k, FZ.cx, FZ.cy); FZ.raf = 0; return; }
-  finCvZoomAt((cv.k + d * 0.22) / cv.k, FZ.cx, FZ.cy); FZ.raf = requestAnimationFrame(finCvZoomStep);
+  const vp = $('#fin-cv-vp'); if (!vp) return; const r = vp.getBoundingClientRect();
+  FCAM.zoom(f, cx === undefined ? r.width / 2 : cx - r.left, cy === undefined ? r.height / 2 : cy - r.top);
 }
 function finCvZoomAt(f, cx, cy) {
   const vp = $('#fin-cv-vp'), cv = UI.fin.cv; if (!vp) return; const r = vp.getBoundingClientRect();
@@ -446,7 +444,7 @@ document.addEventListener('pointerdown', e => {
   if (!e.target.closest || !e.target.closest('#fin-cv-vp') || e.button > 0) return;
   if (e.target.closest('input, select, textarea, [contenteditable]')) return;   // typing and choosing inside an unfolded part
   FCV.ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
-  if (FZ.raf) { cancelAnimationFrame(FZ.raf); FZ.raf = 0; }
+  FCAM.stop();
   if (FCV.ptrs.size === 1) { FCV.moved = false; FCV.start = { x: e.clientX, y: e.clientY, ox: UI.fin.cv.x, oy: UI.fin.cv.y }; }
   if (FCV.ptrs.size === 2) { const [a, b] = [...FCV.ptrs.values()]; FCV.pinch = { d: Math.hypot(a.x - b.x, a.y - b.y) || 1, k: UI.fin.cv.k }; FCV.start = null; }
 });
@@ -455,13 +453,13 @@ document.addEventListener('pointermove', e => {
   if (FCV.pinch && FCV.ptrs.size >= 2) { const [a, b] = [...FCV.ptrs.values()], d = Math.hypot(a.x - b.x, a.y - b.y); FCV.moved = true; finCvZoomAt(FCV.pinch.k * d / FCV.pinch.d / UI.fin.cv.k, (a.x + b.x) / 2, (a.y + b.y) / 2); return; }
   const s = FCV.start; if (!s) return; const dx = e.clientX - s.x, dy = e.clientY - s.y;
   if (!FCV.moved && Math.hypot(dx, dy) < 5) return;
-  FCV.moved = true; UI.fin.cv.user = true; UI.fin.cv.x = s.ox + dx; UI.fin.cv.y = s.oy + dy; finCvApply(); const vp = $('#fin-cv-vp'); if (vp) vp.classList.add('panning');
+  FCV.moved = true; UI.fin.cv.user = true; UI.fin.cv.x = s.ox + dx; UI.fin.cv.y = s.oy + dy; FCAM.track(e.clientX, e.clientY); finCvApplySoon(); const vp = $('#fin-cv-vp'); if (vp) vp.classList.add('panning');
 });
 const finCvEnd = e => {
   if (!FCV.ptrs.delete(e.pointerId)) return;
   if (FCV.ptrs.size < 2) FCV.pinch = null;
   if (FCV.ptrs.size === 1) { const [q] = [...FCV.ptrs.values()]; FCV.start = { x: q.x, y: q.y, ox: UI.fin.cv.x, oy: UI.fin.cv.y }; }
-  if (!FCV.ptrs.size) { FCV.start = null; const vp = $('#fin-cv-vp'); if (vp) vp.classList.remove('panning'); }
+  if (!FCV.ptrs.size) { if (FCV.start && FCV.moved && e.type === 'pointerup') FCAM.release(); FCV.start = null; const vp = $('#fin-cv-vp'); if (vp) vp.classList.remove('panning'); }
 };
 document.addEventListener('pointerup', finCvEnd); document.addEventListener('pointercancel', finCvEnd);
 // a drag that ends on a card is not a tap on it
@@ -472,7 +470,11 @@ document.addEventListener('wheel', e => {
   e.preventDefault();
   // a wheel notch (about 100) zooms about 12%; a trackpad pinch sends many small steps — all of it glides
   if (e.ctrlKey || e.metaKey) { const dy = Math.max(-60, Math.min(60, e.deltaY * (e.deltaMode === 1 ? 16 : 1))); finCvZoomSmooth(Math.exp(-dy * 0.0022), e.clientX, e.clientY); }
-  else { UI.fin.cv.x -= e.shiftKey ? e.deltaY : e.deltaX; UI.fin.cv.y -= e.shiftKey ? 0 : e.deltaY; UI.fin.cv.user = true; finCvApply(); }
+  else {
+    const dx = -wheelPx(e, e.shiftKey ? e.deltaY : e.deltaX), dy = e.shiftKey ? 0 : -wheelPx(e, e.deltaY);
+    if (wheelNotch(e)) FCAM.pan(dx, dy);                                  // a mouse wheel notch glides
+    else { FCAM.stop(); UI.fin.cv.x += dx; UI.fin.cv.y += dy; UI.fin.cv.user = true; finCvApplySoon(); }   // a trackpad follows the fingers
+  }
 }, { passive: false });
 document.addEventListener('keydown', e => {
   if (UI.view !== 'finance') return;

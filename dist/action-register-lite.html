@@ -1769,7 +1769,7 @@ a { color: var(--wine); }
 .fin-note { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; padding: 8px 12px; border-radius: 10px; background: var(--warn-soft); color: var(--ink); font-size: 13px; }
 .fin-note.bad { background: var(--crit-soft); }
 .fin-banner { padding: 10px 14px; border-radius: 12px; background: var(--med-soft); margin-bottom: 12px; font-size: 13.5px; }
-.fin-card { margin-bottom: 14px; display: grid; gap: 10px; align-content: start; grid-template-columns: minmax(0, 1fr); min-width: 0; }
+.fin-card { margin-bottom: 14px; padding: 16px; display: grid; gap: 10px; align-content: start; grid-template-columns: minmax(0, 1fr); min-width: 0; }
 .fin-card > * { min-width: 0; }
 .fin-party .row > .small { overflow-wrap: anywhere; }
 .fin-card h2 { font-size: 17px; }
@@ -1981,7 +1981,10 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 
 /* ---------- the Money canvas is the page ---------- */
 .fin-canvas-page { max-width: none; }
-.fin-cvwrap { display: flex; flex-direction: column; gap: 10px; height: calc(100dvh - var(--fin-top, 64px) - 70px); min-height: 600px; }
+.fin-cvwrap { display: flex; flex-direction: column; gap: 10px; height: calc(100dvh - var(--fin-top, 64px) - 230px); min-height: 520px; }
+/* the draft is part of the page, under the canvas — not inside it */
+.fin-talk-card { margin-top: 16px; margin-bottom: 0; }
+.fin-talk-card h2 { margin: 0; }
 .fin-cv-bar h1 { font-size: 24px; margin: 0 6px 0 0; }
 .fin-cv-stage { position: relative; flex: 1; min-height: 320px; border-radius: 16px; overflow: hidden; }
 .fin-cvn.sel { box-shadow: 0 0 0 3px var(--accent), var(--elev-2); z-index: 2; }
@@ -2023,7 +2026,6 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 #fin-talk-in { min-height: 46px; max-height: 160px; resize: vertical; line-height: 1.45; }
 .fin-talk-att, .fin-talk-send { flex: none; height: 46px; }
 .fin-talk-att { width: 46px; padding: 0; font-size: 18px; cursor: pointer; }
-.fin-cvwrap.full .fin-talk-feed { max-height: 160px; }
 @media (max-width: 700px) {
   .fin-cvwrap { height: auto; min-height: 0; }
   .fin-cv-stage { flex: none; height: 64vh; }
@@ -2120,6 +2122,7 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 .fin-pop-v { font-weight: 800; font-size: 16px; white-space: nowrap; }
 .fin-pop-b { overflow: auto; padding: 12px 16px 16px; display: grid; gap: 10px; overscroll-behavior: contain; }
 .fin-pop-b h4 { margin: 4px 0 0; font-size: 13px; color: var(--ink-2); }
+.fin-cv-world.moving { will-change: transform; }
 .fin-cv-world.glide { transition: transform .4s cubic-bezier(.2, .8, .2, 1); }
 .fin-leaf.sel { z-index: 3; }
 @media (prefers-reduced-motion: no-preference) {
@@ -6985,9 +6988,66 @@ function renderWorld() {
   const c = $('#cv-ctx-slot'); if (c) c.innerHTML = deco(ctxHTML());
 }
 function renderWorldSoon() { if (worldRaf) return; worldRaf = requestAnimationFrame(() => { worldRaf = null; renderWorld(); }); }
+/* --- smooth movement, shared by the to-do map and the Money canvas ---
+   Every move eases toward where it should end, frame by frame, at the same speed on any screen: zoom glides around
+   the point under the pointer, a wheel notch or an arrow key glides the distance, and a drag let go while moving
+   keeps sliding a little and slows to a stop. o.cam() is the camera {x, y, k}; o.apply() draws it; o.min/o.max
+   bound the zoom. */
+function smoothCam(o) {
+  const S = { tk: null, ax: 0, ay: 0, px: 0, py: 0, vx: 0, vy: 0, raf: 0, t: 0, samples: [] };
+  const reduce = () => { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch { return false; } };
+  const clampK = k => Math.max(o.min, Math.min(o.max, k));
+  function frame(t) {
+    S.raf = 0; const c = o.cam(), dt = Math.min(48, S.t ? t - S.t : 16.7); S.t = t;
+    const ease = 1 - Math.pow(1 - 0.24, dt / 16.7);    // about a quarter of the way each frame at 60 Hz
+    let busy = false;
+    if (S.tk != null) {
+      const d = S.tk - c.k, k2 = Math.abs(d) < 0.0015 * c.k ? S.tk : c.k + d * ease;
+      c.x = S.ax - (S.ax - c.x) * (k2 / c.k); c.y = S.ay - (S.ay - c.y) * (k2 / c.k); c.k = k2;
+      if (k2 === S.tk) S.tk = null; else busy = true;
+    }
+    if (S.px || S.py) {
+      const mx = Math.abs(S.px) < 0.4 ? S.px : S.px * ease, my = Math.abs(S.py) < 0.4 ? S.py : S.py * ease;
+      c.x += mx; c.y += my; S.px -= mx; S.py -= my; if (S.px || S.py) busy = true;
+    }
+    if (S.vx || S.vy) {
+      c.x += S.vx * dt; c.y += S.vy * dt; const f = Math.pow(0.94, dt / 16.7); S.vx *= f; S.vy *= f;
+      if (Math.hypot(S.vx, S.vy) < 0.015) S.vx = S.vy = 0; else busy = true;
+    }
+    o.apply();
+    if (busy) S.raf = requestAnimationFrame(frame); else S.t = 0;
+  }
+  const kick = () => { if (!S.raf) { S.t = 0; S.raf = requestAnimationFrame(frame); } };
+  return {
+    // zoom by f around (ax, ay), in viewport pixels; quick steps add up
+    zoom(f, ax, ay) {
+      const c = o.cam(); S.tk = clampK((S.tk == null ? c.k : S.tk) * f); S.ax = ax; S.ay = ay;
+      if (reduce()) { const k2 = S.tk; c.x = ax - (ax - c.x) * (k2 / c.k); c.y = ay - (ay - c.y) * (k2 / c.k); c.k = k2; S.tk = null; o.apply(); return; }
+      kick();
+    },
+    // move by (dx, dy) screen pixels, gliding
+    pan(dx, dy) { if (reduce()) { const c = o.cam(); c.x += dx; c.y += dy; o.apply(); return; } S.vx = S.vy = 0; S.px += dx; S.py += dy; kick(); },
+    // while dragging: remember the last moments of movement, so letting go keeps the speed
+    track(x, y) { const now = performance.now(); S.samples.push({ x, y, t: now }); while (S.samples.length > 2 && now - S.samples[0].t > 90) S.samples.shift(); },
+    release() {
+      const a = S.samples[0], b = S.samples[S.samples.length - 1]; S.samples = [];
+      if (!a || !b || b.t - a.t < 10 || performance.now() - b.t > 70 || reduce()) return;
+      let vx = (b.x - a.x) / (b.t - a.t), vy = (b.y - a.y) / (b.t - a.t); const sp = Math.hypot(vx, vy);
+      if (sp < 0.25) return; if (sp > 3.5) { vx *= 3.5 / sp; vy *= 3.5 / sp; }
+      S.vx = vx; S.vy = vy; kick();
+    },
+    stop() { if (S.raf) cancelAnimationFrame(S.raf); S.raf = 0; S.t = 0; S.tk = null; S.px = S.py = S.vx = S.vy = 0; S.samples = []; },
+    target: () => S.tk,
+    busy: () => !!S.raf,
+  };
+}
+// a mouse wheel moves in notches (big, whole steps); a trackpad sends many small ones that are already smooth
+const wheelNotch = e => e.deltaMode !== 0 || (Math.abs(e.deltaY) >= 50 && Number.isInteger(e.deltaY) && !e.deltaX);
+const wheelPx = (e, v) => v * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? 400 : 1);
 /* --- camera --- */
 function applyCam(animate) {
   const w = $('#map-world'); if (!w) return;
+  if (animate) MCAM.stop();   // a fit or a jump to a task takes over from a glide
   w.classList.toggle('anim', !!animate);
   w.style.transform = `translate(${UI.map.x}px,${UI.map.y}px) scale(${UI.map.k})`;
   // sharp at every zoom: the canvas is a fast moving layer only while you pan or zoom; a moment after you stop,
@@ -7011,6 +7071,14 @@ function mapFit(smart) {
   UI.map.fitted = true; applyCam(true);
 }
 // two-finger zoom ends on 25 %, 50 %, 100 %… when it stops close to one (Touch & stylus › Zoom snap)
+const MCAM = smoothCam({ cam: () => UI.map, apply: () => applyCam(false), min: 0.15, max: 5 });
+// zoom that glides (wheel, buttons): same lock rule as mapZoom
+function mapZoomSmooth(f, cx, cy) {
+  const vp = $('#map-vp'); if (!vp) return;
+  if (zoomLocked()) return mapZoom(f, cx, cy);
+  $('#map-world')?.classList.remove('anim');
+  MCAM.zoom(f, cx ?? vp.clientWidth / 2, cy ?? vp.clientHeight / 2);
+}
 function zoomSnapEnd() {
   if (!touchCfg().zoomSnap || zoomLocked()) return;
   const k = UI.map.k, t = [0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4].find(v => Math.abs(k / v - 1) < 0.1);
@@ -7068,8 +7136,10 @@ function afterMapRender() {
   vp.addEventListener('wheel', e => {
     e.preventDefault();
     // with the zoom locked the wheel (or a two-finger trackpad swipe) moves the canvas instead
-    if (zoomLocked()) { if (!e.ctrlKey) { UI.map.x -= e.deltaX; UI.map.y -= e.deltaY; applyCam(false); } return; }
-    const r = vp.getBoundingClientRect(); mapZoom(Math.exp(-e.deltaY * (e.ctrlKey ? 0.01 : 0.0015)), e.clientX - r.left, e.clientY - r.top);
+    if (zoomLocked()) { if (!e.ctrlKey) { const dx = -wheelPx(e, e.deltaX), dy = -wheelPx(e, e.deltaY); if (wheelNotch(e)) MCAM.pan(dx, dy); else { MCAM.stop(); UI.map.x += dx; UI.map.y += dy; applyCam(false); } } return; }
+    // a wheel notch zooms about 12% and glides; a trackpad pinch (Ctrl + small steps) follows the fingers
+    const r = vp.getBoundingClientRect(), dy = Math.max(-60, Math.min(60, wheelPx(e, e.deltaY)));
+    mapZoomSmooth(Math.exp(-dy * (e.ctrlKey && !wheelNotch(e) ? 0.01 : 0.0022)), e.clientX - r.left, e.clientY - r.top);
   }, { passive: false });
 }
 
@@ -7188,6 +7258,7 @@ document.addEventListener('pointerdown', e => {
       MP.ptrs.clear(); MP.mode = null; MP.pinch = null; UI.cvTemp = null; live('');
     }
   }
+  MCAM.stop();
   if (UI.cvEditing) commitEdit();
   MP.ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY, type: e.pointerType });
   if (MP.ptrs.size === 1) MP.downAt = Date.now();
@@ -7280,7 +7351,7 @@ document.addEventListener('pointermove', e => {
   const w = toWorld(e.clientX, e.clientY), w0 = MP.w0;
   switch (MP.mode) {
     case 'press-empty': if (!MP.far) return; MP.mode = 'pan'; // falls through
-    case 'pan': UI.map.x = MP.mx + dx; UI.map.y = MP.my + dy; applyCam(false); return;
+    case 'pan': UI.map.x = MP.mx + dx; UI.map.y = MP.my + dy; MCAM.track(e.clientX, e.clientY); applyCam(false); return;
     case 'draw': {
       const l = MP.pts[MP.pts.length - 1]; if (Math.hypot(w.x - l[0], w.y - l[1]) * k < 2) return;
       MP.pts.push(MP.press ? [Math.round(w.x * 10) / 10, Math.round(w.y * 10) / 10, pval(e)] : [Math.round(w.x * 10) / 10, Math.round(w.y * 10) / 10]);
@@ -7341,7 +7412,7 @@ function finishPointer(mode, e, w, tmp, drop) {
   const w0 = MP.w0, k = UI.map.k;
   switch (mode) {
     case 'press-empty': if (UI.cvSel.size || UI.mapSel) { UI.cvSel.clear(); UI.mapSel = null; renderWorld(); } return true;
-    case 'pan': return true;
+    case 'pan': MCAM.release(); return true;
     case 'draw': {
       // the stylus without the pen chosen: a tap (no stroke) on a task or note selects or opens it, as a click would
       if (MP.auto && !MP.far) {
@@ -9064,7 +9135,7 @@ const ACT = {
   'day-sug-add': el => { const sg = (UI.daySuggest || [])[+el.dataset.i]; if (!sg) return; putDaily({ id: E.uid('d'), kind: 'achievement', date: UI.dayDate || T(), text: sg.text, taskId: sg.taskId || null, createdAt: nowISO(), by: St.sample ? 'ai' : 'auto' }); UI.daySuggest = UI.daySuggest.filter((_, i) => i !== +el.dataset.i); if (!UI.daySuggest.length) UI.daySuggest = null; render(); },
   'day-sug-clear': () => { UI.daySuggest = null; render(); },
   'day-map': () => { const D = UI.dayDate || T(); UI.mapDay = D; UI.mapAsOf = D < T() ? D : ''; UI.mapShowDone = true; UI.map.fitted = false; UI.todoMode = 'map'; saveTodoPrefs(); go('todo'); },
-  'map-zoom': el => mapZoom(+el.dataset.z > 0 ? 1.2 : 1 / 1.2),
+  'map-zoom': el => mapZoomSmooth(+el.dataset.z > 0 ? 1.15 : 1 / 1.15),
   'map-fit': () => mapFit(false),
   'map-goto': el => centerOnTask(el.dataset.id),
   'show-on-map': el => centerOnTask(el.dataset.id),
@@ -15948,15 +16019,20 @@ VIEW_FN.finance = () => {
       <div class="seg zoom" role="group" aria-label="Zoom"><button data-act="fin-cv-zoom" data-v="out" aria-label="Zoom out">−</button><button data-act="fin-cv-fit" title="Fit to the screen"><span id="fin-cv-z">${Math.round(cv.k * 100)}%</span></button><button data-act="fin-cv-zoom" data-v="in" aria-label="Zoom in">+</button></div>
       <button class="btn sm" data-act="fin-cv-full" aria-pressed="${cv.full}" title="${cv.full ? 'Back (Esc)' : 'Full screen'}">${cv.full ? '✕ Close' : '⤢ Full screen'}</button></div>
     <div class="fin-cv-stage">${finCvBoard()}${finPopHTML()}${typeof finCvMiniHTML === 'function' ? finCvMiniHTML() + finCvHelpHTML() : ''}${typeof finCvEditorHTML === 'function' ? finCvEditorHTML() : ''}</div>
-    ${typeof finTalkHTML === 'function' ? finTalkHTML() : ''}
   </section>
+  ${typeof finTalkHTML === 'function' ? `<section class="card fin-card fin-talk-card" aria-label="Tell the canvas"><h2>Tell the canvas</h2>${finTalkHTML()}</section>` : ''}
 </div>`;
 };
 
 /* --- moving around --- */
-function finCvGlide() { const w = $('#fin-cv-world'); if (!w) return; w.classList.add('glide'); clearTimeout(UI.fin.glideT); UI.fin.glideT = setTimeout(() => { const x = $('#fin-cv-world'); if (x) x.classList.remove('glide'); finPopPlace(); }, 420); }
+function finCvGlide() { FCAM.stop(); const w = $('#fin-cv-world'); if (!w) return; w.classList.add('glide'); clearTimeout(UI.fin.glideT); UI.fin.glideT = setTimeout(() => { const x = $('#fin-cv-world'); if (x) x.classList.remove('glide'); finPopPlace(); }, 420); }
+// drawn once per screen frame however many pointer or trackpad events arrive
+let finCvRaf = 0;
+function finCvApplySoon() { if (!finCvRaf) finCvRaf = requestAnimationFrame(() => { finCvRaf = 0; finCvApply(); }); }
 function finCvApply() {
   const w = $('#fin-cv-world'), cv = UI.fin.cv; if (w) w.style.transform = `translate(${cv.x}px,${cv.y}px) scale(${cv.k})`;
+  // a fast moving layer only while it moves; a moment after, text and lines are drawn sharp at the new size
+  if (w) { w.classList.add('moving'); clearTimeout(UI.fin.sharpT); UI.fin.sharpT = setTimeout(() => { const x = $('#fin-cv-world'); if (x) x.classList.remove('moving'); }, 160); }
   const z = $('#fin-cv-z'); if (z) z.textContent = Math.round(cv.k * 100) + '%';
   finPopPlace(); if (typeof finMiniPlace === 'function') finMiniPlace();
   if (typeof finCvEditorPlace === 'function') finCvEditorPlace();
@@ -15969,18 +16045,11 @@ function finCvFit(all) {
   else { cv.k = Math.min(1, Math.max(0.42, (W - 32) / s.w)); cv.x = Math.max(16, (W - s.w * cv.k) / 2); cv.y = cv.full ? 64 : 16; }   // full screen: below the floating controls
   cv.fitted = true; finCvApply();
 }
-// smooth zoom: each wheel notch, key or button sets where the zoom should go; it glides there frame by frame,
-// around the same point, so it never jumps (quick notches simply add up)
-const FZ = { k: null, cx: undefined, cy: undefined, raf: 0 };
+// smooth movement (smoothCam): zoom glides around the pointer, wheel notches glide, a drag let go keeps sliding
+const FCAM = smoothCam({ cam: () => UI.fin.cv, apply: () => { UI.fin.cv.user = true; $('#fin-cv-world')?.classList.remove('glide'); finCvApply(); }, min: 0.1, max: 2.5 });
 function finCvZoomSmooth(f, cx, cy) {
-  const cv = UI.fin.cv; FZ.k = Math.max(0.1, Math.min(2.5, (FZ.raf ? FZ.k : cv.k) * f)); FZ.cx = cx; FZ.cy = cy;
-  if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) { finCvZoomAt(FZ.k / cv.k, cx, cy); return; }
-  if (!FZ.raf) FZ.raf = requestAnimationFrame(finCvZoomStep);
-}
-function finCvZoomStep() {
-  const cv = UI.fin.cv, d = FZ.k - cv.k;
-  if (Math.abs(d) < 0.002) { finCvZoomAt(FZ.k / cv.k, FZ.cx, FZ.cy); FZ.raf = 0; return; }
-  finCvZoomAt((cv.k + d * 0.22) / cv.k, FZ.cx, FZ.cy); FZ.raf = requestAnimationFrame(finCvZoomStep);
+  const vp = $('#fin-cv-vp'); if (!vp) return; const r = vp.getBoundingClientRect();
+  FCAM.zoom(f, cx === undefined ? r.width / 2 : cx - r.left, cy === undefined ? r.height / 2 : cy - r.top);
 }
 function finCvZoomAt(f, cx, cy) {
   const vp = $('#fin-cv-vp'), cv = UI.fin.cv; if (!vp) return; const r = vp.getBoundingClientRect();
@@ -16001,7 +16070,7 @@ document.addEventListener('pointerdown', e => {
   if (!e.target.closest || !e.target.closest('#fin-cv-vp') || e.button > 0) return;
   if (e.target.closest('input, select, textarea, [contenteditable]')) return;   // typing and choosing inside an unfolded part
   FCV.ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
-  if (FZ.raf) { cancelAnimationFrame(FZ.raf); FZ.raf = 0; }
+  FCAM.stop();
   if (FCV.ptrs.size === 1) { FCV.moved = false; FCV.start = { x: e.clientX, y: e.clientY, ox: UI.fin.cv.x, oy: UI.fin.cv.y }; }
   if (FCV.ptrs.size === 2) { const [a, b] = [...FCV.ptrs.values()]; FCV.pinch = { d: Math.hypot(a.x - b.x, a.y - b.y) || 1, k: UI.fin.cv.k }; FCV.start = null; }
 });
@@ -16010,13 +16079,13 @@ document.addEventListener('pointermove', e => {
   if (FCV.pinch && FCV.ptrs.size >= 2) { const [a, b] = [...FCV.ptrs.values()], d = Math.hypot(a.x - b.x, a.y - b.y); FCV.moved = true; finCvZoomAt(FCV.pinch.k * d / FCV.pinch.d / UI.fin.cv.k, (a.x + b.x) / 2, (a.y + b.y) / 2); return; }
   const s = FCV.start; if (!s) return; const dx = e.clientX - s.x, dy = e.clientY - s.y;
   if (!FCV.moved && Math.hypot(dx, dy) < 5) return;
-  FCV.moved = true; UI.fin.cv.user = true; UI.fin.cv.x = s.ox + dx; UI.fin.cv.y = s.oy + dy; finCvApply(); const vp = $('#fin-cv-vp'); if (vp) vp.classList.add('panning');
+  FCV.moved = true; UI.fin.cv.user = true; UI.fin.cv.x = s.ox + dx; UI.fin.cv.y = s.oy + dy; FCAM.track(e.clientX, e.clientY); finCvApplySoon(); const vp = $('#fin-cv-vp'); if (vp) vp.classList.add('panning');
 });
 const finCvEnd = e => {
   if (!FCV.ptrs.delete(e.pointerId)) return;
   if (FCV.ptrs.size < 2) FCV.pinch = null;
   if (FCV.ptrs.size === 1) { const [q] = [...FCV.ptrs.values()]; FCV.start = { x: q.x, y: q.y, ox: UI.fin.cv.x, oy: UI.fin.cv.y }; }
-  if (!FCV.ptrs.size) { FCV.start = null; const vp = $('#fin-cv-vp'); if (vp) vp.classList.remove('panning'); }
+  if (!FCV.ptrs.size) { if (FCV.start && FCV.moved && e.type === 'pointerup') FCAM.release(); FCV.start = null; const vp = $('#fin-cv-vp'); if (vp) vp.classList.remove('panning'); }
 };
 document.addEventListener('pointerup', finCvEnd); document.addEventListener('pointercancel', finCvEnd);
 // a drag that ends on a card is not a tap on it
@@ -16027,7 +16096,11 @@ document.addEventListener('wheel', e => {
   e.preventDefault();
   // a wheel notch (about 100) zooms about 12%; a trackpad pinch sends many small steps — all of it glides
   if (e.ctrlKey || e.metaKey) { const dy = Math.max(-60, Math.min(60, e.deltaY * (e.deltaMode === 1 ? 16 : 1))); finCvZoomSmooth(Math.exp(-dy * 0.0022), e.clientX, e.clientY); }
-  else { UI.fin.cv.x -= e.shiftKey ? e.deltaY : e.deltaX; UI.fin.cv.y -= e.shiftKey ? 0 : e.deltaY; UI.fin.cv.user = true; finCvApply(); }
+  else {
+    const dx = -wheelPx(e, e.shiftKey ? e.deltaY : e.deltaX), dy = e.shiftKey ? 0 : -wheelPx(e, e.deltaY);
+    if (wheelNotch(e)) FCAM.pan(dx, dy);                                  // a mouse wheel notch glides
+    else { FCAM.stop(); UI.fin.cv.x += dx; UI.fin.cv.y += dy; UI.fin.cv.user = true; finCvApplySoon(); }   // a trackpad follows the fingers
+  }
 }, { passive: false });
 document.addEventListener('keydown', e => {
   if (UI.view !== 'finance') return;
@@ -16715,12 +16788,13 @@ document.addEventListener('keydown', e => {
   else if (k === '+' || k === '=') { own(); finCvZoomSmooth(1.15); }
   else if (k === '-' || k === '_') { own(); finCvZoomSmooth(1 / 1.15); }
   else if (k === '?') { own(); UI.fin.help = !UI.fin.help; render(); }
+  else if (/^Arrow(Left|Right|Up|Down)$/.test(k)) { e.preventDefault(); const d = e.shiftKey ? 420 : 160; FCAM.pan(k === 'ArrowLeft' ? d : k === 'ArrowRight' ? -d : 0, k === 'ArrowUp' ? d : k === 'ArrowDown' ? -d : 0); }   // glides
   else if (/^[1-9]$/.test(k)) { const r = (UI.fin.cvRoomsList || []).filter(x => x.kind !== 'sec')[+k - 1]; if (r) { own(); finCvZoomRoom(r.id); } }
 }, true);
 function finCvHelpHTML() {
   if (!UI.fin.help) return '';
   return `<div class="fin-cv-keys" role="dialog" aria-label="Keys and gestures"><div class="row"><b>Keys and gestures</b><span class="spacer"></span><button class="icon-btn" data-act="fin-cv-help" aria-label="Close">${I.x}</button></div>
-    <dl>${[['Drag, or scroll', 'move around'], ['Ctrl + scroll, or pinch', 'zoom'], ['Tap a card', 'its details pop out'], ['Double-tap a card, or F2', 'edit it'], ['Double-click a room’s title', 'zoom to the room'], ['/', 'find on the canvas (Enter: next)'], ['1 – 9', 'jump to a room'], ['+  −  0', 'zoom in, out, fit'], ['F', 'full screen'], ['Esc', 'close the last thing opened']].map(([a, b]) => `<dt>${esc(a)}</dt><dd>${esc(b)}</dd>`).join('')}</dl></div>`;
+    <dl>${[['Drag, or scroll', 'move around (let go while moving: it slides on)'], ['Arrow keys (Shift: further)', 'move around'], ['Ctrl + scroll, or pinch', 'zoom'], ['Tap a card', 'its details pop out'], ['Double-tap a card, or F2', 'edit it'], ['Double-click a room’s title', 'zoom to the room'], ['/', 'find on the canvas (Enter: next)'], ['1 – 9', 'jump to a room'], ['+  −  0', 'zoom in, out, fit'], ['F', 'full screen'], ['Esc', 'close the last thing opened']].map(([a, b]) => `<dt>${esc(a)}</dt><dd>${esc(b)}</dd>`).join('')}</dl></div>`;
 }
 // zoom so a whole room fits the window
 function finCvZoomRoom(id) {

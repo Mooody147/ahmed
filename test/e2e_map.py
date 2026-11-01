@@ -59,6 +59,18 @@ async def main():
         await pg.mouse.move(vp['x']+vp['width']-60, vp['y']+vp['height']-60); await pg.mouse.down(); await pg.mouse.move(vp['x']+vp['width']-160, vp['y']+vp['height']-120, steps=6); await pg.mouse.up()
         await pg.mouse.wheel(0,-300); await pg.wait_for_timeout(200)
         print('CAM', before, '->', await pg.evaluate("JSON.stringify(window.__AR.UI.map)"))
+        # smooth: one wheel notch zooms about 12% and glides there (values in between on the way)
+        await pg.wait_for_timeout(600); k0 = await pg.evaluate("window.__AR.UI.map.k"); await pg.mouse.wheel(0, -100)
+        km = await pg.evaluate("new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(window.__AR.UI.map.k))))"); await pg.wait_for_timeout(700); k1 = await pg.evaluate("window.__AR.UI.map.k")
+        print('MAPZOOM', round(k0, 3), round(km, 3), round(k1, 3)); assert 1.08 < k1 / k0 < 1.16 and k0 < km < k1, 'map zoom: a small step that glides'
+        # a quick drag let go keeps sliding a little
+        # from an empty spot of the canvas (not a card, a tool or the minimap)
+        px, py = await pg.evaluate("""(b) => { for (let fy = 0.85; fy > 0.1; fy -= 0.05) for (let fx = 0.55; fx > 0.2; fx -= 0.05) { const x = b.x + b.width * fx, y = b.y + b.height * fy, e = document.elementFromPoint(x, y);
+          if (e && e.closest('#map-vp') && !e.closest('.mnode, .cv-el, .minimap, .cv-tools, .cv-sub, .cv-ctx, .cv-panel, button, .map-legend, .zoom-hud')) return [x, y]; } return [b.x + 200, b.y + b.height - 30]; }""", vp)
+        await pg.mouse.move(px, py); await pg.mouse.down()
+        for i in range(1, 9): await pg.mouse.move(px-i*25, py); await pg.wait_for_timeout(8)
+        await pg.mouse.up(); xr = await pg.evaluate("window.__AR.UI.map.x"); await pg.wait_for_timeout(700); xs = await pg.evaluate("window.__AR.UI.map.x")
+        print('MAPFLING', round(xr), round(xs)); assert xs < xr - 15, 'map: let go while moving, it slides on'
         await pg.click('[data-act="map-fit"]'); await pg.wait_for_timeout(500)
         # complete a task from map -> stays as history
         await pg.click('.mnode.task .mtick >> nth=1'); await pg.wait_for_timeout(400)

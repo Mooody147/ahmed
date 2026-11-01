@@ -131,12 +131,13 @@ document.addEventListener('keydown', e => {
   else if (k === '+' || k === '=') { own(); finCvZoomSmooth(1.15); }
   else if (k === '-' || k === '_') { own(); finCvZoomSmooth(1 / 1.15); }
   else if (k === '?') { own(); UI.fin.help = !UI.fin.help; render(); }
+  else if (/^Arrow(Left|Right|Up|Down)$/.test(k)) { e.preventDefault(); const d = e.shiftKey ? 420 : 160; FCAM.pan(k === 'ArrowLeft' ? d : k === 'ArrowRight' ? -d : 0, k === 'ArrowUp' ? d : k === 'ArrowDown' ? -d : 0); }   // glides
   else if (/^[1-9]$/.test(k)) { const r = (UI.fin.cvRoomsList || []).filter(x => x.kind !== 'sec')[+k - 1]; if (r) { own(); finCvZoomRoom(r.id); } }
 }, true);
 function finCvHelpHTML() {
   if (!UI.fin.help) return '';
   return `<div class="fin-cv-keys" role="dialog" aria-label="Keys and gestures"><div class="row"><b>Keys and gestures</b><span class="spacer"></span><button class="icon-btn" data-act="fin-cv-help" aria-label="Close">${I.x}</button></div>
-    <dl>${[['Drag, or scroll', 'move around'], ['Ctrl + scroll, or pinch', 'zoom'], ['Tap a card', 'its details pop out'], ['Double-tap a card, or F2', 'edit it'], ['Double-click a room’s title', 'zoom to the room'], ['/', 'find on the canvas (Enter: next)'], ['1 – 9', 'jump to a room'], ['+  −  0', 'zoom in, out, fit'], ['F', 'full screen'], ['Esc', 'close the last thing opened']].map(([a, b]) => `<dt>${esc(a)}</dt><dd>${esc(b)}</dd>`).join('')}</dl></div>`;
+    <dl>${[['Drag, or scroll', 'move around (let go while moving: it slides on)'], ['Arrow keys (Shift: further)', 'move around'], ['Ctrl + scroll, or pinch', 'zoom'], ['Tap a card', 'its details pop out'], ['Double-tap a card, or F2', 'edit it'], ['Double-click a room’s title', 'zoom to the room'], ['/', 'find on the canvas (Enter: next)'], ['1 – 9', 'jump to a room'], ['+  −  0', 'zoom in, out, fit'], ['F', 'full screen'], ['Esc', 'close the last thing opened']].map(([a, b]) => `<dt>${esc(a)}</dt><dd>${esc(b)}</dd>`).join('')}</dl></div>`;
 }
 // zoom so a whole room fits the window
 function finCvZoomRoom(id) {
