@@ -384,3 +384,7 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
   @keyframes finSelPulse { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 55%, transparent), var(--elev-2); } 100% { box-shadow: 0 0 0 12px transparent, 0 0 0 3px var(--accent), var(--elev-2); } }
 }
 @media (max-width: 700px) { .fin-pop { width: calc(100% - 16px); } }
+/* the pop-out's title never gets squeezed: it wraps, and the amount moves under it when space is short */
+.fin-pop-h { flex-wrap: wrap; row-gap: 4px; }
+.fin-pop-t { min-width: min(60%, 220px); }
+.fin-pop-t b, .fin-pop-t small { white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; }
