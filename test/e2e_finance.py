@@ -232,7 +232,8 @@ async def main():
         # the phone layout reaches Money from More
         await pg.keyboard.press('Escape'); await pg.wait_for_timeout(200)
         await pg.set_viewport_size({'width': 390, 'height': 844}); await pg.wait_for_timeout(600)
-        await pg.click('.ph-tab[data-k="more"]'); await pg.click('[data-act="ph-nav"][data-view="finance"]'); await pg.wait_for_selector('#fin-cv-vp')
+        await pg.click('.ph-tab[data-k="more"]'); await pg.click('[data-act="ph-nav"][data-view="finance"]'); await pg.wait_for_selector('.fin-tabs')
+        await pg.click('[data-act="fin-tab"][data-v="canvas"]'); await pg.wait_for_selector('#fin-cv-vp')   # Money reopens on the tab you left
         assert await ev("document.documentElement.scrollWidth <= innerWidth + 1"), 'no sideways scrolling on a phone'
         await pg.screenshot(path=os.path.join(HERE, 'shots', 'finance-phone.png'))
         bad = [e for e in errors if 'PAGEERROR' in e]; assert not bad, bad

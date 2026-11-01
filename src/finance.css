@@ -220,8 +220,8 @@ html.phone-mode .fin { padding-bottom: 90px; }
 .fin-leaf.muted, .fin-leaf.more { border-left-style: dashed; color: var(--ink-2); }
 .fin-leaf.more .mtxt b { color: var(--accent); }
 .fin-cv-btn { position: absolute; top: -10px; width: 26px; height: 26px; padding: 0; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); box-shadow: var(--elev-1); font-size: 13px; line-height: 1; color: var(--ink-2); opacity: 0; transition: opacity .15s; }
-.fin-cv-btn.tg { right: 22px; } .fin-cv-btn.fo { right: -8px; }
-.fin-cv-br:hover .fin-cv-btn, .fin-cv-br:focus-within .fin-cv-btn, .fin-cv-btn:focus-visible { opacity: 1; }
+.fin-cv-btn.tg { right: 22px; } .fin-cv-btn.fo { right: -8px; } .fin-cv-btn.ad { right: 52px; } .fin-cv-btn.ed { right: -8px; top: -10px; }
+.fin-cv-br:hover .fin-cv-btn, .fin-cv-br:focus-within .fin-cv-btn, .fin-leaf:hover .fin-cv-btn, .fin-leaf:focus-within .fin-cv-btn, .fin-cv-btn:focus-visible { opacity: 1; }
 @media (hover: none) { .fin-cv-btn { opacity: 1; } }
 .fin-cv-help { margin: 0; }
 .fin-cvwrap.full { position: fixed; inset: 0; z-index: 35; margin: 0; border-radius: 0; display: flex; flex-direction: column; gap: 10px; padding: max(12px, env(safe-area-inset-top, 0px)) max(12px, env(safe-area-inset-right, 0px)) max(12px, env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px)); }
@@ -281,3 +281,16 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
   .fin-panel-w { display: none; }
   .fin-talk-feed { max-height: 260px; }
 }
+
+/* two tabs above the canvas */
+.fin-tabs button { font-weight: 600; padding: 6px 14px; }
+.fin-settings-page .fin-cv-bar { margin-bottom: 14px; }
+/* editing on the canvas */
+.fin-leaf { cursor: pointer; }
+.fin-leaf.editable .fin-cv-v { margin-right: 6px; }
+.fin-cv-ed { position: absolute; z-index: 7; width: min(320px, calc(100% - 16px)); display: grid; gap: 8px; padding: 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--elev-3, 0 12px 32px rgba(0,0,0,.25)); left: 16px; top: 16px; }
+.fin-cv-ed-t { font-size: 14px; }
+.fin-cv-ed-f { display: grid; gap: 3px; font-size: 12px; color: var(--ink-3); }
+.fin-cv-ed-f .input { color: var(--ink); }
+.fin-msg.edit { justify-content: flex-end; }
+.fin-msg.edit .fin-bub { background: var(--bg); border-style: dashed; font-size: 13px; }

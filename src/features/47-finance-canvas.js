@@ -11,7 +11,7 @@ const finCvKeep = () => { try { localStorage.setItem(FIN_CV_LS, JSON.stringify({
 const finTxt = h => String(h || '').replace(/<[^>]+>/g, '').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
 const finSecLabel = k => (FIN_SECS.find(s => s[0] === k) || [k, k])[1];
 // which canvas node stands for each part, so the open one is marked
-const FIN_SEC_NODE = { dash: 'root', accounts: 'accts', inc: 'inc', exp: 'exp', credit: 'com', own: 'own', buy: 'buy', settings: 'set', import: 't:import', ledger: 't:ledger', update: 't:update', budget: 't:budget', sim: 't:sim', forecast: 't:forecast' };
+const FIN_SEC_NODE = { dash: 'root', accounts: 'accts', inc: 'inc', exp: 'exp', credit: 'com', own: 'own', buy: 'buy', import: 't:import', ledger: 't:ledger', update: 't:update', budget: 't:budget', sim: 't:sim', forecast: 't:forecast' };
 
 /* --- the tree: built fresh from the numbers every part uses --- */
 function finCvModel() {
@@ -90,7 +90,6 @@ function finCvModel() {
   if (qs.length) B.push(branch('q', '❓', 'Questions for you', 0, 'update', `${qs.length} to answer`, qs.map(q => leaf('q:' + q.id, E.clip(finTxt(q.text), 70), '', 'answer in Balances & history', { act: 'fin-sec', s: 'update' }, 'warn'))));
   else if (log.length) B.push(branch('auto', '🤖', 'Sorted by Claude', 260, 'update', `${(typeof finAutoLog === 'function' ? finAutoLog() : []).length} decision${(typeof finAutoLog === 'function' ? finAutoLog() : []).length === 1 ? '' : 's'} · change any`, log.map(x => leaf('d:' + x.id, x.label, '', x.how + (x.why ? ' · ' + x.why : ''), { act: 'fin-sec', s: x.sec || 'update' }))));
 
-  B.push(branch('set', '⚙️', 'Settings & backup', 220, 'settings', `${p.base} · categories, rules, backup`, []));
 
   const root = { id: 'root', type: 'root', label: 'My money', sec: 'dash', sum: `net worth ${own.net !== null ? fk(own.net) : '—'} · free cash ${fk(n.free)} · saving ${fk(n.capacity)} a month`, children: B };
   const f = UI.fin.cv.focus && B.find(b => b.id === UI.fin.cv.focus);
@@ -139,10 +138,11 @@ function finCvNode(n, hue) {
     return `<div class="mnode project fin-cvn fin-cv-br${open}${fresh}" role="button" tabindex="0" data-act="fin-sec" data-s="${esc(n.sec)}" data-node="${esc(n.id)}" title="Open ${esc(n.label)}" style="${st}">
       <span class="gicon fin-cv-ic" aria-hidden="true">${n.icon}</span><div class="mtxt"><b>${esc(n.label)}</b><small>${esc(n.sum)}</small></div>
       ${hidden && kids ? `<span class="mmore">+${kids}</span>` : ''}
-      ${kids ? `<button class="fin-cv-btn tg" data-act="fin-cv-tog" data-id="${esc(n.id)}" aria-expanded="${!hidden}" title="${hidden ? 'Unfold' : 'Fold'}" aria-label="${hidden ? 'Unfold' : 'Fold'} ${esc(n.label)}">${hidden ? '▸' : '▾'}</button>` : ''}${n.id !== 'rec' && n.id !== 'set' ? `<button class="fin-cv-btn fo" data-act="fin-cv-focus" data-id="${esc(n.id)}" title="${UI.fin.cv.focus === n.id ? 'Show everything' : 'Show only this'}" aria-label="${UI.fin.cv.focus === n.id ? 'Show everything' : 'Show only ' + esc(n.label)}">⤢</button>` : ''}</div>`;
+      ${kids ? `<button class="fin-cv-btn tg" data-act="fin-cv-tog" data-id="${esc(n.id)}" aria-expanded="${!hidden}" title="${hidden ? 'Unfold' : 'Fold'}" aria-label="${hidden ? 'Unfold' : 'Fold'} ${esc(n.label)}">${hidden ? '▸' : '▾'}</button>` : ''}${typeof finCvAddSpec === 'function' && finCvAddSpec(n.id) ? `<button class="fin-cv-btn ad" data-act="fin-cv-add" data-id="${esc(n.id)}" title="Add" aria-label="Add to ${esc(n.label)}">＋</button>` : ''}${n.id !== 'rec' ? `<button class="fin-cv-btn fo" data-act="fin-cv-focus" data-id="${esc(n.id)}" title="${UI.fin.cv.focus === n.id ? 'Show everything' : 'Show only this'}" aria-label="${UI.fin.cv.focus === n.id ? 'Show everything' : 'Show only ' + esc(n.label)}">⤢</button>` : ''}</div>`;
   }
-  return `<button class="mnode fin-cvn fin-leaf ${n.cls}${open}${fresh}" ${finCvAttrs(n.act)} data-node="${esc(n.id)}" title="${esc(n.label)}${n.val ? ' — ' + esc(n.val) : ''}${n.sub ? '\n' + esc(n.sub) : ''}" style="${st}">
-    <div class="mtxt"><b>${n.cls.includes('tool') ? '<span class="fin-tool-i" aria-hidden="true">' + (FIN_ICON[n.act.s] || '') + '</span>' : ''}${esc(n.label)}</b>${n.sub ? `<small>${esc(n.sub)}</small>` : ''}</div>${n.val ? `<span class="fin-cv-v num">${esc(n.val)}</span>` : ''}</button>`;
+  const editable = typeof finCvSpec === 'function' && !n.cls.includes('tool') && !n.cls.includes('more') && !!finCvSpec(n.id);
+  return `<div class="mnode fin-cvn fin-leaf ${n.cls}${open}${fresh}${editable ? ' editable' : ''}" role="button" tabindex="0" ${finCvAttrs(n.act)} data-node="${esc(n.id)}" title="${esc(n.label)}${n.val ? ' — ' + esc(n.val) : ''}${n.sub ? '\n' + esc(n.sub) : ''}" style="${st}">
+    <div class="mtxt"><b>${n.cls.includes('tool') ? '<span class="fin-tool-i" aria-hidden="true">' + (FIN_ICON[n.act.s] || '') + '</span>' : ''}${esc(n.label)}</b>${n.sub ? `<small>${esc(n.sub)}</small>` : ''}</div>${n.val ? `<span class="fin-cv-v num">${esc(n.val)}</span>` : ''}${editable ? `<button class="fin-cv-btn ed" data-act="fin-cv-edit" data-id="${esc(n.id)}" title="Edit (or double-click, F2)" aria-label="Edit ${esc(n.label)}">✎</button>` : ''}</div>`;
 }
 function finCvBoard() {
   const cv = UI.fin.cv, root = finCvModel(), L = finCvLayout(root);
@@ -172,18 +172,20 @@ function finPanelHTML() {
     <div class="fin-panel-b" id="fin-panel-b">${filt ? finFilterBar() : ''}${body}</div></aside>`;
 }
 
+const finTabs = () => `<div class="seg fin-tabs" role="tablist" aria-label="Money">${[['canvas', '🧭 Canvas'], ['settings', '⚙️ Settings']].map(([k, l]) => `<button role="tab" data-act="fin-tab" data-v="${k}" aria-selected="${(UI.fin.tab || 'canvas') === k}" aria-pressed="${(UI.fin.tab || 'canvas') === k}">${l}</button>`).join('')}</div>`;
 VIEW_FN.finance = () => {
   const cv = UI.fin.cv;
+  if (UI.fin.tab === 'settings') return `<div class="wrap fin fin-settings-page"><div class="fin-cv-bar"><h1>Money</h1>${finTabs()}</div>${FIN_VIEW.settings()}</div>`;
   return `<div class="wrap fin fin-canvas-page">
   <section class="fin-cvwrap ${cv.full ? 'full' : ''} ${UI.fin.panel ? 'has-panel' : ''}" id="fin-s-map" aria-label="Money canvas">
-    <div class="fin-cv-bar"><h1>Money</h1><span class="small muted fin-cv-hint">Tap any part to open it · tell the canvas below what changed</span><span class="spacer"></span>
+    <div class="fin-cv-bar"><h1>Money</h1>${finTabs()}<span class="small muted fin-cv-hint">Tap to open · ✎ to edit · or tell the canvas below</span><span class="spacer"></span>
       ${cv.focus ? `<button class="btn sm" data-act="fin-cv-focus" data-id="">Show everything</button>` : ''}
       <button class="btn sm" data-act="fin-new-tx" title="Add a transaction by hand">${I.plus} Transaction</button>
       <div class="seg" role="group" aria-label="Direction"><button data-act="fin-cv-dir" data-v="v" aria-pressed="${cv.dir === 'v'}" title="Branches down">↓ Down</button><button data-act="fin-cv-dir" data-v="h" aria-pressed="${cv.dir === 'h'}" title="Branches across">→ Across</button></div>
       <button class="btn sm" data-act="fin-cv-all" data-v="open" title="Unfold every branch">Unfold all</button><button class="btn sm" data-act="fin-cv-all" data-v="fold" title="Fold every branch">Fold all</button>
       <div class="seg zoom" role="group" aria-label="Zoom"><button data-act="fin-cv-zoom" data-v="out" aria-label="Zoom out">−</button><button data-act="fin-cv-fit" title="Fit to the screen"><span id="fin-cv-z">${Math.round(cv.k * 100)}%</span></button><button data-act="fin-cv-zoom" data-v="in" aria-label="Zoom in">+</button></div>
       <button class="btn sm" data-act="fin-cv-full" aria-pressed="${cv.full}" title="${cv.full ? 'Back (Esc)' : 'Full screen'}">${cv.full ? '✕ Close' : '⤢ Full screen'}</button></div>
-    <div class="fin-cv-stage">${finCvBoard()}${finPanelHTML()}</div>
+    <div class="fin-cv-stage">${finCvBoard()}${finPanelHTML()}${typeof finCvEditorHTML === 'function' ? finCvEditorHTML() : ''}</div>
     ${typeof finTalkHTML === 'function' ? finTalkHTML() : ''}
   </section>
 </div>`;
@@ -193,6 +195,7 @@ VIEW_FN.finance = () => {
 function finCvApply() {
   const w = $('#fin-cv-world'), cv = UI.fin.cv; if (w) w.style.transform = `translate(${cv.x}px,${cv.y}px) scale(${cv.k})`;
   const z = $('#fin-cv-z'); if (z) z.textContent = Math.round(cv.k * 100) + '%';
+  if (typeof finCvEditorPlace === 'function') finCvEditorPlace();
 }
 // on opening: a readable size (all of it when it fits, else starting from "My money"); Fit shows all of it
 function finCvFit(all) {
@@ -242,7 +245,7 @@ const finCvEnd = e => {
 };
 document.addEventListener('pointerup', finCvEnd); document.addEventListener('pointercancel', finCvEnd);
 // a drag that ends on a card is not a tap on it
-document.addEventListener('click', e => { if (FCV.moved && e.target.closest && e.target.closest('#fin-cv-vp')) { e.stopPropagation(); e.preventDefault(); FCV.moved = false; } }, true);
+document.addEventListener('click', e => { if (FCV.moved && e.target.closest && e.target.closest('#fin-cv-vp')) { e.stopImmediatePropagation(); e.preventDefault(); FCV.moved = false; } }, true);
 // scrolling over the canvas zooms it (the canvas is the page); Ctrl + scroll and a trackpad pinch too
 document.addEventListener('wheel', e => {
   if (!e.target.closest || !e.target.closest('#fin-cv-vp')) return;
@@ -254,7 +257,7 @@ document.addEventListener('keydown', e => {
   const br = e.target.closest && e.target.closest('.fin-cvn[role="button"]'); if (br && (e.key === 'Enter' || e.key === ' ') && e.target === br) { e.preventDefault(); br.click(); }
 });
 function finCvFull(on) { UI.fin.cv.full = on; UI.fin.cv.fitted = false; document.documentElement.classList.toggle('fin-cv-lock', on); render(); }
-function finOpen(k) { if (k === 'map') k = null; UI.fin.panel = k && FIN_VIEW[k] ? k : null; if (k) UI.fin.sec = k; if (UI.view !== 'finance') go('finance'); else render(); }
+function finOpen(k) { if (k === 'map') k = null; if (k === 'settings') { UI.fin.tab = 'settings'; UI.fin.panel = null; if (UI.view !== 'finance') go('finance'); else { render(); window.scrollTo(0, 0); } return; } UI.fin.tab = 'canvas'; UI.fin.panel = k && FIN_VIEW[k] ? k : null; if (k) UI.fin.sec = k; if (UI.view !== 'finance') go('finance'); else render(); }
 
 // a redraw keeps where you were in the open panel
 HOOKS.beforeRender.push(() => { const b = $('#fin-panel-b'); if (b && UI.fin.panel) UI.fin.panelScroll[UI.fin.panel] = b.scrollTop; });
@@ -273,6 +276,7 @@ HOOKS.afterRender.push(() => {
 Object.assign(ACT, {
   'fin-sec': el => { UI.fin.sel.clear(); const n = el.closest && el.closest('#fin-cv-vp [data-node]'); UI.fin.panelGoto = n ? n.dataset.node : null; finOpen(el.dataset.s); },
   'fin-panel-x': () => { UI.fin.panel = null; render(); },
+  'fin-tab': el => { if (el.dataset.v === 'settings') finOpen('settings'); else { UI.fin.tab = 'canvas'; UI.fin.cv.fitted = false; render(); } },
   'fin-panel-wide': () => { UI.fin.panelWide = !UI.fin.panelWide; render(); },
   'fin-buy-edit': el => { UI.fin.buyEdit = el.dataset.id; UI.fin.panel = 'buy'; UI.fin.panelScroll.buy = 0; render(); const n = $('#by-name'); if (n) n.scrollIntoView({ block: 'center' }); },
   'fin-cv-tog': (el, e) => { e && e.stopPropagation && e.stopPropagation(); const id = el.dataset.id, c = UI.fin.cvCol; c.has(id) ? c.delete(id) : c.add(id); finCvKeep(); render(); },

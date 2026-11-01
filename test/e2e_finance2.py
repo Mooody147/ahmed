@@ -173,8 +173,8 @@ async def main():
         # the canvas: every former tab is on it
         await pg.keyboard.press('Escape'); await pg.wait_for_timeout(200)
         brs = await ev("[...document.querySelectorAll('.fin-cv-br')].map(b => b.dataset.node)"); print('CANVAS BRANCHES', brs)
-        for k in ('accts', 'inc', 'exp', 'com', 'own', 'third', 'buy', 'auto', 'set'): assert k in brs, k
-        for node, part in [('root', 'dash'), ('t:import', 'import'), ('t:ledger', 'ledger'), ('t:budget', 'budget'), ('t:sim', 'sim'), ('t:forecast', 'forecast'), ('accts', 'accounts'), ('inc', 'inc'), ('exp', 'exp'), ('own', 'own'), ('set', 'settings')]:
+        for k in ('accts', 'inc', 'exp', 'com', 'own', 'third', 'buy', 'auto'): assert k in brs, k
+        for node, part in [('root', 'dash'), ('t:import', 'import'), ('t:ledger', 'ledger'), ('t:budget', 'budget'), ('t:sim', 'sim'), ('t:forecast', 'forecast'), ('accts', 'accounts'), ('inc', 'inc'), ('exp', 'exp'), ('own', 'own')]:
             await tap(node); await pg.wait_for_timeout(250)
             assert await ev(f"{U}.panel") == part and await ev("!!document.querySelector('#fin-panel .fin-panel-b > *')"), (node, part)
             assert await ev(f"document.querySelector('.fin-cvn.sel').dataset.node") == node, 'the open part is marked'
@@ -197,6 +197,57 @@ async def main():
         await pg.click('[data-act="fin-cv-full"]'); await pg.wait_for_timeout(250)
         assert await ev("document.querySelector('.fin-cvwrap').classList.contains('full') && !!document.querySelector('.fin-cvwrap.full #fin-talk-in')"), 'full screen keeps the talk box'
         await pg.keyboard.press('Escape'); await pg.wait_for_timeout(250); assert not await ev("document.querySelector('.fin-cvwrap').classList.contains('full')")
+
+        # only two tabs above the canvas: Canvas and Settings
+        tabs = await ev("[...document.querySelectorAll('.fin-tabs button')].map(b => b.textContent.trim())"); print('TABS', tabs)
+        assert [t.strip() for t in tabs] == ['Canvas', 'Settings']
+        await pg.click('[data-act="fin-tab"][data-v="settings"]'); await pg.wait_for_timeout(300)
+        assert not await ev("!!document.getElementById('fin-cv-vp')") and 'Backup' in await pg.text_content('#main'), 'Settings is its own tab'
+        await pg.click('[data-act="fin-tab"][data-v="canvas"]'); await pg.wait_for_timeout(400)
+        assert await ev("!!document.getElementById('fin-cv-vp')")
+
+        # editing on the canvas: a balance, a salary, a goal, a budget — written to the same records everything reads
+        async def edit(node, values, add=False):
+            await ev(f"window.__FIN.show('{node}')"); await pg.wait_for_timeout(80)
+            await pg.hover(f'.fin-cvn[data-node="{node}"]'); await pg.click(f'.fin-cvn[data-node="{node}"] [data-act="{"fin-cv-add" if add else "fin-cv-edit"}"]')
+            await pg.wait_for_selector('#fin-cv-ed')
+            for k, v in values.items():
+                sel = f'#fin-cv-ed [data-k="{k}"]'
+                if await ev(f"document.querySelector('{sel}').tagName") == 'SELECT': await pg.select_option(sel, v)
+                else: await pg.fill(sel, v)
+            await pg.click('[data-act="fin-cv-ed-ok"]'); await pg.wait_for_timeout(300); await idle()
+            return [x for x in await ev("window.__FIN.talk()") if x['who'] == 'edit'][-1]
+        m = await edit(f'a:{prim}', {'balance': '50000'}); print('EDIT LINE', m)
+        assert m['who'] == 'edit' and '50,000' in m['text'] and (await ev(f"window.__FIN.latest('{prim}')"))['balance'] == 50000
+        assert await ev("window.__FIN.questions().length") == 0, 'the difference is settled, nothing waits'
+        assert '50,000' in await ev(f"document.querySelector('.fin-cvn[data-node=\"a:{prim}\"]').textContent"), 'the card shows it at once'
+        sal_id = await ev("window.__FIN.prefs().inputs.filter(i => i.key === 'salary').pop().id")
+        await edit(f'in:{sal_id}', {'amount': '38000'})
+        assert (await ev("window.__FIN.now()"))['income'] >= 38000 or (await ev("window.__FIN.prefs().inputs.filter(i => i.key === 'salary').pop()"))['amount'] == 38000
+        lap = await ev("window.__FIN.buy().items.find(i => i.name === 'Laptop').id")
+        await edit(f'b:{lap}', {'price': '45000'}); assert await ev(f"window.__FIN.prefs().buys.find(b => b.id === '{lap}').price") == 45000
+        await tap('buy'); await pg.wait_for_selector('#fin-panel .fin-map')
+        assert '45,000' in await pg.text_content('#fin-panel'), 'the open part shows the canvas edit'
+        await pg.keyboard.press('Escape')
+        await pg.click('[data-act="fin-cv-all"][data-v="open"]'); await pg.wait_for_timeout(300)
+        cat = await ev("document.querySelector('.fin-leaf.editable[data-node^=\"c:\"]').dataset.node")
+        await edit(cat, {'budget': '5000'}); assert await ev(f"window.__FIN.prefs().budgets['{cat[2:]}']") == 5000
+        await pg.click('.fin-cvn[data-node="exp"] [data-act="fin-cv-tog"]'); await pg.wait_for_timeout(200)   # folded again, as before
+        # ＋ on a branch adds; Remove in the form removes; Undo puts it back
+        await edit('buy', {'name': 'Camera', 'price': '9000'}, add=True)
+        cam = await ev("(window.__FIN.prefs().buys.find(b => b.name === 'Camera') || {}).id"); assert cam and await ev(f"!!document.querySelector('.fin-cvn[data-node=\"b:{cam}\"]')")
+        await ev(f"window.__FIN.show('b:{cam}')"); await pg.dblclick(f'.fin-cvn[data-node="b:{cam}"] .mtxt'); await pg.wait_for_selector('#fin-cv-ed')
+        await pg.keyboard.press('Escape'); await pg.wait_for_timeout(200); assert not await ev("!!document.getElementById('fin-cv-ed')"), 'Esc closes the form'
+        await ev(f"window.__FIN.show('b:{cam}')"); await pg.dblclick(f'.fin-cvn[data-node="b:{cam}"] .mtxt'); await pg.wait_for_selector('#fin-cv-ed')
+        await pg.click('[data-act="fin-cv-ed-del"]'); await pg.wait_for_timeout(300)
+        assert not await ev("window.__FIN.prefs().buys.some(b => b.name === 'Camera')")
+        await pg.click('#fin-talk-feed .fin-msg.edit:last-child [data-act="fin-talk-undo"]'); await pg.wait_for_timeout(300)
+        assert await ev("window.__FIN.prefs().buys.some(b => b.name === 'Camera')"), 'Undo of a canvas change'
+        # the talk box reads what was changed on the canvas
+        await say('How much is my salary?')
+        last = await ev("window.__prompts.filter(p => /^You update a personal finance tool/.test(p.prompt)).pop().prompt")
+        assert '38000' in last and '45000' in last, 'Claude sees the canvas edits'
+        await pg.screenshot(path=os.path.join(HERE, 'shots', 'finance-canvas-edit.png'))
 
         # questions are answered and change nothing; asking to see something opens it
         t0 = await ev("window.__FIN.tx().length"); m = await say('How much did I spend on food in September?')

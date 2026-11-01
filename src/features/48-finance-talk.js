@@ -31,6 +31,8 @@ const finTalkFeed = () => finTalkDoc('feed').items;
 function finTalkPush(m) { const d = clone(finTalkDoc('feed')); const x = { ...m, text: String(m.text || '').slice(0, 1200), reply: String(m.reply || '').slice(0, 1000), notes: (m.notes || []).slice(0, 10).map(n => String(n).slice(0, 200)), done: (m.done || []).slice(0, 12).map(n => String(n).slice(0, 160)) }; d.items = [...d.items, x].slice(-40); colPut('fintalk', d); }
 function finTalkAdd(files) { for (const f of files) UI.fin.talk.files.push({ file: f, name: f.name, type: f.type || '' }); render(); }
 function finTalkMsg(m, live) {
+  if (m.who === 'edit') { const last = finTalkFeed().filter(x => x.who !== 'you' && x.undoable).pop(), can = !m.undone && last && last.id === m.id && UI.fin.undo.has(m.id);
+    return `<div class="fin-msg edit"><div class="fin-bub"><span>✎ On the canvas: ${esc(m.text)}</span>${m.undone ? ' <span class="small muted">↩ Undone.</span>' : can ? ` <button class="btn sm ghost" data-act="fin-talk-undo" data-id="${esc(m.id)}">↩ Undo</button>` : ''}</div></div>`; }
   if (m.who === 'you') return `<div class="fin-msg you"><div class="fin-bub">${m.text ? esc(m.text) : ''}${(m.files || []).length ? `<div class="fin-msg-files">${m.files.map(f => `<span class="fin-tag">📎 ${esc(f)}</span>`).join('')}</div>` : ''}</div></div>`;
   const last = finTalkFeed().filter(x => x.who !== 'you' && x.undoable).pop(), canUndo = !live && !m.undone && m.undoable && last && last.id === m.id && UI.fin.undo.has(m.id);
   return `<div class="fin-msg claude ${live ? 'live' : ''}"><span class="fin-av" aria-hidden="true">🤖</span><div class="fin-bub">

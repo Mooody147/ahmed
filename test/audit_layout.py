@@ -85,6 +85,16 @@ async def main():
                 if found: problems[f'{w}px {s}'] = found
                 if w in (1400, 390) and s in ('dash', 'buy', 'update', 'credit', 'import'): await pg.screenshot(path=os.path.join(HERE, 'shots', f'audit-{w}-{s}.png'))
             await ev("window.__FIN.open('map')"); await pg.wait_for_timeout(200)
+            # the edit form on the canvas
+            node = await ev("(document.querySelector('.fin-leaf.editable') || {}).dataset?.node")
+            if node:
+                await ev(f"window.__FIN.edit('{node}')"); await pg.wait_for_timeout(300)
+                found = await ev(CHECK + "")
+                ed = await ev("(() => { const e = document.getElementById('fin-cv-ed'), s = document.querySelector('.fin-cv-stage'); if (!e) return 'no form'; const a = e.getBoundingClientRect(), b = s.getBoundingClientRect(); return a.left >= b.left - 1 && a.right <= b.right + 1 && a.top >= b.top - 1 && a.bottom <= b.bottom + 1 ? '' : 'form outside the canvas'; })()")
+                if ed: found = (found or []) + [ed]
+                if found: problems[f'{w}px edit form'] = found
+                if w in (1400, 390): await pg.screenshot(path=os.path.join(HERE, 'shots', f'audit-{w}-edit.png'))
+                await ev("document.querySelector('[data-act=\"fin-cv-ed-x\"]').click()"); await pg.wait_for_timeout(200)
         for k, v in problems.items(): print(f'== {k}'); [print('   ', x) for x in v[:12]]
         bad = [e for e in errors if 'PAGEERROR' in e]
         print('PAGE ERRORS', bad[:5]); print('AUDIT', 'CLEAN' if not problems and not bad else f'{sum(len(v) for v in problems.values())} problems')

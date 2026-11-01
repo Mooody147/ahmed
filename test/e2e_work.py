@@ -63,7 +63,13 @@ async def main():
 
         # time
         await pg.click('[data-act="ins-tab"][data-tab="time"]'); await pg.wait_for_timeout(200)
-        hrs = await ev("document.querySelector('.tile-n').textContent"); print('HOURS', hrs); assert float(hrs) >= 2
+        hrs = float(await ev("document.querySelector('.tile-n').textContent"))
+        # time just logged counts from when it started: in the first hours of a new week part of it is last week's
+        if hrs < 2:
+            await pg.click('[data-act="time-period"][data-p="lastweek"]'); await pg.wait_for_timeout(200)
+            hrs += float(await ev("document.querySelector('.tile-n').textContent"))
+            await pg.click('[data-act="time-period"][data-p="week"]'); await pg.wait_for_timeout(200)
+        print('HOURS', hrs); assert hrs >= 2
         await pg.click('[data-act="time-csv"]'); await pg.wait_for_timeout(300)
 
         # reports
