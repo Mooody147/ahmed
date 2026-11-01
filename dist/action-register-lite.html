@@ -17575,8 +17575,10 @@ function finTreeArt(L) {
   for (let i = 0; i < 60; i++) { const x = cx + rnd(-900, 900), y = G + rnd(-8, 8), r = rnd(5, 10); grass += `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1(r)}" ry="${f1(r * 0.45)}" transform="rotate(${Math.round(rnd(0, 180))} ${f1(x)} ${f1(y)})" fill="${pick(['#b5651d', '#c98a2e', '#8e4f1c', '#a8752f', '#d39a3a'])}" opacity=".85"/>`; }
   for (let i = 0; i < 7; i++) { const x = cx + (i % 2 ? 1 : -1) * rnd(260, 520), y = G + 2, h = rnd(18, 34), r = h * rnd(0.6, 0.9); grass += `<path d="M${f1(x - 3)},${f1(y)} L${f1(x - 3)},${f1(y - h)} L${f1(x + 3)},${f1(y - h)} L${f1(x + 3)},${f1(y)} Z" fill="#efe6d6"/><path d="M${f1(x - r)},${f1(y - h + 2)} Q${f1(x)},${f1(y - h - r * 1.2)} ${f1(x + r)},${f1(y - h + 2)} Z" fill="${pick(['#a3472e', '#8a5a3a', '#c06a3a'])}"/>`; }
   void W;
-  return { box, svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${box.x} ${box.y} ${box.w} ${box.h}" width="${box.w}" height="${box.h}">${defs}
-    ${soil}${roots}${crownBack}${limbs}<path d="${trunk}" fill="url(#ftBark)"/><g clip-path="url(#ftTrunkClip)">${barkLines}</g>${crownFront}${tipSprays}${edge}${vines}${branches}${grass}</svg>` };
+  // drawn in stages (each its own small picture over the last), so the page never stops for long
+  const layers = [soil + roots, crownBack, limbs + `<path d="${trunk}" fill="url(#ftBark)"/><g clip-path="url(#ftTrunkClip)">${barkLines}</g>`, crownFront + tipSprays, edge + vines + branches, grass];
+  const wrap = body => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${box.x} ${box.y} ${box.w} ${box.h}" width="${box.w}" height="${box.h}">${defs}${body}</svg>`;
+  return { box, layers: layers.map(wrap), svg: wrap(layers.join('')) };
 }
 // fine roots: forks from a root, then forks of those, then hairs
 function finTreeRootlets(a, b, t, depth, R, limb, G) {
@@ -17607,12 +17609,16 @@ async function finTreeBake(key, art) {
   if (FTREE.busy === key) return; FTREE.busy = key;
   try {
     const hit = await finTreeCacheGet(key); if (hit && hit.blob) { finTreeShow(key, hit.blob, hit.box); return; }
-    const { box, svg } = art, small = (navigator.deviceMemory && navigator.deviceMemory <= 4) || innerWidth < 700;
+    const { box } = art, small = (navigator.deviceMemory && navigator.deviceMemory <= 4) || innerWidth < 700;
     const scale = Math.min(1.25, Math.sqrt((small ? 7e6 : 13e6) / (box.w * box.h)));
-    const src = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' })), img = new Image();
-    img.src = src; await img.decode();
     const c = document.createElement('canvas'); c.width = Math.round(box.w * scale); c.height = Math.round(box.h * scale);
-    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(src);
+    const ctx = c.getContext('2d'), idle = () => new Promise(r => (window.requestIdleCallback ? requestIdleCallback(() => r(), { timeout: 400 }) : setTimeout(r, 30)));
+    for (const layer of art.layers) {
+      if (FTREE.key !== key) return;                     // the layout changed meanwhile: that picture is not needed
+      await idle();
+      const src = URL.createObjectURL(new Blob([layer], { type: 'image/svg+xml' })), img = new Image();
+      img.src = src; await img.decode(); ctx.drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(src);
+    }
     const blob = await new Promise(r => c.toBlob(r, 'image/webp', 0.9)) || await new Promise(r => c.toBlob(r, 'image/png'));
     if (!blob) throw new Error('no picture');
     finTreeCachePut(key, { blob, box }); finTreeShow(key, blob, box);
@@ -17668,6 +17674,9 @@ function finCvMode(mode) {
   const reduce = (() => { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch { return true; } })();
   const key = el => (el.dataset.room ? 'r:' : 'n:') + (el.dataset.room || el.dataset.node);
   const before = new Map(); if (!reduce) for (const el of document.querySelectorAll('#fin-cv-world [data-node], #fin-cv-world [data-room]')) { if (el.closest('.fin-room-h')) continue; before.set(key(el), { x: parseFloat(el.style.left) || 0, y: parseFloat(el.style.top) || 0 }); }
+  // each layout keeps the heights its own opened details measured (they are as wide as that layout makes them)
+  UI.fin.detHBy = UI.fin.detHBy || {}; UI.fin.detHBy[UI.fin.cv.mode || 'rooms'] = UI.fin.detH; UI.fin.detH = UI.fin.detHBy[mode] || {};
+  UI.fin.fwBy = UI.fin.fwBy || {}; UI.fin.fwBy[UI.fin.cv.mode || 'rooms'] = { ...FIN_W }; for (const k of Object.keys(FIN_W)) delete FIN_W[k]; Object.assign(FIN_W, UI.fin.fwBy[mode] || {});
   UI.fin.cv.mode = mode; try { localStorage.setItem('ar-fin-cv-mode', mode); } catch {}
   UI.fin.menu = null; UI.fin.cv.user = false; UI.fin.cv.fitted = false; finCvGlide(); render();
   if (reduce) return;
