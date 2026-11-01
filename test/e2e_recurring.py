@@ -102,6 +102,27 @@ async def main():
         gtxt = await ev("document.querySelector('#fin-pop .fin-gc').textContent")
         for part in ['1 · Feasibility', '2 · Assessment', '3 · Requirements', '4 · Execution plan', '5 · To make it achievable', 'Not now']: assert part in gtxt, part
         await pg.screenshot(path=os.path.join(HERE, 'shots', 'finance-goalcheck.png'))
+        # 7. "Check my financial health": where you stand on six measures, your optimal position, the road there
+        await ev("window.__FIN.presentEnd && window.__FIN.presentEnd()"); await pg.keyboard.press('Escape'); await ev("window.__FIN.mode('mind')"); await pg.wait_for_timeout(1000)
+        await ev("window.__FIN.show('free')"); await pg.wait_for_timeout(600)
+        await pg.click('.fin-health-btn'); await pg.wait_for_selector('#fin-health-win')
+        H = await ev("window.__FIN.health()"); print('HEALTH', H['score'], H['grade'], H['measures'], H['steps'][:3])
+        assert H['score'] is not None and len(H['measures']) == 6 and H['opt'] and H['steps'], 'score, measures, optimal position, roadmap'
+        assert sum(1 for s_ in H['steps'] if s_[0] == 'next') == 1, 'one step is next'
+        wt = await ev("document.getElementById('fin-health-win').textContent")
+        for part in ['1 · Where you stand today', '2 · Your optimal position', '3 · Your roadmap', 'Savings rate', 'Emergency fund']: assert part in wt, part
+        await pg.wait_for_timeout(500); await pg.screenshot(path=os.path.join(HERE, 'shots', 'finance-health.png'))
+        h = await pg.locator('#fin-health-win .fin-talk-win-h').bounding_box(); w0 = await pg.locator('#fin-health-win').bounding_box()
+        await pg.mouse.move(h['x'] + 120, h['y'] + 12); await pg.mouse.down(); await pg.mouse.move(h['x'] + 20, h['y'] + 52, steps=5); await pg.mouse.up(); await pg.wait_for_timeout(200)
+        w1 = await pg.locator('#fin-health-win').bounding_box(); assert abs(w1['x'] - w0['x'] + 100) < 6, ('it moves', w0, w1)
+        await pg.keyboard.press('Escape'); await pg.wait_for_timeout(200); assert not await ev("!!document.getElementById('fin-health-win')"), 'Esc closes it'
+        # 8. Rich Dad, simpler: how to read it in three lines; the statement only
+        await ev("window.__FIN.mode('rich')"); await pg.wait_for_timeout(1100); await ev("window.__FIN.presentEnd && window.__FIN.presentEnd()")
+        assert await ev("!!document.querySelector('.fin-rd-guide')"), 'how to read the statement'
+        frames = await ev("[...document.querySelectorAll('.fin-rich .rd-ft')].map(t => t.textContent)"); print('FRAMES', frames)
+        assert frames[0].startswith('INCOME STATEMENT — your month') and frames[1].startswith('BALANCE SHEET — what you own')
+        assert not await ev("!!document.querySelector('.fin-room[data-room=\"auto\"], .fin-room[data-room=\"ov\"]')"), 'the statement only'
+        await pg.screenshot(path=os.path.join(HERE, 'shots', 'finance-richdad-simple.png'))
         bad = [e for e in errors if 'PAGEERROR' in e or 'DIALOG' in e]; assert not bad, bad
         print('RECURRING E2E PASSED'); await b.close()
 

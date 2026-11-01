@@ -5,9 +5,9 @@
 const FWIN = { drag: null };
 // which window a title belongs to, and the key its place is kept under (a new card's pop-out / form starts beside it again)
 function finWinOf(t) {
-  const h = t.closest && t.closest('#fin-pop .fin-pop-h, #fin-cv-ed .fin-cv-ed-t, #fin-bal-win .fin-talk-win-h'); if (!h) return null;
-  const el = h.closest('#fin-pop, #fin-cv-ed, #fin-bal-win'), E0 = UI.fin.cvEdit;
-  const key = el.id === 'fin-pop' ? 'pop:' + UI.fin.pop : el.id === 'fin-cv-ed' ? 'ed:' + (E0 ? E0.add || E0.id : '') : 'bal';
+  const h = t.closest && t.closest('#fin-pop .fin-pop-h, #fin-cv-ed .fin-cv-ed-t, #fin-bal-win .fin-talk-win-h, #fin-health-win .fin-talk-win-h'); if (!h) return null;
+  const el = h.closest('#fin-pop, #fin-cv-ed, #fin-bal-win, #fin-health-win'), E0 = UI.fin.cvEdit;
+  const key = el.id === 'fin-pop' ? 'pop:' + UI.fin.pop : el.id === 'fin-cv-ed' ? 'ed:' + (E0 ? E0.add || E0.id : '') : el.id === 'fin-health-win' ? 'health' : 'bal';
   return { h, el, key };
 }
 const finWinPos = key => (UI.fin.winPos || {})[key] || null;
@@ -35,6 +35,8 @@ function finWinKeep() {
   if (p2) { Object.assign(ed.style, { left: p2.x + 'px', top: p2.y + 'px' }); ed.classList.add('moved'); }
   const bw = $('#fin-bal-win'), p3 = bw && finWinPos('bal');
   if (p3) Object.assign(bw.style, { left: p3.x + 'px', top: p3.y + 'px', right: 'auto', bottom: 'auto' });
+  const hw = $('#fin-health-win'), p4 = hw && finWinPos('health');
+  if (p4) Object.assign(hw.style, { left: p4.x + 'px', top: p4.y + 'px', right: 'auto', bottom: 'auto' });
 }
 HOOKS.afterRender.push(finWinKeep);
 Object.assign(window.__FIN, { winPos: () => UI.fin.winPos || {} });

@@ -44,8 +44,8 @@ function finWealth() {
 
 // the centre: financial freedom, your pattern, your cash flow, and the moves that build wealth
 function finFreeHTML() {
-  const W = finWealth(), R = W.R, n = W.n, [pt, why] = FIN_RD_PATTERN[R.pattern], pct = Math.round(R.freedom * 100), C = 2 * Math.PI * 52;
-  const ring = `<svg class="fin-free-ring" viewBox="0 0 128 128" aria-hidden="true"><circle cx="64" cy="64" r="52" class="bg"/><circle cx="64" cy="64" r="52" class="fg" style="stroke-dasharray:${(C * R.freedom).toFixed(1)} ${C.toFixed(1)}"/><text x="64" y="62" text-anchor="middle" class="p">${pct}%</text><text x="64" y="82" text-anchor="middle" class="s">free</text></svg>`;
+  const W = finWealth(), R = W.R, n = W.n, [pt, why] = FIN_RD_PATTERN[R.pattern], pct = Math.round(R.freedom * 100), C = 2 * Math.PI * 52, known = R.expenses > 0;
+  const ring = `<svg class="fin-free-ring" viewBox="0 0 128 128" aria-hidden="true"><circle cx="64" cy="64" r="52" class="bg"/><circle cx="64" cy="64" r="52" class="fg" style="stroke-dasharray:${(C * R.freedom).toFixed(1)} ${C.toFixed(1)}"/><text x="64" y="62" text-anchor="middle" class="p">${known ? pct + '%' : '—'}</text><text x="64" y="82" text-anchor="middle" class="s">${known ? 'free' : 'not known'}</text></svg>`;
   const years = W.months === null ? '' : W.months === 0 ? 'now, if your free cash were invested' : W.months > 600 ? 'more than 50 years at this pace' : W.months < 24 ? `in about ${W.months} months` : `in about ${(W.months / 12).toFixed(W.months < 120 ? 1 : 0)} years`;
   const moves = [];
   if (W.idle > 0) moves.push(['🏗️', 'Put idle money to work', `${fk(W.idle)} sits in your accounts beyond your ${fk(n.reserve)} safety reserve.${W.yld ? ` At your assets’ stated ${(W.yld * 100).toFixed(1)}% a year it would pay about ${fkr(W.idle * W.yld / 12)} a month (estimate).` : ' An asset that pays you would turn it into passive income.'}`, 'own']);
@@ -57,7 +57,11 @@ function finFreeHTML() {
   if (W.payLiab > 0) moves.push(['🔁', 'Your assets already pay a liability', `${W.payL.map(x => x.h.name).join(', ')}: about ${fk(W.payLiab)} a month of the return goes to your instalments (estimate) — the rich let assets pay for liabilities.`, 'own']);
   const flow = [['Earned income', '+' + fk(R.earned), 'work'], ['Passive income', '+' + fk(R.passive), 'gold'], ['Expenses', '−' + fk(n.spending || 0), 'drain'], ['Instalments (liabilities)', '−' + fk(n.instMonthly || 0), 'debt'], ['Surplus → assets', fkr(W.toAssets), 'green']];
   const m = UI.fin.cv.mode || 'mind', views = `<div class="seg fin-free-views" role="group" aria-label="See your wealth map as">${[['mind', '🧠 Map'], ['rich', '💼 Statement']].map(([k, l]) => `<button class="btn sm" data-act="fin-cv-mode" data-v="${k}" aria-pressed="${m === k}">${l}</button>`).join('')}</div>`;
-  return `<div class="fin-free ${R.pattern}">${views}
+  // the one button that judges it all: your health, the optimal position, the road there
+  const check = `<button class="btn primary fin-health-btn" data-act="fin-health" title="Where you stand, your optimal position and the road there">🩺 Check my financial health</button>`;
+  // in the statement view: how to read it, in three lines
+  const guide = m === 'rich' ? `<div class="fin-rd-guide"><div><b>Income statement</b><span>your month: what comes in, what goes out</span></div><div><b>Balance sheet</b><span>assets put money in your pocket; liabilities take it out</span></div><div><b>The aim</b><span>buy assets until their income — passive income — pays all your expenses</span></div></div>` : '';
+  return `<div class="fin-free ${R.pattern}"><div class="fin-free-bar">${check}${views}</div>${guide}
     <div class="fin-free-top">${ring}<div class="fin-free-pat"><span class="small muted">Your cash-flow pattern</span><b>${pt}</b><span class="small">${esc(why)}</span>
       <span class="small muted">Out of the rat race when passive income covers your expenses: ${fk(R.passive)} of ${fk(R.expenses)} a month.</span></div></div>
     <div class="fin-free-cf">${flow.map(([l, v, c]) => `<div class="${c}"><span>${esc(l)}</span><b class="num">${v}</b></div>`).join('')}<small class="muted">a month</small></div>

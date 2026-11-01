@@ -753,3 +753,28 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 .fin-cv-vp.z-far .mnode.fin-leaf.has-d { padding-bottom: 7px; }
 .fin-cv-vp.z-far .fin-leaf .fin-cv-d { display: none; }
 .mnode.fin-leaf .mtxt { min-width: 0; }
+
+/* ---------- Financial freedom: the health check button, and how to read the statement ---------- */
+.fin-free-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; }
+.fin-free-bar .fin-free-views { justify-self: auto; }
+.fin-rd-guide { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.fin-rd-guide > div { display: grid; gap: 2px; padding: 8px 10px; border-radius: 12px; background: color-mix(in srgb, #c9a227 10%, var(--surface)); border: 1px solid color-mix(in srgb, #c9a227 30%, var(--line)); }
+.fin-rd-guide b { font-size: 13px; } .fin-rd-guide span { font-size: 12px; color: var(--ink-2); line-height: 1.35; overflow-wrap: anywhere; }
+@media (max-width: 700px) { .fin-rd-guide { grid-template-columns: minmax(0, 1fr); } }
+/* ---------- the health check window ---------- */
+.fin-health-win { left: 16px; right: 16px; margin: 0 auto; top: 16px; bottom: auto; width: min(720px, calc(100% - 32px)); max-height: calc(100% - 32px); }   /* centred without a transform: its opening animation has the transform */
+.fin-health { display: grid; gap: 10px; }
+.fin-health h4 { margin: 6px 0 0; }
+.fin-health-top { display: flex; gap: 14px; align-items: center; padding: 12px 14px; border-radius: 14px; border: 1px solid var(--line); }
+.fin-health-top small { display: block; font-size: 11px; color: var(--ink-2); text-transform: uppercase; letter-spacing: .06em; } .fin-health-top > div:last-child b { font-size: 20px; display: block; }
+.fin-health-score { display: grid; place-items: center; width: 74px; height: 74px; border-radius: 50%; border: 6px solid var(--line); flex: none; } .fin-health-score b { font-size: 24px; line-height: 1; } .fin-health-score small { text-transform: none; letter-spacing: 0; }
+.fin-health-top.good { background: color-mix(in srgb, #2e9e5b 10%, var(--surface)); } .fin-health-top.good .fin-health-score { border-color: #2e9e5b; }
+.fin-health-top.warn { background: color-mix(in srgb, #e0a030 12%, var(--surface)); } .fin-health-top.warn .fin-health-score { border-color: #e0a030; }
+.fin-health-top.bad { background: color-mix(in srgb, #d9534f 10%, var(--surface)); } .fin-health-top.bad .fin-health-score { border-color: #d9534f; }
+.fin-health-m { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.fin-health-m > div { display: grid; gap: 2px; padding: 8px 10px; border-radius: 12px; border: 1px solid var(--line); border-left-width: 4px; min-width: 0; }
+.fin-health-m span { font-size: 12px; color: var(--ink-2); } .fin-health-m b { font-size: 14px; overflow-wrap: anywhere; } .fin-health-m small { font-size: 11px; color: var(--ink-3); }
+.fin-health-m .good { border-left-color: #2e9e5b; } .fin-health-m .warn { border-left-color: #e0a030; } .fin-health-m .bad { border-left-color: #d9534f; } .fin-health-m .unknown { border-left-color: var(--ink-3); border-style: dashed; }
+@media (max-width: 700px) { .fin-health-m { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+.fin-health-road li.done { opacity: .6; } .fin-health-road li.done::before { background: #2e9e5b; } .fin-health-road li.next::before { background: #e0a030; box-shadow: 0 0 0 3px var(--surface), 0 0 0 6px rgba(224, 160, 48, .35); } .fin-health-road li.later::before { background: var(--ink-3); }
+.fin-health-road li { grid-template-columns: 130px minmax(0, 1fr); }

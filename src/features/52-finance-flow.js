@@ -34,11 +34,11 @@ function finRdNumbers() {
   const own = leaves(room('own')), assets = (n.cash || 0) + own.filter(c => finRdKind(c, 'own') === 'asset').reduce((s, c) => s + amt(c), 0);
   const liab = (n.card && n.card.owed || 0) + (n.halan && n.halan.owed || 0) + own.filter(c => finRdKind(c, 'own') === 'liability').reduce((s, c) => s + amt(c), 0);
   const expenses = (n.spending || 0) + (n.instMonthly || 0), income = n.income || passive + earned, save = Math.max(0, n.capacity || 0);
-  const freedom = expenses > 0 ? Math.min(1, passive / expenses) : passive > 0 ? 1 : 0;
-  const pattern = passive >= expenses && expenses > 0 ? 'rich' : (n.instMonthly || 0) >= income * 0.2 || liab > assets ? 'middle' : income > 0 && save < income * 0.1 ? 'poor' : 'building';
+  const freedom = expenses > 0 ? Math.min(1, passive / expenses) : 0;   // with no expenses known, nobody is "free": it is unknown
+  const pattern = expenses <= 0 && income <= 0 ? 'unknown' : passive >= expenses && expenses > 0 ? 'rich' : (n.instMonthly || 0) >= income * 0.2 || liab > assets ? 'middle' : income > 0 && save < income * 0.1 ? 'poor' : 'building';
   return { n, passive, earned, assets, liab, expenses, income, save, freedom, pattern };
 }
-const FIN_RD_PATTERN = { rich: ['Rich', 'your assets pay for your life — passive income covers your expenses'], middle: ['Middle class', 'much of your income goes to liabilities — instalments and debt'], poor: ['Poor', 'income goes straight to expenses — little is left to buy assets'], building: ['Building', 'you save — now turn savings into assets that pay you every month'] };
+const FIN_RD_PATTERN = { unknown: ['Not known yet', 'add your statements, or tell the canvas your income and spending'], rich: ['Rich', 'your assets pay for your life — passive income covers your expenses'], middle: ['Middle class', 'much of your income goes to liabilities — instalments and debt'], poor: ['Poor', 'income goes straight to expenses — little is left to buy assets'], building: ['Building', 'you save — now turn savings into assets that pay you every month'] };
 // Rich Dad and the Mind map are one wealth map seen two ways: the same branches (earned income, passive income, assets,
 // expenses, liabilities, your choices), the same cards, the same centre (financial freedom) and the same channels.
 // Here they are set out as the book's financial statement; switching moves every card to its place in the other.
@@ -80,10 +80,11 @@ function finRichLayout(rooms0, plan, n) {
   let y = bsB + 120; const buy = by('buy'); if (buy) { fill(buy, L0, y, Wd - L0); y = buy.y + buy.h + 80; }
   for (const r of bx('buy')) { fill(r, L0, y, Wd - L0); y = r.y + r.h + 60; }
   let x = L0, rowH = 0;
-  for (const r of M.rest.filter(r => r.kind !== 'sec')) { const w = r.kind === 'ov' ? 1100 : 640; if (x + w > Wd && x > L0) { x = L0; y += rowH + 50; rowH = 0; } fill(r, x, y, w); x += w + 50; rowH = Math.max(rowH, r.h); }
+  // the statement view shows the statement: the other rooms are on the Mind map and Flow
+  for (const r of M.rest.filter(r => r.kind !== 'sec' && (r.kind === 'box' || r.kind === 'goals'))) { const w = r.kind === 'ov' ? 1100 : 640; if (x + w > Wd && x > L0) { x = L0; y += rowH + 50; rowH = 0; } fill(r, x, y, w); x += w + 50; rowH = Math.max(rowH, r.h); }
   y += rowH + 60;
   for (const r of M.rest) if (r.kind === 'sec') { fill(r, L0, y, Wd - L0); y = r.y + r.h + 44; }
-  const rooms = [center, ...all, ...[...M.boxes.values()].flat(), ...M.rest];
+  const rooms = [center, ...all, ...[...M.boxes.values()].flat(), ...M.rest.filter(r => ['sec', 'box', 'goals'].includes(r.kind))];
   // the cash flow, as the book draws it — the same channels as on the Mind map
   const max = Math.max(1, R.income, R.expenses), th = v => v > 0 ? Math.round(8 + 26 * Math.sqrt(v / max)) : 5, flows = [], pc = v => finPct(v, R.income || 1);
   const E = by('mm-earn'), P = by('mm-pass');
@@ -96,8 +97,8 @@ function finRichLayout(rooms0, plan, n) {
   if (Lb && expEnd) flows.push({ id: 'debt', cls: 'liability', a: { x: Lb.x + Lb.w * 0.5, y: Lb.y }, b: { x: expEnd.x + expEnd.w * 0.5, y: expEnd.y + expEnd.h }, t: th(n.instMonthly || 0), label: [fk(n.instMonthly || 0), ' a month'], line: `your liabilities cost you · ${pc(n.instMonthly) ?? '—'}% of income`, v: true });
   if (A && Lb && W.payLiab > 0) flows.push({ id: 'assetpays', cls: 'save', a: { x: A.x + A.w, y: A.y + 70 }, b: { x: Lb.x, y: Lb.y + 70 }, t: th(W.payLiab), label: [fk(Math.round(W.payLiab)), ' a month'], line: 'your assets pay a liability (estimate)' });
   const frames = [
-    E || exp ? { x: L0 - 30, y: y1 - FRD.FRAME, w: Wd - L0 + 60, h: isB - y1 + FRD.FRAME + 30, title: 'INCOME STATEMENT', cols: [[L0, 'Income — earned and passive'], [C2, 'Expenses']] } : null,
-    { x: L0 - 30, y: y2 - FRD.FRAME, w: Wd - L0 + 60, h: bsB - y2 + FRD.FRAME + 30, title: 'BALANCE SHEET', cols: [[L0, 'Assets — put money in your pocket'], [C2, 'Liabilities — take money out of your pocket']] }].filter(Boolean);
+    E || exp ? { x: L0 - 30, y: y1 - FRD.FRAME, w: Wd - L0 + 60, h: isB - y1 + FRD.FRAME + 30, title: 'INCOME STATEMENT — your month: money in, money out', cols: [[L0, 'Income — earned and passive'], [C2, 'Expenses']] } : null,
+    { x: L0 - 30, y: y2 - FRD.FRAME, w: Wd - L0 + 60, h: bsB - y2 + FRD.FRAME + 30, title: 'BALANCE SHEET — what you own vs what you owe', cols: [[L0, 'Assets — put money in your pocket'], [C2, 'Liabilities — take money out of your pocket']] }].filter(Boolean);
   const w = Wd, h = Math.max(y - 44, 400);
   UI.fin.cvPos = new Map([...rooms.map(r => [r.id, { x: r.x, y: r.y, w: r.w, h: r.h }]), ...cards.map(c => [c.id, { x: c.x, y: c.y, w: c.w, h: c.h }]), ...dets.map(d => [d.id + ':det', d])]);
   UI.fin.cvRoot = UI.fin.cvPos.get('free');

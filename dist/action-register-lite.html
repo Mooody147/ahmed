@@ -2564,6 +2564,31 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 .fin-cv-vp.z-far .fin-leaf .fin-cv-d { display: none; }
 .mnode.fin-leaf .mtxt { min-width: 0; }
 
+/* ---------- Financial freedom: the health check button, and how to read the statement ---------- */
+.fin-free-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; }
+.fin-free-bar .fin-free-views { justify-self: auto; }
+.fin-rd-guide { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.fin-rd-guide > div { display: grid; gap: 2px; padding: 8px 10px; border-radius: 12px; background: color-mix(in srgb, #c9a227 10%, var(--surface)); border: 1px solid color-mix(in srgb, #c9a227 30%, var(--line)); }
+.fin-rd-guide b { font-size: 13px; } .fin-rd-guide span { font-size: 12px; color: var(--ink-2); line-height: 1.35; overflow-wrap: anywhere; }
+@media (max-width: 700px) { .fin-rd-guide { grid-template-columns: minmax(0, 1fr); } }
+/* ---------- the health check window ---------- */
+.fin-health-win { left: 16px; right: 16px; margin: 0 auto; top: 16px; bottom: auto; width: min(720px, calc(100% - 32px)); max-height: calc(100% - 32px); }   /* centred without a transform: its opening animation has the transform */
+.fin-health { display: grid; gap: 10px; }
+.fin-health h4 { margin: 6px 0 0; }
+.fin-health-top { display: flex; gap: 14px; align-items: center; padding: 12px 14px; border-radius: 14px; border: 1px solid var(--line); }
+.fin-health-top small { display: block; font-size: 11px; color: var(--ink-2); text-transform: uppercase; letter-spacing: .06em; } .fin-health-top > div:last-child b { font-size: 20px; display: block; }
+.fin-health-score { display: grid; place-items: center; width: 74px; height: 74px; border-radius: 50%; border: 6px solid var(--line); flex: none; } .fin-health-score b { font-size: 24px; line-height: 1; } .fin-health-score small { text-transform: none; letter-spacing: 0; }
+.fin-health-top.good { background: color-mix(in srgb, #2e9e5b 10%, var(--surface)); } .fin-health-top.good .fin-health-score { border-color: #2e9e5b; }
+.fin-health-top.warn { background: color-mix(in srgb, #e0a030 12%, var(--surface)); } .fin-health-top.warn .fin-health-score { border-color: #e0a030; }
+.fin-health-top.bad { background: color-mix(in srgb, #d9534f 10%, var(--surface)); } .fin-health-top.bad .fin-health-score { border-color: #d9534f; }
+.fin-health-m { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.fin-health-m > div { display: grid; gap: 2px; padding: 8px 10px; border-radius: 12px; border: 1px solid var(--line); border-left-width: 4px; min-width: 0; }
+.fin-health-m span { font-size: 12px; color: var(--ink-2); } .fin-health-m b { font-size: 14px; overflow-wrap: anywhere; } .fin-health-m small { font-size: 11px; color: var(--ink-3); }
+.fin-health-m .good { border-left-color: #2e9e5b; } .fin-health-m .warn { border-left-color: #e0a030; } .fin-health-m .bad { border-left-color: #d9534f; } .fin-health-m .unknown { border-left-color: var(--ink-3); border-style: dashed; }
+@media (max-width: 700px) { .fin-health-m { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+.fin-health-road li.done { opacity: .6; } .fin-health-road li.done::before { background: #2e9e5b; } .fin-health-road li.next::before { background: #e0a030; box-shadow: 0 0 0 3px var(--surface), 0 0 0 6px rgba(224, 160, 48, .35); } .fin-health-road li.later::before { background: var(--ink-3); }
+.fin-health-road li { grid-template-columns: 130px minmax(0, 1fr); }
+
 </style>
 <div class="titlestrip" id="titlestrip"><span class="ts-brand"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c3.3 4 6 7.2 6 10.4a6 6 0 0 1-12 0C6 10.2 8.7 7 12 3z"/><path d="m9.3 13.6 1.9 1.9 3.6-4.1"/></svg> Action Register</span><button class="ts-search" data-act="palette" title="Search and commands (Ctrl+K)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg><span>Search or type a command</span><kbd>Ctrl K</kbd></button><span class="ts-space"></span></div>
 <div class="app">
@@ -16578,7 +16603,7 @@ VIEW_FN.finance = () => {
   const cv = UI.fin.cv;
   // full screen: the canvas alone — no title, no description, no talk box; a few controls float in its corner
   if (cv.full) return `<div class="wrap fin fin-canvas-page"><section class="fin-cvwrap full" id="fin-s-map" aria-label="Money canvas, full screen">
-    <div class="fin-cv-stage">${finCvBoard()}${finPopHTML()}${typeof finCvMiniHTML === 'function' ? finCvMiniHTML() + finCvHelpHTML() : ''}${typeof finCvEditorHTML === 'function' ? finCvEditorHTML() : ''}${typeof finTalkWinHTML === 'function' ? finTalkWinHTML() + finMenuHTML() : ''}${typeof finBalWinHTML === 'function' ? finBalTabHTML() + finBalWinHTML() : ''}
+    <div class="fin-cv-stage">${finCvBoard()}${finPopHTML()}${typeof finCvMiniHTML === 'function' ? finCvMiniHTML() + finCvHelpHTML() : ''}${typeof finCvEditorHTML === 'function' ? finCvEditorHTML() : ''}${typeof finTalkWinHTML === 'function' ? finTalkWinHTML() + finMenuHTML() : ''}${typeof finBalWinHTML === 'function' ? finBalTabHTML() + finBalWinHTML() : ''}${typeof finHealthHTML === 'function' && UI.fin.healthWin ? finHealthHTML() : ''}
       <div class="fin-cv-float" role="toolbar" aria-label="Canvas controls">${typeof finCvToolsHTML === 'function' ? finCvToolsHTML() : ''}
         ${UI.fin.cvOpen.length || UI.fin.pop ? `<button class="btn sm" data-act="fin-cv-close-all" title="Fold every opened detail and part">Close details</button>` : ''}
         <div class="seg zoom" role="group" aria-label="Zoom"><button data-act="fin-cv-zoom" data-v="out" aria-label="Zoom out">−</button><button data-act="fin-cv-fit" title="Fit to the screen"><span id="fin-cv-z">${Math.round(cv.k * 100)}%</span></button><button data-act="fin-cv-zoom" data-v="in" aria-label="Zoom in">+</button></div>
@@ -16596,7 +16621,7 @@ VIEW_FN.finance = () => {
       <button class="btn sm" data-act="fin-cv-all" data-v="open" title="Unfold every room">Unfold all</button><button class="btn sm" data-act="fin-cv-all" data-v="fold" title="Fold every room to its title">Fold all</button>
       <div class="seg zoom" role="group" aria-label="Zoom"><button data-act="fin-cv-zoom" data-v="out" aria-label="Zoom out">−</button><button data-act="fin-cv-fit" title="Fit to the screen"><span id="fin-cv-z">${Math.round(cv.k * 100)}%</span></button><button data-act="fin-cv-zoom" data-v="in" aria-label="Zoom in">+</button></div>
       <button class="btn sm" data-act="fin-cv-full" aria-pressed="${cv.full}" title="${cv.full ? 'Back (Esc)' : 'Full screen'}">${cv.full ? '✕ Close' : '⤢ Full screen'}</button></div>
-    <div class="fin-cv-stage">${finCvBoard()}${finPopHTML()}${typeof finCvMiniHTML === 'function' ? finCvMiniHTML() + finCvHelpHTML() : ''}${typeof finCvEditorHTML === 'function' ? finCvEditorHTML() : ''}${typeof finTalkWinHTML === 'function' ? finTalkWinHTML() + finMenuHTML() : ''}${typeof finBalWinHTML === 'function' ? finBalTabHTML() + finBalWinHTML() : ''}</div>
+    <div class="fin-cv-stage">${finCvBoard()}${finPopHTML()}${typeof finCvMiniHTML === 'function' ? finCvMiniHTML() + finCvHelpHTML() : ''}${typeof finCvEditorHTML === 'function' ? finCvEditorHTML() : ''}${typeof finTalkWinHTML === 'function' ? finTalkWinHTML() + finMenuHTML() : ''}${typeof finBalWinHTML === 'function' ? finBalTabHTML() + finBalWinHTML() : ''}${typeof finHealthHTML === 'function' && UI.fin.healthWin ? finHealthHTML() : ''}</div>
   </section>
   ${typeof finTalkHTML === 'function' ? `<section class="card fin-card fin-talk-card" aria-label="Tell the canvas"><div class="row"><h2>Tell the canvas</h2><span class="spacer"></span>${UI.fin.talk.win ? '' : `<button class="btn sm ghost" data-act="fin-talk-win" title="Open it in a window on the canvas ( T )">⧉ Open on the canvas</button>`}</div>${UI.fin.talk.win ? finTalkDockedHTML() : finTalkHTML()}</section>` : ''}
 </div>`;
@@ -17674,11 +17699,11 @@ function finRdNumbers() {
   const own = leaves(room('own')), assets = (n.cash || 0) + own.filter(c => finRdKind(c, 'own') === 'asset').reduce((s, c) => s + amt(c), 0);
   const liab = (n.card && n.card.owed || 0) + (n.halan && n.halan.owed || 0) + own.filter(c => finRdKind(c, 'own') === 'liability').reduce((s, c) => s + amt(c), 0);
   const expenses = (n.spending || 0) + (n.instMonthly || 0), income = n.income || passive + earned, save = Math.max(0, n.capacity || 0);
-  const freedom = expenses > 0 ? Math.min(1, passive / expenses) : passive > 0 ? 1 : 0;
-  const pattern = passive >= expenses && expenses > 0 ? 'rich' : (n.instMonthly || 0) >= income * 0.2 || liab > assets ? 'middle' : income > 0 && save < income * 0.1 ? 'poor' : 'building';
+  const freedom = expenses > 0 ? Math.min(1, passive / expenses) : 0;   // with no expenses known, nobody is "free": it is unknown
+  const pattern = expenses <= 0 && income <= 0 ? 'unknown' : passive >= expenses && expenses > 0 ? 'rich' : (n.instMonthly || 0) >= income * 0.2 || liab > assets ? 'middle' : income > 0 && save < income * 0.1 ? 'poor' : 'building';
   return { n, passive, earned, assets, liab, expenses, income, save, freedom, pattern };
 }
-const FIN_RD_PATTERN = { rich: ['Rich', 'your assets pay for your life — passive income covers your expenses'], middle: ['Middle class', 'much of your income goes to liabilities — instalments and debt'], poor: ['Poor', 'income goes straight to expenses — little is left to buy assets'], building: ['Building', 'you save — now turn savings into assets that pay you every month'] };
+const FIN_RD_PATTERN = { unknown: ['Not known yet', 'add your statements, or tell the canvas your income and spending'], rich: ['Rich', 'your assets pay for your life — passive income covers your expenses'], middle: ['Middle class', 'much of your income goes to liabilities — instalments and debt'], poor: ['Poor', 'income goes straight to expenses — little is left to buy assets'], building: ['Building', 'you save — now turn savings into assets that pay you every month'] };
 // Rich Dad and the Mind map are one wealth map seen two ways: the same branches (earned income, passive income, assets,
 // expenses, liabilities, your choices), the same cards, the same centre (financial freedom) and the same channels.
 // Here they are set out as the book's financial statement; switching moves every card to its place in the other.
@@ -17720,10 +17745,11 @@ function finRichLayout(rooms0, plan, n) {
   let y = bsB + 120; const buy = by('buy'); if (buy) { fill(buy, L0, y, Wd - L0); y = buy.y + buy.h + 80; }
   for (const r of bx('buy')) { fill(r, L0, y, Wd - L0); y = r.y + r.h + 60; }
   let x = L0, rowH = 0;
-  for (const r of M.rest.filter(r => r.kind !== 'sec')) { const w = r.kind === 'ov' ? 1100 : 640; if (x + w > Wd && x > L0) { x = L0; y += rowH + 50; rowH = 0; } fill(r, x, y, w); x += w + 50; rowH = Math.max(rowH, r.h); }
+  // the statement view shows the statement: the other rooms are on the Mind map and Flow
+  for (const r of M.rest.filter(r => r.kind !== 'sec' && (r.kind === 'box' || r.kind === 'goals'))) { const w = r.kind === 'ov' ? 1100 : 640; if (x + w > Wd && x > L0) { x = L0; y += rowH + 50; rowH = 0; } fill(r, x, y, w); x += w + 50; rowH = Math.max(rowH, r.h); }
   y += rowH + 60;
   for (const r of M.rest) if (r.kind === 'sec') { fill(r, L0, y, Wd - L0); y = r.y + r.h + 44; }
-  const rooms = [center, ...all, ...[...M.boxes.values()].flat(), ...M.rest];
+  const rooms = [center, ...all, ...[...M.boxes.values()].flat(), ...M.rest.filter(r => ['sec', 'box', 'goals'].includes(r.kind))];
   // the cash flow, as the book draws it — the same channels as on the Mind map
   const max = Math.max(1, R.income, R.expenses), th = v => v > 0 ? Math.round(8 + 26 * Math.sqrt(v / max)) : 5, flows = [], pc = v => finPct(v, R.income || 1);
   const E = by('mm-earn'), P = by('mm-pass');
@@ -17736,8 +17762,8 @@ function finRichLayout(rooms0, plan, n) {
   if (Lb && expEnd) flows.push({ id: 'debt', cls: 'liability', a: { x: Lb.x + Lb.w * 0.5, y: Lb.y }, b: { x: expEnd.x + expEnd.w * 0.5, y: expEnd.y + expEnd.h }, t: th(n.instMonthly || 0), label: [fk(n.instMonthly || 0), ' a month'], line: `your liabilities cost you · ${pc(n.instMonthly) ?? '—'}% of income`, v: true });
   if (A && Lb && W.payLiab > 0) flows.push({ id: 'assetpays', cls: 'save', a: { x: A.x + A.w, y: A.y + 70 }, b: { x: Lb.x, y: Lb.y + 70 }, t: th(W.payLiab), label: [fk(Math.round(W.payLiab)), ' a month'], line: 'your assets pay a liability (estimate)' });
   const frames = [
-    E || exp ? { x: L0 - 30, y: y1 - FRD.FRAME, w: Wd - L0 + 60, h: isB - y1 + FRD.FRAME + 30, title: 'INCOME STATEMENT', cols: [[L0, 'Income — earned and passive'], [C2, 'Expenses']] } : null,
-    { x: L0 - 30, y: y2 - FRD.FRAME, w: Wd - L0 + 60, h: bsB - y2 + FRD.FRAME + 30, title: 'BALANCE SHEET', cols: [[L0, 'Assets — put money in your pocket'], [C2, 'Liabilities — take money out of your pocket']] }].filter(Boolean);
+    E || exp ? { x: L0 - 30, y: y1 - FRD.FRAME, w: Wd - L0 + 60, h: isB - y1 + FRD.FRAME + 30, title: 'INCOME STATEMENT — your month: money in, money out', cols: [[L0, 'Income — earned and passive'], [C2, 'Expenses']] } : null,
+    { x: L0 - 30, y: y2 - FRD.FRAME, w: Wd - L0 + 60, h: bsB - y2 + FRD.FRAME + 30, title: 'BALANCE SHEET — what you own vs what you owe', cols: [[L0, 'Assets — put money in your pocket'], [C2, 'Liabilities — take money out of your pocket']] }].filter(Boolean);
   const w = Wd, h = Math.max(y - 44, 400);
   UI.fin.cvPos = new Map([...rooms.map(r => [r.id, { x: r.x, y: r.y, w: r.w, h: r.h }]), ...cards.map(c => [c.id, { x: c.x, y: c.y, w: c.w, h: c.h }]), ...dets.map(d => [d.id + ':det', d])]);
   UI.fin.cvRoot = UI.fin.cvPos.get('free');
@@ -18017,8 +18043,8 @@ function finWealth() {
 
 // the centre: financial freedom, your pattern, your cash flow, and the moves that build wealth
 function finFreeHTML() {
-  const W = finWealth(), R = W.R, n = W.n, [pt, why] = FIN_RD_PATTERN[R.pattern], pct = Math.round(R.freedom * 100), C = 2 * Math.PI * 52;
-  const ring = `<svg class="fin-free-ring" viewBox="0 0 128 128" aria-hidden="true"><circle cx="64" cy="64" r="52" class="bg"/><circle cx="64" cy="64" r="52" class="fg" style="stroke-dasharray:${(C * R.freedom).toFixed(1)} ${C.toFixed(1)}"/><text x="64" y="62" text-anchor="middle" class="p">${pct}%</text><text x="64" y="82" text-anchor="middle" class="s">free</text></svg>`;
+  const W = finWealth(), R = W.R, n = W.n, [pt, why] = FIN_RD_PATTERN[R.pattern], pct = Math.round(R.freedom * 100), C = 2 * Math.PI * 52, known = R.expenses > 0;
+  const ring = `<svg class="fin-free-ring" viewBox="0 0 128 128" aria-hidden="true"><circle cx="64" cy="64" r="52" class="bg"/><circle cx="64" cy="64" r="52" class="fg" style="stroke-dasharray:${(C * R.freedom).toFixed(1)} ${C.toFixed(1)}"/><text x="64" y="62" text-anchor="middle" class="p">${known ? pct + '%' : '—'}</text><text x="64" y="82" text-anchor="middle" class="s">${known ? 'free' : 'not known'}</text></svg>`;
   const years = W.months === null ? '' : W.months === 0 ? 'now, if your free cash were invested' : W.months > 600 ? 'more than 50 years at this pace' : W.months < 24 ? `in about ${W.months} months` : `in about ${(W.months / 12).toFixed(W.months < 120 ? 1 : 0)} years`;
   const moves = [];
   if (W.idle > 0) moves.push(['🏗️', 'Put idle money to work', `${fk(W.idle)} sits in your accounts beyond your ${fk(n.reserve)} safety reserve.${W.yld ? ` At your assets’ stated ${(W.yld * 100).toFixed(1)}% a year it would pay about ${fkr(W.idle * W.yld / 12)} a month (estimate).` : ' An asset that pays you would turn it into passive income.'}`, 'own']);
@@ -18030,7 +18056,11 @@ function finFreeHTML() {
   if (W.payLiab > 0) moves.push(['🔁', 'Your assets already pay a liability', `${W.payL.map(x => x.h.name).join(', ')}: about ${fk(W.payLiab)} a month of the return goes to your instalments (estimate) — the rich let assets pay for liabilities.`, 'own']);
   const flow = [['Earned income', '+' + fk(R.earned), 'work'], ['Passive income', '+' + fk(R.passive), 'gold'], ['Expenses', '−' + fk(n.spending || 0), 'drain'], ['Instalments (liabilities)', '−' + fk(n.instMonthly || 0), 'debt'], ['Surplus → assets', fkr(W.toAssets), 'green']];
   const m = UI.fin.cv.mode || 'mind', views = `<div class="seg fin-free-views" role="group" aria-label="See your wealth map as">${[['mind', '🧠 Map'], ['rich', '💼 Statement']].map(([k, l]) => `<button class="btn sm" data-act="fin-cv-mode" data-v="${k}" aria-pressed="${m === k}">${l}</button>`).join('')}</div>`;
-  return `<div class="fin-free ${R.pattern}">${views}
+  // the one button that judges it all: your health, the optimal position, the road there
+  const check = `<button class="btn primary fin-health-btn" data-act="fin-health" title="Where you stand, your optimal position and the road there">🩺 Check my financial health</button>`;
+  // in the statement view: how to read it, in three lines
+  const guide = m === 'rich' ? `<div class="fin-rd-guide"><div><b>Income statement</b><span>your month: what comes in, what goes out</span></div><div><b>Balance sheet</b><span>assets put money in your pocket; liabilities take it out</span></div><div><b>The aim</b><span>buy assets until their income — passive income — pays all your expenses</span></div></div>` : '';
+  return `<div class="fin-free ${R.pattern}"><div class="fin-free-bar">${check}${views}</div>${guide}
     <div class="fin-free-top">${ring}<div class="fin-free-pat"><span class="small muted">Your cash-flow pattern</span><b>${pt}</b><span class="small">${esc(why)}</span>
       <span class="small muted">Out of the rat race when passive income covers your expenses: ${fk(R.passive)} of ${fk(R.expenses)} a month.</span></div></div>
     <div class="fin-free-cf">${flow.map(([l, v, c]) => `<div class="${c}"><span>${esc(l)}</span><b class="num">${v}</b></div>`).join('')}<small class="muted">a month</small></div>
@@ -18644,9 +18674,9 @@ Object.assign(window.__FIN, { balAge: () => finBalAge() });
 const FWIN = { drag: null };
 // which window a title belongs to, and the key its place is kept under (a new card's pop-out / form starts beside it again)
 function finWinOf(t) {
-  const h = t.closest && t.closest('#fin-pop .fin-pop-h, #fin-cv-ed .fin-cv-ed-t, #fin-bal-win .fin-talk-win-h'); if (!h) return null;
-  const el = h.closest('#fin-pop, #fin-cv-ed, #fin-bal-win'), E0 = UI.fin.cvEdit;
-  const key = el.id === 'fin-pop' ? 'pop:' + UI.fin.pop : el.id === 'fin-cv-ed' ? 'ed:' + (E0 ? E0.add || E0.id : '') : 'bal';
+  const h = t.closest && t.closest('#fin-pop .fin-pop-h, #fin-cv-ed .fin-cv-ed-t, #fin-bal-win .fin-talk-win-h, #fin-health-win .fin-talk-win-h'); if (!h) return null;
+  const el = h.closest('#fin-pop, #fin-cv-ed, #fin-bal-win, #fin-health-win'), E0 = UI.fin.cvEdit;
+  const key = el.id === 'fin-pop' ? 'pop:' + UI.fin.pop : el.id === 'fin-cv-ed' ? 'ed:' + (E0 ? E0.add || E0.id : '') : el.id === 'fin-health-win' ? 'health' : 'bal';
   return { h, el, key };
 }
 const finWinPos = key => (UI.fin.winPos || {})[key] || null;
@@ -18674,6 +18704,8 @@ function finWinKeep() {
   if (p2) { Object.assign(ed.style, { left: p2.x + 'px', top: p2.y + 'px' }); ed.classList.add('moved'); }
   const bw = $('#fin-bal-win'), p3 = bw && finWinPos('bal');
   if (p3) Object.assign(bw.style, { left: p3.x + 'px', top: p3.y + 'px', right: 'auto', bottom: 'auto' });
+  const hw = $('#fin-health-win'), p4 = hw && finWinPos('health');
+  if (p4) Object.assign(hw.style, { left: p4.x + 'px', top: p4.y + 'px', right: 'auto', bottom: 'auto' });
 }
 HOOKS.afterRender.push(finWinKeep);
 Object.assign(window.__FIN, { winPos: () => UI.fin.winPos || {} });
@@ -18928,6 +18960,65 @@ function finCardDesc(c) {
   if (k === 'q') return 'A question for you';
   return '';
 }
+
+/* ===== features/64-finance-health.js ===== */
+// Money canvas — "Check my financial health". One button in the Financial freedom centre (Mind map and Rich Dad) opens a
+// window that (1) evaluates where you stand today on six measures, each against a healthy target; (2) shows the optimal
+// position for you, in your own numbers; (3) lays out the road to it, step by step, in the order that matters — a safety
+// reserve first, expensive debt next, then fewer liabilities, then every pound of surplus into assets until passive
+// income covers your expenses. Only today's figures are used (the same ones every canvas shows); anything not known is
+// said, never guessed. Targets are common rules of thumb, not advice tailored by a professional.
+
+function finHealth() {
+  const W = finWealth(), R = W.R, n = W.n, inc = n.income || 0, exp = R.expenses || 0, today = finToday(), cur = today.slice(0, 7);
+  const essential = n.essential || 0, reserveT = essential * 6, haveReserve = Math.max(0, (n.cash || 0) - (n.held || 0));
+  const save = Math.max(0, n.capacity || 0), card = n.card || null, util = card && card.limit ? (card.owed || 0) / card.limit : null;
+  const pct = (v, of) => of > 0 ? v / of : null, unk = 'not known yet';
+  // the measures: value, healthy target, status
+  const M = [];
+  const sr = pct(save, inc); M.push({ k: 'save', label: 'Savings rate', now: sr === null ? unk : Math.round(sr * 100) + '% of income', target: '20% or more', ok: sr === null ? null : sr >= 0.2 ? 'good' : sr >= 0.1 ? 'warn' : 'bad', score: sr === null ? null : Math.min(1, sr / 0.2) });
+  const dl = pct(n.instMonthly || 0, inc); M.push({ k: 'debt', label: 'Instalments', now: dl === null ? unk : Math.round(dl * 100) + '% of income', target: '20% or less', ok: dl === null ? null : dl <= 0.2 ? 'good' : dl <= 0.35 ? 'warn' : 'bad', score: dl === null ? null : Math.max(0, 1 - Math.max(0, dl - 0.2) / 0.3) });
+  const em = essential > 0 ? haveReserve / essential : null; M.push({ k: 'reserve', label: 'Emergency fund', now: em === null ? unk : em.toFixed(1) + ' months of essentials', target: '3–6 months', ok: em === null ? null : em >= 3 ? 'good' : em >= 1 ? 'warn' : 'bad', score: em === null ? null : Math.min(1, em / 3) });
+  M.push({ k: 'card', label: 'Card used', now: util === null ? (card ? unk : 'no card') : Math.round(util * 100) + '% of the limit', target: '30% or less', ok: util === null ? (card ? null : 'good') : util <= 0.3 ? 'good' : util <= 0.6 ? 'warn' : 'bad', score: util === null ? (card ? null : 1) : Math.max(0, 1 - Math.max(0, util - 0.3) / 0.7) });
+  M.push({ k: 'passive', label: 'Passive income covers', now: exp > 0 ? Math.round(R.freedom * 100) + '% of expenses' : unk, target: '100% = financially free', ok: exp > 0 ? (R.freedom >= 1 ? 'good' : R.freedom >= 0.25 ? 'warn' : 'bad') : null, score: exp > 0 ? Math.min(1, R.freedom) : null });
+  M.push({ k: 'bs', label: 'Assets vs liabilities', now: `${fk(R.assets)} vs ${fk(R.liab)}`, target: 'assets well above', ok: R.liab <= 0 || R.assets >= R.liab * 3 ? 'good' : R.assets >= R.liab ? 'warn' : 'bad', score: R.liab <= 0 ? 1 : Math.min(1, R.assets / (R.liab * 3)) });
+  const known = M.filter(m => m.score !== null), score = known.length ? Math.round(known.reduce((s, m) => s + m.score, 0) / known.length * 100) : null;
+  const grade = score === null ? ['Not known yet', 'unknown'] : score >= 80 ? ['Healthy', 'good'] : score >= 55 ? ['Fair — room to improve', 'warn'] : ['Needs attention', 'bad'];
+  // the optimal position, in your numbers
+  const opt = [];
+  if (inc) opt.push(['Save each month', fk(Math.round(inc * 0.2)), `20% of income · now ${fk(save)}`]);
+  if (inc) opt.push(['Instalments at most', fk(Math.round(inc * 0.2)), `a month · now ${fk(n.instMonthly || 0)}`]);
+  if (essential) opt.push(['Emergency fund', fk(Math.round(reserveT)), `6 months of essentials · now ${fk(haveReserve)}`]);
+  if (card && card.limit) opt.push(['Card owed at most', fk(Math.round(card.limit * 0.3)), `30% of the limit · now ${fk(card.owed || 0)}`]);
+  if (exp) opt.push(['Passive income', fk(Math.round(exp)), `a month = every expense covered · now ${fk(R.passive)}`]);
+  // the road there, in order
+  const steps = []; let t = cur; const spare = save, dateAfter = k => { t = FIN.addMonths(t, Math.max(1, Math.ceil(k))); return fmon(t); };
+  if (!inc || !n.spending) steps.push({ s: 'next', t: 'Tell the canvas your income and spending (or add your statements)', why: 'without them the roadmap cannot be dated', when: 'now' });
+  if (essential && haveReserve < essential * 3) { const gap = essential * 3 - haveReserve; steps.push({ s: 'next', t: `Build a 3-month safety reserve: ${fk(Math.round(gap))} more`, why: 'one surprise should never push you into debt', when: spare > 0 ? 'by ' + dateAfter(gap / spare) : 'once you have a surplus' }); }
+  else if (essential) steps.push({ s: 'done', t: 'A 3-month safety reserve', why: `${fk(haveReserve)} set aside`, when: 'done' });
+  if (card && (card.owed || 0) > 0) steps.push({ s: steps.some(x => x.s === 'next') ? 'later' : 'next', t: `Clear the credit card: ${fk(card.owed)}`, why: 'card interest is the most expensive money there is', when: spare > 0 ? 'by ' + dateAfter((card.owed || 0) / spare) : 'once you have a surplus' });
+  const W2 = W.ending; if ((n.instMonthly || 0) > 0) steps.push({ s: steps.some(x => x.s === 'next') ? 'later' : 'next', t: `Take on no new instalments; let the current ones end${W2 ? ` (${W2.name} ends ${fmon(W2.end)})` : ''}`, why: `${fk(n.instMonthly)} a month leaves your pocket for liabilities`, when: W2 ? fmon(W2.end) : 'ongoing' });
+  if (essential && haveReserve < reserveT) steps.push({ s: 'later', t: `Grow the reserve to 6 months: ${fk(Math.round(reserveT))}`, why: 'a full cushion before taking risks', when: spare > 0 ? 'by ' + dateAfter(Math.max(0, reserveT - Math.max(haveReserve, essential * 3)) / spare) : 'later' });
+  if (exp) for (const f of [0.25, 0.5, 1]) if (R.freedom < f) { const need = exp * f - R.passive, months = W.yld && spare > 0 ? need / (spare * W.yld / 12) : null;
+    steps.push({ s: 'later', t: `Buy assets that pay you until passive income reaches ${Math.round(f * 100)}% of expenses (${fk(Math.round(exp * f))} a month)`, why: f === 1 ? 'out of the rat race: your assets pay for your life' : 'every asset you buy keeps paying you', when: months !== null ? (months > 600 ? 'over 50 years at this pace' : 'about ' + dateAfter(months)) + (W.yld ? ` (estimate at ${(W.yld * 100).toFixed(1)}% a year)` : '') : 'enter what your assets earn to date it' }); }
+  if (steps.length && !steps.some(x => x.s === 'next')) { const f = steps.find(x => x.s === 'later'); if (f) f.s = 'next'; }
+  return { M, score, grade, opt, steps };
+}
+function finHealthHTML() {
+  const H = finHealth();
+  return `<section class="fin-talk-win fin-health-win" id="fin-health-win" role="dialog" aria-label="Your financial health">
+    <div class="fin-talk-win-h"><span aria-hidden="true">🩺</span><b>Your financial health</b><span class="spacer"></span><button class="icon-btn" data-act="fin-health" data-v="close" aria-label="Close">${I.x}</button></div>
+    <div class="fin-talk-win-b fin-health">
+      <div class="fin-health-top ${H.grade[1]}"><div class="fin-health-score"><b>${H.score === null ? '—' : H.score}</b><small>of 100</small></div><div><small>1 · Where you stand today</small><b>${esc(H.grade[0])}</b><span class="small muted">from today’s figures — the same ones every canvas shows</span></div></div>
+      <div class="fin-health-m">${H.M.map(m => `<div class="${m.ok || 'unknown'}"><span>${esc(m.label)}</span><b>${esc(m.now)}</b><small>healthy: ${esc(m.target)}</small></div>`).join('')}</div>
+      <h4>2 · Your optimal position</h4>${H.opt.length ? finKv(H.opt) : '<p class="small muted">Tell the canvas your income and spending to see it.</p>'}
+      <h4>3 · Your roadmap</h4><ol class="fin-gc-steps fin-health-road">${H.steps.map(x => `<li class="${x.s}"><span class="d">${esc(x.when)}</span><span><b>${esc(x.t)}</b><br><small class="muted">${esc(x.why)}</small></span></li>`).join('')}</ol>
+      <p class="small muted">Targets are common rules of thumb (save 20%, instalments under 20% of income, 3–6 months of essentials set aside, card under 30% of its limit), not professional advice. Dates are estimates from today’s surplus.</p>
+    </div></section>`;
+}
+Object.assign(ACT, { 'fin-health': el => { UI.fin.healthWin = el.dataset.v === 'close' ? false : !UI.fin.healthWin; render(); } });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && UI.fin.healthWin && UI.view === 'finance') { UI.fin.healthWin = false; render(); } }, true);
+Object.assign(window.__FIN, { health: () => { const H = finHealth(); return { score: H.score, grade: H.grade[0], measures: H.M.map(m => [m.k, m.ok, m.now]), opt: H.opt.map(o => o[0]), steps: H.steps.map(s => [s.s, s.t, s.when]) }; } });
 
 /* ---------- boot ---------- */
 const startView = (location.hash || '').replace('#', '');

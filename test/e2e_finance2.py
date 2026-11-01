@@ -427,16 +427,21 @@ async def main():
         await pg.click('[data-act="fin-cv-fit"]'); await pg.wait_for_timeout(600)
         await pg.screenshot(path=os.path.join(HERE, 'shots', 'finance-mindmap.png'))
         rooms_now = await ev("[...document.querySelectorAll('.fin-room')].map(r => r.dataset.room)")
+        # the statement (Rich Dad) shows the statement: the cards of the branches, the centre and your choices — the rest
+        # (My money in detail, others' money, what Claude sorted) stays on the Mind map and Flow
+        aside = ['ov', 'third', 'auto', 'q']
+        stmt_cards = sorted(await ev(f"[...window.__AR.UI.fin.cvCards.values()].filter(c => !{aside}.includes(c.room)).map(c => c.id)"))
+        stmt_rooms = sorted(r for r in rooms_now if r not in aside)
         # to the statement from the centre's own switch, with a card open: every card moves to its place, the card stays open
         acard = 'a:' + a12['id']
         await ev(f"window.__FIN.show('{acard}')"); await pg.wait_for_timeout(500); await pg.click(f'.fin-cvn[data-node="{acard}"]'); await pg.wait_for_selector(f'#fin-pop[data-pop="{acard}"]')
         await ev("document.querySelector('.fin-free-views [data-v=\"rich\"]').click()"); await pg.wait_for_timeout(1300)
         assert await ev("window.__FIN.mode()") == 'rich' and await ev("document.getElementById('fin-cv-vp').classList.contains('mode-rich') && document.getElementById('fin-cv-vp').classList.contains('cosmic')")
-        assert sorted(await ev("[...document.querySelectorAll('#fin-cv-world .fin-leaf[data-node]')].map(c => c.dataset.node)")) == rooms_cards, 'the same cards in both views'
-        assert sorted(await ev("[...document.querySelectorAll('.fin-room')].map(r => r.dataset.room)")) == sorted(rooms_now), 'the same branches and centre'
+        assert sorted(await ev("[...document.querySelectorAll('#fin-cv-world .fin-leaf[data-node]')].map(c => c.dataset.node)")) == stmt_cards, 'the same cards of the statement in both views'
+        assert sorted(await ev("[...document.querySelectorAll('.fin-room')].map(r => r.dataset.room)")) == stmt_rooms, 'the same branches and centre'
         assert await ev(f"!!document.querySelector('#fin-pop[data-pop=\"{acard}\"]')"), 'the open card stays open in the other view'
         frames = await ev("[...document.querySelectorAll('.fin-rich .rd-ft')].map(t => t.textContent)"); print('FRAMES', frames)
-        assert frames == ['INCOME STATEMENT', 'BALANCE SHEET'], 'an income statement above a balance sheet'
+        assert [f.split(' —')[0] for f in frames] == ['INCOME STATEMENT', 'BALANCE SHEET'], 'an income statement above a balance sheet'
         P = await ev("Object.fromEntries(['free', 'mm-earn', 'mm-pass', 'exp', 'mm-assets', 'mm-liab', 'buy'].map(id => [id, window.__AR.UI.fin.cvPos.get(id)]))")
         assert P['free']['y'] < P['mm-earn']['y'] < P['mm-pass']['y'] < P['mm-assets']['y'] and P['exp']['x'] > P['mm-earn']['x'] and abs(P['exp']['y'] - P['mm-earn']['y']) < 2, 'freedom on top; income beside expenses'
         assert P['mm-liab']['x'] > P['mm-assets']['x'] and abs(P['mm-liab']['y'] - P['mm-assets']['y']) < 2 and P['buy']['y'] > P['mm-assets']['y'], 'assets beside liabilities; your choices below'
