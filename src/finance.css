@@ -723,3 +723,11 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 .fin-link-l { font: 700 12px/1 var(--font, system-ui); fill: var(--ink); paint-order: stroke; stroke: var(--surface); stroke-width: 4px; stroke-linejoin: round; }
 .cosmic .fin-link-l { fill: #e9f7ff; stroke: rgba(10, 6, 24, .85); }
 .fin-cv-edges path.fin-twig.trunk { stroke-linecap: round; }
+
+/* ---------- windows you can move: drag by the title ---------- */
+#fin-pop .fin-pop-h, #fin-cv-ed .fin-cv-ed-t, #fin-bal-win .fin-talk-win-h { cursor: grab; user-select: none; touch-action: none; }
+#fin-pop.dragging, #fin-cv-ed.dragging, #fin-bal-win.dragging { cursor: grabbing; box-shadow: 0 30px 80px -20px rgba(0, 0, 0, .55); transition: none; }
+#fin-pop.dragging .fin-pop-h, #fin-cv-ed.dragging .fin-cv-ed-t, #fin-bal-win.dragging .fin-talk-win-h { cursor: grabbing; }
+#fin-cv-ed .fin-cv-ed-t { display: flex; align-items: center; gap: 6px; padding-bottom: 2px; }
+#fin-cv-ed .fin-cv-ed-t::after, #fin-pop .fin-pop-h::after { content: "⠿"; margin-left: auto; color: var(--ink-3); font-size: 14px; letter-spacing: -1px; opacity: .6; }
+#fin-pop .fin-pop-h::after { order: 9; margin-left: 4px; }

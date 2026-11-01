@@ -3700,6 +3700,8 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape') { if (!$('#modal').hidden) $('#modal').hidden = true; else if (UI.drawer) closeDrawer(); }
   if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('.trow,.erow,.tc-title,.todo-main .ttl')) { e.preventDefault(); e.target.click(); }
 });
+// dates are picked from a calendar: a click anywhere in a date field opens it (typing still works)
+document.addEventListener('click', e => { const el = e.target; if (!el || el.tagName !== 'INPUT' || !/^(date|month|week|datetime-local|time)$/.test(el.type) || el.disabled || el.readOnly) return; try { el.showPicker && el.showPicker(); } catch {} }, true);   // before anything below stops the click
 document.addEventListener('change', e => { const el = e.target.closest('[data-chg]'); if (el && CHG[el.dataset.chg]) CHG[el.dataset.chg](el, e); });
 // a file dialog can stay open while the page redraws: the replaced input still delivers its files
 HOOKS.afterRender.push(() => document.querySelectorAll('input[type=file][data-chg]:not([data-bound])').forEach(el => { el.dataset.bound = '1'; el.addEventListener('change', e => { if (!el.isConnected && CHG[el.dataset.chg]) CHG[el.dataset.chg](el, e); }); }));

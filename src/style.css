@@ -1596,3 +1596,10 @@ html.phone-mode .toast { border-radius: 12px; padding: 12px 14px; }
 
 /* the canvas page uses the whole width of the window */
 #main .wrap:has(> .map-wrap) { max-width: none; padding-inline: max(14px, env(safe-area-inset-left, 0px)) max(14px, env(safe-area-inset-right, 0px)); }
+
+/* dates: the calendar is always shown, and opens wherever the field is clicked */
+input[type="date"], input[type="month"], input[type="week"], input[type="datetime-local"] { cursor: pointer; min-width: 9.5em; }
+input[type="date"]::-webkit-calendar-picker-indicator, input[type="month"]::-webkit-calendar-picker-indicator, input[type="week"]::-webkit-calendar-picker-indicator, input[type="datetime-local"]::-webkit-calendar-picker-indicator { opacity: .85; cursor: pointer; padding: 2px; border-radius: 4px; }
+input[type="date"]::-webkit-calendar-picker-indicator:hover, input[type="month"]::-webkit-calendar-picker-indicator:hover { opacity: 1; background: color-mix(in srgb, var(--accent, #7a1f3d) 14%, transparent); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) input[type="date"]::-webkit-calendar-picker-indicator, :root:not([data-theme="light"]) input[type="month"]::-webkit-calendar-picker-indicator { filter: invert(.85); } }
+:root[data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator, :root[data-theme="dark"] input[type="month"]::-webkit-calendar-picker-indicator { filter: invert(.85); }

@@ -312,6 +312,7 @@ function finPopGeom() {
 }
 function finPopPlace() {
   const el = $('#fin-pop'), G = finPopGeom(); if (!el || !G) return;
+  if (typeof finWinPos === 'function' && finWinPos('pop:' + UI.fin.pop)) return finWinKeep();   // you moved it: it stays there
   const { W, top, bottom, ax, ay, aw, ah } = G, VH = Math.max(160, bottom - top), gap = 16, acx = ax + aw / 2, acy = ay + ah / 2;
   // its size follows the window: a column on a wide canvas, nearly the whole width on a narrow one; never taller than what you see
   const w = W < 700 ? W - 16 : Math.round(Math.min(560, Math.max(360, W * 0.38)));

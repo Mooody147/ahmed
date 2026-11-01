@@ -127,6 +127,7 @@ function finCvEditorHTML() {
 // keep the form next to its card while the canvas moves
 function finCvEditorPlace() {
   const ed = $('#fin-cv-ed'), E0 = UI.fin.cvEdit, vp = $('#fin-cv-vp'); if (!ed || !E0 || !vp) return;
+  if (typeof finWinPos === 'function' && finWinPos('ed:' + (E0.add || E0.id))) return finWinKeep();   // you moved it: it stays there
   const b = UI.fin.cvPos && UI.fin.cvPos.get(E0.add || E0.id), cv = UI.fin.cv, W = vp.clientWidth, H = vp.clientHeight;
   let x = 16, y = 16; if (b) { x = cv.x + b.x * cv.k; y = cv.y + (b.y + b.h) * cv.k + 6; }
   x = Math.max(8, Math.min(x, W - ed.offsetWidth - 8)); if (y + ed.offsetHeight > H - 8) y = Math.max(8, (b ? cv.y + b.y * cv.k : H) - ed.offsetHeight - 6);

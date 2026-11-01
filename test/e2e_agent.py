@@ -228,6 +228,31 @@ async def main():
             await pg.keyboard.press('Escape'); await pg.wait_for_timeout(400); await ev("window.scrollTo(0, 0)")
         await pg.set_viewport_size({'width': 1400, 'height': 1000}); await pg.wait_for_timeout(500)
 
+        # 8d. windows move where you want them: the add form and a card's pop-out, dragged by their title, stay put when
+        # the canvas moves; a date field opens its calendar when clicked
+        await ev("window.__FIN.presentEnd && window.__FIN.presentEnd()"); await ev("window.__FIN.show('buy')"); await pg.wait_for_timeout(600)
+        await ev("document.querySelector('.fin-room[data-room=\"buy\"] .fin-room-h [data-act=\"fin-cv-add\"]').click()"); await pg.wait_for_selector('#fin-cv-ed')
+        t = await pg.locator('#fin-cv-ed .fin-cv-ed-t').bounding_box(); e0 = await pg.locator('#fin-cv-ed').bounding_box()
+        await pg.mouse.move(t['x'] + 20, t['y'] + 8); await pg.mouse.down(); await pg.mouse.move(t['x'] + 120, t['y'] + 98, steps=6); await pg.mouse.up(); await pg.wait_for_timeout(200)
+        e1 = await pg.locator('#fin-cv-ed').bounding_box(); print('EDITOR MOVED', round(e0['x']), round(e0['y']), '→', round(e1['x']), round(e1['y']))
+        assert abs(e1['x'] - e0['x'] - 100) < 4 and abs(e1['y'] - e0['y'] - 90) < 4, 'the form moved with the drag'
+        cam = await ev("[window.__AR.UI.fin.cv.x, window.__AR.UI.fin.cv.y]")
+        vpb = await pg.locator('#fin-cv-vp').bounding_box(); await pg.mouse.move(vpb['x'] + vpb['width'] - 80, vpb['y'] + vpb['height'] / 2); await pg.mouse.wheel(0, 200); await pg.wait_for_timeout(600)
+        assert await ev("[window.__AR.UI.fin.cv.x, window.__AR.UI.fin.cv.y]") != cam, 'the canvas moved'
+        e2 = await pg.locator('#fin-cv-ed').bounding_box(); assert abs(e2['x'] - e1['x']) < 2 and abs(e2['y'] - e1['y']) < 2, 'the form stays where you put it'
+        await ev("window.__picked = 0; HTMLInputElement.prototype.showPicker = function () { window.__picked++; }")
+        await pg.click('#fin-cv-ed input[type="date"]'); await pg.wait_for_timeout(150); pk = await ev("window.__picked"); print('PICKED', pk); assert pk >= 1, 'a date field opens its calendar'
+        await pg.click('[data-act="fin-cv-ed-x"]'); await pg.wait_for_timeout(200)
+        node = 'a:' + prim
+        await ev(f"window.__FIN.show('{node}')"); await pg.wait_for_timeout(600); await ev(f"document.querySelector('.fin-leaf[data-node=\"{node}\"]').click()"); await pg.wait_for_selector('#fin-pop'); await pg.wait_for_timeout(500)
+        h = await pg.locator('#fin-pop .fin-pop-h').bounding_box(); p0 = await pg.locator('#fin-pop').bounding_box()
+        await pg.mouse.move(h['x'] + 60, h['y'] + 12); await pg.mouse.down(); await pg.mouse.move(h['x'] - 140, h['y'] + 72, steps=6); await pg.mouse.up(); await pg.wait_for_timeout(200)
+        p1 = await pg.locator('#fin-pop').bounding_box(); print('POP MOVED', round(p0['x']), '→', round(p1['x']))
+        assert abs(p1['x'] - p0['x'] + 200) < 4 and abs(p1['y'] - p0['y'] - 60) < 4 and await ev("document.getElementById('fin-pop').classList.contains('far')"), 'the pop-out moved; it no longer points at its card'
+        await pg.mouse.move(vpb['x'] + vpb['width'] - 80, vpb['y'] + vpb['height'] / 2); await pg.mouse.wheel(0, -200); await pg.wait_for_timeout(600)
+        p2 = await pg.locator('#fin-pop').bounding_box(); assert abs(p2['x'] - p1['x']) < 2 and abs(p2['y'] - p1['y']) < 2, 'it stays where you put it'
+        await pg.keyboard.press('Escape'); await pg.wait_for_timeout(400)
+
         # 9. a box goes with its ✕ (and Undo)
         await ev("window.__FIN.show('box:recurring')"); await pg.wait_for_timeout(400)
         await pg.click('.fin-room[data-room="box:recurring"] [data-act="fin-box-del"]'); await pg.wait_for_timeout(300)

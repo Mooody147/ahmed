@@ -1602,6 +1602,13 @@ html.phone-mode .toast { border-radius: 12px; padding: 12px 14px; }
 /* the canvas page uses the whole width of the window */
 #main .wrap:has(> .map-wrap) { max-width: none; padding-inline: max(14px, env(safe-area-inset-left, 0px)) max(14px, env(safe-area-inset-right, 0px)); }
 
+/* dates: the calendar is always shown, and opens wherever the field is clicked */
+input[type="date"], input[type="month"], input[type="week"], input[type="datetime-local"] { cursor: pointer; min-width: 9.5em; }
+input[type="date"]::-webkit-calendar-picker-indicator, input[type="month"]::-webkit-calendar-picker-indicator, input[type="week"]::-webkit-calendar-picker-indicator, input[type="datetime-local"]::-webkit-calendar-picker-indicator { opacity: .85; cursor: pointer; padding: 2px; border-radius: 4px; }
+input[type="date"]::-webkit-calendar-picker-indicator:hover, input[type="month"]::-webkit-calendar-picker-indicator:hover { opacity: 1; background: color-mix(in srgb, var(--accent, #7a1f3d) 14%, transparent); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) input[type="date"]::-webkit-calendar-picker-indicator, :root:not([data-theme="light"]) input[type="month"]::-webkit-calendar-picker-indicator { filter: invert(.85); } }
+:root[data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator, :root[data-theme="dark"] input[type="month"]::-webkit-calendar-picker-indicator { filter: invert(.85); }
+
 /* ================= Action Register on claude.ai — burgundy & white ================= */
 /* Layout: a burgundy command bar across the top (brand · tabs · status), white working sheets below, the canvas as
    a large white board. Phones: burgundy title bar, white tab bar with a burgundy marker on the open tab.
@@ -2504,6 +2511,14 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 .fin-link-l { font: 700 12px/1 var(--font, system-ui); fill: var(--ink); paint-order: stroke; stroke: var(--surface); stroke-width: 4px; stroke-linejoin: round; }
 .cosmic .fin-link-l { fill: #e9f7ff; stroke: rgba(10, 6, 24, .85); }
 .fin-cv-edges path.fin-twig.trunk { stroke-linecap: round; }
+
+/* ---------- windows you can move: drag by the title ---------- */
+#fin-pop .fin-pop-h, #fin-cv-ed .fin-cv-ed-t, #fin-bal-win .fin-talk-win-h { cursor: grab; user-select: none; touch-action: none; }
+#fin-pop.dragging, #fin-cv-ed.dragging, #fin-bal-win.dragging { cursor: grabbing; box-shadow: 0 30px 80px -20px rgba(0, 0, 0, .55); transition: none; }
+#fin-pop.dragging .fin-pop-h, #fin-cv-ed.dragging .fin-cv-ed-t, #fin-bal-win.dragging .fin-talk-win-h { cursor: grabbing; }
+#fin-cv-ed .fin-cv-ed-t { display: flex; align-items: center; gap: 6px; padding-bottom: 2px; }
+#fin-cv-ed .fin-cv-ed-t::after, #fin-pop .fin-pop-h::after { content: "⠿"; margin-left: auto; color: var(--ink-3); font-size: 14px; letter-spacing: -1px; opacity: .6; }
+#fin-pop .fin-pop-h::after { order: 9; margin-left: 4px; }
 
 </style>
 <div class="titlestrip" id="titlestrip"><span class="ts-brand"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c3.3 4 6 7.2 6 10.4a6 6 0 0 1-12 0C6 10.2 8.7 7 12 3z"/><path d="m9.3 13.6 1.9 1.9 3.6-4.1"/></svg> Action Register</span><button class="ts-search" data-act="palette" title="Search and commands (Ctrl+K)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg><span>Search or type a command</span><kbd>Ctrl K</kbd></button><span class="ts-space"></span></div>
@@ -9530,6 +9545,8 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape') { if (!$('#modal').hidden) $('#modal').hidden = true; else if (UI.drawer) closeDrawer(); }
   if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('.trow,.erow,.tc-title,.todo-main .ttl')) { e.preventDefault(); e.target.click(); }
 });
+// dates are picked from a calendar: a click anywhere in a date field opens it (typing still works)
+document.addEventListener('click', e => { const el = e.target; if (!el || el.tagName !== 'INPUT' || !/^(date|month|week|datetime-local|time)$/.test(el.type) || el.disabled || el.readOnly) return; try { el.showPicker && el.showPicker(); } catch {} }, true);   // before anything below stops the click
 document.addEventListener('change', e => { const el = e.target.closest('[data-chg]'); if (el && CHG[el.dataset.chg]) CHG[el.dataset.chg](el, e); });
 // a file dialog can stay open while the page redraws: the replaced input still delivers its files
 HOOKS.afterRender.push(() => document.querySelectorAll('input[type=file][data-chg]:not([data-bound])').forEach(el => { el.dataset.bound = '1'; el.addEventListener('change', e => { if (!el.isConnected && CHG[el.dataset.chg]) CHG[el.dataset.chg](el, e); }); }));
@@ -16402,6 +16419,7 @@ function finPopGeom() {
 }
 function finPopPlace() {
   const el = $('#fin-pop'), G = finPopGeom(); if (!el || !G) return;
+  if (typeof finWinPos === 'function' && finWinPos('pop:' + UI.fin.pop)) return finWinKeep();   // you moved it: it stays there
   const { W, top, bottom, ax, ay, aw, ah } = G, VH = Math.max(160, bottom - top), gap = 16, acx = ax + aw / 2, acy = ay + ah / 2;
   // its size follows the window: a column on a wide canvas, nearly the whole width on a narrow one; never taller than what you see
   const w = W < 700 ? W - 16 : Math.round(Math.min(560, Math.max(360, W * 0.38)));
@@ -17122,6 +17140,7 @@ function finCvEditorHTML() {
 // keep the form next to its card while the canvas moves
 function finCvEditorPlace() {
   const ed = $('#fin-cv-ed'), E0 = UI.fin.cvEdit, vp = $('#fin-cv-vp'); if (!ed || !E0 || !vp) return;
+  if (typeof finWinPos === 'function' && finWinPos('ed:' + (E0.add || E0.id))) return finWinKeep();   // you moved it: it stays there
   const b = UI.fin.cvPos && UI.fin.cvPos.get(E0.add || E0.id), cv = UI.fin.cv, W = vp.clientWidth, H = vp.clientHeight;
   let x = 16, y = 16; if (b) { x = cv.x + b.x * cv.k; y = cv.y + (b.y + b.h) * cv.k + 6; }
   x = Math.max(8, Math.min(x, W - ed.offsetWidth - 8)); if (y + ed.offsetHeight > H - 8) y = Math.max(8, (b ? cv.y + b.y * cv.k : H) - ed.offsetHeight - 6);
@@ -18541,6 +18560,48 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Enter' && e.target.matches('input[data-chg="fin-daily"]')) { e.preventDefault(); CHG['fin-daily'](e.target); setTimeout(() => ACT['fin-bal-save'](), 0); }
 }, true);
 Object.assign(window.__FIN, { balAge: () => finBalAge() });
+
+/* ===== features/60-finance-windows.js ===== */
+// Money canvas — every window on the canvas moves where you want it. Drag a card's pop-out, the add / edit form
+// ("New purchase goal", …) or the Balances window by its title: it stays where you put it while it is open (the canvas
+// can move under it); a moved pop-out no longer points at its card. Tell the canvas's window moves the same way.
+
+const FWIN = { drag: null };
+// which window a title belongs to, and the key its place is kept under (a new card's pop-out / form starts beside it again)
+function finWinOf(t) {
+  const h = t.closest && t.closest('#fin-pop .fin-pop-h, #fin-cv-ed .fin-cv-ed-t, #fin-bal-win .fin-talk-win-h'); if (!h) return null;
+  const el = h.closest('#fin-pop, #fin-cv-ed, #fin-bal-win'), E0 = UI.fin.cvEdit;
+  const key = el.id === 'fin-pop' ? 'pop:' + UI.fin.pop : el.id === 'fin-cv-ed' ? 'ed:' + (E0 ? E0.add || E0.id : '') : 'bal';
+  return { h, el, key };
+}
+const finWinPos = key => (UI.fin.winPos || {})[key] || null;
+document.addEventListener('pointerdown', e => {
+  if (e.button > 0 || (e.target.closest && e.target.closest('button, input, select, textarea, a'))) return;
+  const w = finWinOf(e.target); if (!w) return;
+  e.preventDefault(); e.stopPropagation();   // not a drag of the canvas under it
+  FWIN.drag = { id: e.pointerId, key: w.key, el: w.el, dx: e.clientX - w.el.offsetLeft, dy: e.clientY - w.el.offsetTop }; w.el.classList.add('dragging');
+  try { w.h.setPointerCapture(e.pointerId); } catch {}
+}, true);
+document.addEventListener('pointermove', e => {
+  const D = FWIN.drag; if (!D || e.pointerId !== D.id) return;
+  const el = document.getElementById(D.el.id) || D.el, st = el.offsetParent; if (!st) return;
+  const x = Math.max(0, Math.min(st.clientWidth - 60, e.clientX - D.dx)), y = Math.max(0, Math.min(st.clientHeight - 40, e.clientY - D.dy));
+  (UI.fin.winPos = UI.fin.winPos || {})[D.key] = { x, y };
+  Object.assign(el.style, { left: x + 'px', top: y + 'px', right: 'auto', bottom: 'auto' }); el.classList.add('moved', 'far');
+});
+const finWinEnd = e => { const D = FWIN.drag; if (D && e.pointerId === D.id) { (document.getElementById(D.el.id) || D.el).classList.remove('dragging'); FWIN.drag = null; } };
+document.addEventListener('pointerup', finWinEnd); document.addEventListener('pointercancel', finWinEnd);
+// after every drawing (and every move of the canvas): a moved window stays where you put it
+function finWinKeep() {
+  const pop = $('#fin-pop'), p1 = pop && finWinPos('pop:' + UI.fin.pop);
+  if (p1) { Object.assign(pop.style, { left: p1.x + 'px', top: p1.y + 'px' }); pop.classList.add('moved', 'far'); }
+  const ed = $('#fin-cv-ed'), E0 = UI.fin.cvEdit, p2 = ed && E0 && finWinPos('ed:' + (E0.add || E0.id));
+  if (p2) { Object.assign(ed.style, { left: p2.x + 'px', top: p2.y + 'px' }); ed.classList.add('moved'); }
+  const bw = $('#fin-bal-win'), p3 = bw && finWinPos('bal');
+  if (p3) Object.assign(bw.style, { left: p3.x + 'px', top: p3.y + 'px', right: 'auto', bottom: 'auto' });
+}
+HOOKS.afterRender.push(finWinKeep);
+Object.assign(window.__FIN, { winPos: () => UI.fin.winPos || {} });
 
 /* ---------- boot ---------- */
 const startView = (location.hash || '').replace('#', '');
