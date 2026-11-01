@@ -179,6 +179,13 @@ async def main():
         assert [i['name'] for i in plan['items']] == ['Laptop', 'Phone', 'Sofa'], 'priority order'
         assert await ev("document.querySelectorAll('.fin-leaf.goal').length") == 3 and await ev("document.querySelectorAll('.fin-leaf.src').length") == 4
         assert await ev("document.querySelectorAll('.fin-cv-edges path.fin-link').length") >= 3, 'each goal joined to how it is paid'
+        # the links are routed: an arrow on each, links from one source leave it at different points, amounts on them
+        lk = await ev("[...document.querySelectorAll('.fin-cv-edges path.fin-link')].map(p => [p.getAttribute('marker-end') || '', p.getAttribute('d'), p.querySelector('title').textContent])"); print('LINKS', [(l[2], l[1][:40]) for l in lk])
+        assert all(l[0].startswith('url(#finArr-') for l in lk), 'an arrow on each link'
+        starts = {}
+        for m_, d, t in lk: starts.setdefault(t.split(' → ')[0], []).append(d.split(' C')[0])
+        assert all(len(set(v)) == len(v) for v in starts.values()), ('each link leaves its source at its own point', starts)
+        assert await ev("document.querySelectorAll('.fin-cv-edges .fin-link-l').length") >= 1, 'how much each carries'
         sofa = await ev("window.__FIN.buy().items.find(i => i.name === 'Sofa').id")
         await ev(f"window.__FIN.show('b:{sofa}')"); await pg.wait_for_timeout(500)   # in view first (the test's own move)
         cam = await ev(f"[{U}.cv.x, {U}.cv.y, {U}.cv.k]")
@@ -409,7 +416,8 @@ async def main():
         assert len([c for c in ch if 'mm-branch' in c[1]]) == 6, 'a channel to every branch'
         assert {'pays', 'costs'} <= {c[0] for c in ch if 'mm-cross' in c[1]}, 'assets pay you; liabilities cost you'
         assert await ev("document.querySelectorAll('.fin-mind .flow').length") >= 7 and await ev("document.querySelectorAll('.fin-mind .mm-branch .flow.in').length") == 2, 'money flows in from earned and passive income, out everywhere else'
-        assert await ev("document.querySelectorAll('#fin-cv-world .fin-twig').length") >= 10, 'a thin branch to each card'
+        assert await ev("document.querySelectorAll('#fin-cv-world .fin-twig').length") >= 10, 'a thin branch to each row of cards'
+        assert await ev("document.querySelectorAll('#fin-cv-world .fin-twig.trunk').length") >= 4, 'a trunk along each branch box, the rows on it like a comb'
         assert await ev("[...document.querySelectorAll('.fin-mind text')].every(t => { const b = t.getBBox(), m = t.getCTM(); const x = m.a * b.x + m.c * b.y + m.e, y = m.b * b.x + m.d * b.y + m.f, x2 = m.a * (b.x + b.width) + m.c * (b.y + b.height) + m.e; return Math.min(x, x2) >= 0 && y >= 0; })"), 'every channel label on the canvas'
         await ev("(() => { const U = window.__AR.UI.fin, id = document.querySelector('#fin-cv-world .fin-leaf[data-node^=\"a:\"]').dataset.node; U.flash = { ids: new Set([id]), until: Date.now() + 4000 }; window.__FIN.open('map'); })()"); await pg.wait_for_timeout(300)
         assert await ev("!!document.querySelector('.fin-mind .mm-branch.hot')"), 'a change makes its branch pulse'

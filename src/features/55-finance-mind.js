@@ -164,10 +164,25 @@ function finMindLayout(rooms0, plan, n) {
   const cross = [], A = ins('mm-assets'), P = ins('mm-pass'), Lb = ins('mm-liab'), Ex = ins('exp');
   if (A && P) cross.push({ id: 'pays', cls: 'gold', side: 'L', a: { x: A.x, y: A.y + 50 }, b: { x: P.x, y: P.y + 50 }, t: thick(R.passive), label: R.passive ? [fk(R.passive), ' a month'] : ['—', ''], line: R.passive ? 'your assets pay you' : 'no asset pays you yet' });
   if (Lb && Ex) cross.push({ id: 'costs', cls: 'red', side: 'R', a: { x: Lb.x + Lb.w, y: Lb.y + 50 }, b: { x: Ex.x + Ex.w, y: Ex.y + 50 }, t: thick(n.instMonthly || 0), label: [fk(n.instMonthly || 0), ' a month'], line: 'your liabilities cost you' });
-  if (A && Lb && W.payLiab > 0) cross.push({ id: 'assetpays', cls: 'green under', a: { x: A.x + A.w * 0.6, y: A.y + A.h }, b: { x: Lb.x + Lb.w * 0.4, y: Lb.y + Lb.h }, low: mapB + 150, t: thick(W.payLiab), label: [fk(W.payLiab), ' a month'], line: 'your assets pay a liability (estimate)' });
+  // assets paying a liability: from the inner edge of Assets to the inner edge of Liabilities, dipping under the centre —
+  // never across a box that hangs under either of them
+  if (A && Lb && W.payLiab > 0) cross.push({ id: 'assetpays', cls: 'green under', a: { x: A.x + A.w, y: A.y + A.h - 36 }, b: { x: Lb.x, y: Lb.y + Lb.h - 36 }, low: mapB + 150, side: 'in', t: thick(W.payLiab), label: [fk(W.payLiab), ' a month'], line: 'your assets pay a liability (estimate)' });
   for (const r of all) {
     const L = r.side === 'L', hub = { x: L ? r.x + r.w - 9 : r.x + 9, y: r.y + FMM.HEAD - 2 }, own = cards.filter(c => c.room === r.id), mx = Math.max(1, ...own.map(finMindAmt)), h = (info[r.id] || {}).health || 'calm';
-    for (const c of own) { const k = 1 + Math.round(3 * Math.sqrt(finMindAmt(c) / mx)); edges.push({ x0: hub.x, y0: hub.y, x1: L ? c.x + c.w : c.x, y1: c.y + c.h / 2, cls: `fin-twig ${h} tw${k}`, title: `${r.title} → ${c.label}` }); }
+    // a comb along the box's inner edge: one trunk down from the title, a short rounded stub into each row of cards (the
+    // card nearest the edge), as thick as the row's biggest amount — no line runs across other cards
+    if (r.kind === 'goals') continue;   // your choices have their own links: from each money source to the goals it pays for
+    const rows = new Map(); for (const c of own) { const key = Math.round(c.y); if (!rows.has(key)) rows.set(key, []); rows.get(key).push(c); }
+    const ys = [...rows.keys()].sort((p, q) => p - q), R0 = 10;
+    if (ys.length) {
+      const lastY = ys[ys.length - 1] + own[0].h / 2;
+      edges.push({ d: `M${hub.x},${hub.y} V${lastY - R0}`, cls: `fin-twig ${h} tw2 trunk`, title: `${r.title}` });
+      for (const y0 of ys) {
+        const row = rows.get(y0), near = row.reduce((p, q) => (L ? q.x + q.w > p.x + p.w : q.x < p.x) ? q : p), ym = y0 + near.h / 2, xe = L ? near.x + near.w : near.x, dir = L ? -1 : 1;
+        const k = 1 + Math.round(3 * Math.sqrt(Math.max(...row.map(finMindAmt)) / mx));
+        edges.push({ d: `M${hub.x},${Math.max(hub.y, ym - R0)} Q${hub.x},${ym} ${hub.x + dir * R0},${ym} H${xe}`, cls: `fin-twig ${h} tw${k}`, title: `${r.title} → ${row.map(c => c.label).join(', ')}` });
+      }
+    }
   }
   const w = W0, h = Math.max(y - 44, colH);
   UI.fin.cvPos = new Map([...rooms.map(r => [r.id, { x: r.x, y: r.y, w: r.w, h: r.h }]), ...cards.map(c => [c.id, { x: c.x, y: c.y, w: c.w, h: c.h }]), ...dets.map(d => [d.id + ':det', d])]);
@@ -192,7 +207,8 @@ function finMindSVG(L) {
   }
   for (const c of M.cross) {
     let d, lx, ly, anchor = 'middle';
-    if (c.low) { d = `M${c.a.x},${c.a.y} C${c.a.x},${c.low} ${c.b.x},${c.low} ${c.b.x},${c.b.y}`; lx = (c.a.x + c.b.x) / 2; ly = c.low - c.t / 2 - 50; }
+    if (c.low && c.side === 'in') { const k = Math.max(160, (c.b.x - c.a.x) * 0.22); d = `M${c.a.x},${c.a.y} C${c.a.x + k},${c.a.y} ${c.a.x + k},${c.low} ${(c.a.x + c.b.x) / 2},${c.low} S${c.b.x - k},${c.b.y} ${c.b.x},${c.b.y}`; lx = (c.a.x + c.b.x) / 2; ly = c.low - c.t / 2 - 40; }
+    else if (c.low) { d = `M${c.a.x},${c.a.y} C${c.a.x},${c.low} ${c.b.x},${c.low} ${c.b.x},${c.b.y}`; lx = (c.a.x + c.b.x) / 2; ly = c.low - c.t / 2 - 50; }
     else { const L = c.side === 'L', o = L ? -(FMM.OUT - 110) : FMM.OUT - 110, ox = c.a.x + o; d = `M${c.a.x},${c.a.y} C${ox},${c.a.y} ${ox},${c.b.y} ${c.b.x},${c.b.y}`; lx = c.a.x + o * 0.75 + (L ? -1 : 1) * (c.t / 2 + 40); ly = (c.a.y + c.b.y) / 2; }
     // beside the outer channels the words run along the channel, so they stay on the canvas
     const words = c.low ? text(lx, ly, c.label, c.line, anchor) : `<g transform="translate(${lx},${ly}) rotate(${c.side === 'L' ? -90 : 90})">${text(0, 0, c.label, c.line, 'middle')}</g>`;

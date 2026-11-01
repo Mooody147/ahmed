@@ -139,6 +139,24 @@ function finCvRooms(root) {
 const finDetH = (id, est) => UI.fin.detH[id] || est;
 // goals and purchases: where the money comes from on the left, each goal on the right, joined by how it is best paid;
 // the timeline and the savings goals below
+// the links from the money sources to the goals: each leaves its source and reaches its goal at its own point (spread
+// along the edge, in order, so they do not cross at the ends), each runs in its own lane between the two columns, ends
+// in an arrow and says how much it carries
+function finGoalLinks(items, from, cards, edges, X1, X2) {
+  const links = [];
+  for (const c of items) for (const s of from(c.it)) { const a = cards.find(x => x.id === s); if (a) links.push({ a, c, s }); }
+  const outs = new Map(), ins = new Map();
+  for (const L of links) { (outs.get(L.a.id) || outs.set(L.a.id, []).get(L.a.id)).push(L); (ins.get(L.c.id) || ins.set(L.c.id, []).get(L.c.id)).push(L); }
+  for (const list of outs.values()) list.sort((p, q) => p.c.y - q.c.y).forEach((L, k) => { L.y0 = L.a.y + L.a.h * (k + 1) / (list.length + 1); });
+  for (const list of ins.values()) list.sort((p, q) => p.a.y - q.a.y).forEach((L, k) => { L.y1 = L.c.y + L.c.h * (k + 1) / (list.length + 1); });
+  const gap = Math.max(40, X2 - X1), N = links.length;
+  links.sort((p, q) => p.y1 - q.y1).forEach((L, k) => {
+    const lane = X1 + gap * (0.32 + 0.36 * (N > 1 ? k / (N - 1) : 0.5)), x1 = X2 - 10;   // its own lane; the arrow stops at the goal's edge
+    const amt = L.s === 'src:cash' ? L.c.it.fromCash : L.c.it.monthly, per = L.s === 'src:cash' ? '' : '/mo';
+    edges.push({ d: `M${X1},${L.y0} C${lane},${L.y0} ${lane},${L.y1} ${x1},${L.y1}`, arrow: true, cls: 'fin-link ' + FIN_REC[L.c.it.rec][1], title: `${L.a.label} → ${L.c.it.name}`,
+      label: amt > 0 ? fk(amt) + per : '', lx: x1 - 8, ly: L.y1 - 7 });
+  });
+}
 function finGoalsLayout(r, plan, n, x0, y, iw, cards, dets, edges, subs, grid) {
   const { CG, SW, SH, IW, IH } = FR;
   const kh = finDetH('gk', 120); dets.push({ id: 'gk', x: x0, y, w: iw, h: kh }); y += kh + 18;
@@ -154,9 +172,12 @@ function finGoalsLayout(r, plan, n, x0, y, iw, cards, dets, edges, subs, grid) {
   });
   if (!items.length) { const c = { id: 'b:none', type: 'leaf', label: 'Nothing to buy yet', val: '', sub: 'press ＋ above, or tell the canvas “I want a laptop for 40,000 by March”', cls: 'muted', x: ix, y: iy, w: IW, h: IH, act: { act: 'fin-cv-add', id: 'buy' } }; cards.push(c); iy += IH + 14; }
   const blockH = Math.max(iy - top, srcs.length * (SH + 16)), step = blockH / srcs.length;
-  srcs.forEach(([id, icon, label, val, sub], i) => { const c = { id, type: 'leaf', kind: 'src', icon, label, val, sub, cls: 'src', x: x0, y: top + i * step + (step - SH) / 2, w: SW, h: SH, act: { act: 'fin-cv-det', id } }; cards.push(c); });
   const from = it => it.rec === 'cash' ? ['src:cash'] : it.rec === 'save' ? (it.fromCash ? ['src:cash', 'src:save'] : ['src:save']) : it.rec === 'card_full' || it.rec === 'card_plan' ? (it.fromCash ? ['src:cash', 'src:card'] : ['src:card']) : it.rec === 'halan' ? ['src:halan'] : [];
-  for (const c of items) for (const s of from(c.it)) { const a = cards.find(x => x.id === s); if (a) edges.push({ x0: a.x + a.w, y0: a.y + a.h / 2, x1: c.x, y1: c.y + c.h / 2, cls: 'fin-link ' + FIN_REC[c.it.rec][1], title: `${a.label} → ${c.it.name}` }); }
+  // the money sources stand in the order of the goals they pay for (their goals' average height), so the links cross as
+  // little as they can; a source that pays for nothing yet goes to the end
+  const mid = id => { const ys = items.filter(c => from(c.it).includes(id)).map(c => c.y + c.h / 2); return ys.length ? ys.reduce((t, v) => t + v, 0) / ys.length : Infinity; };
+  srcs.map((s0, k) => ({ s0, k, m: mid(s0[0]) })).sort((p, q) => p.m - q.m || p.k - q.k).forEach(({ s0: [id, icon, label, val, sub] }, i) => { const c = { id, type: 'leaf', kind: 'src', icon, label, val, sub, cls: 'src', x: x0, y: top + i * step + (step - SH) / 2, w: SW, h: SH, act: { act: 'fin-cv-det', id } }; cards.push(c); });
+  finGoalLinks(items, from, cards, edges, x0 + SW, ix);
   y = top + blockH + 22;
   const th = finDetH('gt', 96); dets.push({ id: 'gt', x: x0, y, w: iw, h: th }); y += th + 18;
   // savings goals and the forecast
@@ -370,7 +391,7 @@ function finCvBoard() {
   const now = Date.now(); if (!UI.fin.cvShownAt) UI.fin.cvShownAt = now; const intro = now - UI.fin.cvShownAt < 700;
   return `<div class="fin-cv-vp cosmic${rich ? ' mode-rich' : flow ? ' mode-flow' : ' mode-mind'}${intro ? ' intro' : ''}${cv.k < 0.62 ? ' z-far' : ''}" id="fin-cv-vp">${typeof finFlowSky === 'function' ? finFlowSky() : ''}<div class="fin-cv-world" id="fin-cv-world" style="width:${L.w}px;height:${L.h}px;transform:translate(${cv.x}px,${cv.y}px) scale(${cv.k})">
       ${rich ? finRichSVG(L) : flow ? finFlowSVG(L) : finMindSVG(L)}${L.rooms.map(finCvRoom).join('')}
-      <svg class="fin-cv-edges" width="${L.w}" height="${L.h}" aria-hidden="true">${L.edges.map(e => `<path class="${e.cls}" d="${path(e)}"><title>${esc(e.title)}</title></path>`).join('')}</svg>
+      <svg class="fin-cv-edges" width="${L.w}" height="${L.h}" aria-hidden="true"><defs>${['s1', 's2', 's3', 'muted'].map(k => `<marker id="finArr-${k}" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="fin-arr ${k}"/></marker>`).join('')}</defs>${L.edges.map(e => `<path class="${e.cls}" d="${e.d || path(e)}"${e.arrow ? ` marker-end="url(#finArr-${(e.cls.match(/\b(s1|s2|s3|muted)\b/) || [, 's3'])[1]})"` : ''}><title>${esc(e.title)}</title></path>${e.label ? `<text class="fin-link-l" x="${e.lx}" y="${e.ly}" text-anchor="end">${esc(e.label)}</text>` : ''}`).join('')}</svg>
       ${L.subs.map(s => `<div class="fin-room-sub" style="left:${s.x}px;top:${s.y}px;width:${s.w}px"><b>${esc(s.label)}</b>${s.sum ? ` <small>${esc(s.sum)}</small>` : ''}</div>`).join('')}
       ${L.cards.map(c => finCvCard(c, hueOf.get(c.id) ?? (c.id.startsWith('b:') || c.id.startsWith('src:') || c.id.startsWith('g:') ? 190 : 200))).join('')}
       ${L.dets.map(d => `<div class="fin-det ${d.id.startsWith('sec:') ? 'sec' : ''}" data-det="${esc(d.id)}" style="left:${d.x}px;top:${d.y}px;width:${d.w}px" ${d.id.startsWith('sec:') ? `id="fin-${esc(d.id.replace(':', '-'))}"` : ''}><div class="fin-det-in">${finDetBody(d.id, plan, n)}</div></div>`).join('')}

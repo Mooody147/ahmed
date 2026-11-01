@@ -2498,6 +2498,13 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 
 .fin-pop.c { box-shadow: 0 40px 120px -20px rgba(0, 0, 0, .7), 0 0 0 1px rgba(255, 255, 255, .06); }
 
+/* ---------- arrows inside boxes: routed links with arrowheads and amounts ---------- */
+.fin-arr.s1 { fill: var(--fin-s1); } .fin-arr.s2 { fill: var(--fin-s2); } .fin-arr.s3 { fill: var(--fin-s3); } .fin-arr.muted { fill: var(--ink-3); }
+.cosmic .fin-arr { fill: hsl(190 90% 70% / .9); }
+.fin-link-l { font: 700 12px/1 var(--font, system-ui); fill: var(--ink); paint-order: stroke; stroke: var(--surface); stroke-width: 4px; stroke-linejoin: round; }
+.cosmic .fin-link-l { fill: #e9f7ff; stroke: rgba(10, 6, 24, .85); }
+.fin-cv-edges path.fin-twig.trunk { stroke-linecap: round; }
+
 </style>
 <div class="titlestrip" id="titlestrip"><span class="ts-brand"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c3.3 4 6 7.2 6 10.4a6 6 0 0 1-12 0C6 10.2 8.7 7 12 3z"/><path d="m9.3 13.6 1.9 1.9 3.6-4.1"/></svg> Action Register</span><button class="ts-search" data-act="palette" title="Search and commands (Ctrl+K)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg><span>Search or type a command</span><kbd>Ctrl K</kbd></button><span class="ts-space"></span></div>
 <div class="app">
@@ -16214,6 +16221,24 @@ function finCvRooms(root) {
 const finDetH = (id, est) => UI.fin.detH[id] || est;
 // goals and purchases: where the money comes from on the left, each goal on the right, joined by how it is best paid;
 // the timeline and the savings goals below
+// the links from the money sources to the goals: each leaves its source and reaches its goal at its own point (spread
+// along the edge, in order, so they do not cross at the ends), each runs in its own lane between the two columns, ends
+// in an arrow and says how much it carries
+function finGoalLinks(items, from, cards, edges, X1, X2) {
+  const links = [];
+  for (const c of items) for (const s of from(c.it)) { const a = cards.find(x => x.id === s); if (a) links.push({ a, c, s }); }
+  const outs = new Map(), ins = new Map();
+  for (const L of links) { (outs.get(L.a.id) || outs.set(L.a.id, []).get(L.a.id)).push(L); (ins.get(L.c.id) || ins.set(L.c.id, []).get(L.c.id)).push(L); }
+  for (const list of outs.values()) list.sort((p, q) => p.c.y - q.c.y).forEach((L, k) => { L.y0 = L.a.y + L.a.h * (k + 1) / (list.length + 1); });
+  for (const list of ins.values()) list.sort((p, q) => p.a.y - q.a.y).forEach((L, k) => { L.y1 = L.c.y + L.c.h * (k + 1) / (list.length + 1); });
+  const gap = Math.max(40, X2 - X1), N = links.length;
+  links.sort((p, q) => p.y1 - q.y1).forEach((L, k) => {
+    const lane = X1 + gap * (0.32 + 0.36 * (N > 1 ? k / (N - 1) : 0.5)), x1 = X2 - 10;   // its own lane; the arrow stops at the goal's edge
+    const amt = L.s === 'src:cash' ? L.c.it.fromCash : L.c.it.monthly, per = L.s === 'src:cash' ? '' : '/mo';
+    edges.push({ d: `M${X1},${L.y0} C${lane},${L.y0} ${lane},${L.y1} ${x1},${L.y1}`, arrow: true, cls: 'fin-link ' + FIN_REC[L.c.it.rec][1], title: `${L.a.label} → ${L.c.it.name}`,
+      label: amt > 0 ? fk(amt) + per : '', lx: x1 - 8, ly: L.y1 - 7 });
+  });
+}
 function finGoalsLayout(r, plan, n, x0, y, iw, cards, dets, edges, subs, grid) {
   const { CG, SW, SH, IW, IH } = FR;
   const kh = finDetH('gk', 120); dets.push({ id: 'gk', x: x0, y, w: iw, h: kh }); y += kh + 18;
@@ -16229,9 +16254,12 @@ function finGoalsLayout(r, plan, n, x0, y, iw, cards, dets, edges, subs, grid) {
   });
   if (!items.length) { const c = { id: 'b:none', type: 'leaf', label: 'Nothing to buy yet', val: '', sub: 'press ＋ above, or tell the canvas “I want a laptop for 40,000 by March”', cls: 'muted', x: ix, y: iy, w: IW, h: IH, act: { act: 'fin-cv-add', id: 'buy' } }; cards.push(c); iy += IH + 14; }
   const blockH = Math.max(iy - top, srcs.length * (SH + 16)), step = blockH / srcs.length;
-  srcs.forEach(([id, icon, label, val, sub], i) => { const c = { id, type: 'leaf', kind: 'src', icon, label, val, sub, cls: 'src', x: x0, y: top + i * step + (step - SH) / 2, w: SW, h: SH, act: { act: 'fin-cv-det', id } }; cards.push(c); });
   const from = it => it.rec === 'cash' ? ['src:cash'] : it.rec === 'save' ? (it.fromCash ? ['src:cash', 'src:save'] : ['src:save']) : it.rec === 'card_full' || it.rec === 'card_plan' ? (it.fromCash ? ['src:cash', 'src:card'] : ['src:card']) : it.rec === 'halan' ? ['src:halan'] : [];
-  for (const c of items) for (const s of from(c.it)) { const a = cards.find(x => x.id === s); if (a) edges.push({ x0: a.x + a.w, y0: a.y + a.h / 2, x1: c.x, y1: c.y + c.h / 2, cls: 'fin-link ' + FIN_REC[c.it.rec][1], title: `${a.label} → ${c.it.name}` }); }
+  // the money sources stand in the order of the goals they pay for (their goals' average height), so the links cross as
+  // little as they can; a source that pays for nothing yet goes to the end
+  const mid = id => { const ys = items.filter(c => from(c.it).includes(id)).map(c => c.y + c.h / 2); return ys.length ? ys.reduce((t, v) => t + v, 0) / ys.length : Infinity; };
+  srcs.map((s0, k) => ({ s0, k, m: mid(s0[0]) })).sort((p, q) => p.m - q.m || p.k - q.k).forEach(({ s0: [id, icon, label, val, sub] }, i) => { const c = { id, type: 'leaf', kind: 'src', icon, label, val, sub, cls: 'src', x: x0, y: top + i * step + (step - SH) / 2, w: SW, h: SH, act: { act: 'fin-cv-det', id } }; cards.push(c); });
+  finGoalLinks(items, from, cards, edges, x0 + SW, ix);
   y = top + blockH + 22;
   const th = finDetH('gt', 96); dets.push({ id: 'gt', x: x0, y, w: iw, h: th }); y += th + 18;
   // savings goals and the forecast
@@ -16445,7 +16473,7 @@ function finCvBoard() {
   const now = Date.now(); if (!UI.fin.cvShownAt) UI.fin.cvShownAt = now; const intro = now - UI.fin.cvShownAt < 700;
   return `<div class="fin-cv-vp cosmic${rich ? ' mode-rich' : flow ? ' mode-flow' : ' mode-mind'}${intro ? ' intro' : ''}${cv.k < 0.62 ? ' z-far' : ''}" id="fin-cv-vp">${typeof finFlowSky === 'function' ? finFlowSky() : ''}<div class="fin-cv-world" id="fin-cv-world" style="width:${L.w}px;height:${L.h}px;transform:translate(${cv.x}px,${cv.y}px) scale(${cv.k})">
       ${rich ? finRichSVG(L) : flow ? finFlowSVG(L) : finMindSVG(L)}${L.rooms.map(finCvRoom).join('')}
-      <svg class="fin-cv-edges" width="${L.w}" height="${L.h}" aria-hidden="true">${L.edges.map(e => `<path class="${e.cls}" d="${path(e)}"><title>${esc(e.title)}</title></path>`).join('')}</svg>
+      <svg class="fin-cv-edges" width="${L.w}" height="${L.h}" aria-hidden="true"><defs>${['s1', 's2', 's3', 'muted'].map(k => `<marker id="finArr-${k}" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="fin-arr ${k}"/></marker>`).join('')}</defs>${L.edges.map(e => `<path class="${e.cls}" d="${e.d || path(e)}"${e.arrow ? ` marker-end="url(#finArr-${(e.cls.match(/\b(s1|s2|s3|muted)\b/) || [, 's3'])[1]})"` : ''}><title>${esc(e.title)}</title></path>${e.label ? `<text class="fin-link-l" x="${e.lx}" y="${e.ly}" text-anchor="end">${esc(e.label)}</text>` : ''}`).join('')}</svg>
       ${L.subs.map(s => `<div class="fin-room-sub" style="left:${s.x}px;top:${s.y}px;width:${s.w}px"><b>${esc(s.label)}</b>${s.sum ? ` <small>${esc(s.sum)}</small>` : ''}</div>`).join('')}
       ${L.cards.map(c => finCvCard(c, hueOf.get(c.id) ?? (c.id.startsWith('b:') || c.id.startsWith('src:') || c.id.startsWith('g:') ? 190 : 200))).join('')}
       ${L.dets.map(d => `<div class="fin-det ${d.id.startsWith('sec:') ? 'sec' : ''}" data-det="${esc(d.id)}" style="left:${d.x}px;top:${d.y}px;width:${d.w}px" ${d.id.startsWith('sec:') ? `id="fin-${esc(d.id.replace(':', '-'))}"` : ''}><div class="fin-det-in">${finDetBody(d.id, plan, n)}</div></div>`).join('')}
@@ -18009,10 +18037,25 @@ function finMindLayout(rooms0, plan, n) {
   const cross = [], A = ins('mm-assets'), P = ins('mm-pass'), Lb = ins('mm-liab'), Ex = ins('exp');
   if (A && P) cross.push({ id: 'pays', cls: 'gold', side: 'L', a: { x: A.x, y: A.y + 50 }, b: { x: P.x, y: P.y + 50 }, t: thick(R.passive), label: R.passive ? [fk(R.passive), ' a month'] : ['—', ''], line: R.passive ? 'your assets pay you' : 'no asset pays you yet' });
   if (Lb && Ex) cross.push({ id: 'costs', cls: 'red', side: 'R', a: { x: Lb.x + Lb.w, y: Lb.y + 50 }, b: { x: Ex.x + Ex.w, y: Ex.y + 50 }, t: thick(n.instMonthly || 0), label: [fk(n.instMonthly || 0), ' a month'], line: 'your liabilities cost you' });
-  if (A && Lb && W.payLiab > 0) cross.push({ id: 'assetpays', cls: 'green under', a: { x: A.x + A.w * 0.6, y: A.y + A.h }, b: { x: Lb.x + Lb.w * 0.4, y: Lb.y + Lb.h }, low: mapB + 150, t: thick(W.payLiab), label: [fk(W.payLiab), ' a month'], line: 'your assets pay a liability (estimate)' });
+  // assets paying a liability: from the inner edge of Assets to the inner edge of Liabilities, dipping under the centre —
+  // never across a box that hangs under either of them
+  if (A && Lb && W.payLiab > 0) cross.push({ id: 'assetpays', cls: 'green under', a: { x: A.x + A.w, y: A.y + A.h - 36 }, b: { x: Lb.x, y: Lb.y + Lb.h - 36 }, low: mapB + 150, side: 'in', t: thick(W.payLiab), label: [fk(W.payLiab), ' a month'], line: 'your assets pay a liability (estimate)' });
   for (const r of all) {
     const L = r.side === 'L', hub = { x: L ? r.x + r.w - 9 : r.x + 9, y: r.y + FMM.HEAD - 2 }, own = cards.filter(c => c.room === r.id), mx = Math.max(1, ...own.map(finMindAmt)), h = (info[r.id] || {}).health || 'calm';
-    for (const c of own) { const k = 1 + Math.round(3 * Math.sqrt(finMindAmt(c) / mx)); edges.push({ x0: hub.x, y0: hub.y, x1: L ? c.x + c.w : c.x, y1: c.y + c.h / 2, cls: `fin-twig ${h} tw${k}`, title: `${r.title} → ${c.label}` }); }
+    // a comb along the box's inner edge: one trunk down from the title, a short rounded stub into each row of cards (the
+    // card nearest the edge), as thick as the row's biggest amount — no line runs across other cards
+    if (r.kind === 'goals') continue;   // your choices have their own links: from each money source to the goals it pays for
+    const rows = new Map(); for (const c of own) { const key = Math.round(c.y); if (!rows.has(key)) rows.set(key, []); rows.get(key).push(c); }
+    const ys = [...rows.keys()].sort((p, q) => p - q), R0 = 10;
+    if (ys.length) {
+      const lastY = ys[ys.length - 1] + own[0].h / 2;
+      edges.push({ d: `M${hub.x},${hub.y} V${lastY - R0}`, cls: `fin-twig ${h} tw2 trunk`, title: `${r.title}` });
+      for (const y0 of ys) {
+        const row = rows.get(y0), near = row.reduce((p, q) => (L ? q.x + q.w > p.x + p.w : q.x < p.x) ? q : p), ym = y0 + near.h / 2, xe = L ? near.x + near.w : near.x, dir = L ? -1 : 1;
+        const k = 1 + Math.round(3 * Math.sqrt(Math.max(...row.map(finMindAmt)) / mx));
+        edges.push({ d: `M${hub.x},${Math.max(hub.y, ym - R0)} Q${hub.x},${ym} ${hub.x + dir * R0},${ym} H${xe}`, cls: `fin-twig ${h} tw${k}`, title: `${r.title} → ${row.map(c => c.label).join(', ')}` });
+      }
+    }
   }
   const w = W0, h = Math.max(y - 44, colH);
   UI.fin.cvPos = new Map([...rooms.map(r => [r.id, { x: r.x, y: r.y, w: r.w, h: r.h }]), ...cards.map(c => [c.id, { x: c.x, y: c.y, w: c.w, h: c.h }]), ...dets.map(d => [d.id + ':det', d])]);
@@ -18037,7 +18080,8 @@ function finMindSVG(L) {
   }
   for (const c of M.cross) {
     let d, lx, ly, anchor = 'middle';
-    if (c.low) { d = `M${c.a.x},${c.a.y} C${c.a.x},${c.low} ${c.b.x},${c.low} ${c.b.x},${c.b.y}`; lx = (c.a.x + c.b.x) / 2; ly = c.low - c.t / 2 - 50; }
+    if (c.low && c.side === 'in') { const k = Math.max(160, (c.b.x - c.a.x) * 0.22); d = `M${c.a.x},${c.a.y} C${c.a.x + k},${c.a.y} ${c.a.x + k},${c.low} ${(c.a.x + c.b.x) / 2},${c.low} S${c.b.x - k},${c.b.y} ${c.b.x},${c.b.y}`; lx = (c.a.x + c.b.x) / 2; ly = c.low - c.t / 2 - 40; }
+    else if (c.low) { d = `M${c.a.x},${c.a.y} C${c.a.x},${c.low} ${c.b.x},${c.low} ${c.b.x},${c.b.y}`; lx = (c.a.x + c.b.x) / 2; ly = c.low - c.t / 2 - 50; }
     else { const L = c.side === 'L', o = L ? -(FMM.OUT - 110) : FMM.OUT - 110, ox = c.a.x + o; d = `M${c.a.x},${c.a.y} C${ox},${c.a.y} ${ox},${c.b.y} ${c.b.x},${c.b.y}`; lx = c.a.x + o * 0.75 + (L ? -1 : 1) * (c.t / 2 + 40); ly = (c.a.y + c.b.y) / 2; }
     // beside the outer channels the words run along the channel, so they stay on the canvas
     const words = c.low ? text(lx, ly, c.label, c.line, anchor) : `<g transform="translate(${lx},${ly}) rotate(${c.side === 'L' ? -90 : 90})">${text(0, 0, c.label, c.line, 'middle')}</g>`;

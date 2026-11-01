@@ -716,3 +716,10 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 @media (max-width: 600px) { .fin-bal-tab { grid-template-columns: auto; padding: 8px 10px; border-radius: 50%; } .fin-bal-tab small, .fin-bal-tab { font-size: 0; } .fin-bal-tab span { font-size: 20px; grid-row: auto; } }
 
 .fin-pop.c { box-shadow: 0 40px 120px -20px rgba(0, 0, 0, .7), 0 0 0 1px rgba(255, 255, 255, .06); }
+
+/* ---------- arrows inside boxes: routed links with arrowheads and amounts ---------- */
+.fin-arr.s1 { fill: var(--fin-s1); } .fin-arr.s2 { fill: var(--fin-s2); } .fin-arr.s3 { fill: var(--fin-s3); } .fin-arr.muted { fill: var(--ink-3); }
+.cosmic .fin-arr { fill: hsl(190 90% 70% / .9); }
+.fin-link-l { font: 700 12px/1 var(--font, system-ui); fill: var(--ink); paint-order: stroke; stroke: var(--surface); stroke-width: 4px; stroke-linejoin: round; }
+.cosmic .fin-link-l { fill: #e9f7ff; stroke: rgba(10, 6, 24, .85); }
+.fin-cv-edges path.fin-twig.trunk { stroke-linecap: round; }
