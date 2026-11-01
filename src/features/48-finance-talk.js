@@ -54,7 +54,7 @@ function finTalkHTML() {
     <div class="fin-talk-in">
       <label class="btn fin-talk-att" title="Add statements or screenshots"><span aria-hidden="true">📎</span><span class="sr">Add statements or screenshots</span><input type="file" multiple accept="image/*,.pdf,.csv,.xls,.xlsx,.txt" data-chg="fin-talk-files" hidden></label>
       <div class="fin-talk-box">${T.files.length ? `<div class="fin-talk-files">${T.files.map((f, i) => `<span class="fin-tag">${esc(f.name)} <button class="icon-btn" data-act="fin-talk-file-x" data-i="${i}" aria-label="Remove ${esc(f.name)}">${I.x}</button></span>`).join('')}</div>` : ''}
-        <textarea class="input" id="fin-talk-in" rows="2" placeholder="${T.about ? 'Tell the canvas about ' + esc(E.clip(T.about.label, 40)) + ' — or ask about it…' : 'Tell the canvas what changed, or ask about your money…'}" aria-label="Tell the canvas">${esc(T.text)}</textarea></div>
+        <textarea class="input" id="fin-talk-in" rows="2" placeholder="${T.about ? 'Tell the canvas about ' + esc(E.clip(T.about.label, 40)) + ' — or ask about it…' : 'Talk to your canvas: what changed, a question, or what to show and how — “add a box of my recurring payments”, “my last 10 transactions as a table”…'}" aria-label="Tell the canvas">${esc(T.text)}</textarea></div>
       <button class="btn primary fin-talk-send" data-act="fin-talk-send" ${T.busy ? 'disabled' : ''}>${T.busy ? 'Working…' : 'Send'}</button>
     </div></div>`;
 }
@@ -136,13 +136,17 @@ function finTalkContext() {
 async function finTalkClaude(m, text, imgs, about) {
   const lim = St.limits && St.limits.images, images = [];
   for (const f of imgs.slice(0, lim ? lim.maxCount || 10 : 10)) { try { const bytes = new Uint8Array(await f.file.arrayBuffer()); const r = await E.extract({ name: f.name, bytes }, { vision: true, maxImageBytes: lim ? lim.maxInputBytes : 0, maxPageImages: 4 }); for (const im of r.images || []) if (im.blob) images.push(im.blob); } catch (e) { m.notes.push(`${f.name}: could not be opened`); } }
-  const r = await St.sample.json(FIN_DRAFT_PROMPT(finTalkContext()) + FIN_TALK_RULES + (about ? FIN_ABOUT_RULES(about) : '') + '\n\nOWNER’S MESSAGE:\n' + (text || '(only screenshots)'), { modelTier: 'default', ...(images.length ? { images } : {}) }) || {};
+  // the canvas's agent: it also sees the canvas and the conversation so far, and may reshape the canvas (the most capable model when you wrote something)
+  const agent = typeof FIN_AGENT_RULES === 'function' ? FIN_AGENT_RULES() : '';
+  const r = await St.sample.json(FIN_DRAFT_PROMPT(finTalkContext()) + FIN_TALK_RULES + agent + (about ? FIN_ABOUT_RULES(about) : '') + '\n\nOWNER’S MESSAGE:\n' + (text || '(only screenshots)'), { modelTier: text ? 'complex' : 'default', ...(images.length ? { images } : {}) }) || {};
   const P = finDraftCheck(r);
   // about one card: only what concerns that card is applied; the rest is listed
   if (about) { const out = finAboutScope(about, P, r); if (out.length) m.notes.push('Kept to ' + about.label + ' — not changed: ' + out.join(', ') + '.'); }
   m.done.push(...finDraftApply(P, { text, files: imgs }));
   r._balAccts = new Set((P.balances || []).filter(b => b.account).map(b => b.account + '|' + b.date));   // a balance given in the same message already includes what it mentions
   m.done.push(...finTalkExtras(r));
+  if (typeof finAgentApply === 'function') { const ag = finAgentApply(r.canvas, about); m.done.push(...ag.done); m.notes.push(...ag.notes); }
+  if (UI.fin.agentMode) { const md = UI.fin.agentMode; UI.fin.agentMode = null; setTimeout(() => finCvMode(md), 60); }
   // Claude was told not to ask; anything it still asked is kept as a note, never as a stop
   m.notes.push(...P.questions.map(q => q.text), ...(Array.isArray(r.notes) ? r.notes.filter(x => typeof x === 'string').slice(0, 8) : []));
   if (typeof r.reply === 'string') m.reply = r.reply.slice(0, 800);

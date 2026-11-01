@@ -26,7 +26,7 @@ function finFlowLayout(rooms, plan, n) {
     r.x = x; r.y = y; r.w = w; const HEAD = headOf(r), x0 = x + PAD, iw = w - 2 * PAD; let yy = y + HEAD;
     if (UI.fin.cvCol.has(r.id)) r.h = HEAD + 6;
     else if (r.kind === 'ov') { const h = finDetH('ov', 420); dets.push({ id: 'ov', x: x0, y: yy, w: iw, h }); r.h = yy + h + PAD - y; }
-    else if (r.kind === 'sec') { const h = finDetH(r.id, 640); dets.push({ id: r.id, x: x0, y: yy, w: iw, h }); r.h = yy + h + PAD - y; }
+    else if (r.kind === 'sec' || r.kind === 'box') { const h = finDetH(r.id, r.kind === 'box' ? 360 : 640); dets.push({ id: r.id, x: x0, y: yy, w: iw, h }); r.h = yy + h + PAD - y; }
     else if (r.kind === 'next') { yy = finNextLayout(r, x0, yy, iw, cards, dets, subs, grid); r.h = yy + PAD - y; }
     else if (r.kind === 'goals') { yy = finGoalsLayout(r, plan, n, x0, yy, iw, cards, dets, edges, subs, grid); r.h = yy + PAD - y; }
     else { grid(r.node.children, x0, yy, iw); r.h = Math.max(subs.y2 - CG, y + HEAD + 20) + PAD - y; }
@@ -36,15 +36,17 @@ function finFlowLayout(rooms, plan, n) {
   let y = 0;
   const ov = by('ov'); if (ov) y = fill(ov, 0, 0, FULL) + FFL.TOP;
   // the river: four lanes side by side
-  const lanes = { A: [], B: [], C: [], D: [] }, rest = [];
+  const lanes = { A: [], B: [], C: [], D: [] }, rest = [], boxLane = { 'mm-earn': 'A', 'mm-pass': 'A', 'mm-assets': 'B', exp: 'C', 'mm-liab': 'C' }, below = [];
   for (const r of rooms) {
     if (r.id === 'ov' || r.kind === 'goals' || r.kind === 'sec') continue;
+    if (r.kind === 'box') { if (boxLane[r.branch]) lanes[boxLane[r.branch]].push(r); else below.push(r); continue; }
     (lanes[FIN_FLOW_COL[r.id] || 'D'] || rest).push(r);
   }
   const riverTop = y, bottoms = {};
   for (const [k, list] of Object.entries(lanes)) { let yy = riverTop; for (const r of list) yy = fill(r, FFL[k].x, yy, FFL[k].w) + 40; bottoms[k] = yy - 40; }
   y = Math.max(riverTop, ...Object.values(bottoms)) + FFL.LANE;
   const buy = rooms.find(r => r.kind === 'goals'); if (buy) y = fill(buy, 0, y, FULL) + 60;
+  for (const r of below) y = fill(r, 0, y, FULL) + 44;
   for (const r of rooms) if (r.kind === 'sec') y = fill(r, 0, y, FULL) + 44;
   // the ribbons: how much flows each month
   const flows = [], lab = { A: 'Comes in', B: 'Where it is', C: 'Goes out', D: 'Watch & own' };

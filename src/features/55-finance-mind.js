@@ -87,9 +87,12 @@ function finMindRooms(rooms) {
   const exp = by('exp'); if (exp) out.push({ ...exp, sum: `${fk(n.spending)} a month · ${finPct(n.spending, R.income) ?? '—'}% of income` });
   if (has('accts', 'com', 'own')) out.push(syn('mm-liab', '⛓️', 'Liabilities', `${fk(R.liab)} owed · ${fk(n.instMonthly)} a month · take money out of your pocket`, 0, 'credit', 'com', liab));
   const buy = by('buy'); if (buy) out.push({ ...buy, title: 'Your choices — goals & purchases', sum: W.doodads.length ? `${W.doodads.length} doodad${W.doodads.length === 1 ? '' : 's'} · ${fk(W.plan.total)} · assets first` : buy.sum });
-  const used = new Set(['inc', 'accts', 'own', 'com', 'exp', 'buy']), rest = rooms.filter(r => !used.has(r.id));
+  // your own boxes hang under the branch you put them on; the rest go under the map
+  const used = new Set(['inc', 'accts', 'own', 'com', 'exp', 'buy']), ids = new Set(out.map(r => r.id)), boxes = new Map();
+  for (const r of rooms) if (r.kind === 'box' && ids.has(r.branch)) { if (!boxes.has(r.branch)) boxes.set(r.branch, []); boxes.get(r.branch).push(r); used.add(r.id); }
+  const rest = rooms.filter(r => !used.has(r.id));
   const left = new Set(['mm-earn', 'mm-pass', 'mm-assets']);
-  return { side: { L: out.filter(r => left.has(r.id)), R: out.filter(r => !left.has(r.id)) }, rest, W };
+  return { side: { L: out.filter(r => left.has(r.id)), R: out.filter(r => !left.has(r.id)) }, rest, W, boxes };
 }
 
 function finMindLayout(rooms0, plan, n) {
@@ -106,7 +109,7 @@ function finMindLayout(rooms0, plan, n) {
   const fill = (r, x, y, w) => {
     r.x = x; r.y = y; r.w = w; r.cls = 'mind'; const x0 = x + PAD, iw = w - 2 * PAD; let yy = y + HEAD; const c0 = cards.length;
     if (UI.fin.cvCol.has(r.id)) r.h = HEAD + 6;
-    else if (r.kind === 'ov' || r.kind === 'sec' || r.kind === 'free') { const id = r.kind === 'ov' ? 'ov' : r.id, h = finDetH(id, r.kind === 'sec' ? 640 : r.kind === 'free' ? 820 : 520); dets.push({ id, x: x0, y: yy, w: iw, h }); r.h = yy + h + PAD - y; }
+    else if (r.kind === 'ov' || r.kind === 'sec' || r.kind === 'free' || r.kind === 'box') { const id = r.kind === 'ov' ? 'ov' : r.id, h = finDetH(id, r.kind === 'sec' ? 640 : r.kind === 'free' ? 820 : r.kind === 'box' ? 360 : 520); dets.push({ id, x: x0, y: yy, w: iw, h }); r.h = yy + h + PAD - y; }
     else if (r.kind === 'next') { yy = finNextLayout(r, x0, yy, iw, cards, dets, subs, grid); r.h = yy + PAD - y; }
     else if (r.kind === 'goals') { yy = finGoalsLayout(r, plan, n, x0, yy, iw, cards, dets, edges, subs, grid); r.h = yy + PAD - y; }
     else { grid(r.node.children, x0, yy, iw); r.h = Math.max(subs.y2 - CG, y + HEAD + 20) + PAD - y; }
@@ -117,22 +120,26 @@ function finMindLayout(rooms0, plan, n) {
   const measure = r => { const c0 = cards.length, d0 = dets.length, s0 = subs.length, e0 = edges.length; fill(r, 0, 0, r.mw); cards.length = c0; dets.length = d0; subs.length = s0; edges.length = e0; return r.h; };
   const M = finMindRooms(rooms0), W = M.W, R = W.R;
   const center = { id: 'free', kind: 'free', icon: '🗽', title: 'Financial freedom', sum: `${FIN_RD_PATTERN[R.pattern][0]} pattern · ${Math.round(R.freedom * 100)}% out of the rat race`, hue: 45, mw: FMM.CENTER };
-  for (const s of ['L', 'R']) for (const r of M.side[s]) { r.mw = r.kind === 'goals' ? FMM.WIDE : FMM.W; r.mh = measure(r); }
-  const hgt = s => M.side[s].reduce((t, r) => t + r.mh + FMM.GAPY, 0) - FMM.GAPY, leftW = Math.max(FMM.W, ...M.side.L.map(r => r.mw)) + FMM.OUT;
+  // each side: its branches, each followed by the boxes you hung under it
+  const stack = { L: M.side.L.flatMap(r => [r, ...(M.boxes.get(r.id) || [])]), R: M.side.R.flatMap(r => [r, ...(M.boxes.get(r.id) || [])]) };
+  for (const s of ['L', 'R']) for (const r of stack[s]) { r.mw = r.kind === 'goals' ? FMM.WIDE : FMM.W; r.mh = measure(r); }
+  const hgt = s => stack[s].reduce((t, r) => t + r.mh + FMM.GAPY, 0) - FMM.GAPY, leftW = Math.max(FMM.W, ...stack.L.map(r => r.mw)) + FMM.OUT;
   const ch = measure(center), colH = Math.max(hgt('L'), hgt('R'), ch), midY = colH / 2, cx0 = leftW + FMM.GAPX;
   fill(center, cx0, Math.round(midY - ch / 2), FMM.CENTER);
   for (const s of ['L', 'R']) {
     let y = Math.round(midY - hgt(s) / 2);
-    for (const r of M.side[s]) { fill(r, s === 'L' ? leftW - r.mw : cx0 + FMM.CENTER + FMM.GAPX, y, r.mw); r.side = s; y = r.y + r.h + FMM.GAPY; }
+    for (const r of stack[s]) { fill(r, s === 'L' ? leftW - r.mw : cx0 + FMM.CENTER + FMM.GAPX, y, r.mw); r.side = s; y = r.y + r.h + FMM.GAPY; }
   }
-  const W0 = cx0 + FMM.CENTER + FMM.GAPX + Math.max(FMM.W, ...M.side.R.map(r => r.mw)) + FMM.OUT;
+  const W0 = cx0 + FMM.CENTER + FMM.GAPX + Math.max(FMM.W, ...stack.R.map(r => r.mw)) + FMM.OUT;
   // the rest — my money in detail, coming up, others' money, what Claude sorted — in a row below the map
-  const rest = M.rest.filter(r => r.kind !== 'sec'), mapB = Math.max(...[center, ...M.side.L, ...M.side.R].map(r => r.y + r.h));
+  const rest = M.rest.filter(r => r.kind !== 'sec'), mapB = Math.max(...[center, ...stack.L, ...stack.R].map(r => r.y + r.h));
   let x = FMM.OUT, y = mapB + 260, rowH = 0;
   for (const r of rest) { const w = r.kind === 'ov' ? FMM.CENTER : r.kind === 'next' ? 760 : FMM.W; if (x + w > W0 - FMM.OUT && x > FMM.OUT) { x = FMM.OUT; y += rowH + 50; rowH = 0; } fill(r, x, y, w); x += w + 50; rowH = Math.max(rowH, r.h); }
   y += rowH + 80;
   for (const r of M.rest) if (r.kind === 'sec') { fill(r, FMM.OUT, y, W0 - 2 * FMM.OUT); y = r.y + r.h + 44; }
-  const rooms = [center, ...M.side.L, ...M.side.R, ...M.rest];
+  const rooms = [center, ...stack.L, ...stack.R, ...M.rest];
+  // a box joined to its branch by a thin line
+  for (const [bid, list] of M.boxes) { let up = [...M.side.L, ...M.side.R].find(r => r.id === bid); if (up) for (const bx of list) { edges.push({ x0: bx.x + bx.w / 2, y0: up.y + up.h, x1: bx.x + bx.w / 2, y1: bx.y, cls: 'fin-twig calm tw2 box-link', title: `${up.title} → ${bx.title}` }); up = bx; } }
 
   // the channels: from the centre to each branch, as thick as the money on it a month, and the way the money goes
   const all = [...M.side.L, ...M.side.R], inc = R.income || 1, ins = id => all.find(r => r.id === id);

@@ -1506,10 +1506,12 @@ function smoothCam(o) {
     // move by (dx, dy) screen pixels, gliding
     pan(dx, dy) { if (reduce()) { const c = o.cam(); c.x += dx; c.y += dy; o.apply(); return; } S.vx = S.vy = 0; S.px += dx; S.py += dy; kick(); },
     // while dragging: remember the last moments of movement, so letting go keeps the speed
-    track(x, y) { const now = performance.now(); S.samples.push({ x, y, t: now }); while (S.samples.length > 2 && now - S.samples[0].t > 90) S.samples.shift(); },
-    release() {
+    // times are the events' own (when your finger moved / lifted), not when the page got round to them — a busy moment
+    // between the last move and the release never kills the slide
+    track(x, y, t) { const now = t || performance.now(); S.samples.push({ x, y, t: now }); while (S.samples.length > 2 && now - S.samples[0].t > 90) S.samples.shift(); },
+    release(t) {
       const a = S.samples[0], b = S.samples[S.samples.length - 1]; S.samples = [];
-      if (!a || !b || b.t - a.t < 10 || performance.now() - b.t > 70 || reduce()) return;
+      if (!a || !b || b.t - a.t < 10 || (t || performance.now()) - b.t > 70 || reduce()) return;
       let vx = (b.x - a.x) / (b.t - a.t), vy = (b.y - a.y) / (b.t - a.t); const sp = Math.hypot(vx, vy);
       if (sp < 0.25) return; if (sp > 3.5) { vx *= 3.5 / sp; vy *= 3.5 / sp; }
       S.vx = vx; S.vy = vy; kick();
@@ -1829,7 +1831,7 @@ document.addEventListener('pointermove', e => {
   const w = toWorld(e.clientX, e.clientY), w0 = MP.w0;
   switch (MP.mode) {
     case 'press-empty': if (!MP.far) return; MP.mode = 'pan'; // falls through
-    case 'pan': UI.map.x = MP.mx + dx; UI.map.y = MP.my + dy; MCAM.track(e.clientX, e.clientY); applyCam(false); return;
+    case 'pan': UI.map.x = MP.mx + dx; UI.map.y = MP.my + dy; MCAM.track(e.clientX, e.clientY, e.timeStamp); applyCam(false); return;
     case 'draw': {
       const l = MP.pts[MP.pts.length - 1]; if (Math.hypot(w.x - l[0], w.y - l[1]) * k < 2) return;
       MP.pts.push(MP.press ? [Math.round(w.x * 10) / 10, Math.round(w.y * 10) / 10, pval(e)] : [Math.round(w.x * 10) / 10, Math.round(w.y * 10) / 10]);
@@ -1890,7 +1892,7 @@ function finishPointer(mode, e, w, tmp, drop) {
   const w0 = MP.w0, k = UI.map.k;
   switch (mode) {
     case 'press-empty': if (UI.cvSel.size || UI.mapSel) { UI.cvSel.clear(); UI.mapSel = null; renderWorld(); } return true;
-    case 'pan': MCAM.release(); return true;
+    case 'pan': MCAM.release(e && e.timeStamp); return true;
     case 'draw': {
       // the stylus without the pen chosen: a tap (no stroke) on a task or note selects or opens it, as a click would
       if (MP.auto && !MP.far) {

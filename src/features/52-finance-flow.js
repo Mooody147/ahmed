@@ -56,7 +56,7 @@ function finRichLayout(rooms0, plan, n) {
   const fill = (r, x, y, w) => {
     r.x = x; r.y = y; r.w = w; r.cls = 'rich'; const x0 = x + PAD, iw = w - 2 * PAD; let yy = y + HEAD; const c0 = cards.length;
     if (UI.fin.cvCol.has(r.id)) r.h = HEAD + 6;
-    else if (r.kind === 'ov' || r.kind === 'sec' || r.kind === 'free') { const id = r.kind === 'ov' ? 'ov' : r.id, h = finDetH(id, r.kind === 'sec' ? 640 : r.kind === 'free' ? 760 : 520); dets.push({ id, x: x0, y: yy, w: iw, h }); r.h = yy + h + PAD - y; }
+    else if (r.kind === 'ov' || r.kind === 'sec' || r.kind === 'free' || r.kind === 'box') { const id = r.kind === 'ov' ? 'ov' : r.id, h = finDetH(id, r.kind === 'sec' ? 640 : r.kind === 'free' ? 760 : r.kind === 'box' ? 360 : 520); dets.push({ id, x: x0, y: yy, w: iw, h }); r.h = yy + h + PAD - y; }
     else if (r.kind === 'next') { yy = finNextLayout(r, x0, yy, iw, cards, dets, subs, grid); r.h = yy + PAD - y; }
     else if (r.kind === 'goals') { yy = finGoalsLayout(r, plan, n, x0, yy, iw, cards, dets, edges, subs, grid); r.h = yy + PAD - y; }
     else { grid(r.node.children, x0, yy, iw); r.h = Math.max(subs.y2 - CG, y + HEAD + 20) + PAD - y; }
@@ -69,21 +69,21 @@ function finRichLayout(rooms0, plan, n) {
   // the top: financial freedom
   fill(center, Math.round((L0 + Wd - CWd) / 2), 0, CWd);
   // the income statement: income (earned, then passive) | expenses
-  const y1 = center.h + FRD.FRAME + 90; let yl = y1;
-  for (const r of [by('mm-earn'), by('mm-pass')]) if (r) { fill(r, L0, yl, FRD.COL); yl = r.y + r.h + 40; }
-  const exp = by('exp'); if (exp) fill(exp, C2, y1, FRD.COL);
-  const isB = Math.max(yl - 40, exp ? exp.y + exp.h : y1);
+  // a column: its branches, each followed by the boxes you hung under it
+  const bx = id => M.boxes.get(id) || [], col = (list, x, y) => { for (const r of list) if (r) { fill(r, x, y, FRD.COL); y = r.y + r.h + 40; } return y - 40; };
+  const y1 = center.h + FRD.FRAME + 90, exp = by('exp');
+  const isB = Math.max(col([by('mm-earn'), ...bx('mm-earn'), by('mm-pass'), ...bx('mm-pass')], L0, y1), col([exp, ...bx('exp')], C2, y1), y1);
   // the balance sheet: assets | liabilities
   const y2 = isB + FRD.FRAME + 170, A = by('mm-assets'), Lb = by('mm-liab');
-  if (A) fill(A, L0, y2, FRD.COL); if (Lb) fill(Lb, C2, y2, FRD.COL);
-  const bsB = Math.max(A ? A.y + A.h : y2, Lb ? Lb.y + Lb.h : y2);
+  const bsB = Math.max(col([A, ...bx('mm-assets')], L0, y2), col([Lb, ...bx('mm-liab')], C2, y2), y2);
   // below: your choices; then the rest in a row; then opened parts
   let y = bsB + 120; const buy = by('buy'); if (buy) { fill(buy, L0, y, Wd - L0); y = buy.y + buy.h + 80; }
+  for (const r of bx('buy')) { fill(r, L0, y, Wd - L0); y = r.y + r.h + 60; }
   let x = L0, rowH = 0;
   for (const r of M.rest.filter(r => r.kind !== 'sec')) { const w = r.kind === 'ov' ? 1100 : 640; if (x + w > Wd && x > L0) { x = L0; y += rowH + 50; rowH = 0; } fill(r, x, y, w); x += w + 50; rowH = Math.max(rowH, r.h); }
   y += rowH + 60;
   for (const r of M.rest) if (r.kind === 'sec') { fill(r, L0, y, Wd - L0); y = r.y + r.h + 44; }
-  const rooms = [center, ...all, ...M.rest];
+  const rooms = [center, ...all, ...[...M.boxes.values()].flat(), ...M.rest];
   // the cash flow, as the book draws it — the same channels as on the Mind map
   const max = Math.max(1, R.income, R.expenses), th = v => v > 0 ? Math.round(8 + 26 * Math.sqrt(v / max)) : 5, flows = [], pc = v => finPct(v, R.income || 1);
   const E = by('mm-earn'), P = by('mm-pass');

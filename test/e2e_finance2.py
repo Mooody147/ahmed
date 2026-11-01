@@ -68,7 +68,10 @@ async def main():
             await pg.fill('#fin-talk-in', text); await pg.click('[data-act="fin-talk-send"]'); await pg.wait_for_timeout(200); await idle()
             return (await ev("window.__FIN.talk()"))[-1]
         async def tap(node):
-            await ev(f"window.__FIN.show('{node}')"); await pg.wait_for_timeout(60)   # dragged into view
+            # dragged into view — and kept there: a camera move queued by the step before can land after this one
+            for _ in range(20):
+                await ev(f"window.__FIN.show('{node}')"); await pg.wait_for_timeout(120)
+                if await ev(f"(() => {{ const e = document.querySelector('.fin-cvn[data-node=\"{node}\"] b'), v = document.getElementById('fin-cv-vp'); if (!e || !v) return false; const r = e.getBoundingClientRect(), b = v.getBoundingClientRect(); return r.width > 0 && r.left >= b.left && r.right <= b.right && r.top >= b.top && r.bottom <= b.bottom; }})()"): break
             await pg.click(f'.fin-cvn[data-node="{node}"] b'); await pg.wait_for_timeout(450)
         opened = lambda part: ev(f"window.__AR.UI.fin.cvOpen.includes('sec:{part}') && !!document.getElementById('fin-sec-{part}')")
         await pg.click('[data-nav="finance"]'); await pg.wait_for_timeout(600)

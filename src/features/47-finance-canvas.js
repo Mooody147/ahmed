@@ -104,6 +104,7 @@ function finCvModel() {
     else if (c.id === 'in:salary' || (c.id.startsWith('in:') && c.id !== 'in:cib')) { c.spark = all.months.slice(-8).map(b => b.inc || 0); c.sparkCls = 'inc'; }
   }
   const root = { id: 'root', type: 'root', label: 'My money', sec: 'dash', sum: `net worth ${own.net !== null ? fk(own.net) : '—'} · free cash ${fk(n.free)} · saving ${fk(n.capacity)} a month`, children: B };
+  if (typeof finAgentModel === 'function') finAgentModel(root);   // the names, hidden cards and moved cards you asked for
   const f = UI.fin.cv.focus && B.find(b => b.id === UI.fin.cv.focus);
   if (f) root.children = [f]; else UI.fin.cv.focus = null;
   return root;
@@ -126,6 +127,7 @@ function finCvRooms(root) {
   const buy = root.children.find(b => b.id === 'buy');
   if (buy) R.push({ id: 'buy', kind: 'goals', full: true, node: buy, icon: buy.icon, title: buy.label, sum: buy.sum, hue: buy.hue });
   for (const b of root.children) if (b.id !== 'buy') R.push({ id: b.id, kind: 'room', node: b, icon: b.icon, title: b.label, sum: b.sum, hue: b.hue, sec: b.sec });
+  if (typeof finBoxRooms === 'function') R.push(...finBoxRooms());   // your own boxes, made with Tell the canvas
   // parts opened as rooms, each right after the room it belongs to
   const out = [];
   for (const r of R) {
@@ -257,6 +259,7 @@ function finGoalsTimeline(plan) {
 function finDetBody(id, plan, n) {
   if (id === 'ov') return finOverviewHTML();
   if (id === 'free' && typeof finFreeHTML === 'function') return finFreeHTML();
+  if (id.startsWith('box:') && typeof finBoxHTML === 'function') return finBoxHTML(id);
   if (id === 'gk') return finGoalsHead(plan, n);
   if (id === 'gt') return finGoalsTimeline(plan);
   if (id === 'up') return finUpcomingHTML();
@@ -315,7 +318,7 @@ function finCvCard(c, hue) {
 function finCvRoom(r) {
   const folded = UI.fin.cvCol.has(r.id), fresh = Date.now() < UI.fin.flash.until && UI.fin.flash.ids.has(r.id) ? ' fresh' : '';
   const hasKids = r.kind === 'room' ? r.node.children.length : r.kind !== 'sec';   // overview, coming up and goals fold too
-  const aid = r.addId === undefined ? r.id : r.addId, solo = !r.syn && r.kind !== 'free';   // the Mind map's own branches and centre: no "only this room"
+  const aid = r.addId === undefined ? r.id : r.addId, solo = !r.syn && r.kind !== 'free' && r.kind !== 'box';   // the Mind map's own branches and centre: no "only this room"
   const titleAct = r.kind === 'sec' ? `data-act="fin-cv-sec" data-s="${esc(r.sec)}"` : r.sec ? `data-act="fin-cv-sec" data-s="${esc(r.sec)}"` : '';
   return `<section class="fin-room ${r.kind}${r.cls ? ' tr-' + r.cls : ''}${fresh}" data-room="${esc(r.id)}" style="left:${r.x}px;top:${r.y}px;width:${r.w}px;height:${r.h}px;--h:${r.hue ?? 200}">
     <div class="fin-room-h">
@@ -323,12 +326,13 @@ function finCvRoom(r) {
       <span class="spacer"></span>
       ${typeof finCvAddSpec === 'function' && aid && finCvAddSpec(aid) ? `<button class="btn sm ghost" data-act="fin-cv-add" data-id="${esc(aid)}" title="Add" aria-label="Add to ${esc(r.title)}">＋</button>` : ''}
       ${r.kind === 'sec' ? `<button class="btn sm ghost" data-act="fin-cv-sec" data-s="${esc(r.sec)}" aria-label="Close ${esc(r.title)}">✕</button>`
-        : `${hasKids ? `<button class="btn sm ghost" data-act="fin-cv-tog" data-id="${esc(r.id)}" aria-expanded="${!folded}" title="${folded ? 'Unfold' : 'Fold'}" aria-label="${folded ? 'Unfold' : 'Fold'} ${esc(r.title)}">${folded ? '▸' : '▾'}</button>` : ''}${solo ? `<button class="btn sm ghost" data-act="fin-cv-focus" data-id="${esc(r.id)}" title="${UI.fin.cv.focus === r.id ? 'Show everything' : 'Show only this room'}" aria-label="${UI.fin.cv.focus === r.id ? 'Show everything' : 'Show only ' + esc(r.title)}">⤢</button>` : ''}`}
+        : `${r.kind === 'box' ? `<button class="btn sm ghost" data-act="fin-box-del" data-id="${esc(r.id)}" title="Remove this box" aria-label="Remove ${esc(r.title)}">✕</button>` : ''}${hasKids ? `<button class="btn sm ghost" data-act="fin-cv-tog" data-id="${esc(r.id)}" aria-expanded="${!folded}" title="${folded ? 'Unfold' : 'Fold'}" aria-label="${folded ? 'Unfold' : 'Fold'} ${esc(r.title)}">${folded ? '▸' : '▾'}</button>` : ''}${solo ? `<button class="btn sm ghost" data-act="fin-cv-focus" data-id="${esc(r.id)}" title="${UI.fin.cv.focus === r.id ? 'Show everything' : 'Show only this room'}" aria-label="${UI.fin.cv.focus === r.id ? 'Show everything' : 'Show only ' + esc(r.title)}">⤢</button>` : ''}`}
     </div></section>`;
 }
 function finCvBoard() {
   const cv = UI.fin.cv, root = finCvModel(), n = finNow(), plan = finBuyPlan(), rooms = finCvRooms(root), rich = cv.mode === 'rich' && typeof finRichLayout === 'function', flow = cv.mode === 'flow' && typeof finFlowLayout === 'function', L = rich ? finRichLayout(rooms, plan, n) : flow ? finFlowLayout(rooms, plan, n) : finMindLayout(rooms, plan, n);   // the Mind map unless another layout is chosen
   const hueOf = new Map(); for (const r of rooms) { const walk = k => { hueOf.set(k.id, r.hue); (k.children || []).forEach(walk); }; if (r.node) walk(r.node); }
+  const T = typeof finCanvasP === 'function' ? finCanvasP().titles : {}; for (const r of L.rooms) if (T[r.id]) r.title = T[r.id];   // branch names you chose
   UI.fin.cvSize = { w: L.w, h: L.h }; UI.fin.cvCards = new Map(L.cards.map(c => [c.id, c]));
   if (UI.fin.pop && !UI.fin.cvCards.has(UI.fin.pop)) UI.fin.pop = null;
   const path = e => { const mx = (e.x0 + e.x1) / 2; return `M${e.x0},${e.y0} C${mx},${e.y0} ${mx},${e.y1} ${e.x1},${e.y1}`; };
@@ -430,13 +434,13 @@ document.addEventListener('pointermove', e => {
   if (FCV.pinch && FCV.ptrs.size >= 2) { const [a, b] = [...FCV.ptrs.values()], d = Math.hypot(a.x - b.x, a.y - b.y); FCV.moved = true; finCvZoomAt(FCV.pinch.k * d / FCV.pinch.d / UI.fin.cv.k, (a.x + b.x) / 2, (a.y + b.y) / 2); return; }
   const s = FCV.start; if (!s) return; const dx = e.clientX - s.x, dy = e.clientY - s.y;
   if (!FCV.moved && Math.hypot(dx, dy) < 5) return;
-  FCV.moved = true; UI.fin.cv.user = true; UI.fin.cv.x = s.ox + dx; UI.fin.cv.y = s.oy + dy; FCAM.track(e.clientX, e.clientY); finCvApplySoon(); const vp = $('#fin-cv-vp'); if (vp) vp.classList.add('panning');
+  FCV.moved = true; UI.fin.cv.user = true; UI.fin.cv.x = s.ox + dx; UI.fin.cv.y = s.oy + dy; FCAM.track(e.clientX, e.clientY, e.timeStamp); finCvApplySoon(); const vp = $('#fin-cv-vp'); if (vp) vp.classList.add('panning');
 });
 const finCvEnd = e => {
   if (!FCV.ptrs.delete(e.pointerId)) return;
   if (FCV.ptrs.size < 2) FCV.pinch = null;
   if (FCV.ptrs.size === 1) { const [q] = [...FCV.ptrs.values()]; FCV.start = { x: q.x, y: q.y, ox: UI.fin.cv.x, oy: UI.fin.cv.y }; }
-  if (!FCV.ptrs.size) { if (FCV.start && FCV.moved && e.type === 'pointerup') FCAM.release(); FCV.start = null; const vp = $('#fin-cv-vp'); if (vp) vp.classList.remove('panning'); }
+  if (!FCV.ptrs.size) { if (FCV.start && FCV.moved && e.type === 'pointerup') FCAM.release(e.timeStamp); FCV.start = null; const vp = $('#fin-cv-vp'); if (vp) vp.classList.remove('panning'); }
 };
 document.addEventListener('pointerup', finCvEnd); document.addEventListener('pointercancel', finCvEnd);
 // a drag that ends on a card is not a tap on it
