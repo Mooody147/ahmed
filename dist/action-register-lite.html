@@ -2589,6 +2589,13 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 .fin-health-road li.done { opacity: .6; } .fin-health-road li.done::before { background: #2e9e5b; } .fin-health-road li.next::before { background: #e0a030; box-shadow: 0 0 0 3px var(--surface), 0 0 0 6px rgba(224, 160, 48, .35); } .fin-health-road li.later::before { background: var(--ink-3); }
 .fin-health-road li { grid-template-columns: 130px minmax(0, 1fr); }
 
+/* ---------- a currency beside every amount ---------- */
+.fin-cur-pick { display: inline-flex; gap: 4px; align-items: center; margin-left: 4px; }
+.fin-cv-ed-f .fin-cur-pick, .fin-bal-f .fin-cur-pick { margin: 3px 0 0; }
+.fin-cur { width: auto; min-width: 66px; padding-inline: 6px; }
+.fin-cur-rate { width: 116px; }
+.fin-bal-f { align-content: start; } .fin-bal-f .fin-cur-pick { display: flex; }
+
 </style>
 <div class="titlestrip" id="titlestrip"><span class="ts-brand"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c3.3 4 6 7.2 6 10.4a6 6 0 0 1-12 0C6 10.2 8.7 7 12 3z"/><path d="m9.3 13.6 1.9 1.9 3.6-4.1"/></svg> Action Register</span><button class="ts-search" data-act="palette" title="Search and commands (Ctrl+K)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg><span>Search or type a command</span><kbd>Ctrl K</kbd></button><span class="ts-space"></span></div>
 <div class="app">
@@ -17215,11 +17222,14 @@ function finCvAddSpec(br) {
 const finCvSpecOf = E0 => E0 ? (E0.add ? finCvAddSpec(E0.add) : finCvSpec(E0.id)) : null;
 
 // the form, over the canvas next to its card (not scaled with the canvas, so it is always readable)
+// the currency an edited amount is kept in: an account's own, otherwise your base currency
+function finEdBase(E0) { const id = E0 && (E0.id || ''); const a = id.startsWith('a:') ? finAcct(id.slice(2)) : null; return (a && a.currency) || finP().base; }
 function finCvEditorHTML() {
   const E0 = UI.fin.cvEdit, sp = finCvSpecOf(E0); if (!sp) return '';
   const f = (x, i) => { const v = E0.v[x.k] ?? x.value ?? '', id = `fin-cv-ed-${i}`;
     const input = x.type === 'select' ? `<select class="input sm" id="${id}" data-k="${esc(x.k)}">${x.options.map(([k, l]) => `<option value="${esc(k)}" ${String(v) === String(k) ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>`
-      : `<input class="input sm ${x.type === 'number' ? 'num' : ''}" id="${id}" data-k="${esc(x.k)}" type="${x.type === 'date' ? 'date' : 'text'}" ${x.type === 'number' ? 'inputmode="decimal"' : ''} value="${esc(v)}" autocomplete="off">`;
+      : `<input class="input sm ${x.type === 'number' ? 'num' : ''}" id="${id}" data-k="${esc(x.k)}" type="${x.type === 'date' ? 'date' : 'text'}" ${x.type === 'number' ? 'inputmode="decimal"' : ''} value="${esc(v)}" autocomplete="off">`
+        + (x.type === 'number' && typeof FIN_MONEY_KEYS !== 'undefined' && FIN_MONEY_KEYS.has(x.k) ? finCurPicker('ed', x.k, finEdBase(E0), E0.cur) : '');   // a currency beside every amount
     return `<label class="fin-cv-ed-f"><span>${esc(x.label)}</span>${input}</label>`; };
   return `<div class="fin-cv-ed" id="fin-cv-ed" role="dialog" aria-label="${E0.add ? esc(sp.title) : 'Edit ' + esc(sp.title)}">
     <b class="fin-cv-ed-t">${E0.add ? '＋ ' : '✎ '}${esc(sp.title)}</b>
@@ -17279,8 +17289,10 @@ Object.assign(ACT, {
     // the form's current values (also those typed but not yet reported)
     document.querySelectorAll('#fin-cv-ed [data-k]').forEach(i => { E0.v[i.dataset.k] = i.value; });
     const v = Object.fromEntries(sp.fields.map(x => [x.k, E0.v[x.k] ?? String(x.value ?? '')]));
+    // amounts in another currency: changed at your rate (asked for when there is none)
+    const fx = []; if (typeof finCurApply === 'function') for (const x of sp.fields) if (x.type === 'number' && FIN_MONEY_KEYS.has(x.k)) { const r = finCurApply('ed', x.k, v[x.k], finEdBase(E0), E0.cur); if (r.error) { toast(r.error, { err: true }); return; } v[x.k] = r.value; if (r.note) fx.push(r.note); }
     const snap = finSnapshot(); let line = '';
-    try { line = sp.save(v) || ''; } catch (e) { console.error(e); toast('That could not be saved: ' + (e.message || e), { err: true }); }
+    try { line = sp.save(v) || ''; if (line && fx.length) line += ` (${fx.join('; ')})`; } catch (e) { console.error(e); toast('That could not be saved: ' + (e.message || e), { err: true }); }
     if (E0.add && !line) { toast(sp.fields.some(x => x.type === 'number') ? 'Give it a name and an amount.' : 'Give it a name.', { err: true }); return; }
     finCvEditDone(line, snap, finCvEditIds(E0));
   },
@@ -18629,7 +18641,8 @@ function finBalTabHTML() {
 function finBalWinHTML() {
   if (!UI.fin.balWin) return '';
   const n = finNow(), U = UI.fin.daily = UI.fin.daily || { date: finToday(), v: {} }, rows = n.accts.filter(x => finBalKinds.includes(x.a.kind));
-  const field = (id, k, label) => `<label class="fin-bal-f"><span>${label}</span><input class="input num sm" data-chg="fin-daily" data-id="${esc(id)}" data-k="${k}" value="${esc((U.v[id] || {})[k] ?? '')}" inputmode="decimal" enterkeyhint="done" aria-label="${esc(label)}"></label>`;
+  const curOf = id => (finAcct(id) || {}).currency || finP().base, st = id => Object.fromEntries(Object.entries(UI.fin.balCur || {}).filter(([kk]) => kk.startsWith(id + ':')).map(([kk, vv]) => [kk.slice(id.length + 1), vv]));
+  const field = (id, k, label) => `<label class="fin-bal-f"><span>${label}</span><input class="input num sm" data-chg="fin-daily" data-id="${esc(id)}" data-k="${k}" value="${esc((U.v[id] || {})[k] ?? '')}" inputmode="decimal" enterkeyhint="done" aria-label="${esc(label)}">${typeof finCurPicker === 'function' ? finCurPicker('bal:' + id, k, curOf(id), st(id)) : ''}</label>`;
   const last = (a, l) => !l.date ? 'no balance yet' : (a.kind === 'credit_card' || a.kind === 'bnpl' ? `${typeof l.owed === 'number' ? 'owes ' + fk(l.owed) : ''}${l.available !== null && l.available !== undefined ? ' · ' + fk(l.available) + ' available' : ''}` : typeof l.balance === 'number' ? fk(l.balance) : '—') + ` · ${fday(l.date)}`;
   return `<section class="fin-talk-win fin-bal-win" id="fin-bal-win" role="dialog" aria-label="Today's balances">
     <div class="fin-talk-win-h"><span aria-hidden="true">🏦</span><b>Today’s balances</b><span class="spacer"></span><label class="small">as of <input class="input sm" type="date" data-chg="fin-daily-date" value="${esc(U.date)}"></label>
@@ -18643,6 +18656,10 @@ function finBalSave() {
   // the box you are typing in lets go first: its last value counts, and a redraw cannot report it again later
   if (document.activeElement && document.activeElement.closest && document.activeElement.closest('#fin-bal-win')) document.activeElement.blur();
   const U = UI.fin.daily; if (!U || !Object.values(U.v || {}).some(v => Object.values(v).some(x => String(x ?? '').trim() !== ''))) { toast('Type at least one balance.', { err: true }); return; }
+  // amounts typed in another currency: changed into the account's currency at your rate (asked for when there is none)
+  if (typeof finCurApply === 'function') for (const [id, vals] of Object.entries(U.v || {})) for (const k of Object.keys(vals)) { const cur = (UI.fin.balCur || {})[id + ':' + k]; if (!cur) continue;
+    const base = (finAcct(id) || {}).currency || finP().base, st = { [k]: cur }, r = finCurApply('bal:' + id, k, vals[k], base, st); if (r.error) { toast(r.error, { err: true }); return; } vals[k] = r.value; }
+  UI.fin.balCur = {};
   const before = typeof finChangeIndex === 'function' ? finChangeIndex() : null, snap = finSnapshot();
   finDailyCheck(); const P = (UI.fin.daily.preview || []).slice(); if (!P.length) return;
   finDailySave();
@@ -19019,6 +19036,45 @@ function finHealthHTML() {
 Object.assign(ACT, { 'fin-health': el => { UI.fin.healthWin = el.dataset.v === 'close' ? false : !UI.fin.healthWin; render(); } });
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && UI.fin.healthWin && UI.view === 'finance') { UI.fin.healthWin = false; render(); } }, true);
 Object.assign(window.__FIN, { health: () => { const H = finHealth(); return { score: H.score, grade: H.grade[0], measures: H.M.map(m => [m.k, m.ok, m.now]), opt: H.opt.map(o => o[0]), steps: H.steps.map(s => [s.s, s.t, s.when]) }; } });
+
+/* ===== features/65-finance-currency.js ===== */
+// Money — a currency beside every price or amount. Every money field in the canvas's forms (and in the Balances window)
+// has a currency list beside it: your base currency first, then the currencies you use, then common ones. Choose another
+// and a rate box appears ("1 USD = … EGP"), filled with the rate you saved before if there is one. The amount is changed
+// into the account's / your base currency at YOUR rate — nothing is looked up online, nothing guessed: with no rate the
+// form asks for one. A rate you type is kept (with its date) for next time, and the conversation says what was changed.
+
+const FIN_MONEY_KEYS = new Set(['price', 'amount', 'balance', 'owed', 'limit', 'available', 'budget', 'target', 'saved', 'value', 'principal', 'outstanding']);
+const FIN_COMMON_CUR = ['USD', 'EUR', 'SAR', 'AED', 'GBP', 'KWD', 'QAR'];
+function finCurList(base) {
+  const p = finP(), b = base || p.base;
+  return [...new Set([b, p.base, ...p.accounts.map(a => a.currency).filter(Boolean), ...Object.keys(p.rates || {}), ...FIN_COMMON_CUR])].filter(c => /^[A-Z]{3}$/.test(c));
+}
+// value of 1 unit of `cur` in `to` — from your own rates only (each rate is "1 X = n base")
+function finRate(cur, to) {
+  const p = finP(), base = p.base, r = c => c === base ? 1 : +(p.rates || {})[c] > 0 ? +p.rates[c] : null;
+  if (cur === to) return 1; const a = r(cur), b = r(to); return a && b ? a / b : null;
+}
+// the currency list and (for another currency) the rate box, for one field
+function finCurPicker(scope, k, base, state) {
+  const cur = (state || {})[k] || base, list = finCurList(base);
+  return `<span class="fin-cur-pick"><select class="input sm fin-cur" data-chg="fin-cur" data-scope="${esc(scope)}" data-cur-k="${esc(k)}" aria-label="Currency">${list.map(c => `<option ${c === cur ? 'selected' : ''}>${c}</option>`).join('')}</select>${cur !== base ? `<input class="input sm num fin-cur-rate" data-rate-scope="${esc(scope)}" data-rate-k="${esc(k)}" placeholder="1 ${cur} = ? ${base}" value="${esc(((state || {})['rate:' + k]) ?? (finRate(cur, base) ? +finRate(cur, base).toFixed(4) : ''))}" inputmode="decimal" aria-label="1 ${cur} in ${base}">` : ''}</span>`;
+}
+// read the rate typed (or saved) for a field; keep a newly typed rate; null when there is none
+function finCurApply(scope, k, amountStr, base, state) {
+  const cur = (state || {})[k] || base; if (cur === base || amountStr === '' || amountStr === undefined) return { value: amountStr, note: '' };
+  const box = document.querySelector(`[data-rate-scope="${CSS.escape(scope)}"][data-rate-k="${CSS.escape(k)}"]`), typed = box ? (FIN.parseNum(box.value) || {}).n : null;
+  const rate = typed > 0 ? typed : finRate(cur, base); if (!(rate > 0)) return { error: `Enter the rate: 1 ${cur} = how many ${base}?` };
+  const amt = (FIN.parseNum(String(amountStr)) || {}).n; if (amt === null || amt === undefined) return { value: amountStr, note: '' };
+  if (typed > 0 && base === finP().base && Math.abs(typed - (finRate(cur, base) || 0)) > 1e-9) finSave(q => { q.rates = { ...(q.rates || {}), [cur]: typed }; q.rateDates = { ...(q.rateDates || {}), [cur]: finToday() }; });
+  return { value: String(FIN.r2(amt * rate)), note: `${cur} ${amt.toLocaleString('en-US', { maximumFractionDigits: 2 })} at ${rate} = ${fm(FIN.r2(amt * rate), base)}` };
+}
+Object.assign(CHG, { 'fin-cur': el => {
+  const scope = el.dataset.scope, k = el.dataset.curK;
+  if (scope === 'ed' && UI.fin.cvEdit) { const E0 = UI.fin.cvEdit; document.querySelectorAll('#fin-cv-ed [data-k]').forEach(i => { E0.v[i.dataset.k] = i.value; }); E0.cur = { ...(E0.cur || {}), [k]: el.value }; }
+  else if (scope.startsWith('bal:')) { UI.fin.balCur = { ...(UI.fin.balCur || {}), [scope.slice(4) + ':' + k]: el.value }; }
+  render(); setTimeout(() => { const r = document.querySelector(`[data-rate-scope="${CSS.escape(scope)}"][data-rate-k="${CSS.escape(k)}"]`); if (r && !r.value) r.focus(); }, 30);
+} });
 
 /* ---------- boot ---------- */
 const startView = (location.hash || '').replace('#', '');

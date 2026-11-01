@@ -123,6 +123,27 @@ async def main():
         assert frames[0].startswith('INCOME STATEMENT — your month') and frames[1].startswith('BALANCE SHEET — what you own')
         assert not await ev("!!document.querySelector('.fin-room[data-room=\"auto\"], .fin-room[data-room=\"ov\"]')"), 'the statement only'
         await pg.screenshot(path=os.path.join(HERE, 'shots', 'finance-richdad-simple.png'))
+        # 9. a currency beside every amount: another currency is changed at YOUR rate — asked for when there is none
+        await ev("window.__FIN.mode('mind')"); await pg.wait_for_timeout(900); await ev("window.__FIN.presentEnd && window.__FIN.presentEnd()")
+        await ev("window.__FIN.show('buy')"); await pg.wait_for_timeout(500)
+        await ev("document.querySelector('.fin-room[data-room=\"buy\"] .fin-room-h [data-act=\"fin-cv-add\"]').click()"); await pg.wait_for_selector('#fin-cv-ed')
+        assert await ev("!!document.querySelector('#fin-cv-ed select.fin-cur[data-cur-k=\"price\"]')"), 'a currency beside the price'
+        await pg.fill('#fin-cv-ed [data-k="name"]', 'Monitor'); await pg.fill('#fin-cv-ed [data-k="price"]', '500')
+        await pg.select_option('#fin-cv-ed select.fin-cur[data-cur-k="price"]', 'USD'); await pg.wait_for_selector('#fin-cv-ed .fin-cur-rate')
+        assert await ev("document.querySelector('#fin-cv-ed [data-k=\"name\"]').value") == 'Monitor' and await ev("document.querySelector('#fin-cv-ed [data-k=\"price\"]').value") == '500', 'what you typed stays'
+        await pg.click('[data-act="fin-cv-ed-ok"]'); await pg.wait_for_timeout(300)
+        assert await ev("!!document.getElementById('fin-cv-ed')") and not await ev("(window.__FIN.prefs().buys || []).some(b => b.name === 'Monitor')"), 'no rate: not saved, asked for'
+        await pg.fill('#fin-cv-ed .fin-cur-rate', '48.5'); await pg.click('[data-act="fin-cv-ed-ok"]'); await pg.wait_for_timeout(600)
+        mon = await ev("window.__FIN.prefs().buys.find(b => b.name === 'Monitor')"); print('MONITOR', mon['price'], await ev("window.__FIN.prefs().rates"))
+        assert mon['price'] == 24250 and (await ev("window.__FIN.prefs().rates"))['USD'] == 48.5, 'USD 500 at 48.5 = EGP 24,250; the rate kept'
+        assert any('USD' in (x.get('text') or '') and '24,250' in (x.get('text') or '') for x in await ev("window.__FIN.talk()")), 'the conversation says what was changed'
+        await ev("window.__FIN.presentEnd && window.__FIN.presentEnd()"); await pg.keyboard.press('Escape'); await pg.wait_for_timeout(300)
+        await pg.click('.fin-bal-tab'); await pg.wait_for_selector('#fin-bal-win')
+        prim = await ev("window.__FIN.prefs().accounts.find(a => /0012$/.test(a.number || '')).id")
+        await pg.select_option(f'#fin-bal-win select.fin-cur[data-scope="bal:{prim}"]', 'USD'); await pg.wait_for_selector(f'#fin-bal-win .fin-cur-rate[data-rate-scope="bal:{prim}"]')
+        assert await ev(f"document.querySelector('#fin-bal-win .fin-cur-rate[data-rate-scope=\"bal:{prim}\"]').value") == '48.5', 'your saved rate, filled in'
+        await pg.fill(f'#fin-bal-win [data-id="{prim}"][data-k="balance"]', '1000'); await pg.click('[data-act="fin-bal-save"]'); await pg.wait_for_timeout(600)
+        assert (await ev(f"window.__FIN.latest('{prim}')"))['balance'] == 48500, 'USD 1,000 = EGP 48,500 in the account'
         bad = [e for e in errors if 'PAGEERROR' in e or 'DIALOG' in e]; assert not bad, bad
         print('RECURRING E2E PASSED'); await b.close()
 

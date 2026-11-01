@@ -778,3 +778,10 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 @media (max-width: 700px) { .fin-health-m { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
 .fin-health-road li.done { opacity: .6; } .fin-health-road li.done::before { background: #2e9e5b; } .fin-health-road li.next::before { background: #e0a030; box-shadow: 0 0 0 3px var(--surface), 0 0 0 6px rgba(224, 160, 48, .35); } .fin-health-road li.later::before { background: var(--ink-3); }
 .fin-health-road li { grid-template-columns: 130px minmax(0, 1fr); }
+
+/* ---------- a currency beside every amount ---------- */
+.fin-cur-pick { display: inline-flex; gap: 4px; align-items: center; margin-left: 4px; }
+.fin-cv-ed-f .fin-cur-pick, .fin-bal-f .fin-cur-pick { margin: 3px 0 0; }
+.fin-cur { width: auto; min-width: 66px; padding-inline: 6px; }
+.fin-cur-rate { width: 116px; }
+.fin-bal-f { align-content: start; } .fin-bal-f .fin-cur-pick { display: flex; }

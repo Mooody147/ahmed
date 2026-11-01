@@ -113,11 +113,14 @@ function finCvAddSpec(br) {
 const finCvSpecOf = E0 => E0 ? (E0.add ? finCvAddSpec(E0.add) : finCvSpec(E0.id)) : null;
 
 // the form, over the canvas next to its card (not scaled with the canvas, so it is always readable)
+// the currency an edited amount is kept in: an account's own, otherwise your base currency
+function finEdBase(E0) { const id = E0 && (E0.id || ''); const a = id.startsWith('a:') ? finAcct(id.slice(2)) : null; return (a && a.currency) || finP().base; }
 function finCvEditorHTML() {
   const E0 = UI.fin.cvEdit, sp = finCvSpecOf(E0); if (!sp) return '';
   const f = (x, i) => { const v = E0.v[x.k] ?? x.value ?? '', id = `fin-cv-ed-${i}`;
     const input = x.type === 'select' ? `<select class="input sm" id="${id}" data-k="${esc(x.k)}">${x.options.map(([k, l]) => `<option value="${esc(k)}" ${String(v) === String(k) ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>`
-      : `<input class="input sm ${x.type === 'number' ? 'num' : ''}" id="${id}" data-k="${esc(x.k)}" type="${x.type === 'date' ? 'date' : 'text'}" ${x.type === 'number' ? 'inputmode="decimal"' : ''} value="${esc(v)}" autocomplete="off">`;
+      : `<input class="input sm ${x.type === 'number' ? 'num' : ''}" id="${id}" data-k="${esc(x.k)}" type="${x.type === 'date' ? 'date' : 'text'}" ${x.type === 'number' ? 'inputmode="decimal"' : ''} value="${esc(v)}" autocomplete="off">`
+        + (x.type === 'number' && typeof FIN_MONEY_KEYS !== 'undefined' && FIN_MONEY_KEYS.has(x.k) ? finCurPicker('ed', x.k, finEdBase(E0), E0.cur) : '');   // a currency beside every amount
     return `<label class="fin-cv-ed-f"><span>${esc(x.label)}</span>${input}</label>`; };
   return `<div class="fin-cv-ed" id="fin-cv-ed" role="dialog" aria-label="${E0.add ? esc(sp.title) : 'Edit ' + esc(sp.title)}">
     <b class="fin-cv-ed-t">${E0.add ? '＋ ' : '✎ '}${esc(sp.title)}</b>
@@ -177,8 +180,10 @@ Object.assign(ACT, {
     // the form's current values (also those typed but not yet reported)
     document.querySelectorAll('#fin-cv-ed [data-k]').forEach(i => { E0.v[i.dataset.k] = i.value; });
     const v = Object.fromEntries(sp.fields.map(x => [x.k, E0.v[x.k] ?? String(x.value ?? '')]));
+    // amounts in another currency: changed at your rate (asked for when there is none)
+    const fx = []; if (typeof finCurApply === 'function') for (const x of sp.fields) if (x.type === 'number' && FIN_MONEY_KEYS.has(x.k)) { const r = finCurApply('ed', x.k, v[x.k], finEdBase(E0), E0.cur); if (r.error) { toast(r.error, { err: true }); return; } v[x.k] = r.value; if (r.note) fx.push(r.note); }
     const snap = finSnapshot(); let line = '';
-    try { line = sp.save(v) || ''; } catch (e) { console.error(e); toast('That could not be saved: ' + (e.message || e), { err: true }); }
+    try { line = sp.save(v) || ''; if (line && fx.length) line += ` (${fx.join('; ')})`; } catch (e) { console.error(e); toast('That could not be saved: ' + (e.message || e), { err: true }); }
     if (E0.add && !line) { toast(sp.fields.some(x => x.type === 'number') ? 'Give it a name and an amount.' : 'Give it a name.', { err: true }); return; }
     finCvEditDone(line, snap, finCvEditIds(E0));
   },

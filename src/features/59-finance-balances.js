@@ -21,7 +21,8 @@ function finBalTabHTML() {
 function finBalWinHTML() {
   if (!UI.fin.balWin) return '';
   const n = finNow(), U = UI.fin.daily = UI.fin.daily || { date: finToday(), v: {} }, rows = n.accts.filter(x => finBalKinds.includes(x.a.kind));
-  const field = (id, k, label) => `<label class="fin-bal-f"><span>${label}</span><input class="input num sm" data-chg="fin-daily" data-id="${esc(id)}" data-k="${k}" value="${esc((U.v[id] || {})[k] ?? '')}" inputmode="decimal" enterkeyhint="done" aria-label="${esc(label)}"></label>`;
+  const curOf = id => (finAcct(id) || {}).currency || finP().base, st = id => Object.fromEntries(Object.entries(UI.fin.balCur || {}).filter(([kk]) => kk.startsWith(id + ':')).map(([kk, vv]) => [kk.slice(id.length + 1), vv]));
+  const field = (id, k, label) => `<label class="fin-bal-f"><span>${label}</span><input class="input num sm" data-chg="fin-daily" data-id="${esc(id)}" data-k="${k}" value="${esc((U.v[id] || {})[k] ?? '')}" inputmode="decimal" enterkeyhint="done" aria-label="${esc(label)}">${typeof finCurPicker === 'function' ? finCurPicker('bal:' + id, k, curOf(id), st(id)) : ''}</label>`;
   const last = (a, l) => !l.date ? 'no balance yet' : (a.kind === 'credit_card' || a.kind === 'bnpl' ? `${typeof l.owed === 'number' ? 'owes ' + fk(l.owed) : ''}${l.available !== null && l.available !== undefined ? ' · ' + fk(l.available) + ' available' : ''}` : typeof l.balance === 'number' ? fk(l.balance) : '—') + ` · ${fday(l.date)}`;
   return `<section class="fin-talk-win fin-bal-win" id="fin-bal-win" role="dialog" aria-label="Today's balances">
     <div class="fin-talk-win-h"><span aria-hidden="true">🏦</span><b>Today’s balances</b><span class="spacer"></span><label class="small">as of <input class="input sm" type="date" data-chg="fin-daily-date" value="${esc(U.date)}"></label>
@@ -35,6 +36,10 @@ function finBalSave() {
   // the box you are typing in lets go first: its last value counts, and a redraw cannot report it again later
   if (document.activeElement && document.activeElement.closest && document.activeElement.closest('#fin-bal-win')) document.activeElement.blur();
   const U = UI.fin.daily; if (!U || !Object.values(U.v || {}).some(v => Object.values(v).some(x => String(x ?? '').trim() !== ''))) { toast('Type at least one balance.', { err: true }); return; }
+  // amounts typed in another currency: changed into the account's currency at your rate (asked for when there is none)
+  if (typeof finCurApply === 'function') for (const [id, vals] of Object.entries(U.v || {})) for (const k of Object.keys(vals)) { const cur = (UI.fin.balCur || {})[id + ':' + k]; if (!cur) continue;
+    const base = (finAcct(id) || {}).currency || finP().base, st = { [k]: cur }, r = finCurApply('bal:' + id, k, vals[k], base, st); if (r.error) { toast(r.error, { err: true }); return; } vals[k] = r.value; }
+  UI.fin.balCur = {};
   const before = typeof finChangeIndex === 'function' ? finChangeIndex() : null, snap = finSnapshot();
   finDailyCheck(); const P = (UI.fin.daily.preview || []).slice(); if (!P.length) return;
   finDailySave();
