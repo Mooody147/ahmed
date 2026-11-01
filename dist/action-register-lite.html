@@ -2261,54 +2261,9 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 
 .fin-cv-modes button { display: inline-flex; align-items: center; gap: 4px; }
 
-/* ---------- the second layout: Tree ---------- */
-.fin-cv-vp.mode-tree { --tree-sky1: #6fa6dc; --tree-sky2: #b4d4f0; --tree-sky3: #e3eedf; --tree-soil1: #b98a5e; --tree-soil2: #8d6240; --tree-soil3: #5e4029;
-  --tree-bark1: #9a6a42; --tree-bark2: #6b4528; --tree-grass1: #79b85a; --tree-grass2: #5e9e44; --tree-leaf1: #8fcf7e; --tree-leaf2: #6db866; --tree-leaf3: #a8dc8c; --tree-sap: #ffc93c; --tree-ink: #2b2014;
-  background: var(--tree-sky2); }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .fin-cv-vp.mode-tree { --tree-sky1: #1d2f4a; --tree-sky2: #22344d; --tree-sky3: #283b33; --tree-soil1: #5a4330; --tree-soil2: #45321f; --tree-soil3: #2e2116; --tree-bark1: #7a5535; --tree-bark2: #523621; --tree-leaf1: #4f8f4a; --tree-leaf2: #3f7a3c; --tree-leaf3: #5f9d55; --tree-ink: #f3ede4; } }
-:root[data-theme="dark"] .fin-cv-vp.mode-tree { --tree-sky1: #1d2f4a; --tree-sky2: #22344d; --tree-sky3: #283b33; --tree-soil1: #5a4330; --tree-soil2: #45321f; --tree-soil3: #2e2116; --tree-bark1: #7a5535; --tree-bark2: #523621; --tree-leaf1: #4f8f4a; --tree-leaf2: #3f7a3c; --tree-leaf3: #5f9d55; --tree-ink: #f3ede4; }
-.fin-tree-sky { position: absolute; inset: 0; overflow: hidden; pointer-events: none; background: linear-gradient(180deg, var(--tree-sky1) 0%, var(--tree-sky2) 55%, var(--tree-sky3) 100%); }
-/* a soft, low sun and thin high cloud — nothing drawn, only light */
-.fin-tree-sky .sun { position: absolute; right: 4%; top: -140px; width: 520px; height: 520px; border-radius: 50%; background: radial-gradient(circle, rgba(255, 246, 214, .85), rgba(255, 236, 190, .28) 32%, rgba(255, 236, 190, 0) 62%); }
-.fin-tree-sky .cloud { position: absolute; height: 46px; border-radius: 50%; background: rgba(255, 255, 255, .5); filter: blur(22px); will-change: transform; }
-.fin-tree-sky .c1 { left: 6%; top: 12%; width: 520px; } .fin-tree-sky .c2 { left: 44%; top: 6%; width: 380px; opacity: .7; } .fin-tree-sky .c3 { left: 70%; top: 24%; width: 300px; opacity: .55; }
-@media (prefers-reduced-motion: no-preference) { .fin-tree-sky .c1 { animation: finCloud 90s linear infinite alternate; } .fin-tree-sky .c3 { animation: finCloud 120s linear infinite alternate-reverse; } @keyframes finCloud { to { translate: 14vw 0; } } }
-.fin-tree .rootlet { fill: #3b2a1b; }
-.fin-tree .root { opacity: .97; }
-.mode-tree .fin-cv-world { z-index: 1; }
-.fin-tree { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; }
-.fin-tree .sap { fill: none; stroke: var(--tree-sap); stroke-width: 6; stroke-linecap: round; stroke-dasharray: 0.1 34; }
-@media (prefers-reduced-motion: no-preference) { .fin-tree .sap { animation: finSap 3s linear infinite; } @keyframes finSap { to { stroke-dashoffset: -34.1; } } }
-.fin-tree-l { font: 700 24px/1 var(--font, system-ui); paint-order: stroke; stroke-width: 6px; stroke-linejoin: round; }
-.fin-tree-l .what { font-size: 17px; font-weight: 600; }
-.fin-tree-l.sky { fill: var(--tree-ink); stroke: rgba(255, 255, 255, .85); }
-.fin-tree-l.soil { fill: #fff8ec; stroke: rgba(40, 24, 10, .8); }
-.fin-tree-h { font: 800 20px/1 var(--font, system-ui); letter-spacing: .06em; fill: var(--tree-ink); paint-order: stroke; stroke: rgba(255, 255, 255, .8); stroke-width: 5px; }
-.fin-tree-h.soil { fill: #fff3e0; stroke: rgba(40, 24, 10, .7); }
-/* rooms: calm, light panels; under the ground a warm tone; on the trunk the bark shows through the edge */
-.mode-tree .fin-room { background: color-mix(in srgb, var(--surface) 90%, transparent); border: 2px solid hsl(var(--h) 45% 55% / .4); box-shadow: 0 22px 50px -30px rgba(40, 50, 20, .55), var(--elev-1); }
-.mode-tree .fin-room.tr-root { background: color-mix(in srgb, #fff3e3 92%, transparent); border-color: rgba(120, 80, 40, .45); }
-.mode-tree .fin-room.tr-trunk { border: 3px solid var(--tree-bark2); }
-.mode-tree .fin-room.tr-crown { border-color: color-mix(in srgb, var(--tree-leaf2) 70%, transparent); }
-.mode-tree .fin-room-h { height: 84px; }
-.mode-tree .fin-room-t b { font-size: 22px; }
 /* flat (and so drawn sharp at every zoom) until the pointer is on it; then it leans toward the pointer */
-.mode-tree .mnode.fin-leaf { transition: transform .18s ease-out, box-shadow .18s ease; }
-.mode-tree .mnode.fin-leaf:hover { transform: perspective(800px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) translateY(-3px); box-shadow: 0 18px 34px -16px hsl(var(--h) 60% 30% / .5), 0 0 0 1px hsl(var(--h) 70% 60% / .45); }
-.mode-tree .fin-det[data-det="up"] .fin-up-grid { grid-template-columns: minmax(0, 1fr); }
 /* zoomed out: cards show only their name and figure, in big type; room titles grow; details stay */
-.mode-tree.z-far .fin-leaf .mtxt small, .mode-tree.z-far .fin-leaf .fin-spark, .mode-tree.z-far .fin-cv-ic { display: none; }
-.mode-tree.z-far .fin-leaf { padding: 4px 12px; }
-.mode-tree.z-far .fin-leaf .mtxt b { font-size: 23px; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.mode-tree.z-far .fin-leaf .fin-cv-v { font-size: 23px; }
-.mode-tree.z-far .fin-room-t b { font-size: 32px; }
-.mode-tree.z-far .fin-room-t small { font-size: 17px; }
-.mode-tree.z-far .fin-room-sub b { font-size: 18px; }
 /* zoomed out, a card is its name over its figure, each on its own line */
-.mode-tree.z-far .mnode.fin-leaf { flex-direction: column; align-items: stretch; justify-content: center; gap: 2px; }
-.mode-tree.z-far .fin-leaf .mtxt { width: 100%; }
-.mode-tree.z-far .fin-leaf .fin-cv-v { text-align: left; line-height: 1.2; }
-.mode-tree .fin-room-go { display: none; }
 
 /* ---------- the third layout: Flow ---------- */
 .fin-cv-vp.mode-flow { background: #0d0a1f; border-color: #2a2147; --flow-ink: #f4f0ff; --flow-dim: #b9aedb; }
@@ -2380,19 +2335,54 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 .fin-cv-vp.z-far .fin-room-t b { font-size: 28px; }
 .fin-cv-vp.z-far .fin-room-t small { font-size: 16px; }
 .fin-cv-vp.z-far .fin-room-sub b { font-size: 18px; }
-.fin-cv-vp.z-far.mode-tree .fin-leaf .mtxt b, .fin-cv-vp.z-far.mode-tree .fin-leaf .fin-cv-v { font-size: 23px; }
-.fin-cv-vp.z-far.mode-tree .fin-room-t b { font-size: 32px; }
 /* Flow's lanes are narrow: a modest title so the summary still fits its header */
 .fin-cv-vp.z-far.mode-flow .fin-room:not(.ov):not(.goals):not(.sec) .fin-room-t b { font-size: 22px; }
 .fin-cv-vp.z-far.mode-flow .fin-room:not(.ov):not(.goals):not(.sec) .fin-room-t small { font-size: 13px; line-height: 1.25; }
-/* the tree is one picture (drawn once): the canvas only slides and scales it */
-.fin-tree-img { position: absolute; pointer-events: none; user-select: none; -webkit-user-drag: none; image-rendering: auto; }
-.fin-tree-vec { position: absolute; pointer-events: none; }
-.fin-tree-vec svg { display: block; }
-.fin-tree-far { position: absolute; left: -8000px; right: -8000px; height: 9000px; pointer-events: none; background: linear-gradient(180deg, #5d4230, #4b3526 300px, #2a1e16 1400px); border-top: 18px solid #4f7d33; box-sizing: border-box; }
-.fin-tree-wait { display: none; }
-.fin-tree-vec.sketch { opacity: .55; }
-@media (prefers-reduced-motion: no-preference) { .fin-tree-img.fresh { animation: finTreeIn .5s ease-out; } @keyframes finTreeIn { from { opacity: .4; } } }
+
+/* ---------- the layout "Reservoirs": accounts are tanks, money flows as water ---------- */
+.fin-cv-vp.mode-res { background-color: #f3f8fc; background-image: linear-gradient(rgba(70, 120, 160, .07) 1px, transparent 1px), linear-gradient(90deg, rgba(70, 120, 160, .07) 1px, transparent 1px); background-size: 40px 40px; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .fin-cv-vp.mode-res { background-color: #141c24; background-image: linear-gradient(rgba(140, 190, 230, .06) 1px, transparent 1px), linear-gradient(90deg, rgba(140, 190, 230, .06) 1px, transparent 1px); } }
+:root[data-theme="dark"] .fin-cv-vp.mode-res { background-color: #141c24; background-image: linear-gradient(rgba(140, 190, 230, .06) 1px, transparent 1px), linear-gradient(90deg, rgba(140, 190, 230, .06) 1px, transparent 1px); }
+.mode-res .fin-room { background: color-mix(in srgb, var(--surface) 92%, transparent); border: 2px solid color-mix(in srgb, #3f88c5 30%, var(--line)); box-shadow: 0 18px 44px -30px rgba(20, 60, 100, .45), var(--elev-1); }
+.mode-res .fin-room-h { height: 84px; }
+.mode-res .fin-room-t b { font-size: 22px; }
+/* a tank: a glass vessel with a measuring scale; the water is its balance (red: what is owed of the limit) */
+.mnode.fin-leaf.tank { flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 6px; padding: 14px 14px 12px; border: 3px solid #a9c3d8; border-radius: 16px 16px 30px 30px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, .96), rgba(236, 245, 252, .96) 45%, rgba(255, 255, 255, .96)); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .8), 0 16px 30px -18px rgba(20, 60, 100, .5); }
+.mnode.fin-leaf.tank.debt { border-color: #e2b4ad; }
+.fin-tank { position: absolute; inset: 0; border-radius: 13px 13px 27px 27px; overflow: hidden; pointer-events: none; }
+.fin-tank .w { position: absolute; left: 0; right: 0; bottom: 0; height: calc(var(--lvl) * 100%); background: linear-gradient(180deg, rgba(120, 196, 238, .85), rgba(40, 132, 204, .9)); }
+.fin-tank.debt .w { background: linear-gradient(180deg, rgba(240, 150, 132, .85), rgba(196, 62, 48, .9)); }
+.fin-tank .w::before { content: ""; position: absolute; left: -50%; top: -9px; width: 200%; height: 18px; border-radius: 45%; background: rgba(160, 216, 246, .9); }
+.fin-tank.debt .w::before { background: rgba(246, 184, 170, .9); }
+.fin-tank .scale { position: absolute; right: 8px; top: 18%; bottom: 10%; width: 10px; background: repeating-linear-gradient(180deg, rgba(60, 100, 140, .35) 0 2px, transparent 2px 18%); }
+@media (prefers-reduced-motion: no-preference) { .fin-tank .w::before { animation: finWave 6s ease-in-out infinite alternate; } @keyframes finWave { from { transform: translateX(-12%) rotate(-1deg); } to { transform: translateX(12%) rotate(1deg); } } }
+.mnode.fin-leaf.tank .mtxt, .mnode.fin-leaf.tank .fin-cv-v { position: relative; z-index: 1; text-shadow: 0 1px 0 rgba(255, 255, 255, .9), 0 0 6px rgba(255, 255, 255, .8); }
+.mnode.fin-leaf.tank .mtxt b { font-size: 15px; white-space: normal; }
+.mnode.fin-leaf.tank .mtxt small { white-space: normal; }
+.mnode.fin-leaf.tank .fin-cv-v { font-size: 24px; text-align: left; margin-top: auto; padding-bottom: 6px; }
+.mnode.fin-leaf.tank .fin-spark { display: none; }
+/* water and pipes */
+.fin-res { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; }
+.fin-res-stream .fall { stroke: rgba(90, 175, 232, .32); fill: none; stroke-linecap: round; }
+.fin-res-stream .drops { stroke: #2f8fd0; stroke-width: 6; fill: none; stroke-linecap: round; stroke-dasharray: 0.1 28; }
+.fin-res-stream .d2 { stroke-width: 4; opacity: .7; } .fin-res-stream .d3 { stroke-width: 4; opacity: .7; }
+.fin-res-pipes .shell { stroke: #6f8597; fill: none; stroke-linecap: round; }
+.fin-res-pipes .core { stroke: #dcebf6; fill: none; stroke-linecap: round; }
+.fin-res-pipes .flow { stroke: #2f8fd0; stroke-width: 6; fill: none; stroke-linecap: round; stroke-dasharray: 0.1 24; }
+.fin-res-pipes .empty .core { stroke: #eef3f7; }
+.fin-res-pipes .valve { fill: #8aa1b4; stroke: #56697a; stroke-width: 3; }
+@media (prefers-reduced-motion: no-preference) {
+  .fin-res-stream .drops { animation: finDrop 1.6s linear infinite; } .fin-res-stream .d2 { animation-duration: 2.1s; } .fin-res-stream .d3 { animation-duration: 1.9s; }
+  .fin-res-pipes .flow { animation: finDrop 2.4s linear infinite; } .fin-res-pipes .flow.slow { animation-duration: 3.6s; }
+  @keyframes finDrop { to { stroke-dashoffset: -28.1; } }
+}
+.fin-res-l { font: 700 22px/1 var(--font, system-ui); fill: #1d3a52; paint-order: stroke; stroke: rgba(255, 255, 255, .92); stroke-width: 6px; stroke-linejoin: round; }
+.fin-res-l .what { font-size: 15px; font-weight: 600; fill: #45647d; }
+.fin-cv-vp.z-far.mode-res .mnode.fin-leaf.tank .fin-cv-v { font-size: 30px; }
+.fin-cv-vp.z-far.mode-res .mnode.fin-leaf.tank .mtxt b { font-size: 21px; }
+.mode-res .fin-det[data-det="up"] .fin-up-grid { grid-template-columns: minmax(0, 1fr); }
+.mode-res .fin-up-l { white-space: normal; overflow: visible; overflow-wrap: anywhere; }
 
 </style>
 <div class="titlestrip" id="titlestrip"><span class="ts-brand"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c3.3 4 6 7.2 6 10.4a6 6 0 0 1-12 0C6 10.2 8.7 7 12 3z"/><path d="m9.3 13.6 1.9 1.9 3.6-4.1"/></svg> Action Register</span><button class="ts-search" data-act="palette" title="Search and commands (Ctrl+K)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg><span>Search or type a command</span><kbd>Ctrl K</kbd></button><span class="ts-space"></span></div>
@@ -16307,7 +16297,8 @@ function finCvCard(c, hue) {
   const tool = c.cls.includes('tool'), open = UI.fin.pop === c.id || (tool && c.act && finSecOpen(c.act.s)) ? ' sel' : '', fresh = Date.now() < UI.fin.flash.until && UI.fin.flash.ids.has(c.id) ? ' fresh' : '';
   const act = tool || c.cls.includes('more') ? { act: 'fin-cv-sec', s: (c.act && c.act.s) || 'ledger' } : c.act && c.act.act === 'fin-cv-add' ? c.act : { act: 'fin-cv-det', id: c.id };
   const editable = typeof finCvSpec === 'function' && !tool && !c.cls.includes('more') && !!finCvSpec(c.id);
-  return `<div class="mnode fin-cvn fin-leaf ${c.cls}${open}${fresh}${editable ? ' editable' : ''}" role="button" tabindex="0" aria-expanded="${!!open}" ${finCvAttrs(act)} data-node="${esc(c.id)}" title="${esc(c.label)}${c.val ? ' — ' + esc(c.val) : ''}${c.sub ? '\n' + esc(c.sub) : ''}" style="${st}">
+  const tank = c.tank ? `<i class="fin-tank ${c.tank.kind}" aria-hidden="true" style="--lvl:${c.tank.lvl.toFixed(3)}"><i class="w"></i><i class="scale"></i></i>` : '';
+  return `<div class="mnode fin-cvn fin-leaf ${c.cls}${c.tank ? ' tank ' + c.tank.kind : ''}${open}${fresh}${editable ? ' editable' : ''}" role="button" tabindex="0" aria-expanded="${!!open}" ${finCvAttrs(act)} data-node="${esc(c.id)}" title="${esc(c.label)}${c.val ? ' — ' + esc(c.val) : ''}${c.sub ? '\n' + esc(c.sub) : ''}" style="${st}">${tank}
     ${c.icon ? `<span class="gicon fin-cv-ic" aria-hidden="true">${c.icon}</span>` : ''}<div class="mtxt"><b>${tool ? '<span class="fin-tool-i" aria-hidden="true">' + (FIN_ICON[act.s] || '') + '</span>' : ''}${esc(c.label)}</b>${c.sub ? `<small>${esc(c.sub)}</small>` : ''}</div>${c.val ? `<span class="fin-cv-v num">${esc(c.val)}</span>` : ''}${c.spark && typeof finSparkSVG === 'function' ? finSparkSVG(c.spark, c.sparkCls) : ''}${c.prog ? `<i class="fin-prog" style="width:${Math.round(c.prog * 100)}%" title="${Math.round(c.prog * 100)}% from cash now"></i>` : ''}${editable ? `<button class="fin-cv-btn ed" data-act="fin-cv-edit" data-id="${esc(c.id)}" title="Edit (or double-tap, F2)" aria-label="Edit ${esc(c.label)}">✎</button>` : ''}</div>`;
 }
 function finCvRoom(r) {
@@ -16324,15 +16315,15 @@ function finCvRoom(r) {
     </div></section>`;
 }
 function finCvBoard() {
-  const cv = UI.fin.cv, root = finCvModel(), n = finNow(), plan = finBuyPlan(), rooms = finCvRooms(root), tree = cv.mode === 'tree' && typeof finTreeLayout === 'function', flow = cv.mode === 'flow' && typeof finFlowLayout === 'function', L = tree ? finTreeLayout(rooms, plan, n) : flow ? finFlowLayout(rooms, plan, n) : finCvLayout(rooms, plan, n);
+  const cv = UI.fin.cv, root = finCvModel(), n = finNow(), plan = finBuyPlan(), rooms = finCvRooms(root), res = cv.mode === 'res' && typeof finResLayout === 'function', flow = cv.mode === 'flow' && typeof finFlowLayout === 'function', L = res ? finResLayout(rooms, plan, n) : flow ? finFlowLayout(rooms, plan, n) : finCvLayout(rooms, plan, n);
   const hueOf = new Map(); for (const r of rooms) { const walk = k => { hueOf.set(k.id, r.hue); (k.children || []).forEach(walk); }; if (r.node) walk(r.node); }
   UI.fin.cvSize = { w: L.w, h: L.h }; UI.fin.cvCards = new Map(L.cards.map(c => [c.id, c]));
   if (UI.fin.pop && !UI.fin.cvCards.has(UI.fin.pop)) UI.fin.pop = null;
   const path = e => { const mx = (e.x0 + e.x1) / 2; return `M${e.x0},${e.y0} C${mx},${e.y0} ${mx},${e.y1} ${e.x1},${e.y1}`; };
   // the entrance plays when you open the canvas (within its first moment), not on every redraw after
   const now = Date.now(); if (!UI.fin.cvShownAt) UI.fin.cvShownAt = now; const intro = now - UI.fin.cvShownAt < 700;
-  return `<div class="fin-cv-vp${tree ? ' mode-tree' : flow ? ' mode-flow' : ''}${intro ? ' intro' : ''}${cv.k < 0.62 ? ' z-far' : ''}" id="fin-cv-vp">${tree ? finTreeSky() : flow ? finFlowSky() : ''}<div class="fin-cv-world" id="fin-cv-world" style="width:${L.w}px;height:${L.h}px;transform:translate(${cv.x}px,${cv.y}px) scale(${cv.k})">
-      ${tree ? finTreeSVG(L) : flow ? finFlowSVG(L) : ''}${L.rooms.map(finCvRoom).join('')}
+  return `<div class="fin-cv-vp${res ? ' mode-res' : flow ? ' mode-flow' : ''}${intro ? ' intro' : ''}${cv.k < 0.62 ? ' z-far' : ''}" id="fin-cv-vp">${flow ? finFlowSky() : ''}<div class="fin-cv-world" id="fin-cv-world" style="width:${L.w}px;height:${L.h}px;transform:translate(${cv.x}px,${cv.y}px) scale(${cv.k})">
+      ${res ? finResSVG(L) : flow ? finFlowSVG(L) : ''}${L.rooms.map(finCvRoom).join('')}
       <svg class="fin-cv-edges" width="${L.w}" height="${L.h}" aria-hidden="true">${L.edges.map(e => `<path class="${e.cls}" d="${path(e)}"><title>${esc(e.title)}</title></path>`).join('')}</svg>
       ${L.subs.map(s => `<div class="fin-room-sub" style="left:${s.x}px;top:${s.y}px;width:${s.w}px"><b>${esc(s.label)}</b>${s.sum ? ` <small>${esc(s.sum)}</small>` : ''}</div>`).join('')}
       ${L.cards.map(c => finCvCard(c, hueOf.get(c.id) ?? (c.id.startsWith('b:') || c.id.startsWith('src:') || c.id.startsWith('g:') ? 190 : 200))).join('')}
@@ -16386,7 +16377,7 @@ function finCvApply() {
 }
 // on opening: as wide as the screen allows (readable), from the top; Fit shows all of it
 function finCvFit(all) {
-  if (UI.fin.cv.mode === 'tree') all = true;   // the whole tree is the point of it
+  if (UI.fin.cv.mode === 'res') all = true;   // the whole system of tanks and pipes at once
   const vp = $('#fin-cv-vp'), s = UI.fin.cvSize, cv = UI.fin.cv; if (!vp || !s) return;
   const W = vp.clientWidth, H = vp.clientHeight; if (!W || !H) return;
   if (all) { const top = cv.full ? 64 : 16; cv.k = Math.max(0.1, Math.min(1, (W - 32) / s.w, (H - top - 16) / s.h)); cv.x = (W - s.w * cv.k) / 2; cv.y = Math.max(top, top + (H - top - 16 - s.h * cv.k) / 2); }   // full screen: below the floating controls
@@ -17389,22 +17380,22 @@ Object.assign(ACT, {
 Object.assign(window.__FIN, { menu: (id, x, y) => finMenuOpen(id, x, y), about: () => UI.fin.talk.about });
 
 /* ===== features/52-finance-flow.js ===== */
-// Money canvas — the second card layout, "Tree": your money as a living tree.
-// Above the ground: your accounts are the trunk; branches carry money out to spending (left) and commitments (right);
-// the crown holds your goals and purchases — the fruit. Below the ground the roots reach into what feeds the tree:
-// your income and what you own. My money and what is coming up stand beside the tree as its signpost. Gold sap
-// (particles) runs up the roots and out along the branches, the way the money moves; each root and branch is as
-// thick as that money is per month. Daylight colours: a soft sky, grass and warm soil.
-// Easy to read: it is wide rather than tall, with two cards to a row, so Fit shows the whole tree large; zoomed out,
-// cards show only their name and figure in big type and room titles grow (zoom in for everything).
-// Rooms (the first layout) is unchanged; everything on the canvas works the same in both.
+// Money canvas — the card layout "Reservoirs": your money as water.
+// Each account is a glass tank filled to its balance (your card and Halan are debt tanks: red, filled to what is owed
+// of the limit). Income pours in from the top as streams; under the tanks a pipe carries money out to spending,
+// commitments and your goals — each pipe as thick as that money is per month, water moving through it and the amount
+// on it. My money and what is coming up sit at the top either side; what you own and others' money below.
+// Calm and light — a clean diagram, readable at Fit (the whole of it shows when it opens). Rooms and Flow are the
+// other layouts; everything on the canvas (details, pop-outs, the card menu, editing, search, the minimap, Tell the
+// canvas) works the same in all of them.
 
-const FTR = { SIGN: 700, GAP: 100, CROWN: 1120, BR: 580, TRUNK: 580, ROOT: 600, HEAD: 92, SKY: 100, SOIL: 140, ARM: 210, TOP: 520 };
-const FIN_CV_MODES = ['rooms', 'flow', 'tree'];
-try { const m = localStorage.getItem('ar-fin-cv-mode'); if (FIN_CV_MODES.includes(m)) UI.fin.cv.mode = m; } catch {}
+const FRS = { W: 2520, SIDE: 700, MID: 1000, GAP: 60, STREAM: 150, PIPE: 190, TANK_W: 236, TANK_H: 250, HEAD: 92 };
+const FIN_CV_MODES = ['rooms', 'flow', 'res'];
+try { const m = localStorage.getItem('ar-fin-cv-mode'); if (FIN_CV_MODES.includes(m)) UI.fin.cv.mode = m; else if (m === 'tree') UI.fin.cv.mode = 'res'; } catch {}
+try { indexedDB.deleteDatabase('ar-tree'); } catch {}   // the Tree's saved pictures are not needed any more
 
-function finTreeLayout(rooms, plan, n) {
-  const { PAD, CG, CW } = FR, CH = 66, cards = [], dets = [], edges = [], subs = [];   // a little taller: name over figure in big type when zoomed out
+function finResLayout(rooms, plan, n) {
+  const { PAD, CG, CW, CH } = FR, cards = [], dets = [], edges = [], subs = [], HEAD = FRS.HEAD;
   const grid = (list, x0, y, w) => {
     const per = Math.max(1, Math.floor((w + CG) / (CW + CG))), cw = per === 1 ? w : Math.floor((w - (per - 1) * CG) / per); let row = [];
     const flush = () => { if (!row.length) return; y += CH + CG; row = []; };
@@ -17414,261 +17405,85 @@ function finTreeLayout(rooms, plan, n) {
     }
     flush(); subs.y2 = y; return [];
   };
-  const fill = (r, x, y, w, cls) => {
-    r.x = x; r.y = y; r.w = w; r.cls = cls || ''; const HEAD = FTR.HEAD, x0 = x + PAD, iw = w - 2 * PAD; let yy = y + HEAD;
+  // the accounts room: its tools in a row, then one tank per account
+  const tanks = (r, x0, y, iw) => {
+    const all = r.node.children, accts = all.filter(c => c.type === 'leaf' && c.id.startsWith('a:')), rest = all.filter(c => !accts.includes(c));
+    grid(rest, x0, y, iw); y = subs.y2 + 10;
+    const bank = accts.map(c => { const a = finAcct(c.id.slice(2)); const l = a ? finLatest(a) : {}; return { c, a, l }; });
+    const top = Math.max(1, ...bank.filter(x => x.a && !['credit_card', 'bnpl'].includes(x.a.kind)).map(x => typeof x.l.balance === 'number' ? x.l.balance : 0));
+    const per = Math.max(1, Math.floor((iw + 30) / (FRS.TANK_W + 30))), rows = Math.ceil(bank.length / per);
+    bank.forEach(({ c, a, l }, i) => {
+      const row = Math.floor(i / per), inRow = Math.min(per, bank.length - row * per), col = i % per, span = inRow * FRS.TANK_W + (inRow - 1) * 30;
+      c.x = x0 + (iw - span) / 2 + col * (FRS.TANK_W + 30); c.y = y + row * (FRS.TANK_H + 30); c.w = FRS.TANK_W; c.h = FRS.TANK_H;
+      const debt = a && ['credit_card', 'bnpl'].includes(a.kind), lim = debt ? (+a.limit || +l.limit || 0) : 0;
+      c.tank = debt ? { kind: 'debt', lvl: lim && typeof l.owed === 'number' ? Math.max(0, Math.min(1, l.owed / lim)) : 0 } : { kind: 'water', lvl: typeof l.balance === 'number' ? Math.max(0, Math.min(1, l.balance / top * 0.9)) : 0 };
+      cards.push(c);
+    });
+    return y + rows * (FRS.TANK_H + 30) - 30;
+  };
+  const fill = (r, x, y, w) => {
+    r.x = x; r.y = y; r.w = w; r.cls = 'res'; const x0 = x + PAD, iw = w - 2 * PAD; let yy = y + HEAD;
     if (UI.fin.cvCol.has(r.id)) r.h = HEAD + 6;
     else if (r.kind === 'ov') { const h = finDetH('ov', 520); dets.push({ id: 'ov', x: x0, y: yy, w: iw, h }); r.h = yy + h + PAD - y; }
     else if (r.kind === 'sec') { const h = finDetH(r.id, 640); dets.push({ id: r.id, x: x0, y: yy, w: iw, h }); r.h = yy + h + PAD - y; }
     else if (r.kind === 'next') { yy = finNextLayout(r, x0, yy, iw, cards, dets, subs, grid); r.h = yy + PAD - y; }
     else if (r.kind === 'goals') { yy = finGoalsLayout(r, plan, n, x0, yy, iw, cards, dets, edges, subs, grid); r.h = yy + PAD - y; }
+    else if (r.id === 'accts') { yy = tanks(r, x0, yy, iw); r.h = yy + PAD - y; }
     else { grid(r.node.children, x0, yy, iw); r.h = Math.max(subs.y2 - CG, y + HEAD + 20) + PAD - y; }
     return y + r.h;
   };
   const by = id => rooms.find(r => r.id === id), placed = new Set(), put = (r, ...a) => { if (!r) return null; placed.add(r.id); fill(r, ...a); return r; };
-  // the signpost on the left: My money, then what is coming up
-  const SX = 0, TX = FTR.SIGN + FTR.GAP;                         // the tree starts right of the signpost
-  // My money on the left of the tree, what is coming up on its right: wide rather than tall, so Fit shows it large
-  const ov = put(by('ov'), SX, 40, FTR.SIGN, 'sign');
-  // the tree: crown, branches, trunk
-  const TW = FTR.BR * 2 + FTR.TRUNK + 2 * FTR.ARM, cx = TX + TW / 2;
-  const buy = rooms.find(r => r.kind === 'goals'); if (buy) put(buy, cx - FTR.CROWN / 2, FTR.TOP, FTR.CROWN, 'crown');
-  const crownB = buy ? buy.y + buy.h : FTR.TOP, brY = crownB + FTR.SKY;
-  const left = [by('exp'), ...rooms.filter(r => (r.id === 'q' || r.id === 'auto'))].filter(Boolean), right = [by('com'), by('third')].filter(Boolean);
-  let ly = brY; for (const r of left) { put(r, TX, ly, FTR.BR, 'branch'); ly = r.y + r.h + 36; }
-  let ry = brY; for (const r of right) { put(r, TX + TW - FTR.BR, ry, FTR.BR, 'branch'); ry = r.y + r.h + 36; }
-  // the trunk just under the crown; the ground under whichever is lowest
-  const acc = put(by('accts'), cx - FTR.TRUNK / 2, brY + 120, FTR.TRUNK, 'trunk');
-  const nx = put(by('next'), TX + TW + FTR.GAP, 40, FTR.SIGN, 'sign'), signB = Math.max(ov ? ov.y + ov.h : 0, nx ? nx.y + nx.h : 0);
-  const G = Math.max(acc ? acc.y + acc.h + 80 : 0, ly + 30, ry + 30);
-  // below the ground: the roots
-  const ru = [by('inc'), by('own')].filter(Boolean), RY = G + FTR.SOIL; let rootB = RY;
-  ru.forEach((r, i) => { const x = ru.length === 1 ? cx - FTR.ROOT / 2 : i === 0 ? cx - FTR.ROOT - 50 : cx + 50; put(r, x, RY, FTR.ROOT, 'root'); rootB = Math.max(rootB, r.y + r.h); });
-  // anything else (new rooms) beside the roots; parts opened as rooms at the very bottom, full width
-  let ox = TX; const others = rooms.filter(r => !placed.has(r.id) && r.kind !== 'sec');
-  for (const r of others) { put(r, ox, Math.max(rootB, signB) + 60, FTR.BR, 'root'); ox += FTR.BR + 40; rootB = Math.max(rootB, r.y + r.h); }
-  const W = TX + TW + (nx ? FTR.GAP + FTR.SIGN : 0); let y = Math.max(rootB, signB) + 70;
-  for (const r of rooms) if (r.kind === 'sec') y = put(r, 0, y, W, 'cellar').y + r.h + 44;
-  // the sap: roots up into the trunk, branches out of it, up into the crown
+  const { W, SIDE, MID, GAP } = FRS, midX = SIDE + GAP + (W - 2 * SIDE - 2 * GAP - MID) / 2;
+  // the top: My money · the income springs · coming up
+  const ov = put(by('ov'), 0, 0, SIDE), inc = put(by('inc'), midX, 0, MID), nx = put(by('next'), W - SIDE, 0, SIDE);
+  const topB = Math.max(...[ov, inc, nx].filter(Boolean).map(r => r.y + r.h), 0);
+  // the tanks
+  const acc = put(by('accts'), 0, Math.max(topB, inc ? inc.y + inc.h : 0) + FRS.STREAM, W);
+  const accB = acc ? acc.y + acc.h : topB;
+  // the outlets: spending · commitments · goals; then what you own · others' money · anything else
+  const yO = accB + FRS.PIPE, exp = put(by('exp'), 0, yO, SIDE), com = put(by('com'), SIDE + GAP, yO, 560), buy = rooms.find(r => r.kind === 'goals');
+  const bx = SIDE + GAP + 560 + GAP; if (buy) put(buy, bx, yO, W - bx);
+  const colA = [by('own')], colB = [by('third'), ...rooms.filter(r => !placed.has(r.id) && r.kind !== 'sec' && !['own', 'third'].includes(r.id))];
+  let ya = exp ? exp.y + exp.h + 50 : yO, yb = com ? com.y + com.h + 50 : yO;
+  for (const r of colA) if (r) { put(r, 0, ya, SIDE); ya = r.y + r.h + 40; }
+  for (const r of colB) if (r && !placed.has(r.id)) { put(r, SIDE + GAP, yb, 560); yb = r.y + r.h + 40; }
+  let y = Math.max(ya, yb, buy ? buy.y + buy.h + 50 : yO);
+  for (const r of rooms) if (r.kind === 'sec') y = put(r, 0, y, W).y + r.h + 44;
+  // what flows: income in, spending, instalments and savings out
   const v = { inc: n.income || 0, exp: n.spending || 0, com: n.instMonthly || 0, save: Math.max(0, n.capacity || 0) }, max = Math.max(1, ...Object.values(v));
-  const th = x => x > 0 ? Math.round(16 + 54 * Math.sqrt(x / max)) : 10;
-  const flows = [], inc = by('inc'), own = by('own'), exp = by('exp'), com = by('com');
-  if (acc) {
-    if (inc) flows.push({ id: 'inc', kind: 'root', a: { x: inc.x + inc.w / 2, y: inc.y }, b: { x: cx - 40, y: G - 10 }, t: th(v.inc), amt: v.inc ? fk(v.inc) : '—', what: v.inc ? 'comes in a month' : 'income not known yet', empty: !v.inc });
-    if (own) flows.push({ id: 'own', kind: 'root', a: { x: own.x + own.w / 2, y: own.y }, b: { x: cx + 40, y: G - 10 }, t: 18, amt: '', what: 'what you own', empty: false, still: true });
-    if (exp) flows.push({ id: 'exp', kind: 'branch', a: { x: acc.x + 30, y: acc.y + Math.min(acc.h - 40, 150) }, b: { x: exp.x + exp.w - 16, y: exp.y + Math.min(exp.h - 40, 120) }, t: th(v.exp), amt: v.exp ? fk(v.exp) : '—', what: v.exp ? 'spent a month' : 'none yet', empty: !v.exp });
-    if (com) flows.push({ id: 'com', kind: 'branch', a: { x: acc.x + acc.w - 30, y: acc.y + Math.min(acc.h - 40, 150) }, b: { x: com.x + 16, y: com.y + Math.min(com.h - 40, 120) }, t: th(v.com), amt: v.com ? fk(v.com) : '—', what: v.com ? 'instalments a month' : 'none yet', empty: !v.com });
-    if (buy) flows.push({ id: 'save', kind: 'up', a: { x: cx, y: acc.y + 10 }, b: { x: cx, y: crownB - 10 }, t: th(v.save), amt: v.save ? fk(v.save) : '—', what: v.save ? 'a month to your goals' : 'nothing left to save yet', empty: !v.save });
+  const th = x => x > 0 ? Math.round(10 + 34 * Math.sqrt(x / max)) : 6;
+  const pipes = [], tanksIn = cards.filter(c => c.tank);
+  const manifold = accB + 70;
+  if (acc && inc) pipes.push({ id: 'inc', kind: 'stream', a: { x: inc.x + inc.w / 2, y: inc.y + inc.h }, b: { x: inc.x + inc.w / 2, y: acc.y }, t: th(v.inc) * 1.6, amt: v.inc ? fk(v.inc) : '—', what: v.inc ? 'comes in a month' : 'income not known yet', empty: !v.inc });
+  if (acc) for (const [r, val, what, id] of [[exp, v.exp, 'spent a month', 'exp'], [com, v.com, 'instalments a month', 'com'], [buy, v.save, 'a month to your goals', 'save']]) {
+    if (!r) continue; const x = r.id === 'buy' || r.kind === 'goals' ? r.x + 180 : r.x + r.w / 2;
+    pipes.push({ id, kind: 'drain', a: { x, y: manifold }, b: { x, y: r.y }, t: th(val), amt: val ? fk(val) : '—', what: val ? what : 'none yet', empty: !val });
   }
-  const w = W, h = Math.max(y - 44, G + 400);
+  const span = tanksIn.length ? [Math.min(...tanksIn.map(c => c.x + c.w / 2), ...pipes.filter(p => p.kind === 'drain').map(p => p.a.x)), Math.max(...tanksIn.map(c => c.x + c.w / 2), ...pipes.filter(p => p.kind === 'drain').map(p => p.a.x))] : null;
+  const w = W, h = Math.max(y - 44, 400);
   UI.fin.cvPos = new Map([...rooms.map(r => [r.id, { x: r.x, y: r.y, w: r.w, h: r.h }]), ...cards.map(c => [c.id, { x: c.x, y: c.y, w: c.w, h: c.h }]), ...dets.map(d => [d.id + ':det', d])]);
   UI.fin.cvRoot = UI.fin.cvPos.get('ov');
   UI.fin.cvRoomsList = rooms.map(r => ({ id: r.id, kind: r.kind, x: r.x, y: r.y, w: r.w, h: r.h, hue: r.hue, icon: r.icon, title: r.title }));
-  return { rooms, cards, dets, edges, subs, w, h, flows, tree: { G, cx, TX, TW, crown: buy ? { x: buy.x, y: buy.y, w: buy.w, h: buy.h } : null, acc: acc ? { x: acc.x, y: acc.y, w: acc.w, h: acc.h } : null, signB } };
+  return { rooms, cards, dets, edges, subs, w, h, res: { pipes, manifold, span, tanks: tanksIn.map(c => ({ x: c.x + c.w / 2, y: c.y + c.h })), accB } };
+}
+// the water: streams from income, stubs from each tank into the pipe under them, drains to the outlets
+function finResSVG(L) {
+  const R = L.res; if (!R) return '';
+  const lab = (p, x, y, anchor) => `<text class="fin-res-l" x="${x}" y="${y}" text-anchor="${anchor}">${p.amt ? `<tspan class="amt">${esc(p.amt)}</tspan>` : ''}<tspan class="what" x="${x}" dy="${p.amt ? 24 : 0}">${esc(p.what)}</tspan></text>`;
+  let out = '';
+  for (const p of R.pipes.filter(p => p.kind === 'stream')) out += `<g class="fin-res-stream ${p.empty ? 'empty' : ''}"><path class="fall" d="M${p.a.x},${p.a.y} L${p.b.x},${p.b.y}" style="stroke-width:${p.t}px"/>${p.empty ? '' : `<path class="drops" d="M${p.a.x},${p.a.y} L${p.b.x},${p.b.y}"/><path class="drops d2" d="M${p.a.x - p.t / 4},${p.a.y} L${p.a.x - p.t / 4},${p.b.y}"/><path class="drops d3" d="M${p.a.x + p.t / 4},${p.a.y} L${p.a.x + p.t / 4},${p.b.y}"/>`}${lab(p, p.a.x + p.t + 22, (p.a.y + p.b.y) / 2 - 6, 'start')}</g>`;
+  if (R.span) {
+    const pipe = (d, t, flow, cls) => `<path class="shell" d="${d}" style="stroke-width:${t + 10}px"/><path class="core" d="${d}" style="stroke-width:${t}px"/>${flow ? `<path class="flow ${cls || ''}" d="${d}"/>` : ''}`;
+    out += `<g class="fin-res-pipes">`;
+    for (const t of R.tanks) out += pipe(`M${t.x},${t.y - 6} L${t.x},${R.manifold}`, 12, true, 'slow');
+    out += pipe(`M${R.span[0] - 20},${R.manifold} L${R.span[1] + 20},${R.manifold}`, 22, true);
+    for (const p of R.pipes.filter(p => p.kind === 'drain')) out += `<g class="${p.empty ? 'empty' : ''}">${pipe(`M${p.a.x},${p.a.y} L${p.b.x},${p.b.y}`, p.t, !p.empty)}${lab(p, p.a.x + p.t / 2 + 20, (p.a.y + p.b.y) / 2 - 4, 'start')}</g>`;
+    for (const t of R.tanks) out += `<circle class="valve" cx="${t.x}" cy="${R.manifold}" r="13"/>`;
+    out += `</g>`;
+  }
+  return `<svg class="fin-res" width="${L.w}" height="${L.h}" aria-hidden="true">${out}</svg>`;
 }
 
-/* --- drawing the tree: a monster of a real tree ---
-   A massive gnarled trunk on buttress roots, deep bark furrows, burls, a hollow and moss; nine great limbs that fork
-   again and again into a huge layered crown of thousands of leaves lit from the top left, with twigs and sprays
-   pushing out of its edge and vines hanging from it; side branches that hold spending and commitments; snaking
-   surface roots, a deep tap root and a fan of rootlets in layered soil with stones; grass tufts, fallen leaves and
-   mushrooms at the foot. Drawn ONCE into a picture (in the background, kept until the layout changes) that the canvas
-   only slides and scales — so moving never makes it redraw. Only the gold sap and the labels stay live on top. */
-function finRng(seed) { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
-const FTREE = { key: '', url: '', urlKey: '', box: null, busy: '', fail: false, art: '' };
-function finTreeGeom(L) {
-  const T = L.tree, { G, cx } = T, cr = T.crown, ac = T.acc;
-  const ccx = cr ? cr.x + cr.w / 2 : cx, ccy = cr ? cr.y + cr.h / 2 : G - 900, RX = cr ? cr.w / 2 + 360 : 700, RY = cr ? cr.h / 2 + 250 : 480;
-  const topY = cr ? cr.y + cr.h + 40 : (ac ? ac.y - 80 : G - 600);
-  return { G, cx, cr, ac, ccx, ccy, RX, RY, topY };
-}
-// the picture's area: the whole tree, its crown above the canvas and its roots below
-const finTreeBox = (L, g) => ({ x: -400, y: Math.floor(Math.min(-200, g.ccy - g.RY * 1.25 - 120)), w: L.w + 800, h: 0 });
-function finTreeArt(L) {
-  const g = finTreeGeom(L), { G, cx, cr, ccx, ccy, RX, RY, topY } = g, W = L.w, box = finTreeBox(L, g); box.h = Math.ceil(Math.max(L.h, G + 1300) + 200 - box.y);
-  const R = finRng(20261101), rnd = (a, b) => a + (b - a) * R(), pick = arr => arr[Math.floor(R() * arr.length)], f1 = v => Math.round(v * 10) / 10;
-  const X0 = box.x, X1 = box.x + box.w, Y1 = box.y + box.h;
-  const leafTile = (id, size, n, palette, rx0, rx1) => {
-    let out = '';
-    for (let i = 0; i < n; i++) {
-      const x = rnd(0, size), y = rnd(0, size), rx = rnd(rx0, rx1), ry = rx * rnd(0.36, 0.55), a = rnd(0, 180), c = pick(palette);
-      for (const [dx, dy] of [[0, 0], [size, 0], [-size, 0], [0, size], [0, -size]]) { const X = x + dx, Y = y + dy; if (X < -rx1 || X > size + rx1 || Y < -rx1 || Y > size + rx1) continue; out += `<ellipse cx="${f1(X)}" cy="${f1(Y)}" rx="${f1(rx)}" ry="${f1(ry)}" transform="rotate(${Math.round(a)} ${f1(X)} ${f1(Y)})" fill="${c}"/>`; }
-    }
-    return `<pattern id="${id}" width="${size}" height="${size}" patternUnits="userSpaceOnUse">${out}</pattern>`;
-  };
-  const blob = (x, y, r, k = 20) => { const pts = Array.from({ length: k }, (_, i) => { const a = (i / k) * Math.PI * 2, rr = r * rnd(0.78, 1.14); return [x + Math.cos(a) * rr, y + Math.sin(a) * rr * 0.9]; });
-    let d = `M${f1((pts[0][0] + pts[k - 1][0]) / 2)},${f1((pts[0][1] + pts[k - 1][1]) / 2)}`; for (let i = 0; i < k; i++) { const p = pts[i], q = pts[(i + 1) % k]; d += ` Q${f1(p[0])},${f1(p[1])} ${f1((p[0] + q[0]) / 2)},${f1((p[1] + q[1]) / 2)}`; } return d + 'Z'; };
-  const limb = (a, b, t0, t1, bend = 0) => {
-    const dx = b.x - a.x, dy = b.y - a.y, len = Math.hypot(dx, dy) || 1, nx = -dy / len, ny = dx / len;
-    const m1 = { x: a.x + dx / 3 + nx * bend, y: a.y + dy / 3 + ny * bend }, m2 = { x: a.x + dx * 2 / 3 + nx * bend * 0.6, y: a.y + dy * 2 / 3 + ny * bend * 0.6 };
-    const P = (q, s, t) => `${f1(q.x + nx * t * s)},${f1(q.y + ny * t * s)}`, ta = (t0 * 2 + t1) / 3, tb = (t0 + t1 * 2) / 3;
-    return `M${P(a, 1, t0 / 2)} C${P(m1, 1, ta / 2)} ${P(m2, 1, tb / 2)} ${P(b, 1, t1 / 2)} L${P(b, -1, t1 / 2)} C${P(m2, -1, tb / 2)} ${P(m1, -1, ta / 2)} ${P(a, -1, t0 / 2)} Z`;
-  };
-  const pal = { deep: ['#16300f', '#1c3a14', '#203f17', '#173311'], back: ['#24461b', '#2c5421', '#335f26', '#2a4d1f', '#3a6a2a'], mid: ['#3f7a2b', '#4a8a33', '#55963a', '#3a6f28', '#5fa040', '#4d8233', '#68a845'], light: ['#78b552', '#86c25c', '#6aa947', '#93cd66', '#a2d675', '#7dbb57', '#b0dc84'] };
-  const bark = (id, c) => `<linearGradient id="${id}" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="${c[0]}"/><stop offset=".22" stop-color="${c[1]}"/><stop offset=".42" stop-color="${c[2]}"/><stop offset=".6" stop-color="${c[3]}"/><stop offset=".85" stop-color="${c[4]}"/><stop offset="1" stop-color="${c[5]}"/></linearGradient>`;
-  let defs = `<defs>${bark('ftBark', ['#24180e', '#4a3422', '#6d5036', '#563e29', '#352516', '#1d130b'])}${bark('ftBarkL', ['#3a2817', '#5e4630', '#82654a', '#6a4f36', '#45311f', '#2c1e12'])}
-    <linearGradient id="ftRoot" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4f3725"/><stop offset="1" stop-color="#2a1d13"/></linearGradient>
-    <linearGradient id="ftSoil" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6b4d34"/><stop offset=".06" stop-color="#5d4230"/><stop offset=".35" stop-color="#4b3526"/><stop offset="1" stop-color="#2a1e16"/></linearGradient>
-    <linearGradient id="ftTurf" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4f7d33"/><stop offset=".5" stop-color="#3f652a"/><stop offset="1" stop-color="#5d4230"/></linearGradient>
-    <radialGradient id="ftShade" cx=".33" cy=".22" r=".85"><stop offset="0" stop-color="#fffbe0" stop-opacity=".25"/><stop offset=".42" stop-color="#fffbe0" stop-opacity="0"/><stop offset=".78" stop-color="#0b1d06" stop-opacity=".2"/><stop offset="1" stop-color="#0b1d06" stop-opacity=".42"/></radialGradient>
-    <radialGradient id="ftStone" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="#a39d92"/><stop offset="1" stop-color="#4a4540"/></radialGradient>
-    <radialGradient id="ftHollow" cx=".5" cy=".55" r=".6"><stop offset="0" stop-color="#050302"/><stop offset=".7" stop-color="#1a110a"/><stop offset="1" stop-color="#3a2817"/></radialGradient>
-    ${leafTile('ftLeafD', 160, 70, pal.deep, 10, 18)}${leafTile('ftLeafB', 150, 80, pal.back, 9, 17)}${leafTile('ftLeafM', 140, 90, pal.mid, 8, 15)}${leafTile('ftLeafL', 130, 70, pal.light, 7, 13)}
-    <pattern id="ftGrain" width="70" height="70" patternUnits="userSpaceOnUse">${Array.from({ length: 56 }, () => `<circle cx="${f1(rnd(0, 70))}" cy="${f1(rnd(0, 70))}" r="${f1(rnd(0.6, 2.2))}" fill="${pick(['#8a6a4c', '#3a291c', '#9b7d5d', '#2c1f15', '#77593f'])}" opacity="${f1(rnd(0.3, 0.8))}"/>`).join('')}</pattern>
-    <pattern id="ftGrass" width="120" height="58" patternUnits="userSpaceOnUse">${Array.from({ length: 60 }, () => { const x = rnd(0, 120), h = rnd(18, 54), b = rnd(-10, 10); return `<path d="M${f1(x)},58 Q${f1(x + b * 0.4)},${f1(58 - h * 0.55)} ${f1(x + b)},${f1(58 - h)}" stroke="${pick(['#3f6b26', '#4f7f2f', '#5f9238', '#6ea444', '#365d22', '#7cb04c', '#2f5520'])}" stroke-width="${f1(rnd(1.2, 2.8))}" fill="none" stroke-linecap="round"/>`; }).join('')}</pattern>`;
-  // ---- the trunk: massive, twisting, flaring into buttresses at the foot and into limbs at the top
-  const tb = 300, tm = 210, tt = 165, mid = (G + topY) / 2;
-  const trunk = `M${cx - tb - 220},${G + 60} C${cx - tb - 60},${G + 10} ${cx - tb + 10},${G - 60} ${cx - tm - 30},${G - 220} C${cx - tm + 30},${mid + 120} ${cx - tm - 50},${mid - 120} ${cx - tt},${topY + 80} C${cx - tt - 40},${topY - 10} ${cx - tt - 140},${topY - 90} ${cx - tt - 250},${topY - 170} L${cx + tt + 250},${topY - 170} C${cx + tt + 140},${topY - 90} ${cx + tt + 40},${topY - 10} ${cx + tt},${topY + 80} C${cx + tm + 50},${mid - 120} ${cx + tm - 30},${mid + 120} ${cx + tm + 30},${G - 220} C${cx + tb - 10},${G - 60} ${cx + tb + 60},${G + 10} ${cx + tb + 220},${G + 60} Z`;
-  defs += `<clipPath id="ftTrunkClip"><path d="${trunk}"/></clipPath></defs>`;
-  let barkLines = '';
-  for (let i = 0; i < 150; i++) { const u = rnd(-1, 1), x0 = cx + u * (tb + 40), x1 = cx + u * tt, w1 = rnd(-26, 26), w2 = rnd(-22, 22); barkLines += `<path d="M${f1(x0)},${G + 50} C${f1(x0 + w1)},${f1(G - (G - topY) * 0.33)} ${f1(x1 + w2)},${f1(G - (G - topY) * 0.68)} ${f1(x1 + w1 * 0.5)},${f1(topY - 120)}" stroke="${R() < 0.62 ? `rgba(14,8,3,${f1(rnd(0.25, 0.55))})` : `rgba(255,230,200,${f1(rnd(0.06, 0.14))})`}" stroke-width="${f1(rnd(1.2, 6))}" fill="none" stroke-linecap="round"/>`; }
-  for (let i = 0; i < 7; i++) { const x = cx + rnd(-140, 140), y = rnd(topY + 140, G - 200), rx = rnd(14, 34), ry = rx * rnd(1.2, 1.8); barkLines += `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1(rx)}" ry="${f1(ry)}" fill="#1e140b" opacity=".75"/><ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1(rx * 1.6)}" ry="${f1(ry * 1.4)}" fill="none" stroke="rgba(255,228,196,.13)" stroke-width="4"/><ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1(rx * 2.3)}" ry="${f1(ry * 1.9)}" fill="none" stroke="rgba(10,6,2,.25)" stroke-width="5"/>`; }
-  const hx = cx + 60, hy = G - 330;
-  barkLines += `<ellipse cx="${hx}" cy="${hy}" rx="64" ry="110" fill="url(#ftHollow)"/><ellipse cx="${hx}" cy="${hy}" rx="78" ry="126" fill="none" stroke="#6d5036" stroke-width="12" opacity=".8"/>`;
-  for (let i = 0; i < 70; i++) { const x = cx + rnd(-tb - 120, -40), y = G - rnd(0, 420) * Math.pow(R(), 1.6); barkLines += `<circle cx="${f1(x)}" cy="${f1(y)}" r="${f1(rnd(3, 11))}" fill="${pick(['#4f7a2a', '#5f8f35', '#3e6a22', '#6f9d3f'])}" opacity="${f1(rnd(0.45, 0.85))}"/>`; }
-  // ---- the great limbs, forking again and again; leaf sprays at their tips
-  let limbs = '', tips = [];
-  const grow = (a, ang, len, t, depth) => {
-    const b = { x: a.x + Math.cos(ang) * len, y: a.y + Math.sin(ang) * len };
-    limbs += `<path d="${limb(a, b, t, Math.max(2, t * 0.62), rnd(-40, 40) * (len / 400))}" fill="url(#${depth < 2 ? 'ftBark' : 'ftBarkL'})"/>`;
-    if (depth >= 4 || t < 7) { tips.push(b); return; }
-    const kids = depth < 2 ? 3 : 2;
-    for (let i = 0; i < kids; i++) grow(b, ang + rnd(-0.62, 0.62) + (i - (kids - 1) / 2) * 0.32, len * rnd(0.56, 0.72), t * rnd(0.52, 0.66), depth + 1);
-  };
-  if (cr) for (let i = 0; i < 9; i++) { const ang = -Math.PI * (0.06 + 0.88 * (i / 8)) + rnd(-0.08, 0.08), a = { x: cx + Math.cos(ang) * 60, y: topY - 120 }; grow(a, ang, rnd(420, 640), rnd(80, 120), 0); }
-  // ---- the crown: deep shade, the body, sunlit clumps, a ragged leafy edge, light and shade over it, hanging vines
-  let crownBack = '', crownFront = '', edge = '', vines = '';
-  if (cr) {
-    for (let i = 0; i < 40; i++) { const a = (i / 40) * Math.PI * 2 + rnd(-0.1, 0.1), f = rnd(0.86, 1.06), x = ccx + Math.cos(a) * RX * f, y = ccy + Math.sin(a) * RY * f; const d = blob(x, y, rnd(180, 290)); crownBack += `<path d="${d}" fill="#132a0d"/><path d="${d}" fill="url(#ftLeafD)"/>`; }
-    crownBack += `<ellipse cx="${ccx}" cy="${ccy}" rx="${RX}" ry="${RY * 0.96}" fill="#1c3815"/><ellipse cx="${ccx}" cy="${ccy}" rx="${RX}" ry="${RY * 0.96}" fill="url(#ftLeafB)"/>`;
-    for (let i = 0; i < 34; i++) { const a = rnd(0, Math.PI * 2), f = Math.sqrt(R()) * 0.8, x = ccx + Math.cos(a) * RX * f, y = ccy + Math.sin(a) * RY * f; crownBack += `<path d="${blob(x, y, rnd(140, 230))}" fill="url(#ftLeafB)"/>`; }
-    for (let i = 0; i < 56; i++) { const a = (i / 56) * Math.PI * 2 + rnd(-0.15, 0.15), f = rnd(0.5, 0.97), x = ccx + Math.cos(a) * RX * f, y = ccy + Math.sin(a) * RY * f - 24; crownFront += `<path d="${blob(x, y, rnd(120, 210))}" fill="url(#ftLeafM)"/>`; }
-    for (let i = 0; i < 34; i++) { const a = rnd(Math.PI * 1.0, Math.PI * 1.8), f = rnd(0.45, 1.02), x = ccx + Math.cos(a) * RX * f, y = ccy + Math.sin(a) * RY * f; crownFront += `<path d="${blob(x, y, rnd(70, 140))}" fill="url(#ftLeafL)" opacity=".96"/>`; }
-    for (let i = 0; i < 900; i++) { const a = rnd(0, Math.PI * 2), f = rnd(0.96, 1.2), x = ccx + Math.cos(a) * RX * f, y = ccy + Math.sin(a) * RY * f, up = Math.sin(a) < -0.1 && Math.cos(a) < 0.3, rx = rnd(6, 14); edge += `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1(rx)}" ry="${f1(rx * rnd(0.36, 0.52))}" transform="rotate(${Math.round(rnd(0, 180))} ${f1(x)} ${f1(y)})" fill="${pick(up ? pal.light : R() < 0.5 ? pal.mid : pal.back)}"/>`; }
-    crownFront += `<ellipse cx="${ccx}" cy="${ccy}" rx="${RX * 1.12}" ry="${RY * 1.1}" fill="url(#ftShade)"/>`;
-    for (let i = 0; i < 16; i++) { const x = ccx + rnd(-RX * 0.85, RX * 0.85), y0 = ccy + RY * rnd(0.55, 0.85), len = rnd(120, 300), sw = rnd(-30, 30); let leaves = ''; for (let k = 1; k < 9; k++) { const q = k / 9, lx = x + sw * q * q, ly = y0 + len * q; leaves += `<ellipse cx="${f1(lx + rnd(-6, 6))}" cy="${f1(ly)}" rx="${f1(rnd(5, 8))}" ry="${f1(rnd(2.5, 3.5))}" transform="rotate(${Math.round(rnd(20, 160))} ${f1(lx)} ${f1(ly)})" fill="${pick(pal.mid)}"/>`; }
-      vines += `<path d="M${f1(x)},${f1(y0)} Q${f1(x + sw * 0.3)},${f1(y0 + len * 0.5)} ${f1(x + sw)},${f1(y0 + len)}" stroke="#3a5a24" stroke-width="2" fill="none" opacity=".8"/>${leaves}`; }
-  }
-  const spray = (x, y, r) => `<path d="${blob(x, y, r, 14)}" fill="#24461b"/><path d="${blob(x, y - 4, r * 0.9, 14)}" fill="url(#ftLeafM)"/><path d="${blob(x - r * 0.25, y - r * 0.3, r * 0.5, 12)}" fill="url(#ftLeafL)"/>`;
-  const tipSprays = tips.map(b => spray(b.x, b.y, rnd(36, 70))).join('');
-  // ---- side branches to spending and commitments, with twigs and sprays
-  let branches = '', roots = '';
-  for (const f of L.flows || []) {
-    if (f.kind === 'branch') {
-      const a = { x: cx + Math.sign(f.b.x - cx) * 80, y: f.a.y }, b = f.b, bend = -50 * Math.sign(b.x - cx);
-      branches += `<path d="${limb(a, b, f.t * 0.9 + 40, 12, bend)}" fill="url(#ftBark)"/>`;
-      for (let i = 0; i < 5; i++) { const q = 0.25 + i * 0.15, p = { x: a.x + (b.x - a.x) * q, y: a.y + (b.y - a.y) * q - 8 }, side = i % 2 ? 1 : -1, e = { x: p.x + Math.sign(b.x - a.x) * rnd(30, 120), y: p.y + side * rnd(90, 190) * (side < 0 ? 1 : 0.6) };
-        branches += `<path d="${limb(p, e, rnd(12, 20), 2, rnd(-24, 24))}" fill="url(#ftBarkL)"/>` + spray(e.x, e.y, rnd(40, 70)); }
-    } else if (f.kind === 'root') {
-      const b = { x: cx + Math.sign(f.a.x - cx) * 120, y: G + 30 }, a = f.a, t = f.still ? 44 : f.t * 0.75 + 34, bend = 40 * Math.sign(a.x - cx);
-      roots += `<path d="${limb(b, a, t, 9, bend)}" fill="url(#ftRoot)"/>` + finTreeRootlets(b, a, t, 0, R, limb, G);
-    }
-  }
-  // snaking surface roots and buttresses, a deep tap root
-  for (let i = 0; i < 12; i++) { const side = i % 2 ? 1 : -1, b = { x: cx + side * rnd(150, 330), y: G - rnd(10, 60) }, e = { x: cx + side * rnd(420, 1200), y: G + rnd(40, 320) }; roots += `<path d="${limb(b, e, rnd(40, 100), 3, side * rnd(-30, 60))}" fill="url(#ftRoot)"/>` + finTreeRootlets(b, e, 26, 1, R, limb, G); }
-  roots += `<path d="${limb({ x: cx, y: G + 40 }, { x: cx + rnd(-60, 60), y: G + rnd(900, 1150) }, 150, 6, 30)}" fill="url(#ftRoot)"/>` + finTreeRootlets({ x: cx, y: G + 60 }, { x: cx, y: G + 1000 }, 60, 0, R, limb, G);
-  // soil, grass, the foot of the tree
-  let soil = `<rect x="${X0}" y="${G}" width="${box.w}" height="${Y1 - G}" fill="url(#ftSoil)"/><rect x="${X0}" y="${G}" width="${box.w}" height="${Y1 - G}" fill="url(#ftGrain)" opacity=".75"/>`;
-  for (let i = 0; i < 6; i++) { const y = G + 130 + i * rnd(150, 230); soil += `<path d="M${X0},${f1(y)} ${Array.from({ length: 16 }, (_, k) => `Q${f1(X0 + (k + 0.25) * box.w / 16)},${f1(y + rnd(-20, 20))} ${f1(X0 + (k + 0.5) * box.w / 16)},${f1(y + rnd(-10, 10))}`).join(' ')} L${X1},${f1(y)}" stroke="rgba(18,10,4,.24)" stroke-width="${f1(rnd(2, 6))}" fill="none"/>`; }
-  for (let i = 0; i < 70; i++) { const x = rnd(X0 + 200, X1 - 200), y = rnd(G + 60, Math.min(Y1 - 40, G + 1300)), r = rnd(4, 22); soil += `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1(r)}" ry="${f1(r * rnd(0.5, 0.8))}" fill="url(#ftStone)" opacity=".88"/>`; }
-  let grass = `<rect x="${X0}" y="${G - 6}" width="${box.w}" height="24" fill="url(#ftTurf)"/><rect x="${X0}" y="${G - 54}" width="${box.w}" height="58" fill="url(#ftGrass)"/><rect x="${X0}" y="${G - 38}" width="${box.w}" height="58" fill="url(#ftGrass)" transform="translate(41 0)" opacity=".9"/>`;
-  for (let i = 0; i < 160; i++) { const x = rnd(X0 + 100, X1 - 100), y = G + rnd(-4, 6); let tuft = ''; for (let k = 0; k < 6; k++) { const h = rnd(24, 70), b = rnd(-16, 16), xx = x + rnd(-8, 8); tuft += `<path d="M${f1(xx)},${f1(y)} Q${f1(xx + b * 0.4)},${f1(y - h * 0.55)} ${f1(xx + b)},${f1(y - h)}" stroke="${pick(['#3f6b26', '#4f7f2f', '#5f9238', '#6ea444', '#2f5520'])}" stroke-width="${f1(rnd(1.4, 3))}" fill="none" stroke-linecap="round"/>`; } grass += tuft; }
-  for (let i = 0; i < 60; i++) { const x = cx + rnd(-900, 900), y = G + rnd(-8, 8), r = rnd(5, 10); grass += `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1(r)}" ry="${f1(r * 0.45)}" transform="rotate(${Math.round(rnd(0, 180))} ${f1(x)} ${f1(y)})" fill="${pick(['#b5651d', '#c98a2e', '#8e4f1c', '#a8752f', '#d39a3a'])}" opacity=".85"/>`; }
-  for (let i = 0; i < 7; i++) { const x = cx + (i % 2 ? 1 : -1) * rnd(260, 520), y = G + 2, h = rnd(18, 34), r = h * rnd(0.6, 0.9); grass += `<path d="M${f1(x - 3)},${f1(y)} L${f1(x - 3)},${f1(y - h)} L${f1(x + 3)},${f1(y - h)} L${f1(x + 3)},${f1(y)} Z" fill="#efe6d6"/><path d="M${f1(x - r)},${f1(y - h + 2)} Q${f1(x)},${f1(y - h - r * 1.2)} ${f1(x + r)},${f1(y - h + 2)} Z" fill="${pick(['#a3472e', '#8a5a3a', '#c06a3a'])}"/>`; }
-  void W;
-  // drawn in stages (each its own small picture over the last), so the page never stops for long
-  const layers = [soil + roots, crownBack, limbs + `<path d="${trunk}" fill="url(#ftBark)"/><g clip-path="url(#ftTrunkClip)">${barkLines}</g>`, crownFront + tipSprays, edge + vines + branches, grass];
-  const wrap = body => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${box.x} ${box.y} ${box.w} ${box.h}" width="${box.w}" height="${box.h}">${defs}${body}</svg>`;
-  return { box, layers: layers.map(wrap), svg: wrap(layers.join('')) };
-}
-// fine roots: forks from a root, then forks of those, then hairs
-function finTreeRootlets(a, b, t, depth, R, limb, G) {
-  let out = ''; if (depth > 3) return out;
-  const rnd = (x, y) => x + (y - x) * R(), n = depth === 0 ? 6 : depth === 1 ? 3 : 2;
-  for (let i = 0; i < n; i++) {
-    const q = rnd(0.2, 0.92), p = { x: a.x + (b.x - a.x) * q, y: a.y + (b.y - a.y) * q }, side = R() < 0.5 ? -1 : 1, len = depth === 0 ? rnd(140, 300) : depth === 1 ? rnd(70, 160) : rnd(30, 80);
-    const ang = Math.atan2(b.y - a.y, b.x - a.x) + side * rnd(0.45, 1.15), e = { x: p.x + Math.cos(ang) * len, y: Math.max(G + 26, p.y + Math.abs(Math.sin(ang)) * len * 0.9 + 16) };
-    const w = Math.max(0.9, t * (depth === 0 ? 0.3 : 0.42));
-    out += `<path d="${limb(p, e, w, 0.6, side * rnd(6, 26))}" fill="#3a291b"/>` + finTreeRootlets(p, e, w, depth + 1, R, limb, G);
-  }
-  return out;
-}
-// the finished picture is kept in this browser too (a few, newest first), so the tree is there at once next time
-const FTDB = { db: null };
-function finTreeDB() { if (FTDB.db) return FTDB.db; FTDB.db = new Promise((ok, no) => { try { const r = indexedDB.open('ar-tree', 1); r.onupgradeneeded = () => r.result.createObjectStore('pics'); r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error); } catch (e) { no(e); } }); return FTDB.db; }
-async function finTreeCacheGet(key) { try { const db = await finTreeDB(); return await new Promise(ok => { const q = db.transaction('pics').objectStore('pics').get(key); q.onsuccess = () => ok(q.result || null); q.onerror = () => ok(null); }); } catch { return null; } }
-async function finTreeCachePut(key, val) { try { const db = await finTreeDB(); const st = db.transaction('pics', 'readwrite').objectStore('pics'); st.put({ ...val, at: Date.now() }, key);
-  const all = await new Promise(ok => { const q = st.getAllKeys(); q.onsuccess = () => ok(q.result || []); q.onerror = () => ok([]); }); if (all.length > 3) for (const k of all.filter(k => k !== key).slice(0, all.length - 3)) st.delete(k); } catch {} }
-function finTreeShow(key, blob, box) {
-  if (FTREE.key !== key) return;
-  const old = FTREE.url; FTREE.url = URL.createObjectURL(blob); FTREE.urlKey = key; FTREE.box = box;
-  const el = document.getElementById('fin-tree-art'); if (el) el.outerHTML = finTreeImgHTML(true);   // fades in once, when it arrives
-  if (old) setTimeout(() => URL.revokeObjectURL(old), 2000);
-}
-// draw the picture once, in the background; the live canvas shows it as soon as it is ready
-async function finTreeBake(key, art) {
-  if (FTREE.busy === key) return; FTREE.busy = key;
-  try {
-    const hit = await finTreeCacheGet(key); if (hit && hit.blob) { finTreeShow(key, hit.blob, hit.box); return; }
-    const { box } = art, small = (navigator.deviceMemory && navigator.deviceMemory <= 4) || innerWidth < 700;
-    const scale = Math.min(1.25, Math.sqrt((small ? 7e6 : 13e6) / (box.w * box.h)));
-    const c = document.createElement('canvas'); c.width = Math.round(box.w * scale); c.height = Math.round(box.h * scale);
-    const ctx = c.getContext('2d'), idle = () => new Promise(r => (window.requestIdleCallback ? requestIdleCallback(() => r(), { timeout: 400 }) : setTimeout(r, 30)));
-    for (const layer of art.layers) {
-      if (FTREE.key !== key) return;                     // the layout changed meanwhile: that picture is not needed
-      await idle();
-      const src = URL.createObjectURL(new Blob([layer], { type: 'image/svg+xml' })), img = new Image();
-      img.src = src; await img.decode(); ctx.drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(src);
-    }
-    const blob = await new Promise(r => c.toBlob(r, 'image/webp', 0.9)) || await new Promise(r => c.toBlob(r, 'image/png'));
-    if (!blob) throw new Error('no picture');
-    finTreeCachePut(key, { blob, box }); finTreeShow(key, blob, box);
-  } catch (e) { console.warn('tree picture', e); FTREE.fail = true; if (FTREE.key === key && UI.fin.cv.mode === 'tree') render(); }
-  finally { if (FTREE.busy === key) FTREE.busy = ''; }
-}
-const finTreeImgHTML = fresh => { const b = FTREE.box; return `<img id="fin-tree-art" class="fin-tree-img${fresh ? ' fresh' : ''}${FTREE.urlKey === FTREE.key ? '' : ' stale'}" src="${FTREE.url}" alt="" draggable="false" style="left:${b.x}px;top:${b.y}px;width:${b.w}px;height:${b.h}px">`; };
-function finTreeSVG(L) {
-  const T = L.tree; if (!T) return '';
-  const g = finTreeGeom(L), key = JSON.stringify([L.w, L.h, T, (L.flows || []).map(f => [f.id, f.a, f.b, f.t, f.empty, f.still])]);
-  if (FTREE.key !== key) { FTREE.key = key; FTREE.art = finTreeArt(L); if (!FTREE.fail) setTimeout(() => finTreeBake(key, FTREE.art), 0); }
-  // under everything: plain soil and grass that run on beyond the picture
-  const far = `<div class="fin-tree-far" aria-hidden="true" style="top:${g.G}px"></div>`;
-  const art = FTREE.fail ? `<div id="fin-tree-art" class="fin-tree-vec" style="left:${FTREE.art.box.x}px;top:${FTREE.art.box.y}px">${FTREE.art.svg}</div>`
-    : FTREE.url ? finTreeImgHTML() : finTreeSketch(g, L);
-  return far + art + finTreeLive(L, g);
-}
-// while the picture is being drawn: a soft outline of the same tree (a handful of shapes), replaced by the picture
-function finTreeSketch(g, L) {
-  const { G, cx, cr, ccx, ccy, RX, RY, topY } = g, tb = 300, tt = 165;
-  const trunk = `M${cx - tb - 200},${G + 50} C${cx - tb},${G - 40} ${cx - 210},${G - 260} ${cx - tt},${topY + 60} L${cx - tt - 220},${topY - 160} L${cx + tt + 220},${topY - 160} L${cx + tt},${topY + 60} C${cx + 210},${G - 260} ${cx + tb},${G - 40} ${cx + tb + 200},${G + 50} Z`;
-  return `<svg id="fin-tree-art" class="fin-tree-vec sketch" width="${L.w}" height="${L.h}" aria-hidden="true" style="left:0;top:0;overflow:visible">
-    ${cr ? `<ellipse cx="${ccx}" cy="${ccy}" rx="${RX * 1.08}" ry="${RY * 1.05}" fill="#2e5a22"/><ellipse cx="${ccx - RX * 0.18}" cy="${ccy - RY * 0.2}" rx="${RX * 0.8}" ry="${RY * 0.75}" fill="#4f8a35"/>` : ''}
-    <path d="${trunk}" fill="#4a3422"/><path d="M${cx - 120},${G + 30} C${cx - 400},${G + 120} ${cx - 700},${G + 200} ${cx - 900},${G + 320} M${cx + 120},${G + 30} C${cx + 400},${G + 120} ${cx + 700},${G + 200} ${cx + 900},${G + 320}" stroke="#3a291b" stroke-width="40" fill="none" stroke-linecap="round"/></svg>`;
-}
-// what stays live on top of the picture: the gold sap and the labels
-function finTreeLive(L, g) {
-  const { G, cx, ac } = g; let sap = '', labels = '';
-  const centre = (a, b, bend = 0) => { const dx = b.x - a.x, dy = b.y - a.y, len = Math.hypot(dx, dy) || 1, nx = -dy / len, ny = dx / len; return `M${a.x},${a.y} C${a.x + dx / 3 + nx * bend},${a.y + dy / 3 + ny * bend} ${a.x + dx * 2 / 3 + nx * bend * 0.6},${a.y + dy * 2 / 3 + ny * bend * 0.6} ${b.x},${b.y}`; };
-  for (const f of L.flows || []) {
-    if (f.kind === 'up') { sap += `<path class="sap" d="M${f.a.x},${f.a.y} L${f.b.x},${f.b.y}" style="animation-duration:3.2s"/>`; labels += finTreeLabel(f, f.a.x - 190, (f.a.y + f.b.y) / 2 - 8, 'end', 'sky'); continue; }
-    if (f.kind === 'branch') { const a = { x: cx + Math.sign(f.b.x - cx) * 80, y: f.a.y }, b = f.b, bend = -50 * Math.sign(b.x - cx); if (!f.empty) sap += `<path class="sap" d="${centre(a, b, bend)}" style="animation-duration:${Math.max(1.8, 5 - f.t / 18).toFixed(1)}s"/>`;
-      const edge = ac ? (b.x < cx ? ac.x : ac.x + ac.w) : a.x; labels += finTreeLabel(f, (edge + b.x) / 2, Math.max(a.y, b.y) + f.t / 2 + 56, 'middle', 'sky'); continue; }
-    const b = { x: cx + Math.sign(f.a.x - cx) * 120, y: G + 30 }, a = f.a, bend = 40 * Math.sign(a.x - cx);
-    if (!f.empty && !f.still) sap += `<path class="sap" d="${centre(a, b, -bend)}" style="animation-duration:${Math.max(1.8, 5 - f.t / 18).toFixed(1)}s"/>`;
-    labels += finTreeLabel(f, (a.x + b.x) / 2 + Math.sign(a.x - cx) * 40, (a.y + b.y) / 2 + 10, a.x < cx ? 'end' : 'start', 'soil');
-  }
-  return `<svg class="fin-tree" width="${L.w}" height="${L.h}" aria-hidden="true">${sap}${labels}
-    <text class="fin-tree-h" x="${ac ? ac.x + ac.w + 80 : L.tree.TX}" y="${G - 80}">↑ Above the ground — your accounts and where money goes</text>
-    <text class="fin-tree-h soil" x="${L.tree.TX}" y="${G + 74}">↓ The roots — what feeds your money</text></svg>`;
-}
-// the amount and what it is, readable when zoomed out
-function finTreeLabel(f, x, y, anchor, on) {
-  if (!f.amt && !f.what) return '';
-  return `<text class="fin-tree-l ${on}" x="${x}" y="${y}" text-anchor="${anchor}">${f.amt ? `<tspan class="amt">${esc(f.amt)}</tspan>` : ''}<tspan class="what" x="${x}" dy="${f.amt ? 26 : 0}">${esc(f.what)}</tspan></text>`;
-}
-// the sky behind (it does not move with the canvas): soft light, slow clouds
-const finTreeSky = () => '<div class="fin-tree-sky" aria-hidden="true"><i class="sun"></i><i class="cloud c1"></i><i class="cloud c2"></i><i class="cloud c3"></i></div>';
-
-/* --- switching: every card moves from its place in one layout to its place in the other --- */
 function finCvMode(mode) {
   mode = FIN_CV_MODES.includes(mode) ? mode : 'rooms'; if ((UI.fin.cv.mode || 'rooms') === mode) return;
   const reduce = (() => { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch { return true; } })();
@@ -17688,7 +17503,7 @@ function finCvMode(mode) {
     if (b) el.style.transform = `translate(${b.x - x}px, ${b.y - y}px)`; else { el.style.opacity = '0'; el.style.transform = 'scale(.92)'; }
     moved.push(el);
   }
-  for (const d of document.querySelectorAll('#fin-cv-world .fin-det, #fin-cv-world .fin-room-sub, #fin-cv-world .fin-tree, #fin-cv-world .fin-flow')) { d.style.transition = 'none'; d.style.opacity = '0'; moved.push(d); }
+  for (const d of document.querySelectorAll('#fin-cv-world .fin-det, #fin-cv-world .fin-room-sub, #fin-cv-world .fin-res, #fin-cv-world .fin-flow')) { d.style.transition = 'none'; d.style.opacity = '0'; moved.push(d); }
   void document.body.offsetWidth;
   requestAnimationFrame(() => {
     for (const el of moved) { el.style.transition = 'transform .7s cubic-bezier(.2,.8,.2,1), opacity .5s ease .15s'; el.style.transform = ''; el.style.opacity = ''; }
@@ -17696,11 +17511,11 @@ function finCvMode(mode) {
   });
 }
 
-/* --- cards lean toward the pointer (Flow and Tree) --- */
+/* --- cards lean toward the pointer (Flow) --- */
 const FTL = { el: null, raf: 0, x: 0, y: 0 };
 document.addEventListener('pointermove', e => {
-  if (e.pointerType !== 'mouse' || !['tree', 'flow'].includes(UI.fin.cv.mode) || UI.view !== 'finance') return;
-  const c = e.target.closest && e.target.closest('.mode-tree #fin-cv-world .fin-leaf, .mode-flow #fin-cv-world .fin-leaf');
+  if (e.pointerType !== 'mouse' || UI.fin.cv.mode !== 'flow' || UI.view !== 'finance') return;
+  const c = e.target.closest && e.target.closest('.mode-flow #fin-cv-world .fin-leaf');
   if (FTL.el && FTL.el !== c) { FTL.el.style.removeProperty('--rx'); FTL.el.style.removeProperty('--ry'); FTL.el = null; }
   if (!c || e.buttons) return; FTL.el = c; FTL.x = e.clientX; FTL.y = e.clientY;
   if (!FTL.raf) FTL.raf = requestAnimationFrame(() => { FTL.raf = 0; const el = FTL.el; if (!el) return; const r = el.getBoundingClientRect(); const px = (FTL.x - r.left) / r.width - 0.5, py = (FTL.y - r.top) / r.height - 0.5;
@@ -17708,8 +17523,8 @@ document.addEventListener('pointermove', e => {
 });
 
 function finCvModeHTML() {
-  const m = UI.fin.cv.mode || 'rooms', tip = { rooms: 'Rooms: every topic in its own room', flow: 'Flow: your money as a river, from income to goals', tree: 'Tree: your accounts the trunk, income and what you own the roots, spending and commitments the branches, goals the crown' };
-  return `<div class="seg fin-cv-modes" role="group" aria-label="Card layout">${[['rooms', '▦', 'Rooms'], ['flow', '✦', 'Flow'], ['tree', '🌳', 'Tree']].map(([k, i, l]) => `<button data-act="fin-cv-mode" data-v="${k}" aria-pressed="${m === k}" title="${tip[k]} ( L )"><span aria-hidden="true">${i}</span> ${l}</button>`).join('')}</div>`;
+  const m = UI.fin.cv.mode || 'rooms', tip = { rooms: 'Rooms: every topic in its own room', flow: 'Flow: your money as a river, from income to goals', res: 'Reservoirs: each account a tank filled to its balance; income flows in from the top, pipes carry money out to spending, commitments and goals' };
+  return `<div class="seg fin-cv-modes" role="group" aria-label="Card layout">${[['rooms', '▦', 'Rooms'], ['flow', '✦', 'Flow'], ['res', '💧', 'Reservoirs']].map(([k, i, l]) => `<button data-act="fin-cv-mode" data-v="${k}" aria-pressed="${m === k}" title="${tip[k]} ( L )"><span aria-hidden="true">${i}</span> ${l}</button>`).join('')}</div>`;
 }
 Object.assign(ACT, { 'fin-cv-mode': el => finCvMode(el.dataset.v) });
 Object.assign(window.__FIN, { mode: m => (m ? finCvMode(m) : UI.fin.cv.mode || 'rooms') });
