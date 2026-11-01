@@ -160,8 +160,12 @@ async def main():
         assert await ev("document.querySelectorAll('.fin-leaf.goal').length") == 3 and await ev("document.querySelectorAll('.fin-leaf.src').length") == 4
         assert await ev("document.querySelectorAll('.fin-cv-edges path.fin-link').length") >= 3, 'each goal joined to how it is paid'
         sofa = await ev("window.__FIN.buy().items.find(i => i.name === 'Sofa').id")
-        await tap(f'b:{sofa}'); await pg.wait_for_selector(f'.fin-det[data-det="b:{sofa}"]')
-        dt = await pg.text_content(f'.fin-det[data-det="b:{sofa}"]'); assert 'Way to pay' in dt and 'Halan instalments' in dt, 'its details right on the canvas'
+        await ev(f"window.__FIN.show('b:{sofa}')"); await pg.wait_for_timeout(500)   # in view first (the test's own move)
+        cam = await ev(f"[{U}.cv.x, {U}.cv.y, {U}.cv.k]")
+        await pg.click(f'.fin-cvn[data-node="b:{sofa}"] b'); await pg.wait_for_selector(f'#fin-pop[data-pop="b:{sofa}"]'); await pg.wait_for_timeout(450)
+        dt = await pg.text_content('#fin-pop'); assert 'Way to pay' in dt and 'Halan instalments' in dt, 'its details pop out on the canvas'
+        assert await ev(f"[{U}.cv.x, {U}.cv.y, {U}.cv.k]") == cam, 'the canvas does not move to it'
+        assert await ev("(() => { const p = document.getElementById('fin-pop').getBoundingClientRect(), s = document.querySelector('.fin-cv-stage').getBoundingClientRect(); return p.left >= s.left - 1 && p.right <= s.right + 1 && p.top >= s.top - 1 && p.bottom <= s.bottom + 1; })()"), 'the pop-out stays inside the canvas window'
         await ev(f"document.querySelector('[data-act=\"fin-buy-star\"][data-id=\"{sofa}\"]').click()"); await pg.wait_for_timeout(300)
         assert (await ev("window.__FIN.buy()"))['items'][0]['name'] == 'Sofa', 'focus mode puts the chosen item first'
         await ev("document.querySelector('[data-act=\"fin-buy-focus\"][data-v=\"0\"]').click()"); await pg.wait_for_timeout(300)
@@ -187,12 +191,18 @@ async def main():
         assert not await ev("!!document.getElementById('fin-panel')"), 'no side window'
         await pg.screenshot(path=os.path.join(HERE, 'shots', 'finance-canvas-rooms.png'))
         await pg.click('[data-act="fin-cv-close-all"]'); await pg.wait_for_timeout(200)
-        await tap(f'a:{prim}'); await pg.wait_for_selector(f'.fin-det[data-det="a:{prim}"] .fin-chart')
-        assert 'Latest' in await pg.text_content(f'.fin-det[data-det="a:{prim}"]'), 'an account unfolds with its chart and latest transactions'
-        await ev(f"document.querySelector('.fin-det [data-act=\"fin-acct-ledger\"][data-id=\"{prim}\"]').click()"); await pg.wait_for_timeout(500)
+        n_before = await ev("[...document.querySelectorAll('.fin-leaf')].map(c => c.style.top).join()")
+        await tap(f'a:{prim}'); await pg.wait_for_selector(f'#fin-pop[data-pop="a:{prim}"] .fin-chart')
+        assert await ev("document.getElementById('fin-pop').classList.contains('enter')"), 'it pops out with its animation'
+        assert 'Latest' in await pg.text_content('#fin-pop'), 'an account pops out with its chart and latest transactions'
+        assert await ev("[...document.querySelectorAll('.fin-leaf')].map(c => c.style.top).join()") == n_before, 'nothing on the canvas moves'
+        # the canvas stays usable with it open: another card swaps it, a drag still moves the canvas
+        other = await ev(f"[...document.querySelectorAll('.fin-leaf[data-node^=\"a:\"]')].map(c => c.dataset.node).find(n => n !== 'a:{prim}')")
+        await tap(other); await pg.wait_for_selector(f'#fin-pop[data-pop="{other}"]'); await tap(f'a:{prim}'); await pg.wait_for_selector(f'#fin-pop[data-pop="a:{prim}"]')
+        await ev(f"document.querySelector('#fin-pop [data-act=\"fin-acct-ledger\"][data-id=\"{prim}\"]').click()"); await pg.wait_for_timeout(500)
         assert await ev(f"{U}.l.acct") == prim and await opened('ledger'), 'and opens all its transactions as a room'
-        await pg.keyboard.press('Escape'); await pg.wait_for_timeout(200); assert not await opened('ledger'), 'Esc closes the last opened'
-        await pg.keyboard.press('Escape'); await pg.wait_for_timeout(200); assert not await ev(f"!!document.querySelector('.fin-det[data-det=\"a:{prim}\"]')")
+        await pg.keyboard.press('Escape'); await pg.wait_for_timeout(300); assert not await ev("!!document.getElementById('fin-pop')"), 'Esc puts the pop-out away first'
+        await pg.keyboard.press('Escape'); await pg.wait_for_timeout(200); assert not await opened('ledger'), 'then closes the last part opened'
         # fold a room, show one room, zoom, move, fit, full screen
         n0 = await ev("document.querySelectorAll('.fin-leaf').length")
         await ev("window.__FIN.show('exp')"); await pg.click('.fin-room[data-room="exp"] [data-act="fin-cv-tog"]'); await pg.wait_for_timeout(250)

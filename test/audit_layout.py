@@ -84,13 +84,16 @@ async def main():
             found = await ev(CHECK)
             if found: problems[f'{w}px canvas'] = found
             if w in (1400, 390): await pg.screenshot(path=os.path.join(HERE, 'shots', f'audit-{w}-canvas.png'))
-            # cards unfolded in place: an account, a goal, a category, a source of money, an instalment
+            # cards popped out beside themselves: an account, a goal, a category, a source of money, an instalment
             ids = await ev("['.fin-leaf[data-node^=\"a:\"]', '.fin-leaf.goal', '.fin-leaf[data-node^=\"c:\"]', '.fin-leaf[data-node=\"src:save\"]', '.fin-leaf[data-node^=\"i:\"]'].map(q => (document.querySelector(q) || {}).dataset?.node).filter(Boolean)")
-            for nid in ids: await ev(f"document.querySelector('[data-node=\"{nid}\"]') && window.__AR.UI.fin.cvOpen.push('{nid}')")
-            await ev("window.__FIN.open('map')"); await pg.wait_for_timeout(700)
-            found = await ev(CHECK)
-            if found: problems[f'{w}px details {ids}'] = found
-            if w in (1400, 390): await ev(f"window.__FIN.show('{ids[0]}')"); await pg.wait_for_timeout(200); await pg.screenshot(path=os.path.join(HERE, 'shots', f'audit-{w}-details.png'))
+            for nid in ids:
+                await ev(f"window.__FIN.show('{nid}')"); await ev(f"document.querySelector('[data-act=\"fin-cv-det\"][data-id=\"{nid}\"]') ? window.__AR.UI.fin.pop = '{nid}' : 0"); await ev("window.__FIN.open('map')"); await pg.wait_for_timeout(600)
+                found = await ev(CHECK)
+                inside = await ev("(() => { const p = document.getElementById('fin-pop'), s = document.querySelector('.fin-cv-stage'); if (!p) return 'no pop-out'; const a = p.getBoundingClientRect(), b = s.getBoundingClientRect(); return a.left >= b.left - 1 && a.right <= b.right + 1 && a.top >= b.top - 1 && a.bottom <= b.bottom + 1 ? '' : 'pop-out outside the canvas window'; })()")
+                if inside: found = (found or []) + [inside]
+                if found: problems[f'{w}px pop-out {nid}'] = found
+                if w in (1400, 390) and nid == ids[0]: await pg.screenshot(path=os.path.join(HERE, 'shots', f'audit-{w}-popout.png'))
+            await ev("window.__AR.UI.fin.pop = null")
             # every part, opened as a room on the canvas
             for s in SECS:
                 await ev("window.__AR.UI.fin.cvOpen = []"); await ev(f"window.__FIN.open('{s}')"); await pg.wait_for_timeout(600)

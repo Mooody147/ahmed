@@ -427,7 +427,7 @@ HOOKS.afterRender.push(() => {
   FIN_W._chain = FIN_W._self ? (FIN_W._chain || 0) + 1 : 0; FIN_W._self = false;
   if (FIN_W._chain > 3) return;
   let again = false;
-  document.querySelectorAll('.fin-chart[data-key]:not([data-key=""])').forEach(svg => { const w = Math.round(svg.getBoundingClientRect().width / (svg.closest('#fin-cv-world') ? UI.fin.cv.k || 1 : 1)); /* drawn on the canvas: its own size, not the zoomed one */ if (w > 120 && Math.abs(w - +svg.dataset.w) > 24) { FIN_W[svg.dataset.key] = Math.max(300, w); again = true; } });
+  document.querySelectorAll('.fin-chart[data-key]:not([data-key=""])').forEach(svg => { const par = svg.parentElement, ps = par && getComputedStyle(par), w = par ? Math.round(par.clientWidth - parseFloat(ps.paddingLeft) - parseFloat(ps.paddingRight)) : Math.round(svg.getBoundingClientRect().width); /* the box it sits in: its real width, whatever the zoom or an opening animation */ if (w > 120 && Math.abs(w - +svg.dataset.w) > 24) { FIN_W[svg.dataset.key] = Math.max(300, w); again = true; } });
   if (again) { FIN_W._self = true; scheduleRender(); }
 
 });

@@ -130,7 +130,7 @@ function finCvLayout(rooms, plan, n) {
   let col = Array(COLS).fill(0);
   const grid = (list, x0, y, w) => {   // cards in rows; an opened card's details right under its row
     const per = Math.max(1, Math.floor((w + CG) / (CW + CG))); let row = [];
-    const flush = () => { if (!row.length) return; y += CH + CG; for (const c of row) if (finIsOpen(c.id) && !c.cls.includes('tool') && !c.cls.includes('more')) { const h = finDetH(c.id, 300); dets.push({ id: c.id, x: x0, y, w, h }); y += h + CG; } row = []; };
+    const flush = () => { if (!row.length) return; y += CH + CG; row = []; };
     for (const c of list) {
       if (c.type === 'branch') { flush(); subs.push({ id: c.id, label: `${c.icon} ${c.label}`, sum: c.sum, x: x0, y, w }); y += 34; grid(c.children, x0, y, w).forEach(() => {}); y = subs.y2; continue; }
       c.x = x0 + row.length * (CW + CG); c.y = y; c.w = CW; c.h = CH; cards.push(c); row.push(c); if (row.length === per) flush();
@@ -165,13 +165,11 @@ function finGoalsLayout(r, plan, n, x0, y, iw, cards, dets, edges, subs, grid) {
   const items = plan.items.map(it => {
     const c = { id: 'b:' + it.id, type: 'leaf', kind: 'goal', label: it.name + (it.focus ? ' ★' : ''), val: fk(it.price), sub: `${FIN_REC[it.rec][0]}${it.ready ? ' · ' + fmon(it.ready) : ''}${it.monthly ? ' · ' + fk(it.monthly) + '/mo' : ''}`, cls: 'goal ' + (it.late ? 'warn' : it.rec === 'not_yet' ? 'muted' : ''), x: ix, y: iy, w: IW, h: IH, it, act: { act: 'fin-cv-det', id: 'b:' + it.id } };
     cards.push(c); iy += IH + 14;
-    if (finIsOpen(c.id)) { const h = finDetH(c.id, 360); dets.push({ id: c.id, x: ix, y: iy - 6, w: IW, h }); iy += h + 8; }
     return c;
   });
   if (!items.length) { const c = { id: 'b:none', type: 'leaf', label: 'Nothing to buy yet', val: '', sub: 'press ＋ above, or tell the canvas “I want a laptop for 40,000 by March”', cls: 'muted', x: ix, y: iy, w: IW, h: IH, act: { act: 'fin-cv-add', id: 'buy' } }; cards.push(c); iy += IH + 14; }
   const blockH = Math.max(iy - top, srcs.length * (SH + 16)), step = blockH / srcs.length;
-  srcs.forEach(([id, icon, label, val, sub], i) => { const c = { id, type: 'leaf', kind: 'src', icon, label, val, sub, cls: 'src', x: x0, y: top + i * step + (step - SH) / 2, w: SW, h: SH, act: { act: 'fin-cv-det', id } }; cards.push(c);
-    if (finIsOpen(id)) { const h = finDetH(id, 220); dets.push({ id, x: x0 + SW + 24, y: c.y, w: Math.min(420, ix - x0 - SW - 60), h }); } });
+  srcs.forEach(([id, icon, label, val, sub], i) => { const c = { id, type: 'leaf', kind: 'src', icon, label, val, sub, cls: 'src', x: x0, y: top + i * step + (step - SH) / 2, w: SW, h: SH, act: { act: 'fin-cv-det', id } }; cards.push(c); });
   const from = it => it.rec === 'cash' ? ['src:cash'] : it.rec === 'save' ? (it.fromCash ? ['src:cash', 'src:save'] : ['src:save']) : it.rec === 'card_full' || it.rec === 'card_plan' ? (it.fromCash ? ['src:cash', 'src:card'] : ['src:card']) : it.rec === 'halan' ? ['src:halan'] : [];
   for (const c of items) for (const s of from(c.it)) { const a = cards.find(x => x.id === s); if (a) edges.push({ x0: a.x + a.w, y0: a.y + a.h / 2, x1: c.x, y1: c.y + c.h / 2, cls: 'fin-link ' + FIN_REC[c.it.rec][1], title: `${a.label} → ${c.it.name}` }); }
   y = top + blockH + 22;
@@ -279,11 +277,49 @@ function finDetBody(id, plan, n) {
   try { return finCardDetail(id) || '<p class="small muted">Nothing more to show.</p>'; } catch (e) { console.error(e); return `<p class="small muted">Could not show this (${esc(e.message || String(e))}).</p>`; }
 }
 
+/* --- a card's details pop out beside it: the canvas stays where it is, and stays usable --- */
+UI.fin.pop = null;
+function finPopHTML() {
+  const id = UI.fin.pop, c = id && UI.fin.cvCards && UI.fin.cvCards.get(id); if (!c) return '';
+  const body = finDetBody(id, finBuyPlan(), finNow()), enter = Date.now() - (UI.fin.popAt || 0) < 450 ? ' enter' : '';
+  return `<div class="fin-pop${enter}" id="fin-pop" data-pop="${esc(id)}" role="dialog" aria-label="${esc(c.label)}" style="--h:${c.hue ?? 200}">
+    <div class="fin-pop-h">${c.icon ? `<span class="fin-pop-ic" aria-hidden="true">${c.icon}</span>` : ''}<div class="fin-pop-t"><b>${esc(c.label)}</b>${c.sub ? `<small>${esc(c.sub)}</small>` : ''}</div>${c.val ? `<span class="fin-pop-v num">${esc(c.val)}</span>` : ''}<button class="icon-btn" data-act="fin-pop-x" title="Close (Esc)" aria-label="Close">${I.x}</button></div>
+    <div class="fin-pop-b">${body}</div></div>`;
+}
+// beside its card (right, else left, else below), always inside the canvas window; a little pointer shows which card
+function finPopPlace() {
+  const el = $('#fin-pop'), vp = $('#fin-cv-vp'), b = UI.fin.pop && UI.fin.cvPos && UI.fin.cvPos.get(UI.fin.pop); if (!el || !vp || !b) return;
+  const cv = UI.fin.cv, W = vp.clientWidth, H = vp.clientHeight, w = el.offsetWidth, h = el.offsetHeight, gap = 16;
+  const ax = cv.x + b.x * cv.k, ay = cv.y + b.y * cv.k, aw = b.w * cv.k, ah = b.h * cv.k, acx = ax + aw / 2, acy = ay + ah / 2;
+  let side, x, y;
+  if (ax + aw + gap + w <= W - 8) { side = 'r'; x = ax + aw + gap; }
+  else if (ax - gap - w >= 8) { side = 'l'; x = ax - gap - w; }
+  else side = ay + ah + gap + h <= H - 8 || ay < H / 2 ? 'b' : 't';
+  if (side === 'r' || side === 'l') y = Math.max(8, Math.min(H - h - 8, acy - h / 2));
+  else { x = Math.max(8, Math.min(W - w - 8, acx - w / 2)); y = side === 'b' ? Math.min(H - h - 8, ay + ah + gap) : Math.max(8, ay - gap - h); }
+  el.classList.remove('r', 'l', 'b', 't'); el.classList.add(side);
+  const py = Math.max(18, Math.min(h - 18, acy - y)), px = Math.max(18, Math.min(w - 18, acx - x));
+  el.style.left = Math.round(x) + 'px'; el.style.top = Math.round(Math.max(8, y)) + 'px';
+  el.style.setProperty('--py', py + 'px'); el.style.setProperty('--px', px + 'px');
+  el.style.transformOrigin = side === 'r' ? `0 ${py}px` : side === 'l' ? `100% ${py}px` : side === 'b' ? `${px}px 0` : `${px}px 100%`;
+  // the pointer hides when its card has left the window
+  el.classList.toggle('far', acx < 0 || acx > W || acy < 0 || acy > H);
+}
+function finPopOpen(id) { UI.fin.pop = id; UI.fin.popAt = Date.now(); render(); }
+function finPopClose() {
+  const el = $('#fin-pop'); if (!el || !UI.fin.pop) { UI.fin.pop = null; render(); return; }
+  const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  el.classList.remove('enter'); el.classList.add('leave');
+  setTimeout(() => { UI.fin.pop = null; render(); }, reduce ? 0 : 170);
+}
+// a tap on an empty part of the canvas puts the pop-out away
+document.addEventListener('click', e => { if (UI.view !== 'finance' || !UI.fin.pop || !e.target.closest) return; if (e.target.closest('#fin-cv-vp') && !e.target.closest('.fin-cvn, .fin-det, button, a, input, select, textarea, label')) finPopClose(); });
+
 /* --- drawing --- */
 const finCvAttrs = a => a ? Object.entries(a).map(([k, v]) => `data-${k}="${esc(v)}"`).join(' ') : '';
 function finCvCard(c, hue) {
   const st = `left:${c.x}px;top:${c.y}px;width:${c.w}px;height:${c.h}px;--h:${hue ?? 200}`;
-  const tool = c.cls.includes('tool'), open = finIsOpen(c.id) || (tool && c.act && finSecOpen(c.act.s)) ? ' sel' : '', fresh = Date.now() < UI.fin.flash.until && UI.fin.flash.ids.has(c.id) ? ' fresh' : '';
+  const tool = c.cls.includes('tool'), open = UI.fin.pop === c.id || (tool && c.act && finSecOpen(c.act.s)) ? ' sel' : '', fresh = Date.now() < UI.fin.flash.until && UI.fin.flash.ids.has(c.id) ? ' fresh' : '';
   const act = tool || c.cls.includes('more') ? { act: 'fin-cv-sec', s: (c.act && c.act.s) || 'ledger' } : c.act && c.act.act === 'fin-cv-add' ? c.act : { act: 'fin-cv-det', id: c.id };
   const editable = typeof finCvSpec === 'function' && !tool && !c.cls.includes('more') && !!finCvSpec(c.id);
   return `<div class="mnode fin-cvn fin-leaf ${c.cls}${open}${fresh}${editable ? ' editable' : ''}" role="button" tabindex="0" aria-expanded="${!!open}" ${finCvAttrs(act)} data-node="${esc(c.id)}" title="${esc(c.label)}${c.val ? ' — ' + esc(c.val) : ''}${c.sub ? '\n' + esc(c.sub) : ''}" style="${st}">
@@ -305,7 +341,8 @@ function finCvRoom(r) {
 function finCvBoard() {
   const cv = UI.fin.cv, root = finCvModel(), n = finNow(), plan = finBuyPlan(), rooms = finCvRooms(root), L = finCvLayout(rooms, plan, n);
   const hueOf = new Map(); for (const r of rooms) { const walk = k => { hueOf.set(k.id, r.hue); (k.children || []).forEach(walk); }; if (r.node) walk(r.node); }
-  UI.fin.cvSize = { w: L.w, h: L.h };
+  UI.fin.cvSize = { w: L.w, h: L.h }; UI.fin.cvCards = new Map(L.cards.map(c => [c.id, c]));
+  if (UI.fin.pop && !UI.fin.cvCards.has(UI.fin.pop)) UI.fin.pop = null;
   const path = e => { const mx = (e.x0 + e.x1) / 2; return `M${e.x0},${e.y0} C${mx},${e.y0} ${mx},${e.y1} ${e.x1},${e.y1}`; };
   return `<div class="fin-cv-vp" id="fin-cv-vp"><div class="fin-cv-world" id="fin-cv-world" style="width:${L.w}px;height:${L.h}px;transform:translate(${cv.x}px,${cv.y}px) scale(${cv.k})">
       ${L.rooms.map(finCvRoom).join('')}
@@ -321,9 +358,9 @@ VIEW_FN.finance = () => {
   const cv = UI.fin.cv;
   // full screen: the canvas alone — no title, no description, no talk box; a few controls float in its corner
   if (cv.full) return `<div class="wrap fin fin-canvas-page"><section class="fin-cvwrap full" id="fin-s-map" aria-label="Money canvas, full screen">
-    <div class="fin-cv-stage">${finCvBoard()}${typeof finCvEditorHTML === 'function' ? finCvEditorHTML() : ''}
+    <div class="fin-cv-stage">${finCvBoard()}${finPopHTML()}${typeof finCvEditorHTML === 'function' ? finCvEditorHTML() : ''}
       <div class="fin-cv-float" role="toolbar" aria-label="Canvas controls">
-        ${UI.fin.cvOpen.length ? `<button class="btn sm" data-act="fin-cv-close-all" title="Fold every opened detail and part">Close details</button>` : ''}
+        ${UI.fin.cvOpen.length || UI.fin.pop ? `<button class="btn sm" data-act="fin-cv-close-all" title="Fold every opened detail and part">Close details</button>` : ''}
         <div class="seg zoom" role="group" aria-label="Zoom"><button data-act="fin-cv-zoom" data-v="out" aria-label="Zoom out">−</button><button data-act="fin-cv-fit" title="Fit to the screen"><span id="fin-cv-z">${Math.round(cv.k * 100)}%</span></button><button data-act="fin-cv-zoom" data-v="in" aria-label="Zoom in">+</button></div>
         <button class="btn sm" data-act="fin-cv-full" aria-pressed="true" title="Back (Esc)">✕ Exit full screen</button>
       </div></div>
@@ -333,21 +370,23 @@ VIEW_FN.finance = () => {
   <section class="fin-cvwrap ${cv.full ? 'full' : ''}" id="fin-s-map" aria-label="Money canvas">
     <div class="fin-cv-bar"><h1>Money</h1>${finTabs()}<span class="small muted fin-cv-hint">Tap a card for its details · a room’s title opens it fully · ✎ to edit · or tell the canvas below</span><span class="spacer"></span>
       ${cv.focus ? `<button class="btn sm" data-act="fin-cv-focus" data-id="">Show everything</button>` : ''}
-      ${UI.fin.cvOpen.length ? `<button class="btn sm" data-act="fin-cv-close-all" title="Fold every opened detail and part">Close details</button>` : ''}
+      ${UI.fin.cvOpen.length || UI.fin.pop ? `<button class="btn sm" data-act="fin-cv-close-all" title="Fold every opened detail and part">Close details</button>` : ''}
       <button class="btn sm" data-act="fin-new-tx" title="Add a transaction by hand">${I.plus} Transaction</button>
       <button class="btn sm" data-act="fin-cv-all" data-v="open" title="Unfold every room">Unfold all</button><button class="btn sm" data-act="fin-cv-all" data-v="fold" title="Fold every room to its title">Fold all</button>
       <div class="seg zoom" role="group" aria-label="Zoom"><button data-act="fin-cv-zoom" data-v="out" aria-label="Zoom out">−</button><button data-act="fin-cv-fit" title="Fit to the screen"><span id="fin-cv-z">${Math.round(cv.k * 100)}%</span></button><button data-act="fin-cv-zoom" data-v="in" aria-label="Zoom in">+</button></div>
       <button class="btn sm" data-act="fin-cv-full" aria-pressed="${cv.full}" title="${cv.full ? 'Back (Esc)' : 'Full screen'}">${cv.full ? '✕ Close' : '⤢ Full screen'}</button></div>
-    <div class="fin-cv-stage">${finCvBoard()}${typeof finCvEditorHTML === 'function' ? finCvEditorHTML() : ''}</div>
+    <div class="fin-cv-stage">${finCvBoard()}${finPopHTML()}${typeof finCvEditorHTML === 'function' ? finCvEditorHTML() : ''}</div>
     ${typeof finTalkHTML === 'function' ? finTalkHTML() : ''}
   </section>
 </div>`;
 };
 
 /* --- moving around --- */
+function finCvGlide() { const w = $('#fin-cv-world'); if (!w) return; w.classList.add('glide'); clearTimeout(UI.fin.glideT); UI.fin.glideT = setTimeout(() => { const x = $('#fin-cv-world'); if (x) x.classList.remove('glide'); finPopPlace(); }, 420); }
 function finCvApply() {
   const w = $('#fin-cv-world'), cv = UI.fin.cv; if (w) w.style.transform = `translate(${cv.x}px,${cv.y}px) scale(${cv.k})`;
   const z = $('#fin-cv-z'); if (z) z.textContent = Math.round(cv.k * 100) + '%';
+  finPopPlace();
   if (typeof finCvEditorPlace === 'function') finCvEditorPlace();
 }
 // on opening: as wide as the screen allows (readable), from the top; Fit shows all of it
@@ -370,7 +409,7 @@ function finCvGoto(id, onlyIfHidden) {
   const box = d ? { x: Math.min(b.x, d.x), y: b.y, w: Math.max(b.x + b.w, d.x + d.w) - Math.min(b.x, d.x), h: d.y + d.h - b.y } : b;
   const W = vp.clientWidth, H = vp.clientHeight, k = Math.max(cv.k, Math.min(0.75, (W - 40) / box.w));
   if (onlyIfHidden) { const sx = cv.x + box.x * cv.k, sy = cv.y + box.y * cv.k; if (sx >= 0 && sy >= 0 && sx + box.w * cv.k <= W && sy + Math.min(box.h, H / cv.k * 0.9) * cv.k <= H) return; }
-  cv.k = k; cv.x = box.w * k < W ? W / 2 - (box.x + box.w / 2) * k : 20 - box.x * k; cv.y = box.h * k < H - 40 ? H / 2 - (box.y + box.h / 2) * k : 20 - box.y * k; cv.user = true; finCvApply();
+  finCvGlide(); cv.k = k; cv.x = box.w * k < W ? W / 2 - (box.x + box.w / 2) * k : 20 - box.x * k; cv.y = box.h * k < H - 40 ? H / 2 - (box.y + box.h / 2) * k : 20 - box.y * k; cv.user = true; finCvApply();
 }
 const FCV = { ptrs: new Map(), start: null, pinch: null, moved: false };
 document.addEventListener('pointerdown', e => {
@@ -405,7 +444,7 @@ document.addEventListener('wheel', e => {
 }, { passive: false });
 document.addEventListener('keydown', e => {
   if (UI.view !== 'finance') return;
-  if (e.key === 'Escape') { if (UI.drawer || !$('#modal').hidden) return; if (UI.fin.cvOpen.length) { UI.fin.cvOpen = UI.fin.cvOpen.slice(0, -1); render(); return; } if (UI.fin.cv.full) { finCvFull(false); return; } }
+  if (e.key === 'Escape') { if (UI.drawer || !$('#modal').hidden) return; if (UI.fin.pop) { finPopClose(); return; } if (UI.fin.cvOpen.length) { UI.fin.cvOpen = UI.fin.cvOpen.slice(0, -1); render(); return; } if (UI.fin.cv.full) { finCvFull(false); return; } }
   const br = e.target.closest && e.target.closest('.fin-cvn[role="button"]'); if (br && (e.key === 'Enter' || e.key === ' ') && e.target === br) { e.preventDefault(); br.click(); }
 });
 function finCvFull(on) { UI.fin.cv.full = on; UI.fin.cv.fitted = false; document.documentElement.classList.toggle('fin-cv-lock', on); render(); }
@@ -427,6 +466,7 @@ HOOKS.afterRender.push(() => {
   UI.fin.detChain = UI.fin.detSelf ? (UI.fin.detChain || 0) + 1 : 0; UI.fin.detSelf = false;
   if (UI.fin.detChain <= 4) { let again = false; document.querySelectorAll('#fin-cv-world .fin-det').forEach(d => { const h = d.offsetHeight; if (Math.abs(h - (UI.fin.detH[d.dataset.det] || 0)) > 3) { UI.fin.detH[d.dataset.det] = h; again = true; } }); if (again) { UI.fin.detSelf = true; scheduleRender(); return; } }
   const w = UI.fin.cvSize ? UI.fin.cvSize.w : 0; if (!UI.fin.cv.fitted || (!UI.fin.cv.user && w !== UI.fin.cv.sw)) finCvFit(); UI.fin.cv.sw = w;
+  finPopPlace();
   if (UI.fin.goto) { const id = UI.fin.goto; UI.fin.goto = null; finCvGoto(id, true); }
   if (UI.fin.flash.until > Date.now()) { clearTimeout(UI.fin.flashT); UI.fin.flashT = setTimeout(() => { if (UI.view === 'finance') document.querySelectorAll('.fin-cvn.fresh, .fin-room.fresh').forEach(n => n.classList.remove('fresh')); }, UI.fin.flash.until - Date.now()); }
 });
@@ -434,18 +474,19 @@ HOOKS.afterRender.push(() => {
 Object.assign(ACT, {
   'fin-sec': el => { UI.fin.sel.clear(); finOpen(el.dataset.s); },
   'fin-cv-sec': el => { const k = el.dataset.s; if (k === 'buy') return finOpen('buy'); if (finSetOpen('sec:' + k)) UI.fin.goto = 'sec:' + k; render(); },
-  'fin-cv-det': el => { const id = el.dataset.id; if (finSetOpen(id)) UI.fin.goto = id; render(); },
-  'fin-cv-close-all': () => { UI.fin.cvOpen = []; render(); },
+  'fin-cv-det': el => { const id = el.dataset.id; if (UI.fin.pop === id) finPopClose(); else finPopOpen(id); },
+  'fin-pop-x': () => finPopClose(),
+  'fin-cv-close-all': () => { UI.fin.cvOpen = []; UI.fin.pop = null; render(); },
   'fin-panel-x': () => { UI.fin.cvOpen = UI.fin.cvOpen.filter(x => !x.startsWith('sec:')); render(); },
   'fin-tab': el => { if (el.dataset.v === 'settings') finOpen('settings'); else { UI.fin.tab = 'canvas'; UI.fin.cv.fitted = false; render(); } },
-  'fin-buy-edit': el => { if (typeof finCvEditOpen === 'function') { finSetOpen('b:' + el.dataset.id, true); finCvEditOpen('b:' + el.dataset.id); } },
+  'fin-buy-edit': el => { if (typeof finCvEditOpen === 'function') finCvEditOpen('b:' + el.dataset.id); },
   'fin-buy-star': el => { finSave(q => { const b = (q.buys || []).find(x => x.id === el.dataset.id); if (b) { b.focus = !b.focus; if (b.focus) q.buyFocus = true; } }); render(); },
   'fin-cat-ledger': el => { UI.fin.l = { ...UI.fin.l, cat: el.dataset.k, acct: '', ids: null, page: 0 }; finOpen('ledger'); },
   'fin-cv-tog': (el, e) => { e && e.stopPropagation && e.stopPropagation(); const id = el.dataset.id, c = UI.fin.cvCol; c.has(id) ? c.delete(id) : c.add(id); finCvKeep(); render(); },
   'fin-cv-all': el => { const c = UI.fin.cvCol; c.clear(); if (el.dataset.v === 'fold') { finCvRooms(finCvModel()).forEach(r => { if (r.kind !== 'sec') c.add(r.id); }); UI.fin.cvOpen = []; } finCvKeep(); UI.fin.cv.fitted = false; UI.fin.cv.user = false; render(); },
   'fin-cv-focus': el => { const id = el.dataset.id || null; UI.fin.cv.focus = UI.fin.cv.focus === id ? null : id; if (id) UI.fin.cvCol.delete(id); UI.fin.cv.fitted = false; UI.fin.cv.user = false; render(); },
-  'fin-cv-zoom': el => finCvZoomAt(el.dataset.v === 'in' ? 1.25 : 0.8),
-  'fin-cv-fit': () => { UI.fin.cv.user = false; finCvFit(true); },
+  'fin-cv-zoom': el => { finCvGlide(); finCvZoomAt(el.dataset.v === 'in' ? 1.25 : 0.8); },
+  'fin-cv-fit': () => { UI.fin.cv.user = false; finCvGlide(); finCvFit(true); },
   'fin-cv-full': () => finCvFull(!UI.fin.cv.full),
   'fin-cv-goto': el => { const id = el.dataset.id; UI.fin.flash = { ids: new Set([id]), until: Date.now() + 2500 }; render(); finCvGoto(id); },
 });

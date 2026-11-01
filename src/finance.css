@@ -348,3 +348,39 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 .fin-cvwrap.full .fin-cv-stage { flex: 1; height: auto; border-radius: 0; }
 .fin-cvwrap.full .fin-cv-vp { border-radius: 0; border: 0; }
 .fin-cv-float { position: absolute; top: max(10px, env(safe-area-inset-top, 0px)); right: max(10px, env(safe-area-inset-right, 0px)); z-index: 8; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; padding: 6px; border-radius: 14px; background: color-mix(in srgb, var(--surface) 88%, transparent); box-shadow: var(--elev-2); backdrop-filter: blur(6px); }
+
+/* ---------- a card's details pop out beside it ---------- */
+.fin-pop { position: absolute; left: 0; top: 0; z-index: 6; width: min(460px, calc(100% - 16px)); max-height: calc(100% - 16px); box-sizing: border-box; display: flex; flex-direction: column;
+  background: var(--surface); border: 1px solid color-mix(in srgb, hsl(var(--h) 50% 50%) 25%, var(--line)); border-radius: 20px;
+  box-shadow: 0 28px 64px -24px rgba(20, 10, 30, .45), 0 10px 24px -12px rgba(20, 10, 30, .25), 0 0 0 1px rgba(255,255,255,.04) inset; }
+.fin-pop::before { content: ""; position: absolute; width: 14px; height: 14px; background: var(--surface); border: inherit; border-width: 0; transform: rotate(45deg); }
+.fin-pop.r::before { left: -8px; top: calc(var(--py) - 7px); border-left-width: 1px; border-bottom-width: 1px; border-style: solid; }
+.fin-pop.l::before { right: -8px; top: calc(var(--py) - 7px); border-right-width: 1px; border-top-width: 1px; border-style: solid; }
+.fin-pop.b::before { top: -8px; left: calc(var(--px) - 7px); border-left-width: 1px; border-top-width: 1px; border-style: solid; }
+.fin-pop.t::before { bottom: -8px; left: calc(var(--px) - 7px); border-right-width: 1px; border-bottom-width: 1px; border-style: solid; }
+.fin-pop.far::before { display: none; }
+.fin-pop-h { display: flex; align-items: center; gap: 10px; padding: 12px 10px 10px 16px; border-bottom: 1px solid var(--line-2); border-radius: 20px 20px 0 0;
+  background: linear-gradient(180deg, color-mix(in srgb, hsl(var(--h) 60% 92%) 55%, var(--surface)), var(--surface)); }
+.fin-pop-ic { font-size: 22px; }
+.fin-pop-t { flex: 1; min-width: 0; }
+.fin-pop-t b { display: block; font-family: var(--f-display); font-size: 17px; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fin-pop-t small { display: block; color: var(--ink-3); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fin-pop-v { font-weight: 800; font-size: 16px; white-space: nowrap; }
+.fin-pop-b { overflow: auto; padding: 12px 16px 16px; display: grid; gap: 10px; overscroll-behavior: contain; }
+.fin-pop-b h4 { margin: 4px 0 0; font-size: 13px; color: var(--ink-2); }
+.fin-cv-world.glide { transition: transform .4s cubic-bezier(.2, .8, .2, 1); }
+.fin-leaf.sel { z-index: 3; }
+@media (prefers-reduced-motion: no-preference) {
+  .fin-pop.enter { animation: finPopIn .42s cubic-bezier(.2, .95, .25, 1.12) both; }
+  .fin-pop.r.enter { --dx: -18px; --dy: 0px; } .fin-pop.l.enter { --dx: 18px; --dy: 0px; } .fin-pop.b.enter { --dx: 0px; --dy: -14px; } .fin-pop.t.enter { --dx: 0px; --dy: 14px; }
+  .fin-pop.enter .fin-pop-b > * { animation: finPopItem .5s cubic-bezier(.2, .8, .2, 1) both; }
+  .fin-pop.enter .fin-pop-b > :nth-child(2) { animation-delay: .05s; } .fin-pop.enter .fin-pop-b > :nth-child(3) { animation-delay: .1s; }
+  .fin-pop.enter .fin-pop-b > :nth-child(4) { animation-delay: .15s; } .fin-pop.enter .fin-pop-b > :nth-child(n+5) { animation-delay: .2s; }
+  .fin-pop.leave { animation: finPopOut .17s ease-in both; }
+  .fin-leaf.sel { animation: finSelPulse .9s ease-out 1; }
+  @keyframes finPopIn { 0% { opacity: 0; transform: translate(var(--dx, 0), var(--dy, 0)) scale(.72); filter: blur(3px); } 55% { opacity: 1; filter: none; } 100% { opacity: 1; transform: none; filter: none; } }
+  @keyframes finPopItem { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  @keyframes finPopOut { to { opacity: 0; transform: scale(.88); filter: blur(2px); } }
+  @keyframes finSelPulse { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 55%, transparent), var(--elev-2); } 100% { box-shadow: 0 0 0 12px transparent, 0 0 0 3px var(--accent), var(--elev-2); } }
+}
+@media (max-width: 700px) { .fin-pop { width: calc(100% - 16px); } }
