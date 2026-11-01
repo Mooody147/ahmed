@@ -147,7 +147,7 @@ a { color: var(--wine); }
 [dir="rtl"] .today-strip::before { left: auto; right: 0; }
 
 /* ---------- to-do canvas: emails to add to the work server (notices, not tasks) ---------- */
-.srv-notes { position: absolute; top: 58px; right: 12px; z-index: 6; width: min(360px, calc(100% - 90px)); display: grid; gap: 6px; padding: 8px; border-radius: 14px;
+.srv-notes { position: absolute; top: 58px; right: 12px; z-index: 4; width: min(360px, calc(100% - 90px)); display: grid; gap: 6px; padding: 8px; border-radius: 14px;
   background: color-mix(in srgb, var(--surface) 94%, transparent); border: 1px solid var(--line); box-shadow: var(--elev-2); }
 .srv-notes.folded { width: auto; padding: 0; background: none; border: 0; box-shadow: none; }
 .srv-h { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 0 2px; }

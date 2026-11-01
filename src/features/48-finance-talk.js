@@ -140,6 +140,7 @@ async function finTalkClaude(m, text, imgs, about) {
   // about one card: only what concerns that card is applied; the rest is listed
   if (about) { const out = finAboutScope(about, P, r); if (out.length) m.notes.push('Kept to ' + about.label + ' — not changed: ' + out.join(', ') + '.'); }
   m.done.push(...finDraftApply(P, { text, files: imgs }));
+  r._balAccts = new Set((P.balances || []).filter(b => b.account).map(b => b.account + '|' + b.date));   // a balance given in the same message already includes what it mentions
   m.done.push(...finTalkExtras(r));
   // Claude was told not to ask; anything it still asked is kept as a note, never as a stop
   m.notes.push(...P.questions.map(q => q.text), ...(Array.isArray(r.notes) ? r.notes.filter(x => typeof x === 'string').slice(0, 8) : []));
@@ -162,7 +163,7 @@ function finTalkExtras(r) {
     const date = FIN.validDate(x.date) ? x.date : today, desc = String(x.desc || 'From what you told the canvas').slice(0, 140);
     if (finTx().some(t => t.acct === acct && t.date === date && Math.abs(t.amount - amount) < 0.01 && FIN.norm(t.desc || '') === FIN.norm(desc))) continue;
     const cat = finCat(x.category) ? x.category : FIN.classify({ desc, amount }, { rules: finP().rules, cats: finCats(), parties: finP().parties, holdings: finP().holdings }).cat;
-    add.push({ id: E.uid('tx'), acct, date, desc, amount, currency: (finAcct(acct) || {}).currency || finP().base, cat, catSrc: 'claude', manual: true, flags: ['from_talk'], src: { f: '', manual: true, talk: true }, createdAt: at, hist: [{ at, f: 'created', to: 'from what you told the canvas', why: desc }] });
+    add.push({ id: E.uid('tx'), acct, date, desc, amount, currency: (finAcct(acct) || {}).currency || finP().base, cat, catSrc: 'claude', manual: true, flags: ['from_talk', ...(r._balAccts && r._balAccts.has(acct + '|' + date) ? ['in_balance'] : [])], src: { f: '', manual: true, talk: true }, createdAt: at, hist: [{ at, f: 'created', to: 'from what you told the canvas', why: desc }] });
     done.push(`${desc} ${fm(amount)}`);
   }
   if (add.length) finWrite(add);

@@ -23,6 +23,8 @@ let g; Object.defineProperty(window, '__mockAnswer', { configurable: true, get()
     const ctx = JSON.parse(p.split('CURRENT RECORDS: ')[1].split('\\nRead the message')[0]), msg = p.split('OWNER’S MESSAGE:\\n')[1] || '';
     if (/\\?/.test(msg)) return { reply: 'You spent EGP 4,250 on groceries & food in September.' };
     if (/show me my card/i.test(msg)) return { view: { open: 'credit' }, reply: 'Here is your card.' };
+    if (/bank app screen/i.test(msg)) return { balances: [{ account: null, newAccount: { name: 'NBE', kind: 'current', number: 'EG12 0003 0004 0000 0000 0000 0120' }, date: ctx.today, balance: 7000, available: 6500, evidence: 'screenshot: Available Balance 6,500 · equivalent 7,000' }], reply: 'Read your balance.' };
+    if (/paid 50 for parking/i.test(msg)) return { transactions: [{ account: null, date: ctx.today, amount: -50, desc: 'Parking', category: 'transport' }], reply: 'Added.' };
     if (/only this card/i.test(msg)) { const a12 = ctx.accounts.find(a => /0012$/.test(a.number)), a13 = ctx.accounts.find(a => /0013$/.test(a.number));
       return { balances: [{ account: a12.id, date: ctx.today, balance: 12345, evidence: 'said' }, { account: a13.id, date: ctx.today, balance: 999, evidence: 'said' }], inputs: [{ key: 'salary', label: 'Salary', kind: 'income', amount: 1, from: ctx.today, permanent: true }],
         goals: [{ name: 'Boat', price: 5 }], transactions: [{ account: null, date: ctx.today, amount: -77, desc: 'Snack', category: 'dining' }, { account: a13.id, date: ctx.today, amount: -55, desc: 'Elsewhere', category: 'dining' }], reply: 'Done for this card.' }; }
@@ -328,6 +330,17 @@ async def main():
         feed = await pg.text_content('#fin-talk-feed'); assert 'Kept to' in feed and 'about ' + a12['name'] in feed, 'what was left alone is listed; the message shows its card'
         await pg.click('#fin-talk-win [data-act="fin-about-clear"]'); await pg.wait_for_timeout(150); assert not await ev("!!document.querySelector('.fin-about')"), 'back to the whole canvas'
         await pg.click('#fin-talk-win [data-act="fin-talk-win"][data-v="close"]'); await pg.wait_for_timeout(200)
+        # a bank app screen: its AVAILABLE balance is the balance, and its IBAN (ending …00012) is ••0012 — not a new account
+        n_acc = await ev("window.__FIN.prefs().accounts.length")
+        await say('Here is my bank app screen')
+        assert await ev(f"window.__FIN.latest('{a12['id']}').balance") == 6500 and await ev("window.__FIN.prefs().accounts.length") == n_acc, ('available balance on ••0012', await ev(f"window.__FIN.latest('{a12['id']}')"))
+        # paying for something moves the balance at once, and the card says so
+        await say('I paid 50 for parking')
+        assert await ev(f"window.__FIN.latest('{a12['id']}').balance") == 6450, 'the account goes down by what you paid, straight away'
+        assert await ev(f"window.__FIN.latest('{a12['id']}', {{ base: true }}).balance") == 6500, 'the last balance known for sure stays as it was'
+        await ev("window.__FIN.open('map')"); await pg.wait_for_timeout(300)
+        card = await ev(f"document.querySelector('[data-node=\"a:{a12['id']}\"]').textContent"); print('CARD', ' '.join(card.split()))
+        assert '6,450' in card and 'since' in card, 'the card shows the new balance and what changed since'
         # in full screen the window is there too
         await pg.click('[data-act="fin-cv-full"]'); await pg.wait_for_timeout(250); await ev("document.activeElement && document.activeElement.blur()"); await pg.keyboard.press('t'); await pg.wait_for_timeout(250)
         assert await ev("!!document.querySelector('.fin-cvwrap.full #fin-talk-win #fin-talk-in')"), 'Tell the canvas in full screen'

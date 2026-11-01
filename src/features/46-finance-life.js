@@ -111,13 +111,33 @@ function finAddSnaps(list) {
     colPut('finbal', d); }
 }
 // the latest known figure for an account: your newest balance, or the latest statement — whichever is newer
-function finLatest(a) {
+// An account's balance now: the last balance known for sure (a statement, or one you gave) with everything paid or
+// received after it applied at once — what you tell the canvas, what you add by hand, statement lines after it —
+// until a newer statement or balance replaces it. { base: true } gives the last balance known for sure alone (what
+// a new balance is compared with, so nothing is counted twice).
+function finLatest(a, opt) {
+  const base = finLatestBase(a); if (opt && opt.base) return base;
+  const out = { ...base }; if (!out.date) return out;
+  const credit = a.kind === 'credit_card' || a.kind === 'bnpl';
+  const later = finTx().filter(t => t.acct === a.id && typeof t.amount === 'number' && !isNaN(t.amount) && FIN.validDate(t.date) && !(t.flags || []).includes('direction_unknown') && !(t.flags || []).some(f => f === 'in_balance' || f === 'from_balance')
+    && (t.date > out.date || (t.date === out.date && out.source === 'you' && t.manual && out.at && (t.createdAt || '') > out.at)));
+  if (!later.length) return out;
+  const sum = FIN.r2(later.reduce((s, t) => s + t.amount, 0));
+  out.since = { n: later.length, sum, from: out.date, base: credit ? out.owed : out.balance };
+  if (credit) {
+    if (typeof out.owed === 'number') out.owed = Math.max(0, FIN.r2(out.owed - sum));
+    if (typeof out.available === 'number') out.available = FIN.r2(out.available + sum);
+    if (typeof out.balance === 'number') out.balance = FIN.r2(out.balance + sum);
+  } else if (typeof out.balance === 'number') { out.balance = FIN.r2(out.balance + sum); if (typeof out.available === 'number') out.available = FIN.r2(out.available + sum); }
+  return out;
+}
+function finLatestBase(a) {
   const tx = finTx(), snaps = finSnaps().filter(s => s.acct === a.id).sort((x, y) => x.date.localeCompare(y.date) || (x.at || '').localeCompare(y.at || ''));
   const snap = snaps[snaps.length - 1], out = { date: null, source: null };
   const rec = FIN.reconcile(a, tx, colList('finbatch').filter(b => !b.undone));
   const st = rec.confirmed ? { date: rec.confirmed.date, balance: rec.confirmed.balance } : null;
   const fromStmt = a.stmt && typeof a.stmt.closing === 'number' && (!st || a.stmt.date >= st.date) ? { date: a.stmt.date, balance: a.stmt.closing } : st;
-  if (snap && (!fromStmt || snap.date >= fromStmt.date)) Object.assign(out, { date: snap.date, balance: snap.balance, available: snap.available, outstanding: snap.outstanding, source: 'you' });
+  if (snap && (!fromStmt || snap.date >= fromStmt.date)) Object.assign(out, { date: snap.date, at: snap.at || '', balance: snap.balance, available: snap.available, outstanding: snap.outstanding, source: 'you' });
   else if (fromStmt) Object.assign(out, { date: fromStmt.date, balance: fromStmt.balance, source: 'statement' });
   if (a.kind === 'credit_card' || a.kind === 'bnpl') {
     const owed = out.outstanding !== undefined && out.outstanding !== null ? +out.outstanding : typeof out.balance === 'number' ? Math.max(0, -out.balance) : null;
@@ -218,7 +238,7 @@ Read the message and every screenshot. Return JSON only:
 "terms":[{"account":"id","method":"flat|reducing|none","rate":number or null,"months":number or null,"feePct":number or null,"feeFixed":number or null,"conditions":""}],
 "goals":[{"name":"","price":number,"priority":1-3,"wantBy":"YYYY-MM-DD or null"}],
 "questions":[{"text":"a short question to the owner","about":""}]}
-Rules: take only what the message or screenshots actually state — never invent or estimate a value. A new value for something already recorded (salary, a return, an expense, a balance) uses that record's key/id: it replaces it from its date; a temporary change has "permanent": false. Resolve "today"/"yesterday"/month names to dates from today's date. Identify the account of each screenshot from its number, name or app (CIB, Halan, the card ••). Credit card: "outstanding" is what is owed, "available" what can still be spent. When the owner says money in their account belongs to someone else, put it in thirdParty and match it to a recentDeposits txId when the amount and date fit. If anything is unclear, incomplete or contradictory (which account, whether a change is permanent, whose money), do not guess: add a question. Empty lists when nothing applies.`;
+Rules: take only what the message or screenshots actually state — never invent or estimate a value. A new value for something already recorded (salary, a return, an expense, a balance) uses that record's key/id: it replaces it from its date; a temporary change has "permanent": false. Resolve "today"/"yesterday"/month names to dates from today's date. Identify the account of each screenshot from its number, name or app (CIB, Halan, the card ••). Credit card: "outstanding" is what is owed, "available" what can still be spent. A bank account (current or savings): its balance is the AVAILABLE balance ("Available Balance", "Available", "الرصيد المتاح") — put that number in both "balance" and "available"; an amount on hold, unclear or uncleared funds, an overdraft or utilised limit and an "equivalent balance" line are not the balance. An IBAN or a long account number belongs to the account whose number it ends with (…00012 is the account ••0012): use that account's id, not a new account. When the owner says money in their account belongs to someone else, put it in thirdParty and match it to a recentDeposits txId when the amount and date fit. If anything is unclear, incomplete or contradictory (which account, whether a change is permanent, whose money), do not guess: add a question. Empty lists when nothing applies.`;
 async function finDraftRead() {
   const D = UI.fin.draft2 = UI.fin.draft2 || { text: '', files: [] };
   if (!St.sample) return toast('Reading by Claude is not available in this view.', { err: true });
@@ -238,11 +258,16 @@ function finDraftCheck(r) {
   const num = v => v === null || v === undefined || v === '' ? null : typeof v === 'number' ? v : (FIN.parseNum(v) || {}).n ?? null;
   const day = v => FIN.validDate(v) ? v : today;
   for (const b of r.balances || []) {
-    const a = b.account && finAcct(b.account);
+    let a = b.account && finAcct(b.account);
+    // a new account whose IBAN or long number ends like one of yours is that account
+    if (!a && b.newAccount && b.newAccount.number) { const d = String(b.newAccount.number).replace(/\D/g, '').slice(-7), m = p.accounts.filter(x => FIN.last4(x.number).length === 4 && d.includes(FIN.last4(x.number))); if (m.length === 1) a = m[0]; }
     if (!a && !(b.newAccount && b.newAccount.name)) { out.questions.push({ text: `Which account is this balance for${b.evidence ? ` (${b.evidence})` : ''}?`, about: 'balance' }); continue; }
     const v = { account: a ? a.id : null, newAccount: a ? null : b.newAccount, date: day(b.date), balance: num(b.balance), available: num(b.available), outstanding: num(b.outstanding), limit: num(b.limit), evidence: b.evidence || '' };
+    // a bank account's balance is what is available (not what is on hold, nor an "equivalent" line)
+    const bankKind = a ? !['credit_card', 'bnpl'].includes(a.kind) : !['credit_card', 'bnpl'].includes((b.newAccount || {}).kind);
+    if (bankKind && v.available !== null) v.balance = v.available;
     if (v.balance === null && v.available === null && v.outstanding === null && v.limit === null) continue;
-    if (a && v.balance !== null) { const prev = finLatest(a); v.prev = prev; v.change = FIN.balanceChange(prev.date ? { balance: prev.balance, date: prev.date } : null, { balance: v.balance, date: v.date }, finTx().filter(t => t.acct === a.id)); }
+    if (a && v.balance !== null) { const prev = finLatest(a, { base: true }); v.prev = finLatest(a); v.change = FIN.balanceChange(prev.date ? { balance: prev.balance, date: prev.date } : null, { balance: v.balance, date: v.date }, finTx().filter(t => t.acct === a.id)); }
     out.balances.push(v);
   }
   for (const h of r.holdings || []) { const x = p.holdings.find(z => z.id === h.id); if (x) out.holdings.push({ id: x.id, name: x.name, principal: num(h.principal), myShareMonthly: num(h.myShareMonthly), rate: num(h.rate), prev: { principal: x.principal, myShareMonthly: x.myShareMonthly, rate: x.rate }, evidence: h.evidence || '' }); }
@@ -360,7 +385,8 @@ function finDailyCheck() {
     const r = { id, name: x.a.name, kind: x.a.kind, balance: num('balance'), available: num('available'), outstanding: num('outstanding'), prev: x.l };
     if (r.balance === null && r.available === null && r.outstanding === null) continue;
     const newBal = r.balance !== null ? r.balance : r.outstanding !== null ? -r.outstanding : null;
-    if (newBal !== null) r.change = FIN.balanceChange(x.l.date && typeof (x.l.balance ?? (x.l.owed !== undefined && x.l.owed !== null ? -x.l.owed : null)) === 'number' ? { balance: x.l.balance ?? -x.l.owed, date: x.l.date } : null, { balance: newBal, date: U.date }, finTx().filter(t => t.acct === id));
+    const xb = finLatest(x.a, { base: true });   // compared with the last balance known for sure (later lines are counted below, once)
+    if (newBal !== null) r.change = FIN.balanceChange(xb.date && typeof (xb.balance ?? (xb.owed !== undefined && xb.owed !== null ? -xb.owed : null)) === 'number' ? { balance: xb.balance ?? -xb.owed, date: xb.date } : null, { balance: newBal, date: U.date }, finTx().filter(t => t.acct === id));
     out.push(r);
   }
   // an unexplained drop in one account matched by the same rise in another: money moved between your accounts
@@ -495,4 +521,4 @@ Object.assign(CHG, {
 });
 // keep the draft text while typing (the page redraws on other changes)
 document.addEventListener('input', e => { if (e.target && e.target.id === 'fin-draft' && UI.fin.draft2) UI.fin.draft2.text = e.target.value; });
-Object.assign(window.__FIN, { now: () => finNow(), questions: () => finQuestions(), buy: () => finBuyPlan(), latest: id => finLatest(finAcct(id)) });
+Object.assign(window.__FIN, { now: () => finNow(), questions: () => finQuestions(), buy: () => finBuyPlan(), latest: (id, o) => finLatest(finAcct(id), o) });
