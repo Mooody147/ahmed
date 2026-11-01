@@ -1,5 +1,5 @@
 """Lite artifact build: only To-do (canvas), Review, Add emails (Gmail), Emails and Setup; emails read and analysed, tasks on the canvas, delete/undo, data kept in the artifact database; phone width; Arabic."""
-import asyncio, os, sys
+import json, asyncio, os, sys
 os.environ['AR_PAGE'] = 'action-register-lite.html'
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from playwright.async_api import async_playwright
@@ -35,6 +35,23 @@ async def main():
         await pg.click('.rail [data-nav="todo"]'); await pg.wait_for_timeout(1200)
         if await ev("document.querySelector('[data-act=\"todo-mode\"][data-mode=\"map\"]').getAttribute('aria-pressed') !== 'true'"):
             await pg.click('[data-act="todo-mode"][data-mode="map"]'); await pg.wait_for_timeout(800)
+        # every email in or out that is not on the work server yet: a small notice over the canvas, not a task card
+        ne = await ev("[...window.__AR.St.emails.values()].filter(e => e.source !== 'docs').length")
+        await ev("(() => { const St = window.__AR.St, e = [...St.emails.values()][0]; St.emails.set(e.id, { ...e, fromMe: true }); })()"); await pg.click('[data-act="map-refresh"]'); await pg.wait_for_timeout(400)
+        # the tag on the email itself, in its conversation card
+        tags = await ev("[...document.querySelectorAll('#map-world .thn-list .srv-tag')].map(t => t.dataset.eid)"); print('TAGS', len(tags))
+        assert tags and await ev(f"{json.dumps(tags)}.every(id => !window.__AR.St.emails.get(id).serverAt)"), 'every email shown on the canvas is tagged until it is on the server'
+        await pg.click(f'#map-world .srv-tag[data-eid="{tags[0]}"]'); await pg.wait_for_timeout(300)
+        assert await ev(f"!!window.__AR.St.emails.get('{tags[0]}').serverAt") and not await ev(f"!!document.querySelector('#map-world .srv-tag[data-eid=\"{tags[0]}\"]')"), 'tapping the tag marks it added; the tag goes'
+        await pg.click('#toasts [data-act], .toast button'); await pg.wait_for_timeout(300)
+        assert not await ev(f"window.__AR.St.emails.get('{tags[0]}').serverAt") and await ev(f"!!document.querySelector('#map-world .srv-tag[data-eid=\"{tags[0]}\"]')"), 'Undo brings the tag back'
+        # the corner: one folded pill that counts them (incoming and outgoing) and opens the list
+        head = await pg.text_content('.srv-notes .srv-pill'); assert f'{ne} to add to the work server' in head and await ev("!!document.querySelector('.srv-notes.folded')"), head
+        assert not await ev("!!document.querySelector('#map-world .srv-note')"), 'the list is over the canvas, not among the tasks'
+        await pg.click('.srv-notes .srv-pill'); await pg.wait_for_timeout(200)
+        assert await ev("[...document.querySelectorAll('.srv-dir')].some(d => d.textContent.includes('Out'))") and await ev("[...document.querySelectorAll('.srv-dir')].some(d => d.textContent.includes('In'))"), 'incoming and outgoing'
+        await pg.click('.srv-note [data-act="srv-copy"]'); await pg.wait_for_timeout(200)
+        await pg.click('.srv-notes .srv-pill'); await pg.wait_for_timeout(200); assert await ev("!!document.querySelector('.srv-notes.folded')"), 'folds back into one pill'
         tid = await ev("document.querySelector('.mnode.task').dataset.tid")
         await pg.hover(f'.mnode.task[data-tid="{tid}"]'); await pg.click(f'.mnode.task[data-tid="{tid}"] [data-map="del"]'); await pg.wait_for_timeout(300)
         assert await ev("window.__AR.St.tasks.size") == n0 - 1

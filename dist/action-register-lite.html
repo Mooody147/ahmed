@@ -1750,6 +1750,35 @@ a { color: var(--wine); }
 [dir="rtl"] .rail .rail-foot { border-left: 0; border-right: 1px solid rgba(255,255,255,.18); margin: 0 10px 0 0; padding: 0 14px 0 0; }
 [dir="rtl"] .today-strip::before { left: auto; right: 0; }
 
+/* ---------- to-do canvas: emails to add to the work server (notices, not tasks) ---------- */
+.srv-notes { position: absolute; top: 58px; right: 12px; z-index: 6; width: min(360px, calc(100% - 90px)); display: grid; gap: 6px; padding: 8px; border-radius: 14px;
+  background: color-mix(in srgb, var(--surface) 94%, transparent); border: 1px solid var(--line); box-shadow: var(--elev-2); }
+.srv-notes.folded { width: auto; padding: 0; background: none; border: 0; box-shadow: none; }
+.srv-h { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 0 2px; }
+.srv-pill { border: 1px solid color-mix(in srgb, var(--warn) 45%, var(--line)); background: color-mix(in srgb, var(--warn) 12%, var(--surface)); color: var(--ink); border-radius: 99px; padding: 5px 12px; font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; box-shadow: var(--elev-1); }
+.srv-pill:hover { border-color: var(--warn); }
+.srv-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.srv-list.more { max-height: 320px; overflow: auto; overscroll-behavior: contain; }
+.srv-note { display: flex; align-items: center; gap: 4px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); padding: 2px 4px 2px 2px; }
+.srv-note.out { border-left: 3px solid var(--accent); } .srv-note.in { border-left: 3px solid var(--ok); }
+.srv-open { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; border: 0; background: none; text-align: left; padding: 5px 6px; font: inherit; color: var(--ink); cursor: pointer; border-radius: 8px; }
+.srv-open:hover { background: var(--bg); }
+.srv-dir { flex: none; font-size: 11px; font-weight: 700; padding: 2px 6px; border-radius: 6px; background: color-mix(in srgb, var(--ok) 14%, transparent); color: var(--ok); }
+.srv-note.out .srv-dir { background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent); }
+.srv-txt { min-width: 0; display: grid; } .srv-txt b { font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .srv-txt small { font-size: 11.5px; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.srv-acts { flex: none; display: flex; gap: 0; } .srv-acts .icon-btn { width: 28px; height: 28px; font-size: 13px; }
+.srv-ok { color: var(--ok); font-weight: 700; }
+.srv-f { display: flex; align-items: center; gap: 6px; }
+@media (prefers-reduced-motion: no-preference) { .srv-note { animation: srvIn .3s ease-out both; } @keyframes srvIn { from { opacity: 0; transform: translateY(-4px); } } }
+@media (max-width: 700px) { .srv-notes { top: auto; bottom: 10px; right: 8px; width: calc(100% - 16px); } }
+/* the tag on the email itself */
+.srv-tag { flex: none; align-self: center; border: 1px dashed color-mix(in srgb, var(--warn) 70%, var(--line)); background: color-mix(in srgb, var(--warn) 12%, var(--surface)); color: color-mix(in srgb, var(--warn) 55%, var(--ink));
+  border-radius: 99px; padding: 1px 8px; font: inherit; font-size: 11px; font-weight: 700; line-height: 1.6; cursor: pointer; white-space: nowrap; }
+.srv-tag:hover { border-style: solid; background: color-mix(in srgb, var(--ok) 14%, var(--surface)); color: var(--ok); }
+.srv-tag:hover::after { content: " ✓"; }
+.thn-list li { position: relative; }
+.thn-list li > .srv-tag { margin: 2px 0 2px 28px; justify-self: start; }
+
 /* ================= Money tab ================= */
 /* chart series (validated: blue / orange / aqua, light and dark); text never takes a series colour */
 .fin { --fin-s1: #2a78d6; --fin-s2: #eb6834; --fin-s3: #1baf7a; --fin-gap: color-mix(in srgb, var(--ink-3) 18%, transparent); max-width: 1320px; }
@@ -7116,7 +7145,7 @@ function viewMap() {
         <div class="map-world" id="map-world" style="width:${M.w}px;height:${M.h}px;transform:translate(${UI.map.x}px,${UI.map.y}px) scale(${UI.map.k})">${worldHTML(M)}</div>
         ${M.projects.length || St.board.size ? '' : `<div class="empty map-empty"><div class="big-emoji">🧠</div><h3>Your canvas is empty</h3><p>Approved tasks appear here, branching from projects and topics. Use the tools on the left to add notes, shapes and drawings.</p><button class="btn primary" data-act="nav" data-view="import">${I.upload} Add emails</button></div>`}
         ${toolsHTML()}
-        <div id="cv-ctx-slot">${ctxHTML()}</div>
+        <div id="cv-ctx-slot">${ctxHTML()}</div>${MAP_OVERLAYS.map(f => f()).join('')}
         ${UI.mapMini !== false && (M.projects.length || St.board.size) ? '<canvas class="minimap" id="minimap" width="200" height="130" aria-label="Minimap — click to move there"></canvas>' : ''}
       </div>
       ${UI.mapActivity ? `<aside class="map-activity"><div class="label" style="padding:12px 14px 6px">Activity${UI.mapDay ? ' · ' + esc(fmtDate(UI.mapDay)) : ''}</div>${act.length ? `<ol>${act.map(e => `<li><button data-act="map-goto" data-id="${esc(e.t.id)}"><span class="ae">${evEmoji(e.text)}</span><span class="atxt"><b>${esc(e.t.ref || '')}</b> <span dir="auto">${esc(E.clip(e.t.title, 60))}</span><small dir="auto">${esc(e.text)}</small></span><time>${esc(fmtDate(e.at.slice(0, 10)))}</time></button></li>`).join('')}</ol>` : '<p class="small muted" style="padding:0 14px">No activity yet.</p>'}</aside>` : ''}
@@ -7397,7 +7426,7 @@ function eraseAt(e) {
 document.addEventListener('pointerdown', e => {
   const isPen = e.pointerType === 'pen', isTouch = e.pointerType === 'touch';
   const vp = e.target.closest && e.target.closest('#map-vp'); if (!vp || (e.button > 1 && !isPen)) return;
-  if (e.target.closest('.cv-tools,.cv-sub,.cv-ctx,.cv-panel,.map-empty,.minimap,.present-bar,.board-bar,.cv-overlay,[contenteditable],input,textarea,select')) return;
+  if (e.target.closest('.cv-tools,.cv-sub,.cv-ctx,.cv-panel,.map-empty,.minimap,.present-bar,.board-bar,.cv-overlay,.map-overlay,[contenteditable],input,textarea,select')) return;
   // palm rejection: while the stylus touches the screen every other touch is ignored, and once a stylus has been
   // used a broad touch (the side of a hand) is ignored too
   if (isTouch && palmLikely(e)) return;
@@ -7656,7 +7685,7 @@ function finishPointer(mode, e, w, tmp, drop) {
   return false;
 }
 // feature files add small buttons to task nodes (NODE_EXTRA: t → html with data-map="name") and handle them (MAP_BTN[name](taskId, button))
-const NODE_EXTRA = [], MAP_BTN = {};
+const NODE_EXTRA = [], MAP_BTN = {}, MAP_OVERLAYS = [];   // MAP_OVERLAYS: small things shown over the to-do canvas (not on it)
 // a click on a tree node (no drag)
 function clickNode(node, target) {
   const kind = node.dataset.type, btn = target && target.closest && target.closest('[data-map]');
@@ -13587,7 +13616,7 @@ function threadNodeHTML(n, st) {
   const effects = eid => ttasks.map(t => (t.emailIds || [])[0] === eid ? ['＋', t, 'created here'] : (t.history || []).some(h => h.emailId === eid) ? ((t.history || []).some(h => h.emailId === eid && /complet|done/i.test(h.text)) ? ['✓', t, 'completed by this message'] : ['↻', t, 'updated by this message']) : null).filter(Boolean);
   const drag = UI.cvTemp && UI.cvTemp.kind === 'node' && UI.cvTemp.id === n.id ? ' dragging' : '';
   const row = (x, i) => x.gap ? `<li class="thn-gap"><button data-map="th-all">⋯ ${x.gap} more message${x.gap > 1 ? 's' : ''}</button></li>`
-    : `<li class="${x.me ? 'me' : ''}${x === steps[steps.length - 1] ? ' last' : ''}${x.emailId && selE.has(x.emailId) ? ' sel-src' : ''}"><button class="thn-row" data-map="th-email" ${x.emailId ? `data-eid="${esc(x.emailId)}"` : ''} title="${esc(x.says || '')}"><span class="thn-i" aria-hidden="true">${x === steps[steps.length - 1] ? '📍' : TH_KIND[x.kind] || TH_KIND.info}</span><span class="thn-d">${x.date ? esc(fmtDate(x.date, { day: 'numeric', month: 'short' })) : '—'}</span><span class="thn-t" dir="auto"><b>${esc(x.me ? 'Me' : E.clip(x.from || 'Someone', 26))}</b> ${esc(E.clip(x.says || '', 90))}</span></button>${x.emailId && effects(x.emailId).length ? `<span class="thn-fx">${effects(x.emailId).map(([g, t, why]) => `<button class="thn-chip fx-${g === '＋' ? 'new' : g === '✓' ? 'done' : 'upd'}${t.status === 'done' ? ' done' : ''}" data-map="th-task" data-tid="${esc(t.id)}" title="${esc(`${t.ref} ${why}: ${t.title}`)}">${g} ${esc(t.ref || '')}</button>`).join('')}</span>` : ''}</li>`;
+    : `<li class="${x.me ? 'me' : ''}${x === steps[steps.length - 1] ? ' last' : ''}${x.emailId && selE.has(x.emailId) ? ' sel-src' : ''}"><button class="thn-row" data-map="th-email" ${x.emailId ? `data-eid="${esc(x.emailId)}"` : ''} title="${esc(x.says || '')}"><span class="thn-i" aria-hidden="true">${x === steps[steps.length - 1] ? '📍' : TH_KIND[x.kind] || TH_KIND.info}</span><span class="thn-d">${x.date ? esc(fmtDate(x.date, { day: 'numeric', month: 'short' })) : '—'}</span><span class="thn-t" dir="auto"><b>${esc(x.me ? 'Me' : E.clip(x.from || 'Someone', 26))}</b> ${esc(E.clip(x.says || '', 90))}</span></button>${x.emailId && typeof srvTagHTML === 'function' ? srvTagHTML(x.emailId) : ''}${x.emailId && effects(x.emailId).length ? `<span class="thn-fx">${effects(x.emailId).map(([g, t, why]) => `<button class="thn-chip fx-${g === '＋' ? 'new' : g === '✓' ? 'done' : 'upd'}${t.status === 'done' ? ' done' : ''}" data-map="th-task" data-tid="${esc(t.id)}" title="${esc(`${t.ref} ${why}: ${t.title}`)}">${g} ${esc(t.ref || '')}</button>`).join('')}</span>` : ''}</li>`;
   const inside = (n.children || []).length;
   return `<div class="mnode thread${n.compact && !opened ? ' compact' : ''}${inside ? ' holds' : ''}${selT && selE.size && ems.some(e => selE.has(e.id)) ? ' has-sel' : ''}${drag}" data-node="${esc(n.id)}" data-type="thread" style="${st}">
     <div class="thn-h"><span class="thn-ic" aria-hidden="true">🧵</span><div class="thn-ht"><b dir="auto">${esc(E.clip(E.normSubject(ems[0].subject || '') || 'Email thread', 70))}</b><small>${steps.length} message${steps.length > 1 ? 's' : ''} · ${ems.length} added${first ? ` · ${esc(fmtDate(first.date, { day: 'numeric', month: 'short' }))}${last && last.date !== first.date ? ' → ' + esc(fmtDate(last.date, { day: 'numeric', month: 'short' })) : ''}` : ''}${open ? ` · ${open} open` : ''}</small></div>${steps.length > 6 || (n.compact && steps.length > 1) ? `<button class="mfocus" data-map="th-all" title="${all ? 'Show less' : 'Show the whole conversation'}">${all ? '▴' : '▾'}</button>` : ''}</div>
@@ -13599,6 +13628,7 @@ function threadNodeClick(node, btn) {
   const id = node.dataset.node;
   if (btn && btn.dataset.map === 'th-all') { UI.thOpen.has(id) ? UI.thOpen.delete(id) : UI.thOpen.add(id); render(); return; }
   if (btn && btn.dataset.map === 'th-task' && St.tasks.has(btn.dataset.tid)) { UI.mapSel = btn.dataset.tid; UI.cvSel.clear(); render(); return; }
+  if (btn && btn.dataset.map === 'srv' && typeof srvMarkOne === 'function') { srvMarkOne(btn.dataset.eid); return; }
   const eid = btn && btn.dataset.eid; const cid = id.split(':').pop(), ems = convEmails(cid);
   const target = eid && St.emails.has(eid) ? eid : (ems[ems.length - 1] || {}).id;
   if (target) { UI.previews.clear(); openDrawer('email', target); }
@@ -17618,6 +17648,70 @@ function finFlowLabel(f) {
 // the night sky behind the Flow layout (it does not move with the canvas, so moving stays light)
 const finFlowSky = () => '<div class="fin-flow-sky" aria-hidden="true"><i></i><i></i><i></i></div>';
 
+
+/* ===== features/54-server-notes.js ===== */
+// To-do canvas: every email in or out that still has to go on your work server is tagged on the email itself —
+// a small "📁 Server" tag on its row in the conversation card (on the task card when conversations are hidden);
+// tapping the tag marks it added (Undo). A folded pill in the corner counts them and opens the full list.
+// A notice, not a task card: it sits over the canvas in the top-right corner (not among the tasks), shows whether the
+// email came in or went out, its subject, who it is from or to and its date; ✓ marks it added, 📋 copies a ready file
+// name ("2026-10-28 - In - subject - sender"), ⬇ saves the original email when it was kept, and a click opens the
+// email. The newest show first; the stack folds into one pill. Marked on the email itself, so every device agrees.
+
+const SRV_LS = 'ar-srv-notes';
+UI.srvOpen = (() => { try { return localStorage.getItem(SRV_LS) === 'open'; } catch { return false; } })();   // folded unless you open it
+UI.srvMore = false;
+const srvWhen = e => { const t = Date.parse(e.date || '') || Date.parse(e.importedAt || '') || Date.now(), d = new Date(t); return d; };
+const srvDay = e => { const d = srvWhen(e); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+const srvWho = s => String(s || '').replace(/<[^>]*>/g, '').replace(/["']/g, '').split(/[,;]/)[0].trim();
+// every email in or out still to file (documents added by hand are not emails)
+function srvPending() {
+  return [...St.emails.values()].filter(e => e.source !== 'docs' && !e.serverAt && !e.serverSkip).sort((a, b) => srvWhen(b) - srvWhen(a));
+}
+function srvFileName(e) {
+  const subject = String(e.subject || 'email').replace(/^\s*((re|fw|fwd|aw|wg)\s*:\s*|\[external\]\s*)+/gi, '').trim();
+  const who = srvWho(e.fromMe ? e.to : e.from);
+  return [srvDay(e), e.fromMe ? 'Out' : 'In', subject, who].filter(Boolean).join(' - ').replace(/[\\/:*?"<>|\u0000-\u001f]+/g, '-').replace(/\s+/g, ' ').slice(0, 140).trim();
+}
+function srvNoteHTML(e) {
+  const out = !!e.fromMe, who = srvWho(out ? e.to : e.from), orig = (e.files || []).findIndex(f => f.role === 'original');
+  return `<li class="srv-note ${out ? 'out' : 'in'}">
+    <button class="srv-open" data-act="srv-open" data-id="${esc(e.id)}" title="Open the email"><span class="srv-dir" aria-label="${out ? 'Outgoing' : 'Incoming'}">${out ? '↑ Out' : '↓ In'}</span>
+      <span class="srv-txt"><b dir="auto">${esc(E.clip(e.subject || '(no subject)', 60))}</b><small dir="auto">${out ? 'to' : 'from'} ${esc(E.clip(who || '—', 28))} · ${esc(fmtDate(srvDay(e)))}</small></span></button>
+    <span class="srv-acts">${orig >= 0 ? `<button class="icon-btn" data-act="af-save" data-eid="${esc(e.id)}" data-i="${orig}" title="Save the original email" aria-label="Save the original email">⬇</button>` : ''}<button class="icon-btn" data-act="srv-copy" data-id="${esc(e.id)}" title="Copy a file name for the server: ${esc(srvFileName(e))}" aria-label="Copy a file name">📋</button><button class="icon-btn srv-ok" data-act="srv-done" data-id="${esc(e.id)}" title="Added to the work server" aria-label="Mark as added to the work server">✓</button></span></li>`;
+}
+MAP_OVERLAYS.push(() => {
+  if (St.mode === 'viewer' || UI.view !== 'todo') return '';
+  const list = srvPending(); if (!list.length) return '';
+  const nIn = list.filter(e => !e.fromMe).length, nOut = list.length - nIn, head = `📁 ${list.length} to add to the work server`;
+  if (!UI.srvOpen) return `<div class="srv-notes map-overlay folded"><button class="srv-pill" data-act="srv-fold" aria-expanded="false" title="${nIn} in · ${nOut} out">${head}</button></div>`;
+  const show = UI.srvMore ? list.slice(0, 60) : list.slice(0, 3);
+  return `<section class="srv-notes map-overlay" aria-label="Emails to add to the work server">
+    <div class="srv-h"><button class="srv-pill" data-act="srv-fold" aria-expanded="true" title="Fold">${head}</button><span class="small muted">${nIn} in · ${nOut} out</span></div>
+    <ol class="srv-list ${UI.srvMore ? 'more' : ''}">${show.map(srvNoteHTML).join('')}</ol>
+    <div class="srv-f">${list.length > 3 ? `<button class="btn sm ghost" data-act="srv-more">${UI.srvMore ? 'Show fewer' : `+${list.length - 3} more`}</button>` : ''}<span class="spacer"></span>${list.length > 1 ? `<button class="btn sm ghost" data-act="srv-all">✓ Mark all added</button>` : ''}</div></section>`;
+});
+// the tag on the email itself
+function srvTagHTML(eid) {
+  const e = St.emails.get(eid); if (!e || e.source === 'docs' || e.serverAt || e.serverSkip || St.mode === 'viewer') return '';
+  return `<button class="srv-tag ${e.fromMe ? 'out' : 'in'}" data-map="srv" data-eid="${esc(eid)}" title="${e.fromMe ? 'Your email' : 'This email'} is not on the work server yet — tap once you have added it (file name: ${esc(srvFileName(e))})">📁 Server</button>`;
+}
+function srvMarkOne(eid) { if (!St.emails.has(eid)) return; srvMark([eid], true); render(); toast('Marked as on the work server.', { action: 'Undo', fn: () => { srvMark([eid], false); render(); } }); }
+// conversations hidden: the tag goes on the task the email made
+NODE_EXTRA.push(t => { if (UI.mapThreads !== false || St.mode === 'viewer') return ''; const p = (t.emailIds || []).map(id => St.emails.get(id)).filter(e => e && !e.serverAt && !e.serverSkip && e.source !== 'docs'); return p.length ? `<button class="srv-tag" data-map="srv" title="${p.length} email${p.length > 1 ? 's' : ''} of this task not on the work server yet — tap once added">📁 Server</button>` : ''; });
+MAP_BTN.srv = id => { const t = St.tasks.get(id); if (!t) return; const ids = (t.emailIds || []).filter(x => { const e = St.emails.get(x); return e && !e.serverAt && !e.serverSkip; }); if (!ids.length) return; srvMark(ids, true); render(); toast(`${ids.length > 1 ? ids.length + ' emails' : 'Email'} marked as on the work server.`, { action: 'Undo', fn: () => { srvMark(ids, false); render(); } }); };
+function srvMark(ids, on) {
+  const at = nowISO();
+  for (const id of ids) { const e = St.emails.get(id); if (!e) continue; const x = clone(e); if (on) x.serverAt = at; else delete x.serverAt; putEmail(x); }
+}
+Object.assign(ACT, {
+  'srv-fold': () => { UI.srvOpen = !UI.srvOpen; try { localStorage.setItem(SRV_LS, UI.srvOpen ? 'open' : 'folded'); } catch {} render(); },
+  'srv-more': () => { UI.srvMore = !UI.srvMore; render(); },
+  'srv-open': el => openDrawer('email', el.dataset.id),
+  'srv-copy': async el => { const e = St.emails.get(el.dataset.id); if (!e) return; const name = srvFileName(e); try { await navigator.clipboard.writeText(name); toast('Copied: ' + name); } catch { toast(name); } },
+  'srv-done': el => srvMarkOne(el.dataset.id),
+  'srv-all': () => { const ids = srvPending().map(e => e.id); srvMark(ids, true); render(); toast(`${ids.length} emails marked as on the work server.`, { action: 'Undo', fn: () => { srvMark(ids, false); render(); } }); },
+});
 
 /* ---------- boot ---------- */
 const startView = (location.hash || '').replace('#', '');

@@ -1442,7 +1442,7 @@ function viewMap() {
         <div class="map-world" id="map-world" style="width:${M.w}px;height:${M.h}px;transform:translate(${UI.map.x}px,${UI.map.y}px) scale(${UI.map.k})">${worldHTML(M)}</div>
         ${M.projects.length || St.board.size ? '' : `<div class="empty map-empty"><div class="big-emoji">🧠</div><h3>Your canvas is empty</h3><p>Approved tasks appear here, branching from projects and topics. Use the tools on the left to add notes, shapes and drawings.</p><button class="btn primary" data-act="nav" data-view="import">${I.upload} Add emails</button></div>`}
         ${toolsHTML()}
-        <div id="cv-ctx-slot">${ctxHTML()}</div>
+        <div id="cv-ctx-slot">${ctxHTML()}</div>${MAP_OVERLAYS.map(f => f()).join('')}
         ${UI.mapMini !== false && (M.projects.length || St.board.size) ? '<canvas class="minimap" id="minimap" width="200" height="130" aria-label="Minimap — click to move there"></canvas>' : ''}
       </div>
       ${UI.mapActivity ? `<aside class="map-activity"><div class="label" style="padding:12px 14px 6px">Activity${UI.mapDay ? ' · ' + esc(fmtDate(UI.mapDay)) : ''}</div>${act.length ? `<ol>${act.map(e => `<li><button data-act="map-goto" data-id="${esc(e.t.id)}"><span class="ae">${evEmoji(e.text)}</span><span class="atxt"><b>${esc(e.t.ref || '')}</b> <span dir="auto">${esc(E.clip(e.t.title, 60))}</span><small dir="auto">${esc(e.text)}</small></span><time>${esc(fmtDate(e.at.slice(0, 10)))}</time></button></li>`).join('')}</ol>` : '<p class="small muted" style="padding:0 14px">No activity yet.</p>'}</aside>` : ''}
@@ -1723,7 +1723,7 @@ function eraseAt(e) {
 document.addEventListener('pointerdown', e => {
   const isPen = e.pointerType === 'pen', isTouch = e.pointerType === 'touch';
   const vp = e.target.closest && e.target.closest('#map-vp'); if (!vp || (e.button > 1 && !isPen)) return;
-  if (e.target.closest('.cv-tools,.cv-sub,.cv-ctx,.cv-panel,.map-empty,.minimap,.present-bar,.board-bar,.cv-overlay,[contenteditable],input,textarea,select')) return;
+  if (e.target.closest('.cv-tools,.cv-sub,.cv-ctx,.cv-panel,.map-empty,.minimap,.present-bar,.board-bar,.cv-overlay,.map-overlay,[contenteditable],input,textarea,select')) return;
   // palm rejection: while the stylus touches the screen every other touch is ignored, and once a stylus has been
   // used a broad touch (the side of a hand) is ignored too
   if (isTouch && palmLikely(e)) return;
@@ -1982,7 +1982,7 @@ function finishPointer(mode, e, w, tmp, drop) {
   return false;
 }
 // feature files add small buttons to task nodes (NODE_EXTRA: t → html with data-map="name") and handle them (MAP_BTN[name](taskId, button))
-const NODE_EXTRA = [], MAP_BTN = {};
+const NODE_EXTRA = [], MAP_BTN = {}, MAP_OVERLAYS = [];   // MAP_OVERLAYS: small things shown over the to-do canvas (not on it)
 // a click on a tree node (no drag)
 function clickNode(node, target) {
   const kind = node.dataset.type, btn = target && target.closest && target.closest('[data-map]');
