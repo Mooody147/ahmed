@@ -1786,6 +1786,28 @@ a { color: var(--wine); }
 .thn-list li { position: relative; }
 .thn-fx .srv-tag { margin-right: 2px; }
 
+/* ---------- the To-do canvas in the Money canvas's night sky ---------- */
+.map-viewport { background: radial-gradient(circle at 1px 1px, rgba(220, 205, 255, .16) 1px, transparent 0) 0 0 / 22px 22px,
+  radial-gradient(1200px 700px at 15% -10%, #3b1d5c 0%, transparent 60%), radial-gradient(900px 600px at 110% 110%, #3a1430 0%, transparent 60%), linear-gradient(160deg, #0f0c26, #120a1c 60%, #0b0f22);
+  border-color: #2a2147; box-shadow: inset 0 2px 30px rgba(0, 0, 0, .35), var(--elev-2); --flow-ink: #f4f0ff; --flow-dim: #b9aedb; }
+.map-viewport::before, .map-viewport::after { content: ""; position: absolute; width: 60vmax; height: 60vmax; border-radius: 50%; pointer-events: none; z-index: 0; will-change: transform; }
+.map-viewport::before { left: -12%; top: -18%; background: radial-gradient(circle, #7b3fe4, transparent 65%); opacity: .38; }
+.map-viewport::after { right: -18%; bottom: -30%; background: radial-gradient(circle, #1fb6c9, transparent 65%); opacity: .22; }
+@media (prefers-reduced-motion: no-preference) { .map-viewport::before { animation: finSky1 26s ease-in-out infinite alternate; } .map-viewport::after { animation: finSky2 34s ease-in-out infinite alternate; } }
+.map-viewport > .map-world { z-index: 1; }
+/* project lanes: glass lit by their colour; their names in light type */
+.map-edges .band { fill: hsl(var(--h) 60% 45% / .16); stroke: hsl(var(--h) 80% 75% / .32); }
+.band-label { background: rgba(14, 10, 32, .55); color: var(--flow-ink); }
+/* connectors and dependency links: bright on the dark sky */
+.map-edges .edge { stroke: hsl(var(--h) 85% 72% / .7); }
+.map-edges .link-halo { stroke: rgba(13, 10, 31, .85); }
+/* what you write and draw on the board stays readable */
+.map-viewport .bel.btext { color: var(--flow-ink); }
+.map-viewport .bel.frame { background: color-mix(in srgb, var(--c) 12%, rgba(255, 255, 255, .03)); }
+.map-viewport .map-ink path { filter: drop-shadow(0 0 1.2px rgba(255, 255, 255, .55)); }
+.map-viewport .minimap { background: rgba(16, 12, 36, .85); border-color: rgba(255, 255, 255, .15); }
+.map-viewport .mnode { box-shadow: 0 10px 28px -16px rgba(0, 0, 0, .65), 0 0 0 1px rgba(255, 255, 255, .05); }
+
 /* ================= Money tab ================= */
 /* chart series (validated: blue / orange / aqua, light and dark); text never takes a series colour */
 .fin { --fin-s1: #2a78d6; --fin-s2: #eb6834; --fin-s3: #1baf7a; --fin-gap: color-mix(in srgb, var(--ink-3) 18%, transparent); max-width: 1320px; }
