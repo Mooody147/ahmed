@@ -5157,7 +5157,7 @@ function viewMap() {
         <div class="map-world" id="map-world" style="width:${M.w}px;height:${M.h}px;transform:translate(${UI.map.x}px,${UI.map.y}px) scale(${UI.map.k})">${worldHTML(M)}</div>
         ${M.projects.length || St.board.size ? '' : `<div class="empty map-empty"><div class="big-emoji">🧠</div><h3>Your canvas is empty</h3><p>Approved tasks appear here, branching from projects and topics. Use the tools on the left to add notes, shapes and drawings.</p><button class="btn primary" data-act="nav" data-view="import">${I.upload} Add emails</button></div>`}
         ${toolsHTML()}
-        <div id="cv-ctx-slot">${ctxHTML()}</div>
+        <div id="cv-ctx-slot">${ctxHTML()}</div>${MAP_OVERLAYS.map(f => f()).join('')}
         ${UI.mapMini !== false && (M.projects.length || St.board.size) ? '<canvas class="minimap" id="minimap" width="200" height="130" aria-label="Minimap — click to move there"></canvas>' : ''}
       </div>
       ${UI.mapActivity ? `<aside class="map-activity"><div class="label" style="padding:12px 14px 6px">Activity${UI.mapDay ? ' · ' + esc(fmtDate(UI.mapDay)) : ''}</div>${act.length ? `<ol>${act.map(e => `<li><button data-act="map-goto" data-id="${esc(e.t.id)}"><span class="ae">${evEmoji(e.text)}</span><span class="atxt"><b>${esc(e.t.ref || '')}</b> <span dir="auto">${esc(E.clip(e.t.title, 60))}</span><small dir="auto">${esc(e.text)}</small></span><time>${esc(fmtDate(e.at.slice(0, 10)))}</time></button></li>`).join('')}</ol>` : '<p class="small muted" style="padding:0 14px">No activity yet.</p>'}</aside>` : ''}
@@ -5438,7 +5438,7 @@ function eraseAt(e) {
 document.addEventListener('pointerdown', e => {
   const isPen = e.pointerType === 'pen', isTouch = e.pointerType === 'touch';
   const vp = e.target.closest && e.target.closest('#map-vp'); if (!vp || (e.button > 1 && !isPen)) return;
-  if (e.target.closest('.cv-tools,.cv-sub,.cv-ctx,.cv-panel,.map-empty,.minimap,.present-bar,.board-bar,.cv-overlay,[contenteditable],input,textarea,select')) return;
+  if (e.target.closest('.cv-tools,.cv-sub,.cv-ctx,.cv-panel,.map-empty,.minimap,.present-bar,.board-bar,.cv-overlay,.map-overlay,[contenteditable],input,textarea,select')) return;
   // palm rejection: while the stylus touches the screen every other touch is ignored, and once a stylus has been
   // used a broad touch (the side of a hand) is ignored too
   if (isTouch && palmLikely(e)) return;
@@ -5697,7 +5697,7 @@ function finishPointer(mode, e, w, tmp, drop) {
   return false;
 }
 // feature files add small buttons to task nodes (NODE_EXTRA: t → html with data-map="name") and handle them (MAP_BTN[name](taskId, button))
-const NODE_EXTRA = [], MAP_BTN = {};
+const NODE_EXTRA = [], MAP_BTN = {}, MAP_OVERLAYS = [];   // MAP_OVERLAYS: small things shown over the to-do canvas (not on it)
 // a click on a tree node (no drag)
 function clickNode(node, target) {
   const kind = node.dataset.type, btn = target && target.closest && target.closest('[data-map]');
@@ -15471,7 +15471,7 @@ function threadNodeHTML(n, st) {
   const effects = eid => ttasks.map(t => (t.emailIds || [])[0] === eid ? ['＋', t, 'created here'] : (t.history || []).some(h => h.emailId === eid) ? ((t.history || []).some(h => h.emailId === eid && /complet|done/i.test(h.text)) ? ['✓', t, 'completed by this message'] : ['↻', t, 'updated by this message']) : null).filter(Boolean);
   const drag = UI.cvTemp && UI.cvTemp.kind === 'node' && UI.cvTemp.id === n.id ? ' dragging' : '';
   const row = (x, i) => x.gap ? `<li class="thn-gap"><button data-map="th-all">⋯ ${x.gap} more message${x.gap > 1 ? 's' : ''}</button></li>`
-    : `<li class="${x.me ? 'me' : ''}${x === steps[steps.length - 1] ? ' last' : ''}${x.emailId && selE.has(x.emailId) ? ' sel-src' : ''}"><button class="thn-row" data-map="th-email" ${x.emailId ? `data-eid="${esc(x.emailId)}"` : ''} title="${esc(x.says || '')}"><span class="thn-i" aria-hidden="true">${x === steps[steps.length - 1] ? '📍' : TH_KIND[x.kind] || TH_KIND.info}</span><span class="thn-d">${x.date ? esc(fmtDate(x.date, { day: 'numeric', month: 'short' })) : '—'}</span><span class="thn-t" dir="auto"><b>${esc(x.me ? 'Me' : E.clip(x.from || 'Someone', 26))}</b> ${esc(E.clip(x.says || '', 90))}</span></button>${x.emailId && effects(x.emailId).length ? `<span class="thn-fx">${effects(x.emailId).map(([g, t, why]) => `<button class="thn-chip fx-${g === '＋' ? 'new' : g === '✓' ? 'done' : 'upd'}${t.status === 'done' ? ' done' : ''}" data-map="th-task" data-tid="${esc(t.id)}" title="${esc(`${t.ref} ${why}: ${t.title}`)}">${g} ${esc(t.ref || '')}</button>`).join('')}</span>` : ''}</li>`;
+    : `<li class="${x.me ? 'me' : ''}${x === steps[steps.length - 1] ? ' last' : ''}${x.emailId && selE.has(x.emailId) ? ' sel-src' : ''}"><button class="thn-row" data-map="th-email" ${x.emailId ? `data-eid="${esc(x.emailId)}"` : ''} title="${esc(x.says || '')}"><span class="thn-i" aria-hidden="true">${x === steps[steps.length - 1] ? '📍' : TH_KIND[x.kind] || TH_KIND.info}</span><span class="thn-d">${x.date ? esc(fmtDate(x.date, { day: 'numeric', month: 'short' })) : '—'}</span><span class="thn-t" dir="auto"><b>${esc(x.me ? 'Me' : E.clip(x.from || 'Someone', 26))}</b> ${esc(E.clip(x.says || '', 90))}</span></button>${x.emailId && typeof srvTagHTML === 'function' ? srvTagHTML(x.emailId) : ''}${x.emailId && effects(x.emailId).length ? `<span class="thn-fx">${effects(x.emailId).map(([g, t, why]) => `<button class="thn-chip fx-${g === '＋' ? 'new' : g === '✓' ? 'done' : 'upd'}${t.status === 'done' ? ' done' : ''}" data-map="th-task" data-tid="${esc(t.id)}" title="${esc(`${t.ref} ${why}: ${t.title}`)}">${g} ${esc(t.ref || '')}</button>`).join('')}</span>` : ''}</li>`;
   const inside = (n.children || []).length;
   return `<div class="mnode thread${n.compact && !opened ? ' compact' : ''}${inside ? ' holds' : ''}${selT && selE.size && ems.some(e => selE.has(e.id)) ? ' has-sel' : ''}${drag}" data-node="${esc(n.id)}" data-type="thread" style="${st}">
     <div class="thn-h"><span class="thn-ic" aria-hidden="true">🧵</span><div class="thn-ht"><b dir="auto">${esc(E.clip(E.normSubject(ems[0].subject || '') || 'Email thread', 70))}</b><small>${steps.length} message${steps.length > 1 ? 's' : ''} · ${ems.length} added${first ? ` · ${esc(fmtDate(first.date, { day: 'numeric', month: 'short' }))}${last && last.date !== first.date ? ' → ' + esc(fmtDate(last.date, { day: 'numeric', month: 'short' })) : ''}` : ''}${open ? ` · ${open} open` : ''}</small></div>${steps.length > 6 || (n.compact && steps.length > 1) ? `<button class="mfocus" data-map="th-all" title="${all ? 'Show less' : 'Show the whole conversation'}">${all ? '▴' : '▾'}</button>` : ''}</div>
@@ -15483,6 +15483,7 @@ function threadNodeClick(node, btn) {
   const id = node.dataset.node;
   if (btn && btn.dataset.map === 'th-all') { UI.thOpen.has(id) ? UI.thOpen.delete(id) : UI.thOpen.add(id); render(); return; }
   if (btn && btn.dataset.map === 'th-task' && St.tasks.has(btn.dataset.tid)) { UI.mapSel = btn.dataset.tid; UI.cvSel.clear(); render(); return; }
+  if (btn && btn.dataset.map === 'srv' && typeof srvMarkOne === 'function') { srvMarkOne(btn.dataset.eid); return; }
   const eid = btn && btn.dataset.eid; const cid = id.split(':').pop(), ems = convEmails(cid);
   const target = eid && St.emails.has(eid) ? eid : (ems[ems.length - 1] || {}).id;
   if (target) { UI.previews.clear(); openDrawer('email', target); }
