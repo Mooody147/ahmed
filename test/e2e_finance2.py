@@ -243,6 +243,32 @@ async def main():
         await pg.screenshot(path=os.path.join(HERE, 'shots', 'finance-fullscreen.png'))
         await pg.keyboard.press('Escape'); await pg.wait_for_timeout(250); assert not await ev("document.querySelector('.fin-cvwrap').classList.contains('full')")
 
+        # one card saved twice (same number; some statements on the copy): opening Money joins them — every
+        # transaction kept, said in the conversation, Undo puts it back; no second card is made again
+        n_tx = await ev("window.__FIN.tx().length")
+        dup = await ev("""(() => { const St = window.__AR.St, p = JSON.parse(JSON.stringify(St.cols.prefs.get('finance'))), card = p.accounts.find(a => a.kind === 'credit_card' && a.number);
+          const copy = { ...card, id: 'acdupcopy0001', preset: undefined, createdAt: '2099-01-01T00:00:00Z' }; p.accounts.push(copy); p.updatedAt = new Date().toISOString(); St.cols.prefs.set('finance', p);
+          let moved = 0; for (const d of St.cols.fintx.values()) { let hit = false; for (const t of d.tx || []) if (t.acct === card.id && moved < 20 && t.date >= '2026-09-01') { t.acct = copy.id; moved++; hit = true; } if (hit) d.updatedAt = new Date().toISOString(); }
+          return { card: card.id, moved, cards: p.accounts.filter(a => a.kind === 'credit_card').length }; })()""")
+        print('DUP', dup); assert dup['moved'] > 0 and dup['cards'] == 2
+        await ev("window.__FIN.open('map')"); await pg.wait_for_timeout(600)
+        cards = await ev("window.__FIN.prefs().accounts.filter(a => a.kind === 'credit_card').map(a => a.id)")
+        assert cards == [dup['card']], ('one card again, the first one kept', cards)
+        assert await ev("window.__FIN.tx().length") == n_tx and await ev(f"window.__FIN.tx().filter(t => t.acct === 'acdupcopy0001').length") == 0, 'every transaction kept, now on the one card'
+        assert 'joined' in await pg.text_content('#fin-talk-feed'), 'the conversation says what was joined'
+        await pg.click('#fin-talk-feed .fin-msg:last-child [data-act="fin-talk-undo"]'); await pg.wait_for_timeout(300)
+        assert await ev("window.__FIN.prefs().accounts.filter(a => a.kind === 'credit_card').length") == 2, 'Undo puts the copy back'
+        await ev("window.__FIN.open('map')"); await pg.wait_for_timeout(600)
+        assert await ev("window.__FIN.prefs().accounts.filter(a => a.kind === 'credit_card').length") == 2, 'a join you undid is not redone by itself'
+        # a statement for a card already there (same number) goes to it, never to a new account
+        n_acc = await ev("window.__FIN.prefs().accounts.length")
+        await ev("window.__FIN.open('import')"); await pg.wait_for_timeout(200); await pg.click('[data-act="fin-kind"][data-k="credit_card"]'); await pg.set_input_files('input[data-chg="fin-files"]', [f('CARD_SEP.pdf')])
+        for _ in range(100):
+            if await ev("(window.__AR.UI.fin.queue || []).length && window.__AR.UI.fin.queue.every(q => ['done', 'error'].includes(q.state))"): break
+            await pg.wait_for_timeout(200)
+        assert await ev("window.__FIN.prefs().accounts.length") == n_acc, 'no second card'
+        await ev("window.__FIN.open('map')"); await pg.wait_for_timeout(300)
+
         # only two tabs above the canvas: Canvas and Settings
         tabs = await ev("[...document.querySelectorAll('.fin-tabs button')].map(b => b.textContent.trim())"); print('TABS', tabs)
         assert [t.strip() for t in tabs] == ['Canvas', 'Settings']

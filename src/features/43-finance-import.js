@@ -172,6 +172,8 @@ function finRowDecision(it, i) {
 function finCommit(it, auto) {
   const p = finP();
   let acct = it.acct;
+  // the same number as an account already there: that account, not a second one
+  if (!acct) { const ex = finAcctSameNumber((it.newAcct || {}).kind, it.meta.account, (it.newAcct || {}).bank, (it.newAcct || {}).currency || it.meta.currency); if (ex) { acct = it.acct = ex.id; it.newAcct = null; } }
   if (!acct) {
     const n = it.newAcct || {}; if (!n.name) { toast('Name the new account first.', { err: true }); return; }
     acct = E.uid('ac'); const a = { id: acct, name: n.name.trim(), bank: (n.bank || '').trim(), kind: n.kind || 'current', currency: n.currency || it.meta.currency || p.base, number: (it.meta.account || '').slice(-14), owner: 'me', holder: 'me', createdAt: nowISO() };
@@ -405,6 +407,7 @@ async function finAuto(files, kind) {
       if (!it.rows.length) { q.state = 'error'; q.msg = 'No transaction lines were found in this file.'; render(); continue; }
       it.auto = true;
       if (finP().reviewFirst) { UI.fin.imp = UI.fin.imp || { files: [], cur: 0 }; it.auto = false; UI.fin.imp.files.push(it); q.state = 'review'; render(); continue; }
+      if (!it.acct) { const ex = finAcctSameNumber(it.newAcct.kind, it.meta.account, it.newAcct.bank, it.newAcct.currency); if (ex) { it.acct = ex.id; it.newAcct = null; finParse(it); it.auto = true; } }
       if (!it.acct) { const n = it.newAcct; const id = E.uid('ac'); finSave(pp => { pp.accounts.push({ id, name: n.name, bank: n.bank || '', kind: n.kind, currency: n.currency, number: (it.meta.account || '').slice(-14), owner: 'me', holder: 'me', createdAt: nowISO() }); }); it.acct = id; it.newAcct = null; q.created = true; finParse(it); it.auto = true; }
       const r = finCommit(it, true);
       Object.assign(q, { state: 'done', counts: r.counts, acct: r.acct, batch: r.batch, why: it.acctWhy, method: it.method, check: it.check });

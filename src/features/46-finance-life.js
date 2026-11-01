@@ -33,6 +33,51 @@ function finEnsurePresets() {
   });
 }
 HOOKS.ready.push(() => setTimeout(finEnsurePresets, 800));
+
+/* --- one account saved twice: joined into one ---
+   Two accounts of the same kind with the same account or card number (and bank and currency) are the same account —
+   e.g. a card whose statements were read before their number could be read. Everything that pointed at the copy
+   (its transactions, statements and saved balances) moves to the one kept (the preset one, else the oldest);
+   nothing is removed or counted twice, the conversation says what was joined, and Undo puts it back. */
+const finNumKey = n => { const d = String(n || '').replace(/[\s-]/g, ''); return d.replace(/\D/g, '').length >= 4 ? d.slice(-4) : ''; };
+const finAcctKey = a => { const n = finNumKey(a.number); return n && a.kind ? [a.kind, a.currency || '', n, FIN.norm(a.bank || '')].join('|') : null; };
+// an account already there for this kind and number (before a statement makes a new one)
+function finAcctSameNumber(kind, number, bank, currency) {
+  const k = finAcctKey({ kind, number, bank, currency: currency || finP().base }); if (!k) return null;
+  return finP().accounts.find(a => finAcctKey({ ...a, currency: a.currency || finP().base }) === k) || null;
+}
+function finJoinDupAccts() {
+  if (St.mode === 'viewer' || (St.mode === 'db' && St.colsLoaded && !['prefs', 'fintx', 'finbatch', 'finbal'].every(n => St.colsLoaded.has(n)))) return 0;
+  const p = finP(), groups = new Map();
+  UI.fin.joinSkip = UI.fin.joinSkip || new Set();
+  for (const a of p.accounts) { const k = finAcctKey({ ...a, currency: a.currency || p.base }); if (k) groups.set(k, [...(groups.get(k) || []), a]); }
+  for (const [k, g] of groups) if (g.some(a => UI.fin.joinSkip.has(a.id))) groups.delete(k);
+  const sets = [...groups.values()].filter(g => g.length > 1); if (!sets.length) return 0;
+  const snap = finSnapshot(), to = new Map(), lines = [];
+  for (const g of sets) {
+    const keep = g.slice().sort((x, y) => (y.preset ? 1 : 0) - (x.preset ? 1 : 0) || String(x.createdAt || '').localeCompare(String(y.createdAt || '')))[0];
+    for (const a of g) if (a !== keep) to.set(a.id, keep.id);
+    const n = finTx().filter(t => g.some(a => a !== keep && a.id === t.acct)).length;
+    lines.push(`${keep.name}${finNumKey(keep.number) ? ' ••' + finNumKey(keep.number) : ''}: ${g.length} copies of the same ${keep.kind === 'credit_card' ? 'card' : 'account'} joined into one — ${n} transaction${n === 1 ? '' : 's'} moved to it, nothing removed`);
+  }
+  // ids are unique random strings, so every place that names a copy is found and pointed at the one kept
+  const swap = d => { let j = JSON.stringify(d), hit = false; for (const [from, keep] of to) { const q = JSON.stringify(from); if (j.includes(q)) { j = j.split(q).join(JSON.stringify(keep)); hit = true; } } return hit ? JSON.parse(j) : null; };
+  for (const n of ['fintx', 'finbatch', 'finbal']) for (const d of colList(n)) { const x = swap(d); if (x) colPut(n, x); }
+  finSave(q => {
+    const accts = q.accounts; delete q.accounts; Object.assign(q, swap(q) || {});
+    const out = [];
+    for (const a of [...accts.filter(x => !to.has(x.id)), ...accts.filter(x => to.has(x.id))]) {   // the one kept first, the copies after
+      const id = to.get(a.id) || a.id, k = out.find(x => x.id === id);
+      if (!k) { out.push(to.has(a.id) ? { ...a, id } : a); continue; }
+      for (const [f, v] of Object.entries(a)) if (f !== 'id' && f !== 'name' && f !== 'preset' && (k[f] === undefined || k[f] === null || k[f] === '')) k[f] = v;   // what only the copy knew is kept
+    }
+    q.accounts = out;
+  });
+  FS.key = '';
+  const m = { id: E.uid('tk'), at: nowISO(), who: 'claude', reply: 'One account was saved twice — I joined the copies:', done: [], notes: lines, undoable: true, joined: [...to.keys()] };
+  UI.fin.undo.set(m.id, snap); finTalkPush(m); render();
+  return sets.length;
+}
 HOOKS.beforeRender.push(() => { if (UI.view === 'finance' && St.ready && !finP().presetsV1) setTimeout(finEnsurePresets, 0); });
 
 /* --- balances you give (dated snapshots, kept as history) --- */

@@ -269,6 +269,7 @@ async function finAutoFix(inTalk) {
 HOOKS.afterRender.push(() => {
   if (UI.view !== 'finance' || UI.fin.fixing || UI.fin.talk.busy || UI.fin.autoQ) return;
   if (St.mode === 'db' && St.colsLoaded && !['prefs', 'fintx', 'finbatch'].every(n => St.colsLoaded.has(n))) return;
+  if (finJoinDupAccts()) return;   // one account saved twice: joined first (always, it only moves things)
   if (finP().autoFix === false) return;
   const stale = typeof FIN_READER !== 'undefined' ? colList('finbatch').filter(b => !b.undone && (b.reader || 1) < FIN_READER && b.asset) : [];
   if (stale.length && !UI.fin.rereadTried) {
@@ -304,7 +305,8 @@ Object.assign(ACT, {
   'fin-talk-undo': el => {
     const id = el.dataset.id, s = UI.fin.undo.get(id); if (!s) return;
     finUndoTo(s); UI.fin.undo.delete(id);
-    { const d = clone(finTalkDoc('feed')), m = d.items.find(x => x.id === id); if (m) { m.undone = true; colPut('fintalk', d); } }
+    { const d = clone(finTalkDoc('feed')), m = d.items.find(x => x.id === id); if (m) { m.undone = true; colPut('fintalk', d); }
+      if (m && m.joined) for (const c of m.joined) (UI.fin.joinSkip = UI.fin.joinSkip || new Set()).add(c); }   // a join you undid is not done again by itself
     UI.fin.fixTried.clear(); UI.fin.flash = { ids: new Set(), until: 0 }; render(); toast('Undone — everything is as it was before.');
   },
   'fin-daily-check': () => { finDailyCheck(); if (finP().autoFix !== false && (UI.fin.daily.preview || []).length) finDailySave(); },

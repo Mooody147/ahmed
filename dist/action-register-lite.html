@@ -2150,14 +2150,15 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
   background: linear-gradient(180deg, color-mix(in srgb, hsl(var(--h) 70% 85%) 55%, transparent), transparent); }
 .fin-room-h { position: relative; }
 .fin-room-ic { background: linear-gradient(145deg, var(--surface), color-mix(in srgb, hsl(var(--h) 70% 88%) 70%, var(--surface))); }
-.mnode.fin-leaf { overflow: hidden; transition: transform .16s ease, box-shadow .16s ease; }
+/* the card does not clip (its ✎ badge sits on the corner); the sparkline and progress bar follow its rounded corners */
+.mnode.fin-leaf { overflow: visible; transition: transform .16s ease, box-shadow .16s ease; }
 .mnode.fin-leaf:hover { transform: translateY(-2px); box-shadow: 0 10px 22px -12px rgba(30, 10, 30, .35), var(--elev-1); }
 .mnode.fin-leaf .mtxt, .mnode.fin-leaf .fin-cv-v { position: relative; z-index: 1; }
-.fin-spark { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: 22px; pointer-events: none; opacity: .55; }
+.fin-spark { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: 22px; pointer-events: none; opacity: .55; overflow: hidden; border-radius: 0 0 13px 10px; }
 .fin-spark .a { fill: color-mix(in srgb, hsl(var(--h) 60% 55%) 16%, transparent); } .fin-spark .l { fill: none; stroke: hsl(var(--h) 55% 50%); stroke-width: 1.4; vector-effect: non-scaling-stroke; }
 .fin-spark.exp .l { stroke: var(--fin-s2); } .fin-spark.exp .a { fill: color-mix(in srgb, var(--fin-s2) 14%, transparent); }
 .fin-spark.inc .l { stroke: var(--fin-s1); } .fin-spark.inc .a { fill: color-mix(in srgb, var(--fin-s1) 14%, transparent); }
-.fin-prog { position: absolute; left: 0; bottom: 0; height: 4px; border-radius: 0 4px 0 0; background: linear-gradient(90deg, var(--fin-s3), color-mix(in srgb, var(--fin-s3) 60%, #fff)); }
+.fin-prog { position: absolute; left: 0; bottom: 0; height: 4px; border-radius: 0 4px 0 10px; max-width: 100%; background: linear-gradient(90deg, var(--fin-s3), color-mix(in srgb, var(--fin-s3) 60%, #fff)); }
 .fin-leaf.trend-up .mtxt small { color: var(--crit); } .fin-leaf.trend-down .mtxt small { color: var(--ok); }
 @media (prefers-reduced-motion: no-preference) {
   .fin-canvas-page .fin-room { animation: finRoomIn .5s cubic-bezier(.2, .8, .2, 1) both; }
@@ -14321,6 +14322,8 @@ function finRowDecision(it, i) {
 function finCommit(it, auto) {
   const p = finP();
   let acct = it.acct;
+  // the same number as an account already there: that account, not a second one
+  if (!acct) { const ex = finAcctSameNumber((it.newAcct || {}).kind, it.meta.account, (it.newAcct || {}).bank, (it.newAcct || {}).currency || it.meta.currency); if (ex) { acct = it.acct = ex.id; it.newAcct = null; } }
   if (!acct) {
     const n = it.newAcct || {}; if (!n.name) { toast('Name the new account first.', { err: true }); return; }
     acct = E.uid('ac'); const a = { id: acct, name: n.name.trim(), bank: (n.bank || '').trim(), kind: n.kind || 'current', currency: n.currency || it.meta.currency || p.base, number: (it.meta.account || '').slice(-14), owner: 'me', holder: 'me', createdAt: nowISO() };
@@ -14554,6 +14557,7 @@ async function finAuto(files, kind) {
       if (!it.rows.length) { q.state = 'error'; q.msg = 'No transaction lines were found in this file.'; render(); continue; }
       it.auto = true;
       if (finP().reviewFirst) { UI.fin.imp = UI.fin.imp || { files: [], cur: 0 }; it.auto = false; UI.fin.imp.files.push(it); q.state = 'review'; render(); continue; }
+      if (!it.acct) { const ex = finAcctSameNumber(it.newAcct.kind, it.meta.account, it.newAcct.bank, it.newAcct.currency); if (ex) { it.acct = ex.id; it.newAcct = null; finParse(it); it.auto = true; } }
       if (!it.acct) { const n = it.newAcct; const id = E.uid('ac'); finSave(pp => { pp.accounts.push({ id, name: n.name, bank: n.bank || '', kind: n.kind, currency: n.currency, number: (it.meta.account || '').slice(-14), owner: 'me', holder: 'me', createdAt: nowISO() }); }); it.acct = id; it.newAcct = null; q.created = true; finParse(it); it.auto = true; }
       const r = finCommit(it, true);
       Object.assign(q, { state: 'done', counts: r.counts, acct: r.acct, batch: r.batch, why: it.acctWhy, method: it.method, check: it.check });
@@ -15226,6 +15230,51 @@ function finEnsurePresets() {
   });
 }
 HOOKS.ready.push(() => setTimeout(finEnsurePresets, 800));
+
+/* --- one account saved twice: joined into one ---
+   Two accounts of the same kind with the same account or card number (and bank and currency) are the same account —
+   e.g. a card whose statements were read before their number could be read. Everything that pointed at the copy
+   (its transactions, statements and saved balances) moves to the one kept (the preset one, else the oldest);
+   nothing is removed or counted twice, the conversation says what was joined, and Undo puts it back. */
+const finNumKey = n => { const d = String(n || '').replace(/[\s-]/g, ''); return d.replace(/\D/g, '').length >= 4 ? d.slice(-4) : ''; };
+const finAcctKey = a => { const n = finNumKey(a.number); return n && a.kind ? [a.kind, a.currency || '', n, FIN.norm(a.bank || '')].join('|') : null; };
+// an account already there for this kind and number (before a statement makes a new one)
+function finAcctSameNumber(kind, number, bank, currency) {
+  const k = finAcctKey({ kind, number, bank, currency: currency || finP().base }); if (!k) return null;
+  return finP().accounts.find(a => finAcctKey({ ...a, currency: a.currency || finP().base }) === k) || null;
+}
+function finJoinDupAccts() {
+  if (St.mode === 'viewer' || (St.mode === 'db' && St.colsLoaded && !['prefs', 'fintx', 'finbatch', 'finbal'].every(n => St.colsLoaded.has(n)))) return 0;
+  const p = finP(), groups = new Map();
+  UI.fin.joinSkip = UI.fin.joinSkip || new Set();
+  for (const a of p.accounts) { const k = finAcctKey({ ...a, currency: a.currency || p.base }); if (k) groups.set(k, [...(groups.get(k) || []), a]); }
+  for (const [k, g] of groups) if (g.some(a => UI.fin.joinSkip.has(a.id))) groups.delete(k);
+  const sets = [...groups.values()].filter(g => g.length > 1); if (!sets.length) return 0;
+  const snap = finSnapshot(), to = new Map(), lines = [];
+  for (const g of sets) {
+    const keep = g.slice().sort((x, y) => (y.preset ? 1 : 0) - (x.preset ? 1 : 0) || String(x.createdAt || '').localeCompare(String(y.createdAt || '')))[0];
+    for (const a of g) if (a !== keep) to.set(a.id, keep.id);
+    const n = finTx().filter(t => g.some(a => a !== keep && a.id === t.acct)).length;
+    lines.push(`${keep.name}${finNumKey(keep.number) ? ' ••' + finNumKey(keep.number) : ''}: ${g.length} copies of the same ${keep.kind === 'credit_card' ? 'card' : 'account'} joined into one — ${n} transaction${n === 1 ? '' : 's'} moved to it, nothing removed`);
+  }
+  // ids are unique random strings, so every place that names a copy is found and pointed at the one kept
+  const swap = d => { let j = JSON.stringify(d), hit = false; for (const [from, keep] of to) { const q = JSON.stringify(from); if (j.includes(q)) { j = j.split(q).join(JSON.stringify(keep)); hit = true; } } return hit ? JSON.parse(j) : null; };
+  for (const n of ['fintx', 'finbatch', 'finbal']) for (const d of colList(n)) { const x = swap(d); if (x) colPut(n, x); }
+  finSave(q => {
+    const accts = q.accounts; delete q.accounts; Object.assign(q, swap(q) || {});
+    const out = [];
+    for (const a of [...accts.filter(x => !to.has(x.id)), ...accts.filter(x => to.has(x.id))]) {   // the one kept first, the copies after
+      const id = to.get(a.id) || a.id, k = out.find(x => x.id === id);
+      if (!k) { out.push(to.has(a.id) ? { ...a, id } : a); continue; }
+      for (const [f, v] of Object.entries(a)) if (f !== 'id' && f !== 'name' && f !== 'preset' && (k[f] === undefined || k[f] === null || k[f] === '')) k[f] = v;   // what only the copy knew is kept
+    }
+    q.accounts = out;
+  });
+  FS.key = '';
+  const m = { id: E.uid('tk'), at: nowISO(), who: 'claude', reply: 'One account was saved twice — I joined the copies:', done: [], notes: lines, undoable: true, joined: [...to.keys()] };
+  UI.fin.undo.set(m.id, snap); finTalkPush(m); render();
+  return sets.length;
+}
 HOOKS.beforeRender.push(() => { if (UI.view === 'finance' && St.ready && !finP().presetsV1) setTimeout(finEnsurePresets, 0); });
 
 /* --- balances you give (dated snapshots, kept as history) --- */
@@ -16425,6 +16474,7 @@ async function finAutoFix(inTalk) {
 HOOKS.afterRender.push(() => {
   if (UI.view !== 'finance' || UI.fin.fixing || UI.fin.talk.busy || UI.fin.autoQ) return;
   if (St.mode === 'db' && St.colsLoaded && !['prefs', 'fintx', 'finbatch'].every(n => St.colsLoaded.has(n))) return;
+  if (finJoinDupAccts()) return;   // one account saved twice: joined first (always, it only moves things)
   if (finP().autoFix === false) return;
   const stale = typeof FIN_READER !== 'undefined' ? colList('finbatch').filter(b => !b.undone && (b.reader || 1) < FIN_READER && b.asset) : [];
   if (stale.length && !UI.fin.rereadTried) {
@@ -16460,7 +16510,8 @@ Object.assign(ACT, {
   'fin-talk-undo': el => {
     const id = el.dataset.id, s = UI.fin.undo.get(id); if (!s) return;
     finUndoTo(s); UI.fin.undo.delete(id);
-    { const d = clone(finTalkDoc('feed')), m = d.items.find(x => x.id === id); if (m) { m.undone = true; colPut('fintalk', d); } }
+    { const d = clone(finTalkDoc('feed')), m = d.items.find(x => x.id === id); if (m) { m.undone = true; colPut('fintalk', d); }
+      if (m && m.joined) for (const c of m.joined) (UI.fin.joinSkip = UI.fin.joinSkip || new Set()).add(c); }   // a join you undid is not done again by itself
     UI.fin.fixTried.clear(); UI.fin.flash = { ids: new Set(), until: 0 }; render(); toast('Undone — everything is as it was before.');
   },
   'fin-daily-check': () => { finDailyCheck(); if (finP().autoFix !== false && (UI.fin.daily.preview || []).length) finDailySave(); },

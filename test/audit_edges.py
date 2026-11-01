@@ -21,15 +21,14 @@ CHECK = r"""([minX, minY]) => {
     const bord = ['Left', 'Right'].every(k => parseFloat(s['border' + k + 'Width']) >= 1 && !tr(s['border' + k + 'Color']));
     const bg = !tr(s.backgroundColor) && parseFloat(s.borderTopLeftRadius) >= 6;
     return bord || bg; };
-  // the ✎ corner badge on a canvas card sits on its corner on purpose
-  const skip = el => el.closest('svg, .sr, [aria-hidden="true"], details:not([open]) > :not(summary), .toast, .toasts, .fin-cvmini, .fin-cv-btn.ed');
+  const skip = el => el.closest('svg, .sr, [aria-hidden="true"], details:not([open]) > :not(summary), .toast, .toasts, .fin-cvmini');
   const items = [];
   for (const el of document.querySelectorAll('#main *, .modal *, .ph-sheet *')) {
     if (skip(el) || !vis(el)) continue;
     // a drawn control (border or fill) is measured by its outline; a plain full-row button by the text in it
     const drawn = c => { const s = getComputedStyle(c); return ['Left', 'Right', 'Top', 'Bottom'].some(k => parseFloat(s['border' + k + 'Width']) >= 1 && !tr(s['border' + k + 'Color'])) || !tr(s.backgroundColor) || s.backgroundImage !== 'none' || parseFloat(s.boxShadow ? 1 : 0) && s.boxShadow !== 'none'; };
     if (el.matches('input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=hidden]), select, textarea')) { items.push({ el, r: el.getBoundingClientRect() }); continue; }
-    if (el.matches('button, .btn') && drawn(el)) { items.push({ el, r: el.getBoundingClientRect() }); continue; }
+    if (el.matches('button, .btn') && drawn(el)) { if (getComputedStyle(el).position !== 'absolute') items.push({ el, r: el.getBoundingClientRect() }); continue; }
     const ctl = el.closest('button, .btn, select, label.btn'); if (ctl && drawn(ctl)) continue;
     // text cut with an ellipsis ends where its box ends
     let clip = null; for (let q = el; q && !isBox(q); q = q.parentElement) { const s = getComputedStyle(q); if (/(hidden|clip)/.test(s.overflowX)) { clip = q.getBoundingClientRect(); break; } }
@@ -50,6 +49,20 @@ CHECK = r"""([minX, minY]) => {
     const key = name(box) + ' > ' + name(el) + ' ' + bad.map(x => x.split(' ')[0]).join('/');
     if (seen.has(key)) continue; seen.add(key);
     out.push(key + ' (' + bad.join(', ') + ') "' + (el.value || el.textContent || el.placeholder || '').trim().slice(0, 30) + '"');
+  }
+  // a button or field cut off by a box that hides what sticks out (shown on hover too, so hidden ones count);
+  // the canvas windows and scroll areas are left out — panning or scrolling brings those into view
+  for (const c of document.querySelectorAll('#main button, #main .btn, #main input:not([type=hidden]):not([type=file]), #main select, .modal button')) {
+    if (c.closest('svg, .sr, details:not([open])')) continue; const s0 = getComputedStyle(c); if (s0.display === 'none' || s0.visibility === 'hidden') continue;
+    const r = c.getBoundingClientRect(); if (r.width < 4 || r.height < 4) continue;
+    for (let p = c.parentElement; p && p !== document.body; p = p.parentElement) {
+      if (p.matches('#fin-cv-vp, .fin-cv-stage, #map-vp, .map-vp')) break;
+      const s = getComputedStyle(p); if (!/(hidden|clip)/.test(s.overflowX + s.overflowY) || /(auto|scroll)/.test(s.overflowX + s.overflowY)) continue;
+      const b = p.getBoundingClientRect(), cut = r.left < b.left - 0.5 || r.right > b.right + 0.5 || r.top < b.top - 0.5 || r.bottom > b.bottom + 0.5;
+      const seen2 = r.right > b.left && r.left < b.right && r.bottom > b.top && r.top < b.bottom;
+      if (cut && seen2) { const key = 'cut off: ' + name(c) + ' by ' + name(p); if (!seen.has(key)) { seen.add(key); out.push(key + ' "' + (c.getAttribute('aria-label') || c.textContent || '').trim().slice(0, 30) + '"'); } }
+      break;
+    }
   }
   return { out, n: items.length };
 }"""

@@ -398,14 +398,15 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
   background: linear-gradient(180deg, color-mix(in srgb, hsl(var(--h) 70% 85%) 55%, transparent), transparent); }
 .fin-room-h { position: relative; }
 .fin-room-ic { background: linear-gradient(145deg, var(--surface), color-mix(in srgb, hsl(var(--h) 70% 88%) 70%, var(--surface))); }
-.mnode.fin-leaf { overflow: hidden; transition: transform .16s ease, box-shadow .16s ease; }
+/* the card does not clip (its ✎ badge sits on the corner); the sparkline and progress bar follow its rounded corners */
+.mnode.fin-leaf { overflow: visible; transition: transform .16s ease, box-shadow .16s ease; }
 .mnode.fin-leaf:hover { transform: translateY(-2px); box-shadow: 0 10px 22px -12px rgba(30, 10, 30, .35), var(--elev-1); }
 .mnode.fin-leaf .mtxt, .mnode.fin-leaf .fin-cv-v { position: relative; z-index: 1; }
-.fin-spark { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: 22px; pointer-events: none; opacity: .55; }
+.fin-spark { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: 22px; pointer-events: none; opacity: .55; overflow: hidden; border-radius: 0 0 13px 10px; }
 .fin-spark .a { fill: color-mix(in srgb, hsl(var(--h) 60% 55%) 16%, transparent); } .fin-spark .l { fill: none; stroke: hsl(var(--h) 55% 50%); stroke-width: 1.4; vector-effect: non-scaling-stroke; }
 .fin-spark.exp .l { stroke: var(--fin-s2); } .fin-spark.exp .a { fill: color-mix(in srgb, var(--fin-s2) 14%, transparent); }
 .fin-spark.inc .l { stroke: var(--fin-s1); } .fin-spark.inc .a { fill: color-mix(in srgb, var(--fin-s1) 14%, transparent); }
-.fin-prog { position: absolute; left: 0; bottom: 0; height: 4px; border-radius: 0 4px 0 0; background: linear-gradient(90deg, var(--fin-s3), color-mix(in srgb, var(--fin-s3) 60%, #fff)); }
+.fin-prog { position: absolute; left: 0; bottom: 0; height: 4px; border-radius: 0 4px 0 10px; max-width: 100%; background: linear-gradient(90deg, var(--fin-s3), color-mix(in srgb, var(--fin-s3) 60%, #fff)); }
 .fin-leaf.trend-up .mtxt small { color: var(--crit); } .fin-leaf.trend-down .mtxt small { color: var(--ok); }
 @media (prefers-reduced-motion: no-preference) {
   .fin-canvas-page .fin-room { animation: finRoomIn .5s cubic-bezier(.2, .8, .2, 1) both; }
