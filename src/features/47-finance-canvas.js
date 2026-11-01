@@ -123,7 +123,6 @@ const finSecOpen = k => finIsOpen('sec:' + k);
 
 function finCvRooms(root) {
   const R = [{ id: 'ov', kind: 'ov', full: true, icon: '💰', title: 'My money', sum: root.sum, hue: 340, sec: 'dash' }];
-  if (typeof finNextLayout === 'function') R.push({ id: 'next', kind: 'next', full: true, icon: '🔔', title: 'Coming up & attention', sum: finNextSum(), hue: 28 });
   const buy = root.children.find(b => b.id === 'buy');
   if (buy) R.push({ id: 'buy', kind: 'goals', full: true, node: buy, icon: buy.icon, title: buy.label, sum: buy.sum, hue: buy.hue });
   for (const b of root.children) if (b.id !== 'buy') R.push({ id: b.id, kind: 'room', node: b, icon: b.icon, title: b.label, sum: b.sum, hue: b.hue, sec: b.sec });
@@ -136,35 +135,6 @@ function finCvRooms(root) {
   const f = UI.fin.cv.focus; return f ? out.filter(r => r.id === f || r.parent === f) : out;
 }
 const finDetH = (id, est) => UI.fin.detH[id] || est;
-function finCvLayout(rooms, plan, n) {
-  const { W, GAP, COLS, PAD, HEAD, CG, CW, CH } = FR, cards = [], dets = [], edges = [], subs = [];
-  let col = Array(COLS).fill(0);
-  const grid = (list, x0, y, w) => {   // cards in rows; an opened card's details right under its row
-    const per = Math.max(1, Math.floor((w + CG) / (CW + CG))); let row = [];
-    const flush = () => { if (!row.length) return; y += CH + CG; row = []; };
-    for (const c of list) {
-      if (c.type === 'branch') { flush(); subs.push({ id: c.id, label: `${c.icon} ${c.label}`, sum: c.sum, x: x0, y, w }); y += 34; grid(c.children, x0, y, w).forEach(() => {}); y = subs.y2; continue; }
-      c.x = x0 + row.length * (CW + CG); c.y = y; c.w = CW; c.h = CH; cards.push(c); row.push(c); if (row.length === per) flush();
-    }
-    flush(); subs.y2 = y; return [];
-  };
-  for (const r of rooms) {
-    if (r.full) { r.x = 0; r.y = Math.max(...col); r.w = FR.FULL; } else { const c = col.indexOf(Math.min(...col)); r.x = c * (W + GAP); r.y = col[c]; r.w = W; }
-    const x0 = r.x + PAD, iw = r.w - 2 * PAD; let y = r.y + HEAD;
-    if (UI.fin.cvCol.has(r.id)) { r.h = HEAD + 6; }
-    else if (r.kind === 'ov') { const h = finDetH('ov', 420); dets.push({ id: 'ov', x: x0, y, w: iw, h }); y += h; r.h = y + PAD - r.y; }
-    else if (r.kind === 'sec') { const h = finDetH(r.id, 640); dets.push({ id: r.id, x: x0, y, w: iw, h }); y += h; r.h = y + PAD - r.y; }
-    else if (r.kind === 'next') { y = finNextLayout(r, x0, y, iw, cards, dets, subs, grid); r.h = y + PAD - r.y; }
-    else if (r.kind === 'goals') { y = finGoalsLayout(r, plan, n, x0, y, iw, cards, dets, edges, subs, grid); r.h = y + PAD - r.y; }
-    else { grid(r.node.children, x0, y, iw); y = subs.y2; r.h = Math.max(y - CG, r.y + HEAD + 20) + PAD - r.y; }
-    if (r.full) col = col.map(() => r.y + r.h + GAP); else { const c = Math.round(r.x / (W + GAP)); col[c] = r.y + r.h + GAP; }
-  }
-  const w = FR.FULL, h = Math.max(...rooms.map(r => r.y + r.h), 200);
-  UI.fin.cvPos = new Map([...rooms.map(r => [r.id, { x: r.x, y: r.y, w: r.w, h: r.h }]), ...cards.map(c => [c.id, { x: c.x, y: c.y, w: c.w, h: c.h }]), ...dets.map(d => [d.id + ':det', d])]);
-  UI.fin.cvRoot = UI.fin.cvPos.get('ov');
-  UI.fin.cvRoomsList = rooms.map(r => ({ id: r.id, kind: r.kind, x: r.x, y: r.y, w: r.w, h: r.h, hue: r.hue, icon: r.icon, title: r.title }));
-  return { rooms, cards, dets, edges, subs, w, h };
-}
 // goals and purchases: where the money comes from on the left, each goal on the right, joined by how it is best paid;
 // the timeline and the savings goals below
 function finGoalsLayout(r, plan, n, x0, y, iw, cards, dets, edges, subs, grid) {
@@ -286,7 +256,6 @@ function finGoalsTimeline(plan) {
 }
 function finDetBody(id, plan, n) {
   if (id === 'ov') return finOverviewHTML();
-  if (id === 'rd' && typeof finRdScoreHTML === 'function') return finRdScoreHTML();
   if (id === 'free' && typeof finFreeHTML === 'function') return finFreeHTML();
   if (id === 'gk') return finGoalsHead(plan, n);
   if (id === 'gt') return finGoalsTimeline(plan);
@@ -358,15 +327,15 @@ function finCvRoom(r) {
     </div></section>`;
 }
 function finCvBoard() {
-  const cv = UI.fin.cv, root = finCvModel(), n = finNow(), plan = finBuyPlan(), rooms = finCvRooms(root), rich = cv.mode === 'rich' && typeof finRichLayout === 'function', flow = cv.mode === 'flow' && typeof finFlowLayout === 'function', mind = cv.mode === 'mind' && typeof finMindLayout === 'function', L = rich ? finRichLayout(rooms, plan, n) : flow ? finFlowLayout(rooms, plan, n) : mind ? finMindLayout(rooms, plan, n) : finCvLayout(rooms, plan, n);
+  const cv = UI.fin.cv, root = finCvModel(), n = finNow(), plan = finBuyPlan(), rooms = finCvRooms(root), rich = cv.mode === 'rich' && typeof finRichLayout === 'function', flow = cv.mode === 'flow' && typeof finFlowLayout === 'function', L = rich ? finRichLayout(rooms, plan, n) : flow ? finFlowLayout(rooms, plan, n) : finMindLayout(rooms, plan, n);   // the Mind map unless another layout is chosen
   const hueOf = new Map(); for (const r of rooms) { const walk = k => { hueOf.set(k.id, r.hue); (k.children || []).forEach(walk); }; if (r.node) walk(r.node); }
   UI.fin.cvSize = { w: L.w, h: L.h }; UI.fin.cvCards = new Map(L.cards.map(c => [c.id, c]));
   if (UI.fin.pop && !UI.fin.cvCards.has(UI.fin.pop)) UI.fin.pop = null;
   const path = e => { const mx = (e.x0 + e.x1) / 2; return `M${e.x0},${e.y0} C${mx},${e.y0} ${mx},${e.y1} ${e.x1},${e.y1}`; };
   // the entrance plays when you open the canvas (within its first moment), not on every redraw after
   const now = Date.now(); if (!UI.fin.cvShownAt) UI.fin.cvShownAt = now; const intro = now - UI.fin.cvShownAt < 700;
-  return `<div class="fin-cv-vp${rich ? ' mode-rich' : flow ? ' mode-flow' : mind ? ' mode-mind' : ''}${intro ? ' intro' : ''}${cv.k < 0.62 ? ' z-far' : ''}" id="fin-cv-vp">${flow ? finFlowSky() : ''}<div class="fin-cv-world" id="fin-cv-world" style="width:${L.w}px;height:${L.h}px;transform:translate(${cv.x}px,${cv.y}px) scale(${cv.k})">
-      ${rich ? finRichSVG(L) : flow ? finFlowSVG(L) : mind ? finMindSVG(L) : ''}${L.rooms.map(finCvRoom).join('')}
+  return `<div class="fin-cv-vp cosmic${rich ? ' mode-rich' : flow ? ' mode-flow' : ' mode-mind'}${intro ? ' intro' : ''}${cv.k < 0.62 ? ' z-far' : ''}" id="fin-cv-vp">${typeof finFlowSky === 'function' ? finFlowSky() : ''}<div class="fin-cv-world" id="fin-cv-world" style="width:${L.w}px;height:${L.h}px;transform:translate(${cv.x}px,${cv.y}px) scale(${cv.k})">
+      ${rich ? finRichSVG(L) : flow ? finFlowSVG(L) : finMindSVG(L)}${L.rooms.map(finCvRoom).join('')}
       <svg class="fin-cv-edges" width="${L.w}" height="${L.h}" aria-hidden="true">${L.edges.map(e => `<path class="${e.cls}" d="${path(e)}"><title>${esc(e.title)}</title></path>`).join('')}</svg>
       ${L.subs.map(s => `<div class="fin-room-sub" style="left:${s.x}px;top:${s.y}px;width:${s.w}px"><b>${esc(s.label)}</b>${s.sum ? ` <small>${esc(s.sum)}</small>` : ''}</div>`).join('')}
       ${L.cards.map(c => finCvCard(c, hueOf.get(c.id) ?? (c.id.startsWith('b:') || c.id.startsWith('src:') || c.id.startsWith('g:') ? 190 : 200))).join('')}

@@ -2265,8 +2265,8 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 /* zoomed out: cards show only their name and figure, in big type; room titles grow; details stay */
 /* zoomed out, a card is its name over its figure, each on its own line */
 
-/* ---------- the third layout: Flow ---------- */
-.fin-cv-vp.mode-flow { background: #0d0a1f; border-color: #2a2147; --flow-ink: #f4f0ff; --flow-dim: #b9aedb; }
+/* ---------- the night-sky theme (Flow's style) — every Money canvas layout: Mind map, Rich Dad, Flow ---------- */
+.fin-cv-vp.cosmic { background: #0d0a1f; border-color: #2a2147; --flow-ink: #f4f0ff; --flow-dim: #b9aedb; }
 /* the night sky: three soft lights drifting slowly behind the canvas (they never move with it) */
 .fin-flow-sky { position: absolute; inset: 0; overflow: hidden; pointer-events: none; background:
   radial-gradient(1200px 700px at 15% -10%, #3b1d5c 0%, transparent 60%), radial-gradient(900px 600px at 110% 110%, #3a1430 0%, transparent 60%), linear-gradient(160deg, #0f0c26, #120a1c 60%, #0b0f22); }
@@ -2281,26 +2281,26 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
   @keyframes finSky1 { to { transform: translate(14vmax, 8vmax) scale(1.15); } }
   @keyframes finSky2 { to { transform: translate(-12vmax, 10vmax) scale(.9); } }
 }
-.mode-flow .fin-cv-world { z-index: 1; }
+.cosmic .fin-cv-world { z-index: 1; }
 /* rooms: frosted glass lit by their own colour */
-.mode-flow .fin-room { background: linear-gradient(160deg, hsl(var(--h) 60% 40% / .30), hsl(var(--h) 50% 18% / .42) 55%, rgba(14, 10, 32, .55)); border: 1px solid hsl(var(--h) 80% 75% / .28);
+.cosmic .fin-room { background: linear-gradient(160deg, hsl(var(--h) 60% 40% / .30), hsl(var(--h) 50% 18% / .42) 55%, rgba(14, 10, 32, .55)); border: 1px solid hsl(var(--h) 80% 75% / .28);
   box-shadow: 0 1px 0 hsl(var(--h) 90% 85% / .25) inset, 0 30px 80px -40px hsl(var(--h) 80% 55% / .65), 0 0 0 1px rgba(0,0,0,.25); }
-.mode-flow .fin-room::before { background: linear-gradient(180deg, hsl(var(--h) 90% 75% / .22), transparent); }
-.mode-flow .fin-room-h b, .mode-flow .fin-room-sub b { color: var(--flow-ink); }
-.mode-flow .fin-room-h small, .mode-flow .fin-room-sub small, .mode-flow .fin-room-go { color: var(--flow-dim); }
-.mode-flow .fin-room-ic { background: hsl(var(--h) 70% 60% / .22); box-shadow: 0 0 18px hsl(var(--h) 90% 65% / .45); }
-.mode-flow .fin-room-h .btn.ghost { color: var(--flow-ink); }
-.mode-flow .fin-room-h .btn.ghost:hover { background: rgba(255,255,255,.12); }
-.mode-flow .fin-room-t.sel { box-shadow: 0 0 0 2px hsl(var(--h) 90% 70% / .7); border-radius: 12px; }
+.cosmic .fin-room::before { background: linear-gradient(180deg, hsl(var(--h) 90% 75% / .22), transparent); }
+.cosmic .fin-room-h b, .cosmic .fin-room-sub b { color: var(--flow-ink); }
+.cosmic .fin-room-h small, .cosmic .fin-room-sub small, .cosmic .fin-room-go { color: var(--flow-dim); }
+.cosmic .fin-room-ic { background: hsl(var(--h) 70% 60% / .22); box-shadow: 0 0 18px hsl(var(--h) 90% 65% / .45); }
+.cosmic .fin-room-h .btn.ghost { color: var(--flow-ink); }
+.cosmic .fin-room-h .btn.ghost:hover { background: rgba(255,255,255,.12); }
+.cosmic .fin-room-t.sel { box-shadow: 0 0 0 2px hsl(var(--h) 90% 70% / .7); border-radius: 12px; }
 /* cards: bright tiles that lean toward the pointer, with a light that follows it */
-.mode-flow .mnode.fin-leaf { border-color: hsl(var(--h) 60% 75% / .55); box-shadow: 0 10px 28px -16px rgba(0,0,0,.65), 0 0 0 1px rgba(255,255,255,.04);
+.cosmic .mnode.fin-leaf { border-color: hsl(var(--h) 60% 75% / .55); box-shadow: 0 10px 28px -16px rgba(0,0,0,.65), 0 0 0 1px rgba(255,255,255,.04);
   background: radial-gradient(160px 80px at var(--gx, 50%) 0%, hsl(var(--h) 90% 92% / .9), transparent 70%), linear-gradient(180deg, var(--face-top), transparent 50%), var(--surface);
   transition: transform .18s ease-out, box-shadow .18s ease; }   /* flat until hovered: sharp at every zoom */
-.mode-flow .mnode.fin-leaf:hover { transform: perspective(800px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) translateY(-3px) scale(1.015);
+.cosmic .mnode.fin-leaf:hover { transform: perspective(800px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) translateY(-3px) scale(1.015);
   box-shadow: 0 22px 40px -18px hsl(var(--h) 80% 40% / .7), 0 0 0 1px hsl(var(--h) 90% 70% / .5), 0 0 30px -6px hsl(var(--h) 90% 65% / .55); }
-.mode-flow .fin-det { box-shadow: 0 24px 60px -30px rgba(0,0,0,.8), 0 0 0 1px rgba(255,255,255,.06); }
+.cosmic .fin-det { box-shadow: 0 24px 60px -30px rgba(0,0,0,.8), 0 0 0 1px rgba(255,255,255,.06); }
 .mode-flow .fin-det[data-det="up"] .fin-up-grid { grid-template-columns: minmax(0, 1fr); }
-.mode-flow .fin-link { stroke: hsl(190 90% 70% / .75); }
+.cosmic .fin-link { stroke: hsl(190 90% 70% / .75); }
 /* the ribbons */
 .fin-flow { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; }
 .fin-flow .glow { opacity: .22; stroke: currentColor; stroke-width: 22px; stroke-linejoin: round; }   /* a halo without a blur filter (cheap while moving) */
@@ -2311,7 +2311,7 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 .fin-flow-l .what { font-size: 12px; font-weight: 500; fill: var(--flow-dim, #ccc); }
 .fin-flow-l { fill: var(--flow-ink, #fff); font: 700 15px/1 var(--font, system-ui); paint-order: stroke; stroke: rgba(10, 6, 24, .85); stroke-width: 5px; stroke-linejoin: round; }
 .fin-flow-h { fill: var(--flow-dim, #ccc); font: 700 13px/1 var(--font, system-ui); letter-spacing: .14em; text-transform: uppercase; }
-.mode-flow ~ .fin-cvmini, .fin-cv-stage:has(.mode-flow) .fin-cvmini { background: rgba(16, 12, 36, .85); border-color: rgba(255,255,255,.15); }
+.cosmic ~ .fin-cvmini, .fin-cv-stage:has(.cosmic) .fin-cvmini { background: rgba(16, 12, 36, .85); border-color: rgba(255,255,255,.15); }
 .mode-flow .fin-room-go { display: none; }
 /* Flow's lanes are narrower: room subtitles and the coming-weeks list wrap instead of running under the buttons */
 .mode-flow .fin-room:not(.ov):not(.goals):not(.sec) .fin-room-h > .spacer { display: none; }
@@ -2328,10 +2328,10 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
    titles grow, so the whole canvas reads at Fit. Text is drawn at its exact size at every zoom. */
 .fin-cv-world { text-rendering: geometricPrecision; -webkit-font-smoothing: antialiased; }
 .fin-cv-vp.z-far .fin-leaf .mtxt small, .fin-cv-vp.z-far .fin-leaf .fin-spark, .fin-cv-vp.z-far .fin-cv-ic { display: none; }
-.fin-cv-vp.z-far .mnode.fin-leaf { flex-direction: column; align-items: stretch; justify-content: center; gap: 1px; padding: 3px 12px; }
+.fin-cv-vp.z-far .mnode.fin-leaf { flex-direction: column; align-items: stretch; justify-content: center; gap: 1px; padding: 7px 14px; }
 .fin-cv-vp.z-far .fin-leaf .mtxt { width: 100%; }
-.fin-cv-vp.z-far .fin-leaf .mtxt b { font-size: 19px; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.fin-cv-vp.z-far .fin-leaf .fin-cv-v { font-size: 19px; line-height: 1.2; text-align: left; }
+.fin-cv-vp.z-far .fin-leaf .mtxt b { font-size: 17px; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fin-cv-vp.z-far .fin-leaf .fin-cv-v { font-size: 17px; line-height: 1.15; text-align: left; }
 .fin-cv-vp.z-far .fin-room-t b { font-size: 28px; }
 .fin-cv-vp.z-far .fin-room-t small { font-size: 16px; }
 .fin-cv-vp.z-far .fin-room-sub b { font-size: 18px; }
@@ -2340,9 +2340,6 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 .fin-cv-vp.z-far.mode-flow .fin-room:not(.ov):not(.goals):not(.sec) .fin-room-t small { font-size: 13px; line-height: 1.25; }
 
 /* ---------- the layout "Mind map": branches as thick as their money, coloured by health, money flowing ---------- */
-.fin-cv-vp.mode-mind { background: radial-gradient(1400px 900px at 50% 45%, color-mix(in srgb, var(--accent) 6%, var(--bg)), var(--bg)); }
-.mode-mind .fin-room { background: color-mix(in srgb, var(--surface) 82%, transparent); border: 1.5px solid color-mix(in srgb, hsl(var(--h) 50% 55%) 35%, var(--line)); box-shadow: 0 14px 36px -28px rgba(30, 20, 50, .45); }
-.mode-mind .fin-room.ov { border: 2.5px solid color-mix(in srgb, var(--accent) 55%, var(--line)); box-shadow: 0 0 0 8px color-mix(in srgb, var(--accent) 8%, transparent), 0 30px 70px -40px color-mix(in srgb, var(--accent) 60%, transparent); }
 .mode-mind .fin-room-h { height: 84px; }
 .mode-mind .fin-room-t b { font-size: 22px; }
 .fin-mind { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; }
@@ -2355,27 +2352,24 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 .mm-branch.hot .limb { filter: drop-shadow(0 0 10px rgba(255, 210, 90, .9)); }
 .mm-branch.hot .flow { stroke: #fff7c8; stroke-width: 7; }
 @media (prefers-reduced-motion: no-preference) { .mm-branch .flow { animation: finMind 2.6s linear infinite; } .mm-branch.hot .flow { animation-duration: .9s !important; } @keyframes finMind { to { stroke-dashoffset: -22.1; } } }
-.mm-l { font: 700 20px/1 var(--font, system-ui); fill: var(--ink); paint-order: stroke; stroke: color-mix(in srgb, var(--bg) 90%, transparent); stroke-width: 6px; stroke-linejoin: round; }
-.mm-l .per { font-size: 14px; font-weight: 600; fill: var(--ink-2); }
+.mm-l { font: 700 20px/1 var(--font, system-ui); fill: var(--flow-ink, #fff); paint-order: stroke; stroke: rgba(10, 6, 24, .85); stroke-width: 6px; stroke-linejoin: round; }
+.mm-l .per { font-size: 14px; font-weight: 600; fill: var(--flow-dim, #ccc); }
 .mode-mind .fin-det[data-det="up"] .fin-up-grid { grid-template-columns: minmax(0, 1fr); }
 .mode-mind .fin-up-l { white-space: normal; overflow: visible; overflow-wrap: anywhere; }
 
 /* ---------- the layout "Rich Dad": an income statement above a balance sheet ---------- */
-.fin-cv-vp.mode-rich { background: linear-gradient(180deg, color-mix(in srgb, #c9a227 5%, var(--bg)), var(--bg)); }
-.mode-rich .fin-room { background: color-mix(in srgb, var(--surface) 94%, transparent); border: 1.5px solid color-mix(in srgb, hsl(var(--h) 45% 55%) 30%, var(--line)); }
-.mode-rich .fin-room.rd { border: 2.5px solid #c9a227; box-shadow: 0 0 0 6px color-mix(in srgb, #c9a227 12%, transparent), var(--elev-1); }
 .mode-rich .fin-room-h { height: 84px; } .mode-rich .fin-room-t b { font-size: 22px; }
 .fin-rich { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; }
-.rd-frame { fill: color-mix(in srgb, var(--surface) 55%, transparent); stroke: color-mix(in srgb, var(--ink) 30%, transparent); stroke-width: 3; stroke-dasharray: 14 8; }
-.rd-ft { font: 800 30px/1 var(--font, system-ui); letter-spacing: .14em; fill: var(--ink); }
-.rd-ct { font: 700 17px/1 var(--font, system-ui); fill: var(--ink-2); }
+.rd-frame { fill: rgba(255, 255, 255, .035); stroke: rgba(220, 205, 255, .3); stroke-width: 3; stroke-dasharray: 14 8; }
+.rd-ft { font: 800 30px/1 var(--font, system-ui); letter-spacing: .14em; fill: var(--flow-ink, #fff); }
+.rd-ct { font: 700 17px/1 var(--font, system-ui); fill: var(--flow-dim, #ccc); }
 .rd-flow .pipe { fill: none; stroke-linecap: round; opacity: .55; }
 .rd-flow .flow { fill: none; stroke: #fff; stroke-width: 5; stroke-linecap: round; stroke-dasharray: 0.1 22; }
 .rd-flow.earned .pipe { stroke: #3b82c4; } .rd-flow.expense .pipe { stroke: #d9534f; } .rd-flow.save .pipe { stroke: #2e9e5b; } .rd-flow.passive .pipe { stroke: #c9a227; } .rd-flow.liability .pipe { stroke: #a2466f; }
 @media (prefers-reduced-motion: no-preference) { .rd-flow .flow { animation: finRd 2.4s linear infinite; } .rd-flow.passive .flow { animation-duration: 1.6s; } @keyframes finRd { to { stroke-dashoffset: -22.1; } } }
 .rd-job { fill: #3b82c4; } .rd-jobt { font: 700 16px/1 var(--font, system-ui); fill: #fff; }
-.rd-l { font: 700 20px/1 var(--font, system-ui); fill: var(--ink); paint-order: stroke; stroke: color-mix(in srgb, var(--bg) 92%, transparent); stroke-width: 6px; stroke-linejoin: round; }
-.rd-l .per { font-size: 14px; font-weight: 600; fill: var(--ink-2); }
+.rd-l { font: 700 20px/1 var(--font, system-ui); fill: var(--flow-ink, #fff); paint-order: stroke; stroke: rgba(10, 6, 24, .85); stroke-width: 6px; stroke-linejoin: round; }
+.rd-l .per { font-size: 14px; font-weight: 600; fill: var(--flow-dim, #ccc); }
 /* what each card is */
 .mode-rich .mnode.fin-leaf.rd-earned, .mode-mind .mnode.fin-leaf.rd-earned { border-left: 6px solid #3b82c4; }
 .mode-rich .mnode.fin-leaf.rd-passive, .mode-mind .mnode.fin-leaf.rd-passive { border-left: 6px solid #c9a227; background: linear-gradient(90deg, color-mix(in srgb, #c9a227 14%, var(--surface)), var(--surface) 60%); }
@@ -2384,11 +2378,6 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 .mode-rich .mnode.fin-leaf.rd-expense, .mode-mind .mnode.fin-leaf.rd-expense { border-left: 6px solid #e08a5a; }
 .mode-rich .mnode.fin-leaf.rd-doodad, .mode-mind .mnode.fin-leaf.rd-doodad { border-left: 6px dashed #8e6bbf; }
 /* the scorecard */
-.fin-rd-score { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 16px; align-items: center; }
-.fin-rd-pat { display: grid; gap: 2px; } .fin-rd-pat b { font-size: 30px; font-family: var(--f-display); }
-.fin-rd-score.rich .fin-rd-pat b { color: #2e9e5b; } .fin-rd-score.middle .fin-rd-pat b { color: #c47a1c; } .fin-rd-score.poor .fin-rd-pat b { color: #d9534f; } .fin-rd-score.building .fin-rd-pat b { color: #3b82c4; }
-.fin-rd-free { display: grid; gap: 6px; }
-.fin-rd-bar { height: 14px; border-radius: 99px; background: var(--line-2); overflow: hidden; } .fin-rd-bar i { display: block; height: 100%; background: linear-gradient(90deg, #c9a227, #2e9e5b); border-radius: 99px; }
 .mode-rich .fin-det[data-det="up"] .fin-up-grid { grid-template-columns: minmax(0, 1fr); }
 .mode-rich .fin-up-l { white-space: normal; overflow: visible; overflow-wrap: anywhere; }
 
@@ -2397,12 +2386,11 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 .mode-mind .mnode.fin-leaf.rd-asset.rd-idle { border-left: 6px dashed #2e9e5b; background: var(--surface); }
 .mm-branch.work .limb { fill: #3b82c4; } .mm-branch.gold .limb { fill: #c9a227; }
 .fin-twig.work { stroke: #3b82c4; } .fin-twig.gold { stroke: #c9a227; }
-.mm-i { font: 600 15px/1 var(--font, system-ui); fill: var(--ink-2); paint-order: stroke; stroke: color-mix(in srgb, var(--bg) 90%, transparent); stroke-width: 5px; stroke-linejoin: round; }
+.mm-i { font: 600 15px/1 var(--font, system-ui); fill: var(--flow-dim, #ccc); paint-order: stroke; stroke: rgba(10, 6, 24, .85); stroke-width: 5px; stroke-linejoin: round; }
 .mm-cross .pipe { fill: none; stroke-linecap: round; opacity: .5; }
 .mm-cross .flow { fill: none; stroke: #fff; stroke-width: 5; stroke-linecap: round; stroke-dasharray: 0.1 22; opacity: .95; }
 .mm-cross.gold .pipe { stroke: #c9a227; } .mm-cross.red .pipe { stroke: #d9534f; } .mm-cross.green .pipe { stroke: #2e9e5b; }
 @media (prefers-reduced-motion: no-preference) { .mm-cross .flow { animation: finMind 2.6s linear infinite; } }
-.mode-mind .fin-room.free { border: 3px solid #c9a227; box-shadow: 0 0 0 10px color-mix(in srgb, #c9a227 12%, transparent), 0 30px 70px -40px rgba(120, 90, 10, .5); background: color-mix(in srgb, var(--surface) 96%, #c9a227); }
 .mode-mind .fin-room.free .fin-room-t b { font-size: 28px; }
 .fin-free { display: grid; gap: 14px; }
 .fin-free-top { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 18px; align-items: center; }
@@ -2429,6 +2417,17 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 .fin-free-key i { display: inline-block; width: 14px; height: 10px; border-radius: 3px; margin-right: -6px; vertical-align: middle; }
 .fin-free-key .work { background: #3b82c4; } .fin-free-key .gold { background: #c9a227; } .fin-free-key .green { background: #2e9e5b; } .fin-free-key .cash { background: #7cc79a; }
 .fin-free-key .idle { border: 2px dashed #2e9e5b; } .fin-free-key .red { background: #d9534f; } .fin-free-key .exp { background: #e08a5a; } .fin-free-key .doodad { border: 2px dashed #8e6bbf; }
+.rd-i { font: 600 15px/1 var(--font, system-ui); fill: var(--flow-dim, #ccc); paint-order: stroke; stroke: rgba(10, 6, 24, .85); stroke-width: 5px; stroke-linejoin: round; }
+.rd-flow.save.none .pipe { stroke: #e0a030; stroke-dasharray: 6 10; }
+.mode-rich .fin-room.free .fin-room-t b { font-size: 28px; }
+.fin-free-views { justify-self: end; }
+
+/* the centre of the wealth map: financial freedom, a golden glass room */
+.cosmic .fin-room.free { background: linear-gradient(160deg, rgba(232, 190, 60, .34), rgba(90, 60, 10, .42) 55%, rgba(14, 10, 32, .6)); border: 2px solid rgba(240, 200, 90, .7);
+  box-shadow: 0 1px 0 rgba(255, 230, 150, .4) inset, 0 0 0 10px rgba(232, 190, 60, .12), 0 40px 90px -40px rgba(232, 190, 60, .7); }
+.cosmic .fin-room.free .fin-room-t b { font-size: 28px; }
+.cosmic .mm-branch .limb { opacity: .8; }
+.cosmic .fin-twig { opacity: .6; }
 
 </style>
 <div class="titlestrip" id="titlestrip"><span class="ts-brand"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c3.3 4 6 7.2 6 10.4a6 6 0 0 1-12 0C6 10.2 8.7 7 12 3z"/><path d="m9.3 13.6 1.9 1.9 3.6-4.1"/></svg> Action Register</span><button class="ts-search" data-act="palette" title="Search and commands (Ctrl+K)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg><span>Search or type a command</span><kbd>Ctrl K</kbd></button><span class="ts-space"></span></div>
@@ -16128,7 +16127,6 @@ const finSecOpen = k => finIsOpen('sec:' + k);
 
 function finCvRooms(root) {
   const R = [{ id: 'ov', kind: 'ov', full: true, icon: '💰', title: 'My money', sum: root.sum, hue: 340, sec: 'dash' }];
-  if (typeof finNextLayout === 'function') R.push({ id: 'next', kind: 'next', full: true, icon: '🔔', title: 'Coming up & attention', sum: finNextSum(), hue: 28 });
   const buy = root.children.find(b => b.id === 'buy');
   if (buy) R.push({ id: 'buy', kind: 'goals', full: true, node: buy, icon: buy.icon, title: buy.label, sum: buy.sum, hue: buy.hue });
   for (const b of root.children) if (b.id !== 'buy') R.push({ id: b.id, kind: 'room', node: b, icon: b.icon, title: b.label, sum: b.sum, hue: b.hue, sec: b.sec });
@@ -16141,35 +16139,6 @@ function finCvRooms(root) {
   const f = UI.fin.cv.focus; return f ? out.filter(r => r.id === f || r.parent === f) : out;
 }
 const finDetH = (id, est) => UI.fin.detH[id] || est;
-function finCvLayout(rooms, plan, n) {
-  const { W, GAP, COLS, PAD, HEAD, CG, CW, CH } = FR, cards = [], dets = [], edges = [], subs = [];
-  let col = Array(COLS).fill(0);
-  const grid = (list, x0, y, w) => {   // cards in rows; an opened card's details right under its row
-    const per = Math.max(1, Math.floor((w + CG) / (CW + CG))); let row = [];
-    const flush = () => { if (!row.length) return; y += CH + CG; row = []; };
-    for (const c of list) {
-      if (c.type === 'branch') { flush(); subs.push({ id: c.id, label: `${c.icon} ${c.label}`, sum: c.sum, x: x0, y, w }); y += 34; grid(c.children, x0, y, w).forEach(() => {}); y = subs.y2; continue; }
-      c.x = x0 + row.length * (CW + CG); c.y = y; c.w = CW; c.h = CH; cards.push(c); row.push(c); if (row.length === per) flush();
-    }
-    flush(); subs.y2 = y; return [];
-  };
-  for (const r of rooms) {
-    if (r.full) { r.x = 0; r.y = Math.max(...col); r.w = FR.FULL; } else { const c = col.indexOf(Math.min(...col)); r.x = c * (W + GAP); r.y = col[c]; r.w = W; }
-    const x0 = r.x + PAD, iw = r.w - 2 * PAD; let y = r.y + HEAD;
-    if (UI.fin.cvCol.has(r.id)) { r.h = HEAD + 6; }
-    else if (r.kind === 'ov') { const h = finDetH('ov', 420); dets.push({ id: 'ov', x: x0, y, w: iw, h }); y += h; r.h = y + PAD - r.y; }
-    else if (r.kind === 'sec') { const h = finDetH(r.id, 640); dets.push({ id: r.id, x: x0, y, w: iw, h }); y += h; r.h = y + PAD - r.y; }
-    else if (r.kind === 'next') { y = finNextLayout(r, x0, y, iw, cards, dets, subs, grid); r.h = y + PAD - r.y; }
-    else if (r.kind === 'goals') { y = finGoalsLayout(r, plan, n, x0, y, iw, cards, dets, edges, subs, grid); r.h = y + PAD - r.y; }
-    else { grid(r.node.children, x0, y, iw); y = subs.y2; r.h = Math.max(y - CG, r.y + HEAD + 20) + PAD - r.y; }
-    if (r.full) col = col.map(() => r.y + r.h + GAP); else { const c = Math.round(r.x / (W + GAP)); col[c] = r.y + r.h + GAP; }
-  }
-  const w = FR.FULL, h = Math.max(...rooms.map(r => r.y + r.h), 200);
-  UI.fin.cvPos = new Map([...rooms.map(r => [r.id, { x: r.x, y: r.y, w: r.w, h: r.h }]), ...cards.map(c => [c.id, { x: c.x, y: c.y, w: c.w, h: c.h }]), ...dets.map(d => [d.id + ':det', d])]);
-  UI.fin.cvRoot = UI.fin.cvPos.get('ov');
-  UI.fin.cvRoomsList = rooms.map(r => ({ id: r.id, kind: r.kind, x: r.x, y: r.y, w: r.w, h: r.h, hue: r.hue, icon: r.icon, title: r.title }));
-  return { rooms, cards, dets, edges, subs, w, h };
-}
 // goals and purchases: where the money comes from on the left, each goal on the right, joined by how it is best paid;
 // the timeline and the savings goals below
 function finGoalsLayout(r, plan, n, x0, y, iw, cards, dets, edges, subs, grid) {
@@ -16291,7 +16260,6 @@ function finGoalsTimeline(plan) {
 }
 function finDetBody(id, plan, n) {
   if (id === 'ov') return finOverviewHTML();
-  if (id === 'rd' && typeof finRdScoreHTML === 'function') return finRdScoreHTML();
   if (id === 'free' && typeof finFreeHTML === 'function') return finFreeHTML();
   if (id === 'gk') return finGoalsHead(plan, n);
   if (id === 'gt') return finGoalsTimeline(plan);
@@ -16363,15 +16331,15 @@ function finCvRoom(r) {
     </div></section>`;
 }
 function finCvBoard() {
-  const cv = UI.fin.cv, root = finCvModel(), n = finNow(), plan = finBuyPlan(), rooms = finCvRooms(root), rich = cv.mode === 'rich' && typeof finRichLayout === 'function', flow = cv.mode === 'flow' && typeof finFlowLayout === 'function', mind = cv.mode === 'mind' && typeof finMindLayout === 'function', L = rich ? finRichLayout(rooms, plan, n) : flow ? finFlowLayout(rooms, plan, n) : mind ? finMindLayout(rooms, plan, n) : finCvLayout(rooms, plan, n);
+  const cv = UI.fin.cv, root = finCvModel(), n = finNow(), plan = finBuyPlan(), rooms = finCvRooms(root), rich = cv.mode === 'rich' && typeof finRichLayout === 'function', flow = cv.mode === 'flow' && typeof finFlowLayout === 'function', L = rich ? finRichLayout(rooms, plan, n) : flow ? finFlowLayout(rooms, plan, n) : finMindLayout(rooms, plan, n);   // the Mind map unless another layout is chosen
   const hueOf = new Map(); for (const r of rooms) { const walk = k => { hueOf.set(k.id, r.hue); (k.children || []).forEach(walk); }; if (r.node) walk(r.node); }
   UI.fin.cvSize = { w: L.w, h: L.h }; UI.fin.cvCards = new Map(L.cards.map(c => [c.id, c]));
   if (UI.fin.pop && !UI.fin.cvCards.has(UI.fin.pop)) UI.fin.pop = null;
   const path = e => { const mx = (e.x0 + e.x1) / 2; return `M${e.x0},${e.y0} C${mx},${e.y0} ${mx},${e.y1} ${e.x1},${e.y1}`; };
   // the entrance plays when you open the canvas (within its first moment), not on every redraw after
   const now = Date.now(); if (!UI.fin.cvShownAt) UI.fin.cvShownAt = now; const intro = now - UI.fin.cvShownAt < 700;
-  return `<div class="fin-cv-vp${rich ? ' mode-rich' : flow ? ' mode-flow' : mind ? ' mode-mind' : ''}${intro ? ' intro' : ''}${cv.k < 0.62 ? ' z-far' : ''}" id="fin-cv-vp">${flow ? finFlowSky() : ''}<div class="fin-cv-world" id="fin-cv-world" style="width:${L.w}px;height:${L.h}px;transform:translate(${cv.x}px,${cv.y}px) scale(${cv.k})">
-      ${rich ? finRichSVG(L) : flow ? finFlowSVG(L) : mind ? finMindSVG(L) : ''}${L.rooms.map(finCvRoom).join('')}
+  return `<div class="fin-cv-vp cosmic${rich ? ' mode-rich' : flow ? ' mode-flow' : ' mode-mind'}${intro ? ' intro' : ''}${cv.k < 0.62 ? ' z-far' : ''}" id="fin-cv-vp">${typeof finFlowSky === 'function' ? finFlowSky() : ''}<div class="fin-cv-world" id="fin-cv-world" style="width:${L.w}px;height:${L.h}px;transform:translate(${cv.x}px,${cv.y}px) scale(${cv.k})">
+      ${rich ? finRichSVG(L) : flow ? finFlowSVG(L) : finMindSVG(L)}${L.rooms.map(finCvRoom).join('')}
       <svg class="fin-cv-edges" width="${L.w}" height="${L.h}" aria-hidden="true">${L.edges.map(e => `<path class="${e.cls}" d="${path(e)}"><title>${esc(e.title)}</title></path>`).join('')}</svg>
       ${L.subs.map(s => `<div class="fin-room-sub" style="left:${s.x}px;top:${s.y}px;width:${s.w}px"><b>${esc(s.label)}</b>${s.sum ? ` <small>${esc(s.sum)}</small>` : ''}</div>`).join('')}
       ${L.cards.map(c => finCvCard(c, hueOf.get(c.id) ?? (c.id.startsWith('b:') || c.id.startsWith('src:') || c.id.startsWith('g:') ? 190 : 200))).join('')}
@@ -17196,7 +17164,7 @@ document.addEventListener('keydown', e => {
   else if (k === '-' || k === '_') { own(); finCvZoomSmooth(1 / 1.15); }
   else if (k === '?') { own(); UI.fin.help = !UI.fin.help; render(); }
   else if (k === 't' || k === 'T') { own(); finTalkWin(!UI.fin.talk.win); }
-  else if ((k === 'l' || k === 'L') && typeof finCvMode === 'function') { own(); finCvMode(FIN_CV_MODES[(FIN_CV_MODES.indexOf(UI.fin.cv.mode || 'rooms') + 1) % FIN_CV_MODES.length]); }
+  else if ((k === 'l' || k === 'L') && typeof finCvMode === 'function') { own(); finCvMode(FIN_CV_MODES[(FIN_CV_MODES.indexOf(UI.fin.cv.mode || 'mind') + 1) % FIN_CV_MODES.length]); }
   else if (/^Arrow(Left|Right|Up|Down)$/.test(k)) { e.preventDefault(); const d = e.shiftKey ? 420 : 160; FCAM.pan(k === 'ArrowLeft' ? d : k === 'ArrowRight' ? -d : 0, k === 'ArrowUp' ? d : k === 'ArrowDown' ? -d : 0); }   // glides
   else if (/^[1-9]$/.test(k)) { const r = (UI.fin.cvRoomsList || []).filter(x => x.kind !== 'sec')[+k - 1]; if (r) { own(); finCvZoomRoom(r.id); } }
 }, true);
@@ -17437,8 +17405,10 @@ Object.assign(window.__FIN, { menu: (id, x, y) => finMenuOpen(id, x, y), about: 
 // you are from leaving the rat race — when passive income covers every expense.
 // Rooms, Flow and the Mind map are the other layouts; everything on the canvas works the same in all of them.
 
-const FRD = { LM: 240, COL: 1260, GAP: 80, TOP: 760, NEXT: 760, HEAD: 92, FRAME: 70 };
-const FIN_CV_MODES = ['rooms', 'flow', 'rich', 'mind'];
+const FRD = { LM: 240, COL: 1260, GAP: 80, HEAD: 92, FRAME: 70 };
+const FIN_CV_MODES = ['mind', 'rich', 'flow'];
+// the Mind map is the default; a saved Rooms (removed) opens the Mind map, a saved Reservoirs or Tree opens Rich Dad
+UI.fin.cv.mode = 'mind';
 try { const m = localStorage.getItem('ar-fin-cv-mode'); if (FIN_CV_MODES.includes(m)) UI.fin.cv.mode = m; else if (m === 'res' || m === 'tree') UI.fin.cv.mode = 'rich'; } catch {}
 try { indexedDB.deleteDatabase('ar-tree'); } catch {}
 
@@ -17467,16 +17437,10 @@ function finRdNumbers() {
   return { n, passive, earned, assets, liab, expenses, income, save, freedom, pattern };
 }
 const FIN_RD_PATTERN = { rich: ['Rich', 'your assets pay for your life — passive income covers your expenses'], middle: ['Middle class', 'much of your income goes to liabilities — instalments and debt'], poor: ['Poor', 'income goes straight to expenses — little is left to buy assets'], building: ['Building', 'you save — now turn savings into assets that pay you every month'] };
-// the scorecard, as a detail on the canvas
-function finRdScoreHTML() {
-  const R = finRdNumbers(), [pt, why] = FIN_RD_PATTERN[R.pattern], pct = Math.round(R.freedom * 100), need = Math.max(0, R.expenses - R.passive);
-  return `<div class="fin-rd-score ${R.pattern}"><div class="fin-rd-pat"><span class="small muted">Your cash-flow pattern</span><b>${pt}</b><span class="small">${esc(why)}</span></div>
-    <div class="fin-rd-free"><div class="row"><b>Out of the rat race</b><span class="spacer"></span><b class="num">${pct}%</b></div><div class="fin-rd-bar"><i style="width:${pct}%"></i></div>
-      <span class="small muted">passive income ${fk(R.passive)} a month of ${fk(R.expenses)} expenses${need ? ` — ${fk(need)} a month more passive income and you are free` : ' — you are free'}</span></div></div>`
-    + finKv([['Earned income', fk(R.earned), 'a month — you work for money'], ['Passive income', fk(R.passive), 'a month — money works for you'], ['Assets', fk(R.assets), 'put money in your pocket'], ['Liabilities', fk(R.liab), 'take money out of your pocket'], ['Saved toward assets', fk(R.save), 'a month']]);
-}
-
-function finRichLayout(rooms, plan, n) {
+// Rich Dad and the Mind map are one wealth map seen two ways: the same branches (earned income, passive income, assets,
+// expenses, liabilities, your choices), the same cards, the same centre (financial freedom) and the same channels.
+// Here they are set out as the book's financial statement; switching moves every card to its place in the other.
+function finRichLayout(rooms0, plan, n) {
   const { PAD, CG, CW, CH } = FR, cards = [], dets = [], edges = [], subs = [], HEAD = FRD.HEAD;
   const grid = (list, x0, y, w) => {
     const per = Math.max(1, Math.floor((w + CG) / (CW + CG))), cw = per === 1 ? w : Math.floor((w - (per - 1) * CG) / per); let row = [];
@@ -17490,76 +17454,80 @@ function finRichLayout(rooms, plan, n) {
   const fill = (r, x, y, w) => {
     r.x = x; r.y = y; r.w = w; r.cls = 'rich'; const x0 = x + PAD, iw = w - 2 * PAD; let yy = y + HEAD; const c0 = cards.length;
     if (UI.fin.cvCol.has(r.id)) r.h = HEAD + 6;
-    else if (r.kind === 'ov' || r.kind === 'sec' || r.kind === 'rd') { const id = r.kind === 'ov' ? 'ov' : r.id, h = finDetH(id, r.kind === 'sec' ? 640 : r.kind === 'rd' ? 320 : 520); dets.push({ id, x: x0, y: yy, w: iw, h }); r.h = yy + h + PAD - y; }
+    else if (r.kind === 'ov' || r.kind === 'sec' || r.kind === 'free') { const id = r.kind === 'ov' ? 'ov' : r.id, h = finDetH(id, r.kind === 'sec' ? 640 : r.kind === 'free' ? 760 : 520); dets.push({ id, x: x0, y: yy, w: iw, h }); r.h = yy + h + PAD - y; }
     else if (r.kind === 'next') { yy = finNextLayout(r, x0, yy, iw, cards, dets, subs, grid); r.h = yy + PAD - y; }
     else if (r.kind === 'goals') { yy = finGoalsLayout(r, plan, n, x0, yy, iw, cards, dets, edges, subs, grid); r.h = yy + PAD - y; }
     else { grid(r.node.children, x0, yy, iw); r.h = Math.max(subs.y2 - CG, y + HEAD + 20) + PAD - y; }
-    for (let i = c0; i < cards.length; i++) { const k = finRdKind(cards[i], r.kind === 'goals' ? 'buy' : r.id); if (k && !(cards[i].cls || '').includes(' rd-')) cards[i].cls = (cards[i].cls || '') + ' rd-' + k; }
+    if (r.kind === 'goals') for (let i = c0; i < cards.length; i++) { const k = finRdKind(cards[i], 'buy'); if (k && !(cards[i].cls || '').includes(' rd-')) cards[i].cls = (cards[i].cls || '') + ' rd-' + k; }
     return y + r.h;
   };
-  // the scorecard is a room of its own here
-  const rd = { id: 'rd', kind: 'rd', icon: '💼', title: 'Rich Dad scorecard', sum: FIN_RD_PATTERN[finRdNumbers().pattern][0] + ' pattern · how far from the rat race', hue: 45 };
-  rooms = [...rooms.slice(0, 1), rd, ...rooms.slice(1)];
-  const by = id => rooms.find(r => r.id === id), placed = new Set(), put = (r, ...a) => { if (!r) return null; placed.add(r.id); fill(r, ...a); return r; };
-  const L0 = FRD.LM, C2 = L0 + FRD.COL + FRD.GAP, W = C2 + FRD.COL;
-  // the top: My money · the scorecard · coming up
-  const ov = put(by('ov'), L0, 0, FRD.TOP), sc = put(rd, L0 + FRD.TOP + 60, 0, W - L0 - FRD.TOP - FRD.NEXT - 120), nx = put(by('next'), W - FRD.NEXT, 0, FRD.NEXT);
-  const topB = Math.max(...[ov, sc, nx].filter(Boolean).map(r => r.y + r.h), 0);
-  // the income statement: income | expenses
-  const y1 = topB + FRD.FRAME + 60, inc = put(by('inc'), L0, y1, FRD.COL), exp = put(by('exp'), C2, y1, FRD.COL);
-  const isB = Math.max(inc ? inc.y + inc.h : y1, exp ? exp.y + exp.h : y1);
-  // the balance sheet: assets (your accounts, what you own) | liabilities (commitments)
-  const y2 = isB + FRD.FRAME + 150; let ya = y2, yl = y2;
-  for (const r of [by('accts'), by('own')]) if (r) { put(r, L0, ya, FRD.COL); ya = r.y + r.h + 40; }
-  for (const r of [by('com')]) if (r) { put(r, C2, yl, FRD.COL); yl = r.y + r.h + 40; }
-  const bsB = Math.max(ya, yl) - 40;
-  // below: your plans (goals) · others' money · anything else
-  const y3 = bsB + 110, GX = L0 + FRD.COL + FRD.GAP + 520 + FRD.GAP; let yr = y3; const buy = rooms.find(r => r.kind === 'goals'); if (buy) put(buy, L0, y3, FRD.COL + FRD.GAP + 520);
-  for (const r of rooms) if (!placed.has(r.id) && r.kind !== 'sec') { put(r, GX, yr, W - GX); yr = r.y + r.h + 40; }
-  let y = Math.max(buy ? buy.y + buy.h : y3, yr) + 60;
-  for (const r of rooms) if (r.kind === 'sec') { put(r, L0, y, W - L0); y = r.y + r.h + 44; }
-  // the cash flow, as the book draws it
-  const R = finRdNumbers(), max = Math.max(1, R.income, R.expenses), th = v => v > 0 ? Math.round(8 + 26 * Math.sqrt(v / max)) : 5, flows = [];
-  const acc = by('accts'), com = by('com');
-  if (inc) flows.push({ id: 'job', cls: 'earned', a: { x: 40, y: inc.y + 70 }, b: { x: inc.x, y: inc.y + 70 }, t: th(R.earned), label: [fk(R.earned), 'from your job'], job: true });
-  if (inc && exp) flows.push({ id: 'spend', cls: 'expense', a: { x: inc.x + inc.w, y: inc.y + 70 }, b: { x: exp.x, y: exp.y + 70 }, t: th(R.expenses), label: [fk(R.expenses), 'to expenses'] });
-  if (inc && acc) flows.push({ id: 'save', cls: 'save', a: { x: inc.x + inc.w * 0.3, y: inc.y + inc.h }, b: { x: acc.x + acc.w * 0.3, y: acc.y }, t: th(R.save), label: [fk(R.save), 'saved toward assets'], v: true });
-  if (inc && acc) flows.push({ id: 'passive', cls: 'passive', a: { x: acc.x + acc.w * 0.72, y: acc.y }, b: { x: inc.x + inc.w * 0.72, y: inc.y + inc.h }, t: th(R.passive), label: [fk(R.passive), 'passive income from assets'], v: true });
-  if (com && exp) flows.push({ id: 'debt', cls: 'liability', a: { x: com.x + com.w * 0.5, y: com.y }, b: { x: exp.x + exp.w * 0.5, y: exp.y + exp.h }, t: th(R.n.instMonthly || 0), label: [fk(R.n.instMonthly || 0), 'to liabilities'], v: true });
+  const M = finMindRooms(rooms0), W = M.W, R = W.R, all = [...M.side.L, ...M.side.R], by = id => all.find(r => r.id === id);
+  const center = { id: 'free', kind: 'free', icon: '🗽', title: 'Financial freedom', sum: `${FIN_RD_PATTERN[R.pattern][0]} pattern · ${Math.round(R.freedom * 100)}% out of the rat race`, hue: 45 };
+  const L0 = FRD.LM, C2 = L0 + FRD.COL + FRD.GAP, Wd = C2 + FRD.COL, CWd = 1100;
+  // the top: financial freedom
+  fill(center, Math.round((L0 + Wd - CWd) / 2), 0, CWd);
+  // the income statement: income (earned, then passive) | expenses
+  const y1 = center.h + FRD.FRAME + 90; let yl = y1;
+  for (const r of [by('mm-earn'), by('mm-pass')]) if (r) { fill(r, L0, yl, FRD.COL); yl = r.y + r.h + 40; }
+  const exp = by('exp'); if (exp) fill(exp, C2, y1, FRD.COL);
+  const isB = Math.max(yl - 40, exp ? exp.y + exp.h : y1);
+  // the balance sheet: assets | liabilities
+  const y2 = isB + FRD.FRAME + 170, A = by('mm-assets'), Lb = by('mm-liab');
+  if (A) fill(A, L0, y2, FRD.COL); if (Lb) fill(Lb, C2, y2, FRD.COL);
+  const bsB = Math.max(A ? A.y + A.h : y2, Lb ? Lb.y + Lb.h : y2);
+  // below: your choices; then the rest in a row; then opened parts
+  let y = bsB + 120; const buy = by('buy'); if (buy) { fill(buy, L0, y, Wd - L0); y = buy.y + buy.h + 80; }
+  let x = L0, rowH = 0;
+  for (const r of M.rest.filter(r => r.kind !== 'sec')) { const w = r.kind === 'ov' ? 1100 : 640; if (x + w > Wd && x > L0) { x = L0; y += rowH + 50; rowH = 0; } fill(r, x, y, w); x += w + 50; rowH = Math.max(rowH, r.h); }
+  y += rowH + 60;
+  for (const r of M.rest) if (r.kind === 'sec') { fill(r, L0, y, Wd - L0); y = r.y + r.h + 44; }
+  const rooms = [center, ...all, ...M.rest];
+  // the cash flow, as the book draws it — the same channels as on the Mind map
+  const max = Math.max(1, R.income, R.expenses), th = v => v > 0 ? Math.round(8 + 26 * Math.sqrt(v / max)) : 5, flows = [], pc = v => finPct(v, R.income || 1);
+  const E = by('mm-earn'), P = by('mm-pass');
+  if (E) flows.push({ id: 'job', cls: 'earned', a: { x: 40, y: E.y + 70 }, b: { x: E.x, y: E.y + 70 }, t: th(R.earned), label: [fk(R.earned), ' a month'], line: 'from your job — you work for money', job: true });
+  if (E && exp) flows.push({ id: 'spend', cls: 'expense', a: { x: E.x + E.w, y: E.y + 70 }, b: { x: exp.x, y: exp.y + 70 }, t: th(n.spending || 0), label: [fk(n.spending || 0), ' a month'], line: `to expenses · ${pc(n.spending) ?? '—'}% of income` });
+  const up = P || E;
+  if (up && A) flows.push({ id: 'save', cls: W.toAssets > 0 ? 'save' : 'save none', a: { x: up.x + up.w * 0.28, y: up.y + up.h }, b: { x: A.x + A.w * 0.28, y: A.y }, t: th(W.toAssets), label: [fk(W.toAssets).replace(/\.00$/, ''), ' a month'], line: W.toAssets > 0 ? 'into assets' : 'into assets — purchases take all your surplus', v: true });
+  if (up && A) flows.push({ id: 'passive', cls: 'passive', a: { x: A.x + A.w * 0.72, y: A.y }, b: { x: up.x + up.w * 0.72, y: up.y + up.h }, t: th(R.passive), label: [fk(R.passive), ' a month'], line: R.passive ? 'your assets pay you' : 'no asset pays you yet', v: true });
+  if (Lb && exp) flows.push({ id: 'debt', cls: 'liability', a: { x: Lb.x + Lb.w * 0.5, y: Lb.y }, b: { x: exp.x + exp.w * 0.5, y: exp.y + exp.h }, t: th(n.instMonthly || 0), label: [fk(n.instMonthly || 0), ' a month'], line: `your liabilities cost you · ${pc(n.instMonthly) ?? '—'}% of income`, v: true });
+  if (A && Lb && W.payLiab > 0) flows.push({ id: 'assetpays', cls: 'save', a: { x: A.x + A.w, y: A.y + 70 }, b: { x: Lb.x, y: Lb.y + 70 }, t: th(W.payLiab), label: [fk(Math.round(W.payLiab)), ' a month'], line: 'your assets pay a liability (estimate)' });
   const frames = [
-    inc || exp ? { x: L0 - 30, y: y1 - FRD.FRAME, w: W - L0 + 60, h: isB - y1 + FRD.FRAME + 30, title: 'INCOME STATEMENT', cols: [[L0, 'Income — earned and passive'], [C2, 'Expenses']] } : null,
-    { x: L0 - 30, y: y2 - FRD.FRAME, w: W - L0 + 60, h: bsB - y2 + FRD.FRAME + 30, title: 'BALANCE SHEET', cols: [[L0, 'Assets — put money in your pocket'], [C2, 'Liabilities — take money out of your pocket']] }].filter(Boolean);
-  const w = W, h = Math.max(y - 44, 400);
+    E || exp ? { x: L0 - 30, y: y1 - FRD.FRAME, w: Wd - L0 + 60, h: isB - y1 + FRD.FRAME + 30, title: 'INCOME STATEMENT', cols: [[L0, 'Income — earned and passive'], [C2, 'Expenses']] } : null,
+    { x: L0 - 30, y: y2 - FRD.FRAME, w: Wd - L0 + 60, h: bsB - y2 + FRD.FRAME + 30, title: 'BALANCE SHEET', cols: [[L0, 'Assets — put money in your pocket'], [C2, 'Liabilities — take money out of your pocket']] }].filter(Boolean);
+  const w = Wd, h = Math.max(y - 44, 400);
   UI.fin.cvPos = new Map([...rooms.map(r => [r.id, { x: r.x, y: r.y, w: r.w, h: r.h }]), ...cards.map(c => [c.id, { x: c.x, y: c.y, w: c.w, h: c.h }]), ...dets.map(d => [d.id + ':det', d])]);
-  UI.fin.cvRoot = UI.fin.cvPos.get('ov');
+  UI.fin.cvRoot = UI.fin.cvPos.get('free');
   UI.fin.cvRoomsList = rooms.map(r => ({ id: r.id, kind: r.kind, x: r.x, y: r.y, w: r.w, h: r.h, hue: r.hue, icon: r.icon, title: r.title }));
   return { rooms, cards, dets, edges, subs, w, h, rich: { flows, frames } };
 }
-// the statement frames and the cash-flow arrows, under the rooms
+// the statement frames and the cash-flow channels, under the rooms
 function finRichSVG(L) {
   const D = L.rich; if (!D) return '';
   let out = '';
   for (const f of D.frames) out += `<rect class="rd-frame" x="${f.x}" y="${f.y}" width="${f.w}" height="${f.h}" rx="28"/><text class="rd-ft" x="${f.x + 30}" y="${f.y + 36}">${f.title}</text>${f.cols.map(([x, t]) => `<text class="rd-ct" x="${x}" y="${f.y + 60}">${esc(t)}</text>`).join('')}`;
   const curve = (a, b, v) => v ? `M${a.x},${a.y} C${a.x},${(a.y + b.y) / 2} ${b.x},${(a.y + b.y) / 2} ${b.x},${b.y}` : `M${a.x},${a.y} C${(a.x + b.x) / 2},${a.y} ${(a.x + b.x) / 2},${b.y} ${b.x},${b.y}`;
   for (const f of D.flows) {
-    const d = curve(f.a, f.b, f.v), lx = f.v ? (f.a.x + f.b.x) / 2 + f.t / 2 + 16 : (f.a.x + f.b.x) / 2, ly = f.v ? (f.a.y + f.b.y) / 2 : f.a.y - f.t / 2 - 14;
-    out += `<g class="rd-flow ${f.cls}"><path class="pipe" d="${d}" style="stroke-width:${f.t}px"/><path class="flow" d="${d}"/>
+    const d = curve(f.a, f.b, f.v), lx = f.job ? f.a.x - 30 : f.v ? (f.a.x + f.b.x) / 2 + f.t / 2 + 16 : (f.a.x + f.b.x) / 2, ly = f.job ? f.a.y - 64 : f.v ? (f.a.y + f.b.y) / 2 - 8 : f.a.y - f.t / 2 - 38, anchor = f.v || f.job ? 'start' : 'middle';
+    out += `<g class="rd-flow ${f.cls}" data-ch="${esc(f.id)}"><path class="pipe" d="${d}" style="stroke-width:${f.t}px"/><path class="flow" d="${d}"/>
       ${f.job ? `<rect class="rd-job" x="${f.a.x - 30}" y="${f.a.y - 22}" width="150" height="44" rx="22"/><text class="rd-jobt" x="${f.a.x + 45}" y="${f.a.y + 6}" text-anchor="middle">💼 Your job</text>` : ''}
-      <text class="rd-l" x="${f.job ? f.a.x - 30 : lx}" y="${f.job ? f.a.y - 40 : ly}" text-anchor="${f.v || f.job ? 'start' : 'middle'}">${esc(f.label[0])}<tspan class="per"> ${esc(f.label[1])}</tspan></text></g>`;
+      <text class="rd-l" x="${lx}" y="${ly}" text-anchor="${anchor}">${esc(f.label[0])}<tspan class="per">${esc(f.label[1])}</tspan></text>${f.line ? `<text class="rd-i" x="${lx}" y="${ly + 22}" text-anchor="${anchor}">${esc(f.line)}</text>` : ''}</g>`;
   }
   return `<svg class="fin-rich" width="${L.w}" height="${L.h}" aria-hidden="true">${out}</svg>`;
 }
 
 /* --- switching: every card moves from its place in one layout to its place in the other --- */
 function finCvMode(mode) {
-  mode = FIN_CV_MODES.includes(mode) ? mode : 'rooms'; if ((UI.fin.cv.mode || 'rooms') === mode) return;
+  mode = FIN_CV_MODES.includes(mode) ? mode : 'mind'; if ((UI.fin.cv.mode || 'mind') === mode) return;
   const reduce = (() => { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch { return true; } })();
   const key = el => (el.dataset.room ? 'r:' : 'n:') + (el.dataset.room || el.dataset.node);
   const before = new Map(); if (!reduce) for (const el of document.querySelectorAll('#fin-cv-world [data-node], #fin-cv-world [data-room]')) { if (el.closest('.fin-room-h')) continue; before.set(key(el), { x: parseFloat(el.style.left) || 0, y: parseFloat(el.style.top) || 0 }); }
   // each layout keeps the heights its own opened details measured (they are as wide as that layout makes them)
-  UI.fin.detHBy = UI.fin.detHBy || {}; UI.fin.detHBy[UI.fin.cv.mode || 'rooms'] = UI.fin.detH; UI.fin.detH = UI.fin.detHBy[mode] || {};
-  UI.fin.fwBy = UI.fin.fwBy || {}; UI.fin.fwBy[UI.fin.cv.mode || 'rooms'] = { ...FIN_W }; for (const k of Object.keys(FIN_W)) delete FIN_W[k]; Object.assign(FIN_W, UI.fin.fwBy[mode] || {});
+  UI.fin.detHBy = UI.fin.detHBy || {}; UI.fin.detHBy[UI.fin.cv.mode || 'mind'] = UI.fin.detH; UI.fin.detH = UI.fin.detHBy[mode] || {};
+  UI.fin.fwBy = UI.fin.fwBy || {}; UI.fin.fwBy[UI.fin.cv.mode || 'mind'] = { ...FIN_W }; for (const k of Object.keys(FIN_W)) delete FIN_W[k]; Object.assign(FIN_W, UI.fin.fwBy[mode] || {});
   UI.fin.cv.mode = mode; try { localStorage.setItem('ar-fin-cv-mode', mode); } catch {}
+  // the card you had open stays open and comes into view in the other layout (the Mind map and Rich Dad share every card)
+  const keep = UI.fin.pop; if (keep) setTimeout(() => { if (UI.fin.cvPos && UI.fin.cvPos.get(keep) && UI.fin.cv.mode === mode) { UI.fin.pop = keep; finCvGoto(keep); render(); } }, reduce ? 50 : 780);
   UI.fin.menu = null; UI.fin.cv.user = false; UI.fin.cv.fitted = false; finCvGlide(); render();
   if (reduce) return;
   const moved = [];
@@ -17590,11 +17558,12 @@ document.addEventListener('pointermove', e => {
 });
 
 function finCvModeHTML() {
-  const m = UI.fin.cv.mode || 'rooms', tip = { rooms: 'Rooms: every topic in its own room', flow: 'Flow: your money as a river, from income to goals', rich: 'Rich Dad: your money as an income statement and a balance sheet — assets put money in your pocket, liabilities take it out', mind: 'Mind map: My money in the centre, branches as thick as their money and coloured by health, money flowing along them' };
-  return `<div class="seg fin-cv-modes" role="group" aria-label="Card layout">${[['rooms', '▦', 'Rooms'], ['flow', '✦', 'Flow'], ['rich', '💼', 'Rich Dad'], ['mind', '🧠', 'Mind map']].map(([k, i, l]) => `<button data-act="fin-cv-mode" data-v="${k}" aria-pressed="${m === k}" title="${tip[k]} ( L )"><span aria-hidden="true">${i}</span> ${l}</button>`).join('')}</div>`;
+  const m = UI.fin.cv.mode || 'mind', tip = { mind: 'Mind map: financial freedom in the centre; where money comes from on the left (earned, passive, assets), where it goes on the right (expenses, liabilities, your choices); live channels between them',
+    rich: 'Rich Dad: the same map as a financial statement — an income statement above a balance sheet; switching moves every card to its place', flow: 'Flow: your money as a river, from income to goals' };
+  return `<div class="seg fin-cv-modes" role="group" aria-label="Card layout">${[['mind', '🧠', 'Mind map'], ['rich', '💼', 'Rich Dad'], ['flow', '✦', 'Flow']].map(([k, i, l]) => `<button data-act="fin-cv-mode" data-v="${k}" aria-pressed="${m === k}" title="${tip[k]} ( L )"><span aria-hidden="true">${i}</span> ${l}</button>`).join('')}</div>`;
 }
 Object.assign(ACT, { 'fin-cv-mode': el => finCvMode(el.dataset.v) });
-Object.assign(window.__FIN, { mode: m => (m ? finCvMode(m) : UI.fin.cv.mode || 'rooms') });
+Object.assign(window.__FIN, { mode: m => (m ? finCvMode(m) : UI.fin.cv.mode || 'mind') });
 
 /* ===== features/53-finance-river.js ===== */
 // Money canvas — the third card layout, "Flow": your money as one river from left to right.
@@ -17774,6 +17743,7 @@ const FMM = { GAPX: 430, GAPY: 54, W: 640, WIDE: 1120, CENTER: 900, HEAD: 92, OU
 // a card's amount, from what it shows ("EGP 3,267", "owes EGP 7,960", "EGP 3,000/mo")
 const finMindAmt = c => { const m = /(-?[\d,]+(?:\.\d+)?)/.exec(String(c.val || '').replace(/ /g, ' ')); return m ? Math.abs(parseFloat(m[1].replace(/,/g, ''))) || 0 : 0; };
 const finPct = (v, of) => of > 0 ? Math.round(v / of * 100) : null;
+const fkr = v => fk(Math.round(v)).replace(/\.00$/, '');   // whole pounds
 
 // what a holding is, the Rich Dad way: an asset that pays you, or one that does not pay you yet
 const finHoldPays = h => (+h.rate > 0 && +h.principal > 0) || +h.myShareMonthly > 0;
@@ -17806,15 +17776,16 @@ function finFreeHTML() {
   const ring = `<svg class="fin-free-ring" viewBox="0 0 128 128" aria-hidden="true"><circle cx="64" cy="64" r="52" class="bg"/><circle cx="64" cy="64" r="52" class="fg" style="stroke-dasharray:${(C * R.freedom).toFixed(1)} ${C.toFixed(1)}"/><text x="64" y="62" text-anchor="middle" class="p">${pct}%</text><text x="64" y="82" text-anchor="middle" class="s">free</text></svg>`;
   const years = W.months === null ? '' : W.months === 0 ? 'now, if your free cash were invested' : W.months > 600 ? 'more than 50 years at this pace' : W.months < 24 ? `in about ${W.months} months` : `in about ${(W.months / 12).toFixed(W.months < 120 ? 1 : 0)} years`;
   const moves = [];
-  if (W.idle > 0) moves.push(['🏗️', 'Put idle money to work', `${fk(W.idle)} sits in your accounts beyond your ${fk(n.reserve)} safety reserve.${W.yld ? ` At your assets’ stated ${(W.yld * 100).toFixed(1)}% a year it would pay about ${fk(Math.round(W.idle * W.yld / 12))} a month (estimate).` : ' An asset that pays you would turn it into passive income.'}`, 'own']);
+  if (W.idle > 0) moves.push(['🏗️', 'Put idle money to work', `${fk(W.idle)} sits in your accounts beyond your ${fk(n.reserve)} safety reserve.${W.yld ? ` At your assets’ stated ${(W.yld * 100).toFixed(1)}% a year it would pay about ${fkr(W.idle * W.yld / 12)} a month (estimate).` : ' An asset that pays you would turn it into passive income.'}`, 'own']);
   if (R.save > 0) moves.push(['🌱', 'Pay yourself first', W.toBuy >= R.save ? `All of your ${fk(R.save)} monthly surplus is planned for purchases — nothing goes to assets. Send part of it to assets first; purchases can wait a little.` : `${fk(R.save)} a month is left after expenses and your goals${W.toBuy ? `; ${fk(W.toBuy)} of it is planned for purchases` : ''} — send ${fk(W.toAssets)} to assets before it turns into spending.`, 'forecast']);
   const owed = n.card && n.card.owed > 0 ? n.card.owed : 0;
   if (owed || n.instMonthly > 0) moves.push(['✂️', 'Cut liabilities', `${owed ? `The card owes ${fk(owed)}. ` : ''}${n.instMonthly > 0 ? `Instalments take ${fk(n.instMonthly)} a month (${finPct(n.instMonthly, R.income) ?? '—'}% of income). ` : ''}${W.ending ? `${W.ending.name} ends ${fmon(W.ending.end)} — send its ${fk(W.ending.amount)} to assets, not to new spending.` : ''}`, 'credit']);
   if (W.doodads.length) moves.push(['🛍️', 'Let assets buy your doodads', `${W.doodads.length} planned purchase${W.doodads.length === 1 ? '' : 's'} (${fk(W.plan.total)}) will not pay you back. The book’s rule: buy assets first, and let their income pay for the luxuries.`, 'buy']);
   moves.push(W.gap > 0 ? ['📈', 'Grow passive income', `${fk(W.gap)} a month more passive income covers every expense — then you are out of the rat race${years ? `: ${years} (estimate — assumes your surplus and free cash go to assets at today’s stated return, and expenses stay as they are)` : '. Enter what your assets earn (a rate) to see when.'}`, 'own'] : ['🏆', 'You are out of the rat race', 'Passive income covers your expenses. Keep buying assets before luxuries.', 'own']);
   if (W.payLiab > 0) moves.push(['🔁', 'Your assets already pay a liability', `${W.payL.map(x => x.h.name).join(', ')}: about ${fk(W.payLiab)} a month of the return goes to your instalments (estimate) — the rich let assets pay for liabilities.`, 'own']);
-  const flow = [['Earned income', '+' + fk(R.earned), 'work'], ['Passive income', '+' + fk(R.passive), 'gold'], ['Expenses', '−' + fk(n.spending || 0), 'drain'], ['Instalments (liabilities)', '−' + fk(n.instMonthly || 0), 'debt'], ['Surplus → assets', fk(W.toAssets), 'green']];
-  return `<div class="fin-free ${R.pattern}">
+  const flow = [['Earned income', '+' + fk(R.earned), 'work'], ['Passive income', '+' + fk(R.passive), 'gold'], ['Expenses', '−' + fk(n.spending || 0), 'drain'], ['Instalments (liabilities)', '−' + fk(n.instMonthly || 0), 'debt'], ['Surplus → assets', fkr(W.toAssets), 'green']];
+  const m = UI.fin.cv.mode || 'mind', views = `<div class="seg fin-free-views" role="group" aria-label="See your wealth map as">${[['mind', '🧠 Map'], ['rich', '💼 Statement']].map(([k, l]) => `<button class="btn sm" data-act="fin-cv-mode" data-v="${k}" aria-pressed="${m === k}">${l}</button>`).join('')}</div>`;
+  return `<div class="fin-free ${R.pattern}">${views}
     <div class="fin-free-top">${ring}<div class="fin-free-pat"><span class="small muted">Your cash-flow pattern</span><b>${pt}</b><span class="small">${esc(why)}</span>
       <span class="small muted">Out of the rat race when passive income covers your expenses: ${fk(R.passive)} of ${fk(R.expenses)} a month.</span></div></div>
     <div class="fin-free-cf">${flow.map(([l, v, c]) => `<div class="${c}"><span>${esc(l)}</span><b class="num">${v}</b></div>`).join('')}<small class="muted">a month</small></div>
@@ -17837,14 +17808,16 @@ function finMindRooms(rooms) {
   const liab = [...kids('accts').filter(c => c.id.startsWith('a:') && finRdKind(c, 'accts') === 'liability'), ...kids('com').filter(c => !/none$/.test(c.id)), ...kids('own').filter(c => c.id.startsWith('l:'))].map(c => mark(c, 'liability'));
   for (const c of kids('exp')) if (c.type !== 'branch') mark(c, finRdKind(c, 'exp')); else c.children.forEach(x => mark(x, 'expense'));
   const out = [];
-  out.push(syn('mm-earn', '💼', 'Earned income', `${fk(R.earned)} a month · you work for money`, 210, 'inc', 'inc', earned));
-  out.push(syn('mm-pass', '🌱', 'Passive income', R.passive ? `${fk(R.passive)} a month · money works for you` : 'none yet — buy assets that pay you', 45, 'own', null, passive));
-  out.push(syn('mm-assets', '🏛️', 'Assets', `${fk(R.assets)} · put money in your pocket`, 150, 'own', 'accts', assets));
+  const has = (...ids) => ids.some(id => by(id));   // with one room in focus, only the branches made from it
+  if (has('inc')) out.push(syn('mm-earn', '💼', 'Earned income', `${fk(R.earned)} a month · you work for money`, 210, 'inc', 'inc', earned));
+  if (has('inc')) out.push(syn('mm-pass', '🌱', 'Passive income', R.passive ? `${fk(R.passive)} a month · money works for you` : 'none yet — buy assets that pay you', 45, 'own', null, passive));
+  if (has('accts', 'own')) out.push(syn('mm-assets', '🏛️', 'Assets', `${fk(R.assets)} · put money in your pocket`, 150, 'accounts', 'accts', assets));
   const exp = by('exp'); if (exp) out.push({ ...exp, sum: `${fk(n.spending)} a month · ${finPct(n.spending, R.income) ?? '—'}% of income` });
-  out.push(syn('mm-liab', '⛓️', 'Liabilities', `${fk(R.liab)} owed · ${fk(n.instMonthly)} a month · take money out of your pocket`, 0, 'credit', 'com', liab));
+  if (has('accts', 'com', 'own')) out.push(syn('mm-liab', '⛓️', 'Liabilities', `${fk(R.liab)} owed · ${fk(n.instMonthly)} a month · take money out of your pocket`, 0, 'credit', 'com', liab));
   const buy = by('buy'); if (buy) out.push({ ...buy, title: 'Your choices — goals & purchases', sum: W.doodads.length ? `${W.doodads.length} doodad${W.doodads.length === 1 ? '' : 's'} · ${fk(W.plan.total)} · assets first` : buy.sum });
   const used = new Set(['inc', 'accts', 'own', 'com', 'exp', 'buy']), rest = rooms.filter(r => !used.has(r.id));
-  return { side: { L: out.slice(0, 3), R: out.slice(3) }, rest, W };
+  const left = new Set(['mm-earn', 'mm-pass', 'mm-assets']);
+  return { side: { L: out.filter(r => left.has(r.id)), R: out.filter(r => !left.has(r.id)) }, rest, W };
 }
 
 function finMindLayout(rooms0, plan, n) {
@@ -17866,6 +17839,7 @@ function finMindLayout(rooms0, plan, n) {
     else if (r.kind === 'goals') { yy = finGoalsLayout(r, plan, n, x0, yy, iw, cards, dets, edges, subs, grid); r.h = yy + PAD - y; }
     else { grid(r.node.children, x0, yy, iw); r.h = Math.max(subs.y2 - CG, y + HEAD + 20) + PAD - y; }
     for (let i = c0; i < cards.length; i++) cards[i].room = r.id;
+    if (r.kind === 'goals') for (let i = c0; i < cards.length; i++) { const k = finRdKind(cards[i], 'buy'); if (k && !(cards[i].cls || '').includes(' rd-')) cards[i].cls = (cards[i].cls || '') + ' rd-' + k; }
     return y + r.h;
   };
   const measure = r => { const c0 = cards.length, d0 = dets.length, s0 = subs.length, e0 = edges.length; fill(r, 0, 0, r.mw); cards.length = c0; dets.length = d0; subs.length = s0; edges.length = e0; return r.h; };

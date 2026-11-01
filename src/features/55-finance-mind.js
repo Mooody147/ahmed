@@ -15,6 +15,7 @@ const FMM = { GAPX: 430, GAPY: 54, W: 640, WIDE: 1120, CENTER: 900, HEAD: 92, OU
 // a card's amount, from what it shows ("EGP 3,267", "owes EGP 7,960", "EGP 3,000/mo")
 const finMindAmt = c => { const m = /(-?[\d,]+(?:\.\d+)?)/.exec(String(c.val || '').replace(/ /g, ' ')); return m ? Math.abs(parseFloat(m[1].replace(/,/g, ''))) || 0 : 0; };
 const finPct = (v, of) => of > 0 ? Math.round(v / of * 100) : null;
+const fkr = v => fk(Math.round(v)).replace(/\.00$/, '');   // whole pounds
 
 // what a holding is, the Rich Dad way: an asset that pays you, or one that does not pay you yet
 const finHoldPays = h => (+h.rate > 0 && +h.principal > 0) || +h.myShareMonthly > 0;
@@ -47,15 +48,16 @@ function finFreeHTML() {
   const ring = `<svg class="fin-free-ring" viewBox="0 0 128 128" aria-hidden="true"><circle cx="64" cy="64" r="52" class="bg"/><circle cx="64" cy="64" r="52" class="fg" style="stroke-dasharray:${(C * R.freedom).toFixed(1)} ${C.toFixed(1)}"/><text x="64" y="62" text-anchor="middle" class="p">${pct}%</text><text x="64" y="82" text-anchor="middle" class="s">free</text></svg>`;
   const years = W.months === null ? '' : W.months === 0 ? 'now, if your free cash were invested' : W.months > 600 ? 'more than 50 years at this pace' : W.months < 24 ? `in about ${W.months} months` : `in about ${(W.months / 12).toFixed(W.months < 120 ? 1 : 0)} years`;
   const moves = [];
-  if (W.idle > 0) moves.push(['🏗️', 'Put idle money to work', `${fk(W.idle)} sits in your accounts beyond your ${fk(n.reserve)} safety reserve.${W.yld ? ` At your assets’ stated ${(W.yld * 100).toFixed(1)}% a year it would pay about ${fk(Math.round(W.idle * W.yld / 12))} a month (estimate).` : ' An asset that pays you would turn it into passive income.'}`, 'own']);
+  if (W.idle > 0) moves.push(['🏗️', 'Put idle money to work', `${fk(W.idle)} sits in your accounts beyond your ${fk(n.reserve)} safety reserve.${W.yld ? ` At your assets’ stated ${(W.yld * 100).toFixed(1)}% a year it would pay about ${fkr(W.idle * W.yld / 12)} a month (estimate).` : ' An asset that pays you would turn it into passive income.'}`, 'own']);
   if (R.save > 0) moves.push(['🌱', 'Pay yourself first', W.toBuy >= R.save ? `All of your ${fk(R.save)} monthly surplus is planned for purchases — nothing goes to assets. Send part of it to assets first; purchases can wait a little.` : `${fk(R.save)} a month is left after expenses and your goals${W.toBuy ? `; ${fk(W.toBuy)} of it is planned for purchases` : ''} — send ${fk(W.toAssets)} to assets before it turns into spending.`, 'forecast']);
   const owed = n.card && n.card.owed > 0 ? n.card.owed : 0;
   if (owed || n.instMonthly > 0) moves.push(['✂️', 'Cut liabilities', `${owed ? `The card owes ${fk(owed)}. ` : ''}${n.instMonthly > 0 ? `Instalments take ${fk(n.instMonthly)} a month (${finPct(n.instMonthly, R.income) ?? '—'}% of income). ` : ''}${W.ending ? `${W.ending.name} ends ${fmon(W.ending.end)} — send its ${fk(W.ending.amount)} to assets, not to new spending.` : ''}`, 'credit']);
   if (W.doodads.length) moves.push(['🛍️', 'Let assets buy your doodads', `${W.doodads.length} planned purchase${W.doodads.length === 1 ? '' : 's'} (${fk(W.plan.total)}) will not pay you back. The book’s rule: buy assets first, and let their income pay for the luxuries.`, 'buy']);
   moves.push(W.gap > 0 ? ['📈', 'Grow passive income', `${fk(W.gap)} a month more passive income covers every expense — then you are out of the rat race${years ? `: ${years} (estimate — assumes your surplus and free cash go to assets at today’s stated return, and expenses stay as they are)` : '. Enter what your assets earn (a rate) to see when.'}`, 'own'] : ['🏆', 'You are out of the rat race', 'Passive income covers your expenses. Keep buying assets before luxuries.', 'own']);
   if (W.payLiab > 0) moves.push(['🔁', 'Your assets already pay a liability', `${W.payL.map(x => x.h.name).join(', ')}: about ${fk(W.payLiab)} a month of the return goes to your instalments (estimate) — the rich let assets pay for liabilities.`, 'own']);
-  const flow = [['Earned income', '+' + fk(R.earned), 'work'], ['Passive income', '+' + fk(R.passive), 'gold'], ['Expenses', '−' + fk(n.spending || 0), 'drain'], ['Instalments (liabilities)', '−' + fk(n.instMonthly || 0), 'debt'], ['Surplus → assets', fk(W.toAssets), 'green']];
-  return `<div class="fin-free ${R.pattern}">
+  const flow = [['Earned income', '+' + fk(R.earned), 'work'], ['Passive income', '+' + fk(R.passive), 'gold'], ['Expenses', '−' + fk(n.spending || 0), 'drain'], ['Instalments (liabilities)', '−' + fk(n.instMonthly || 0), 'debt'], ['Surplus → assets', fkr(W.toAssets), 'green']];
+  const m = UI.fin.cv.mode || 'mind', views = `<div class="seg fin-free-views" role="group" aria-label="See your wealth map as">${[['mind', '🧠 Map'], ['rich', '💼 Statement']].map(([k, l]) => `<button class="btn sm" data-act="fin-cv-mode" data-v="${k}" aria-pressed="${m === k}">${l}</button>`).join('')}</div>`;
+  return `<div class="fin-free ${R.pattern}">${views}
     <div class="fin-free-top">${ring}<div class="fin-free-pat"><span class="small muted">Your cash-flow pattern</span><b>${pt}</b><span class="small">${esc(why)}</span>
       <span class="small muted">Out of the rat race when passive income covers your expenses: ${fk(R.passive)} of ${fk(R.expenses)} a month.</span></div></div>
     <div class="fin-free-cf">${flow.map(([l, v, c]) => `<div class="${c}"><span>${esc(l)}</span><b class="num">${v}</b></div>`).join('')}<small class="muted">a month</small></div>
@@ -78,14 +80,16 @@ function finMindRooms(rooms) {
   const liab = [...kids('accts').filter(c => c.id.startsWith('a:') && finRdKind(c, 'accts') === 'liability'), ...kids('com').filter(c => !/none$/.test(c.id)), ...kids('own').filter(c => c.id.startsWith('l:'))].map(c => mark(c, 'liability'));
   for (const c of kids('exp')) if (c.type !== 'branch') mark(c, finRdKind(c, 'exp')); else c.children.forEach(x => mark(x, 'expense'));
   const out = [];
-  out.push(syn('mm-earn', '💼', 'Earned income', `${fk(R.earned)} a month · you work for money`, 210, 'inc', 'inc', earned));
-  out.push(syn('mm-pass', '🌱', 'Passive income', R.passive ? `${fk(R.passive)} a month · money works for you` : 'none yet — buy assets that pay you', 45, 'own', null, passive));
-  out.push(syn('mm-assets', '🏛️', 'Assets', `${fk(R.assets)} · put money in your pocket`, 150, 'own', 'accts', assets));
+  const has = (...ids) => ids.some(id => by(id));   // with one room in focus, only the branches made from it
+  if (has('inc')) out.push(syn('mm-earn', '💼', 'Earned income', `${fk(R.earned)} a month · you work for money`, 210, 'inc', 'inc', earned));
+  if (has('inc')) out.push(syn('mm-pass', '🌱', 'Passive income', R.passive ? `${fk(R.passive)} a month · money works for you` : 'none yet — buy assets that pay you', 45, 'own', null, passive));
+  if (has('accts', 'own')) out.push(syn('mm-assets', '🏛️', 'Assets', `${fk(R.assets)} · put money in your pocket`, 150, 'accounts', 'accts', assets));
   const exp = by('exp'); if (exp) out.push({ ...exp, sum: `${fk(n.spending)} a month · ${finPct(n.spending, R.income) ?? '—'}% of income` });
-  out.push(syn('mm-liab', '⛓️', 'Liabilities', `${fk(R.liab)} owed · ${fk(n.instMonthly)} a month · take money out of your pocket`, 0, 'credit', 'com', liab));
+  if (has('accts', 'com', 'own')) out.push(syn('mm-liab', '⛓️', 'Liabilities', `${fk(R.liab)} owed · ${fk(n.instMonthly)} a month · take money out of your pocket`, 0, 'credit', 'com', liab));
   const buy = by('buy'); if (buy) out.push({ ...buy, title: 'Your choices — goals & purchases', sum: W.doodads.length ? `${W.doodads.length} doodad${W.doodads.length === 1 ? '' : 's'} · ${fk(W.plan.total)} · assets first` : buy.sum });
   const used = new Set(['inc', 'accts', 'own', 'com', 'exp', 'buy']), rest = rooms.filter(r => !used.has(r.id));
-  return { side: { L: out.slice(0, 3), R: out.slice(3) }, rest, W };
+  const left = new Set(['mm-earn', 'mm-pass', 'mm-assets']);
+  return { side: { L: out.filter(r => left.has(r.id)), R: out.filter(r => !left.has(r.id)) }, rest, W };
 }
 
 function finMindLayout(rooms0, plan, n) {
@@ -107,6 +111,7 @@ function finMindLayout(rooms0, plan, n) {
     else if (r.kind === 'goals') { yy = finGoalsLayout(r, plan, n, x0, yy, iw, cards, dets, edges, subs, grid); r.h = yy + PAD - y; }
     else { grid(r.node.children, x0, yy, iw); r.h = Math.max(subs.y2 - CG, y + HEAD + 20) + PAD - y; }
     for (let i = c0; i < cards.length; i++) cards[i].room = r.id;
+    if (r.kind === 'goals') for (let i = c0; i < cards.length; i++) { const k = finRdKind(cards[i], 'buy'); if (k && !(cards[i].cls || '').includes(' rd-')) cards[i].cls = (cards[i].cls || '') + ' rd-' + k; }
     return y + r.h;
   };
   const measure = r => { const c0 = cards.length, d0 = dets.length, s0 = subs.length, e0 = edges.length; fill(r, 0, 0, r.mw); cards.length = c0; dets.length = d0; subs.length = s0; edges.length = e0; return r.h; };

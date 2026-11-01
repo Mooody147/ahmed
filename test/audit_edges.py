@@ -43,8 +43,11 @@ CHECK = r"""([minX, minY]) => {
     // only what the box shows (scrolled-away content and clipped overflow are not "at the edge")
     if (r.right < b.left || r.left > b.right || r.bottom < b.top || r.top > b.bottom) continue;
     const k = zoom(box), r0 = r; r = { left: r0.left, right: r0.right, top: r0.top, bottom: r0.bottom };
-    const L = r.left - (b.left + parseFloat(s.borderLeftWidth)), R = (b.right - parseFloat(s.borderRightWidth)) - r.right, T = r.top - (b.top + parseFloat(s.borderTopWidth)), B = (b.bottom - parseFloat(s.borderBottomWidth)) - r.bottom;
-    const kk = k; const bad = []; if (L / kk < minX) bad.push('left ' + Math.round(L)); if (R / kk < minX && !(/(auto|scroll)/.test(s.overflowX))) bad.push('right ' + Math.round(R)); if (T / kk < minY && !/(auto|scroll)/.test(s.overflowY)) bad.push('top ' + Math.round(T)); if (B / kk < minY && !/(auto|scroll)/.test(s.overflowY)) bad.push('bottom ' + Math.round(B));
+    const bw = side => parseFloat(s['border' + side + 'Width']) * k;   // borders are CSS pixels; on a zoomed canvas they are drawn k times as large, like the rest
+    const L = r.left - (b.left + bw('Left')), R = (b.right - bw('Right')) - r.right, T = r.top - (b.top + bw('Top')), B = (b.bottom - bw('Bottom')) - r.bottom;
+    // inside a scrolling area between the text and its box, the text scrolls: it is not "at the edge" of the box
+    let scrollY = /(auto|scroll)/.test(s.overflowY); for (let p = el.parentElement; p && p !== box && !scrollY; p = p.parentElement) scrollY = /(auto|scroll)/.test(getComputedStyle(p).overflowY);
+    const kk = k; const bad = []; if (L / kk < minX) bad.push('left ' + Math.round(L)); if (R / kk < minX && !(/(auto|scroll)/.test(s.overflowX))) bad.push('right ' + Math.round(R)); if (T / kk < minY && !scrollY) bad.push('top ' + Math.round(T)); if (B / kk < minY && !scrollY) bad.push('bottom ' + Math.round(B));
     if (!bad.length) continue;
     const key = name(box) + ' > ' + name(el) + ' ' + bad.map(x => x.split(' ')[0]).join('/');
     if (seen.has(key)) continue; seen.add(key);

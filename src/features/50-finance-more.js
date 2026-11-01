@@ -134,7 +134,7 @@ document.addEventListener('keydown', e => {
   else if (k === '-' || k === '_') { own(); finCvZoomSmooth(1 / 1.15); }
   else if (k === '?') { own(); UI.fin.help = !UI.fin.help; render(); }
   else if (k === 't' || k === 'T') { own(); finTalkWin(!UI.fin.talk.win); }
-  else if ((k === 'l' || k === 'L') && typeof finCvMode === 'function') { own(); finCvMode(FIN_CV_MODES[(FIN_CV_MODES.indexOf(UI.fin.cv.mode || 'rooms') + 1) % FIN_CV_MODES.length]); }
+  else if ((k === 'l' || k === 'L') && typeof finCvMode === 'function') { own(); finCvMode(FIN_CV_MODES[(FIN_CV_MODES.indexOf(UI.fin.cv.mode || 'mind') + 1) % FIN_CV_MODES.length]); }
   else if (/^Arrow(Left|Right|Up|Down)$/.test(k)) { e.preventDefault(); const d = e.shiftKey ? 420 : 160; FCAM.pan(k === 'ArrowLeft' ? d : k === 'ArrowRight' ? -d : 0, k === 'ArrowUp' ? d : k === 'ArrowDown' ? -d : 0); }   // glides
   else if (/^[1-9]$/.test(k)) { const r = (UI.fin.cvRoomsList || []).filter(x => x.kind !== 'sec')[+k - 1]; if (r) { own(); finCvZoomRoom(r.id); } }
 }, true);

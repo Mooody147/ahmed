@@ -484,8 +484,8 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 /* zoomed out: cards show only their name and figure, in big type; room titles grow; details stay */
 /* zoomed out, a card is its name over its figure, each on its own line */
 
-/* ---------- the third layout: Flow ---------- */
-.fin-cv-vp.mode-flow { background: #0d0a1f; border-color: #2a2147; --flow-ink: #f4f0ff; --flow-dim: #b9aedb; }
+/* ---------- the night-sky theme (Flow's style) — every Money canvas layout: Mind map, Rich Dad, Flow ---------- */
+.fin-cv-vp.cosmic { background: #0d0a1f; border-color: #2a2147; --flow-ink: #f4f0ff; --flow-dim: #b9aedb; }
 /* the night sky: three soft lights drifting slowly behind the canvas (they never move with it) */
 .fin-flow-sky { position: absolute; inset: 0; overflow: hidden; pointer-events: none; background:
   radial-gradient(1200px 700px at 15% -10%, #3b1d5c 0%, transparent 60%), radial-gradient(900px 600px at 110% 110%, #3a1430 0%, transparent 60%), linear-gradient(160deg, #0f0c26, #120a1c 60%, #0b0f22); }
@@ -500,26 +500,26 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
   @keyframes finSky1 { to { transform: translate(14vmax, 8vmax) scale(1.15); } }
   @keyframes finSky2 { to { transform: translate(-12vmax, 10vmax) scale(.9); } }
 }
-.mode-flow .fin-cv-world { z-index: 1; }
+.cosmic .fin-cv-world { z-index: 1; }
 /* rooms: frosted glass lit by their own colour */
-.mode-flow .fin-room { background: linear-gradient(160deg, hsl(var(--h) 60% 40% / .30), hsl(var(--h) 50% 18% / .42) 55%, rgba(14, 10, 32, .55)); border: 1px solid hsl(var(--h) 80% 75% / .28);
+.cosmic .fin-room { background: linear-gradient(160deg, hsl(var(--h) 60% 40% / .30), hsl(var(--h) 50% 18% / .42) 55%, rgba(14, 10, 32, .55)); border: 1px solid hsl(var(--h) 80% 75% / .28);
   box-shadow: 0 1px 0 hsl(var(--h) 90% 85% / .25) inset, 0 30px 80px -40px hsl(var(--h) 80% 55% / .65), 0 0 0 1px rgba(0,0,0,.25); }
-.mode-flow .fin-room::before { background: linear-gradient(180deg, hsl(var(--h) 90% 75% / .22), transparent); }
-.mode-flow .fin-room-h b, .mode-flow .fin-room-sub b { color: var(--flow-ink); }
-.mode-flow .fin-room-h small, .mode-flow .fin-room-sub small, .mode-flow .fin-room-go { color: var(--flow-dim); }
-.mode-flow .fin-room-ic { background: hsl(var(--h) 70% 60% / .22); box-shadow: 0 0 18px hsl(var(--h) 90% 65% / .45); }
-.mode-flow .fin-room-h .btn.ghost { color: var(--flow-ink); }
-.mode-flow .fin-room-h .btn.ghost:hover { background: rgba(255,255,255,.12); }
-.mode-flow .fin-room-t.sel { box-shadow: 0 0 0 2px hsl(var(--h) 90% 70% / .7); border-radius: 12px; }
+.cosmic .fin-room::before { background: linear-gradient(180deg, hsl(var(--h) 90% 75% / .22), transparent); }
+.cosmic .fin-room-h b, .cosmic .fin-room-sub b { color: var(--flow-ink); }
+.cosmic .fin-room-h small, .cosmic .fin-room-sub small, .cosmic .fin-room-go { color: var(--flow-dim); }
+.cosmic .fin-room-ic { background: hsl(var(--h) 70% 60% / .22); box-shadow: 0 0 18px hsl(var(--h) 90% 65% / .45); }
+.cosmic .fin-room-h .btn.ghost { color: var(--flow-ink); }
+.cosmic .fin-room-h .btn.ghost:hover { background: rgba(255,255,255,.12); }
+.cosmic .fin-room-t.sel { box-shadow: 0 0 0 2px hsl(var(--h) 90% 70% / .7); border-radius: 12px; }
 /* cards: bright tiles that lean toward the pointer, with a light that follows it */
-.mode-flow .mnode.fin-leaf { border-color: hsl(var(--h) 60% 75% / .55); box-shadow: 0 10px 28px -16px rgba(0,0,0,.65), 0 0 0 1px rgba(255,255,255,.04);
+.cosmic .mnode.fin-leaf { border-color: hsl(var(--h) 60% 75% / .55); box-shadow: 0 10px 28px -16px rgba(0,0,0,.65), 0 0 0 1px rgba(255,255,255,.04);
   background: radial-gradient(160px 80px at var(--gx, 50%) 0%, hsl(var(--h) 90% 92% / .9), transparent 70%), linear-gradient(180deg, var(--face-top), transparent 50%), var(--surface);
   transition: transform .18s ease-out, box-shadow .18s ease; }   /* flat until hovered: sharp at every zoom */
-.mode-flow .mnode.fin-leaf:hover { transform: perspective(800px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) translateY(-3px) scale(1.015);
+.cosmic .mnode.fin-leaf:hover { transform: perspective(800px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) translateY(-3px) scale(1.015);
   box-shadow: 0 22px 40px -18px hsl(var(--h) 80% 40% / .7), 0 0 0 1px hsl(var(--h) 90% 70% / .5), 0 0 30px -6px hsl(var(--h) 90% 65% / .55); }
-.mode-flow .fin-det { box-shadow: 0 24px 60px -30px rgba(0,0,0,.8), 0 0 0 1px rgba(255,255,255,.06); }
+.cosmic .fin-det { box-shadow: 0 24px 60px -30px rgba(0,0,0,.8), 0 0 0 1px rgba(255,255,255,.06); }
 .mode-flow .fin-det[data-det="up"] .fin-up-grid { grid-template-columns: minmax(0, 1fr); }
-.mode-flow .fin-link { stroke: hsl(190 90% 70% / .75); }
+.cosmic .fin-link { stroke: hsl(190 90% 70% / .75); }
 /* the ribbons */
 .fin-flow { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; }
 .fin-flow .glow { opacity: .22; stroke: currentColor; stroke-width: 22px; stroke-linejoin: round; }   /* a halo without a blur filter (cheap while moving) */
@@ -530,7 +530,7 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 .fin-flow-l .what { font-size: 12px; font-weight: 500; fill: var(--flow-dim, #ccc); }
 .fin-flow-l { fill: var(--flow-ink, #fff); font: 700 15px/1 var(--font, system-ui); paint-order: stroke; stroke: rgba(10, 6, 24, .85); stroke-width: 5px; stroke-linejoin: round; }
 .fin-flow-h { fill: var(--flow-dim, #ccc); font: 700 13px/1 var(--font, system-ui); letter-spacing: .14em; text-transform: uppercase; }
-.mode-flow ~ .fin-cvmini, .fin-cv-stage:has(.mode-flow) .fin-cvmini { background: rgba(16, 12, 36, .85); border-color: rgba(255,255,255,.15); }
+.cosmic ~ .fin-cvmini, .fin-cv-stage:has(.cosmic) .fin-cvmini { background: rgba(16, 12, 36, .85); border-color: rgba(255,255,255,.15); }
 .mode-flow .fin-room-go { display: none; }
 /* Flow's lanes are narrower: room subtitles and the coming-weeks list wrap instead of running under the buttons */
 .mode-flow .fin-room:not(.ov):not(.goals):not(.sec) .fin-room-h > .spacer { display: none; }
@@ -547,10 +547,10 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
    titles grow, so the whole canvas reads at Fit. Text is drawn at its exact size at every zoom. */
 .fin-cv-world { text-rendering: geometricPrecision; -webkit-font-smoothing: antialiased; }
 .fin-cv-vp.z-far .fin-leaf .mtxt small, .fin-cv-vp.z-far .fin-leaf .fin-spark, .fin-cv-vp.z-far .fin-cv-ic { display: none; }
-.fin-cv-vp.z-far .mnode.fin-leaf { flex-direction: column; align-items: stretch; justify-content: center; gap: 1px; padding: 3px 12px; }
+.fin-cv-vp.z-far .mnode.fin-leaf { flex-direction: column; align-items: stretch; justify-content: center; gap: 1px; padding: 7px 14px; }
 .fin-cv-vp.z-far .fin-leaf .mtxt { width: 100%; }
-.fin-cv-vp.z-far .fin-leaf .mtxt b { font-size: 19px; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.fin-cv-vp.z-far .fin-leaf .fin-cv-v { font-size: 19px; line-height: 1.2; text-align: left; }
+.fin-cv-vp.z-far .fin-leaf .mtxt b { font-size: 17px; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fin-cv-vp.z-far .fin-leaf .fin-cv-v { font-size: 17px; line-height: 1.15; text-align: left; }
 .fin-cv-vp.z-far .fin-room-t b { font-size: 28px; }
 .fin-cv-vp.z-far .fin-room-t small { font-size: 16px; }
 .fin-cv-vp.z-far .fin-room-sub b { font-size: 18px; }
@@ -559,9 +559,6 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 .fin-cv-vp.z-far.mode-flow .fin-room:not(.ov):not(.goals):not(.sec) .fin-room-t small { font-size: 13px; line-height: 1.25; }
 
 /* ---------- the layout "Mind map": branches as thick as their money, coloured by health, money flowing ---------- */
-.fin-cv-vp.mode-mind { background: radial-gradient(1400px 900px at 50% 45%, color-mix(in srgb, var(--accent) 6%, var(--bg)), var(--bg)); }
-.mode-mind .fin-room { background: color-mix(in srgb, var(--surface) 82%, transparent); border: 1.5px solid color-mix(in srgb, hsl(var(--h) 50% 55%) 35%, var(--line)); box-shadow: 0 14px 36px -28px rgba(30, 20, 50, .45); }
-.mode-mind .fin-room.ov { border: 2.5px solid color-mix(in srgb, var(--accent) 55%, var(--line)); box-shadow: 0 0 0 8px color-mix(in srgb, var(--accent) 8%, transparent), 0 30px 70px -40px color-mix(in srgb, var(--accent) 60%, transparent); }
 .mode-mind .fin-room-h { height: 84px; }
 .mode-mind .fin-room-t b { font-size: 22px; }
 .fin-mind { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; }
@@ -574,27 +571,24 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 .mm-branch.hot .limb { filter: drop-shadow(0 0 10px rgba(255, 210, 90, .9)); }
 .mm-branch.hot .flow { stroke: #fff7c8; stroke-width: 7; }
 @media (prefers-reduced-motion: no-preference) { .mm-branch .flow { animation: finMind 2.6s linear infinite; } .mm-branch.hot .flow { animation-duration: .9s !important; } @keyframes finMind { to { stroke-dashoffset: -22.1; } } }
-.mm-l { font: 700 20px/1 var(--font, system-ui); fill: var(--ink); paint-order: stroke; stroke: color-mix(in srgb, var(--bg) 90%, transparent); stroke-width: 6px; stroke-linejoin: round; }
-.mm-l .per { font-size: 14px; font-weight: 600; fill: var(--ink-2); }
+.mm-l { font: 700 20px/1 var(--font, system-ui); fill: var(--flow-ink, #fff); paint-order: stroke; stroke: rgba(10, 6, 24, .85); stroke-width: 6px; stroke-linejoin: round; }
+.mm-l .per { font-size: 14px; font-weight: 600; fill: var(--flow-dim, #ccc); }
 .mode-mind .fin-det[data-det="up"] .fin-up-grid { grid-template-columns: minmax(0, 1fr); }
 .mode-mind .fin-up-l { white-space: normal; overflow: visible; overflow-wrap: anywhere; }
 
 /* ---------- the layout "Rich Dad": an income statement above a balance sheet ---------- */
-.fin-cv-vp.mode-rich { background: linear-gradient(180deg, color-mix(in srgb, #c9a227 5%, var(--bg)), var(--bg)); }
-.mode-rich .fin-room { background: color-mix(in srgb, var(--surface) 94%, transparent); border: 1.5px solid color-mix(in srgb, hsl(var(--h) 45% 55%) 30%, var(--line)); }
-.mode-rich .fin-room.rd { border: 2.5px solid #c9a227; box-shadow: 0 0 0 6px color-mix(in srgb, #c9a227 12%, transparent), var(--elev-1); }
 .mode-rich .fin-room-h { height: 84px; } .mode-rich .fin-room-t b { font-size: 22px; }
 .fin-rich { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; }
-.rd-frame { fill: color-mix(in srgb, var(--surface) 55%, transparent); stroke: color-mix(in srgb, var(--ink) 30%, transparent); stroke-width: 3; stroke-dasharray: 14 8; }
-.rd-ft { font: 800 30px/1 var(--font, system-ui); letter-spacing: .14em; fill: var(--ink); }
-.rd-ct { font: 700 17px/1 var(--font, system-ui); fill: var(--ink-2); }
+.rd-frame { fill: rgba(255, 255, 255, .035); stroke: rgba(220, 205, 255, .3); stroke-width: 3; stroke-dasharray: 14 8; }
+.rd-ft { font: 800 30px/1 var(--font, system-ui); letter-spacing: .14em; fill: var(--flow-ink, #fff); }
+.rd-ct { font: 700 17px/1 var(--font, system-ui); fill: var(--flow-dim, #ccc); }
 .rd-flow .pipe { fill: none; stroke-linecap: round; opacity: .55; }
 .rd-flow .flow { fill: none; stroke: #fff; stroke-width: 5; stroke-linecap: round; stroke-dasharray: 0.1 22; }
 .rd-flow.earned .pipe { stroke: #3b82c4; } .rd-flow.expense .pipe { stroke: #d9534f; } .rd-flow.save .pipe { stroke: #2e9e5b; } .rd-flow.passive .pipe { stroke: #c9a227; } .rd-flow.liability .pipe { stroke: #a2466f; }
 @media (prefers-reduced-motion: no-preference) { .rd-flow .flow { animation: finRd 2.4s linear infinite; } .rd-flow.passive .flow { animation-duration: 1.6s; } @keyframes finRd { to { stroke-dashoffset: -22.1; } } }
 .rd-job { fill: #3b82c4; } .rd-jobt { font: 700 16px/1 var(--font, system-ui); fill: #fff; }
-.rd-l { font: 700 20px/1 var(--font, system-ui); fill: var(--ink); paint-order: stroke; stroke: color-mix(in srgb, var(--bg) 92%, transparent); stroke-width: 6px; stroke-linejoin: round; }
-.rd-l .per { font-size: 14px; font-weight: 600; fill: var(--ink-2); }
+.rd-l { font: 700 20px/1 var(--font, system-ui); fill: var(--flow-ink, #fff); paint-order: stroke; stroke: rgba(10, 6, 24, .85); stroke-width: 6px; stroke-linejoin: round; }
+.rd-l .per { font-size: 14px; font-weight: 600; fill: var(--flow-dim, #ccc); }
 /* what each card is */
 .mode-rich .mnode.fin-leaf.rd-earned, .mode-mind .mnode.fin-leaf.rd-earned { border-left: 6px solid #3b82c4; }
 .mode-rich .mnode.fin-leaf.rd-passive, .mode-mind .mnode.fin-leaf.rd-passive { border-left: 6px solid #c9a227; background: linear-gradient(90deg, color-mix(in srgb, #c9a227 14%, var(--surface)), var(--surface) 60%); }
@@ -603,11 +597,6 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 .mode-rich .mnode.fin-leaf.rd-expense, .mode-mind .mnode.fin-leaf.rd-expense { border-left: 6px solid #e08a5a; }
 .mode-rich .mnode.fin-leaf.rd-doodad, .mode-mind .mnode.fin-leaf.rd-doodad { border-left: 6px dashed #8e6bbf; }
 /* the scorecard */
-.fin-rd-score { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 16px; align-items: center; }
-.fin-rd-pat { display: grid; gap: 2px; } .fin-rd-pat b { font-size: 30px; font-family: var(--f-display); }
-.fin-rd-score.rich .fin-rd-pat b { color: #2e9e5b; } .fin-rd-score.middle .fin-rd-pat b { color: #c47a1c; } .fin-rd-score.poor .fin-rd-pat b { color: #d9534f; } .fin-rd-score.building .fin-rd-pat b { color: #3b82c4; }
-.fin-rd-free { display: grid; gap: 6px; }
-.fin-rd-bar { height: 14px; border-radius: 99px; background: var(--line-2); overflow: hidden; } .fin-rd-bar i { display: block; height: 100%; background: linear-gradient(90deg, #c9a227, #2e9e5b); border-radius: 99px; }
 .mode-rich .fin-det[data-det="up"] .fin-up-grid { grid-template-columns: minmax(0, 1fr); }
 .mode-rich .fin-up-l { white-space: normal; overflow: visible; overflow-wrap: anywhere; }
 
@@ -616,12 +605,11 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 .mode-mind .mnode.fin-leaf.rd-asset.rd-idle { border-left: 6px dashed #2e9e5b; background: var(--surface); }
 .mm-branch.work .limb { fill: #3b82c4; } .mm-branch.gold .limb { fill: #c9a227; }
 .fin-twig.work { stroke: #3b82c4; } .fin-twig.gold { stroke: #c9a227; }
-.mm-i { font: 600 15px/1 var(--font, system-ui); fill: var(--ink-2); paint-order: stroke; stroke: color-mix(in srgb, var(--bg) 90%, transparent); stroke-width: 5px; stroke-linejoin: round; }
+.mm-i { font: 600 15px/1 var(--font, system-ui); fill: var(--flow-dim, #ccc); paint-order: stroke; stroke: rgba(10, 6, 24, .85); stroke-width: 5px; stroke-linejoin: round; }
 .mm-cross .pipe { fill: none; stroke-linecap: round; opacity: .5; }
 .mm-cross .flow { fill: none; stroke: #fff; stroke-width: 5; stroke-linecap: round; stroke-dasharray: 0.1 22; opacity: .95; }
 .mm-cross.gold .pipe { stroke: #c9a227; } .mm-cross.red .pipe { stroke: #d9534f; } .mm-cross.green .pipe { stroke: #2e9e5b; }
 @media (prefers-reduced-motion: no-preference) { .mm-cross .flow { animation: finMind 2.6s linear infinite; } }
-.mode-mind .fin-room.free { border: 3px solid #c9a227; box-shadow: 0 0 0 10px color-mix(in srgb, #c9a227 12%, transparent), 0 30px 70px -40px rgba(120, 90, 10, .5); background: color-mix(in srgb, var(--surface) 96%, #c9a227); }
 .mode-mind .fin-room.free .fin-room-t b { font-size: 28px; }
 .fin-free { display: grid; gap: 14px; }
 .fin-free-top { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 18px; align-items: center; }
@@ -648,3 +636,14 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 .fin-free-key i { display: inline-block; width: 14px; height: 10px; border-radius: 3px; margin-right: -6px; vertical-align: middle; }
 .fin-free-key .work { background: #3b82c4; } .fin-free-key .gold { background: #c9a227; } .fin-free-key .green { background: #2e9e5b; } .fin-free-key .cash { background: #7cc79a; }
 .fin-free-key .idle { border: 2px dashed #2e9e5b; } .fin-free-key .red { background: #d9534f; } .fin-free-key .exp { background: #e08a5a; } .fin-free-key .doodad { border: 2px dashed #8e6bbf; }
+.rd-i { font: 600 15px/1 var(--font, system-ui); fill: var(--flow-dim, #ccc); paint-order: stroke; stroke: rgba(10, 6, 24, .85); stroke-width: 5px; stroke-linejoin: round; }
+.rd-flow.save.none .pipe { stroke: #e0a030; stroke-dasharray: 6 10; }
+.mode-rich .fin-room.free .fin-room-t b { font-size: 28px; }
+.fin-free-views { justify-self: end; }
+
+/* the centre of the wealth map: financial freedom, a golden glass room */
+.cosmic .fin-room.free { background: linear-gradient(160deg, rgba(232, 190, 60, .34), rgba(90, 60, 10, .42) 55%, rgba(14, 10, 32, .6)); border: 2px solid rgba(240, 200, 90, .7);
+  box-shadow: 0 1px 0 rgba(255, 230, 150, .4) inset, 0 0 0 10px rgba(232, 190, 60, .12), 0 40px 90px -40px rgba(232, 190, 60, .7); }
+.cosmic .fin-room.free .fin-room-t b { font-size: 28px; }
+.cosmic .mm-branch .limb { opacity: .8; }
+.cosmic .fin-twig { opacity: .6; }
