@@ -596,12 +596,12 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 .rd-l { font: 700 20px/1 var(--font, system-ui); fill: var(--ink); paint-order: stroke; stroke: color-mix(in srgb, var(--bg) 92%, transparent); stroke-width: 6px; stroke-linejoin: round; }
 .rd-l .per { font-size: 14px; font-weight: 600; fill: var(--ink-2); }
 /* what each card is */
-.mode-rich .mnode.fin-leaf.rd-earned { border-left: 6px solid #3b82c4; }
-.mode-rich .mnode.fin-leaf.rd-passive { border-left: 6px solid #c9a227; background: linear-gradient(90deg, color-mix(in srgb, #c9a227 14%, var(--surface)), var(--surface) 60%); }
-.mode-rich .mnode.fin-leaf.rd-asset { border-left: 6px solid #2e9e5b; background: linear-gradient(90deg, color-mix(in srgb, #2e9e5b 10%, var(--surface)), var(--surface) 60%); }
-.mode-rich .mnode.fin-leaf.rd-liability { border-left: 6px solid #d9534f; background: linear-gradient(90deg, color-mix(in srgb, #d9534f 10%, var(--surface)), var(--surface) 60%); }
-.mode-rich .mnode.fin-leaf.rd-expense { border-left: 6px solid #e08a5a; }
-.mode-rich .mnode.fin-leaf.rd-doodad { border-left: 6px dashed #8e6bbf; }
+.mode-rich .mnode.fin-leaf.rd-earned, .mode-mind .mnode.fin-leaf.rd-earned { border-left: 6px solid #3b82c4; }
+.mode-rich .mnode.fin-leaf.rd-passive, .mode-mind .mnode.fin-leaf.rd-passive { border-left: 6px solid #c9a227; background: linear-gradient(90deg, color-mix(in srgb, #c9a227 14%, var(--surface)), var(--surface) 60%); }
+.mode-rich .mnode.fin-leaf.rd-asset, .mode-mind .mnode.fin-leaf.rd-asset { border-left: 6px solid #2e9e5b; background: linear-gradient(90deg, color-mix(in srgb, #2e9e5b 10%, var(--surface)), var(--surface) 60%); }
+.mode-rich .mnode.fin-leaf.rd-liability, .mode-mind .mnode.fin-leaf.rd-liability { border-left: 6px solid #d9534f; background: linear-gradient(90deg, color-mix(in srgb, #d9534f 10%, var(--surface)), var(--surface) 60%); }
+.mode-rich .mnode.fin-leaf.rd-expense, .mode-mind .mnode.fin-leaf.rd-expense { border-left: 6px solid #e08a5a; }
+.mode-rich .mnode.fin-leaf.rd-doodad, .mode-mind .mnode.fin-leaf.rd-doodad { border-left: 6px dashed #8e6bbf; }
 /* the scorecard */
 .fin-rd-score { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 16px; align-items: center; }
 .fin-rd-pat { display: grid; gap: 2px; } .fin-rd-pat b { font-size: 30px; font-family: var(--f-display); }
@@ -610,3 +610,41 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 .fin-rd-bar { height: 14px; border-radius: 99px; background: var(--line-2); overflow: hidden; } .fin-rd-bar i { display: block; height: 100%; background: linear-gradient(90deg, #c9a227, #2e9e5b); border-radius: 99px; }
 .mode-rich .fin-det[data-det="up"] .fin-up-grid { grid-template-columns: minmax(0, 1fr); }
 .mode-rich .fin-up-l { white-space: normal; overflow: visible; overflow-wrap: anywhere; }
+
+/* ---------- the Mind map, the Rich Dad way ---------- */
+.mode-mind .mnode.fin-leaf.rd-asset.rd-cash { border-left: 6px solid #7cc79a; background: var(--surface); }
+.mode-mind .mnode.fin-leaf.rd-asset.rd-idle { border-left: 6px dashed #2e9e5b; background: var(--surface); }
+.mm-branch.work .limb { fill: #3b82c4; } .mm-branch.gold .limb { fill: #c9a227; }
+.fin-twig.work { stroke: #3b82c4; } .fin-twig.gold { stroke: #c9a227; }
+.mm-i { font: 600 15px/1 var(--font, system-ui); fill: var(--ink-2); paint-order: stroke; stroke: color-mix(in srgb, var(--bg) 90%, transparent); stroke-width: 5px; stroke-linejoin: round; }
+.mm-cross .pipe { fill: none; stroke-linecap: round; opacity: .5; }
+.mm-cross .flow { fill: none; stroke: #fff; stroke-width: 5; stroke-linecap: round; stroke-dasharray: 0.1 22; opacity: .95; }
+.mm-cross.gold .pipe { stroke: #c9a227; } .mm-cross.red .pipe { stroke: #d9534f; } .mm-cross.green .pipe { stroke: #2e9e5b; }
+@media (prefers-reduced-motion: no-preference) { .mm-cross .flow { animation: finMind 2.6s linear infinite; } }
+.mode-mind .fin-room.free { border: 3px solid #c9a227; box-shadow: 0 0 0 10px color-mix(in srgb, #c9a227 12%, transparent), 0 30px 70px -40px rgba(120, 90, 10, .5); background: color-mix(in srgb, var(--surface) 96%, #c9a227); }
+.mode-mind .fin-room.free .fin-room-t b { font-size: 28px; }
+.fin-free { display: grid; gap: 14px; }
+.fin-free-top { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 18px; align-items: center; }
+.fin-free-ring { width: 150px; height: 150px; }
+.fin-free-ring .bg { fill: none; stroke: var(--line-2); stroke-width: 14; }
+.fin-free-ring .fg { fill: none; stroke: #2e9e5b; stroke-width: 14; stroke-linecap: round; transform: rotate(-90deg); transform-origin: 64px 64px; transition: stroke-dasharray .6s ease; }
+.fin-free-ring .p { font: 800 30px/1 var(--f-display, system-ui); fill: var(--ink); } .fin-free-ring .s { font: 600 13px/1 var(--font, system-ui); fill: var(--ink-2); }
+.fin-free-pat { display: grid; gap: 4px; } .fin-free-pat b { font-size: 32px; font-family: var(--f-display); }
+.fin-free.rich .fin-free-pat b { color: #2e9e5b; } .fin-free.middle .fin-free-pat b { color: #c47a1c; } .fin-free.poor .fin-free-pat b { color: #d9534f; } .fin-free.building .fin-free-pat b { color: #3b82c4; }
+.fin-free-cf { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; align-items: stretch; }
+.fin-free-cf > div { display: grid; gap: 4px; padding: 10px 12px; border-radius: 12px; background: var(--surface-2, var(--bg)); border-top: 4px solid var(--line); min-width: 0; }
+.fin-free-cf > div span { font-size: 12px; color: var(--ink-2); overflow-wrap: anywhere; } .fin-free-cf > div b { font-size: 16px; }
+.fin-free-cf .work { border-top-color: #3b82c4; } .fin-free-cf .gold { border-top-color: #c9a227; } .fin-free-cf .drain { border-top-color: #e08a5a; } .fin-free-cf .debt { border-top-color: #d9534f; } .fin-free-cf .green { border-top-color: #2e9e5b; }
+.fin-free-cf small { grid-column: 1 / -1; text-align: right; }
+.fin-free-bs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.fin-free-bs > div { display: grid; gap: 2px; padding: 10px 14px; border-radius: 12px; }
+.fin-free-bs .asset { background: color-mix(in srgb, #2e9e5b 12%, var(--surface)); } .fin-free-bs .liab { background: color-mix(in srgb, #d9534f 12%, var(--surface)); }
+.fin-free-bs b { font-size: 20px; } .fin-free-bs small { color: var(--ink-2); }
+.fin-free h4 { margin: 2px 0 0; }
+.fin-moves { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.fin-moves li { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; gap: 10px; align-items: start; padding: 10px 12px; border-radius: 12px; background: var(--surface-2, var(--bg)); }
+.fin-moves .ic { font-size: 20px; line-height: 1.2; } .fin-moves li div { display: grid; gap: 2px; min-width: 0; } .fin-moves li .small { overflow-wrap: anywhere; }
+.fin-free-key { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: center; }
+.fin-free-key i { display: inline-block; width: 14px; height: 10px; border-radius: 3px; margin-right: -6px; vertical-align: middle; }
+.fin-free-key .work { background: #3b82c4; } .fin-free-key .gold { background: #c9a227; } .fin-free-key .green { background: #2e9e5b; } .fin-free-key .cash { background: #7cc79a; }
+.fin-free-key .idle { border: 2px dashed #2e9e5b; } .fin-free-key .red { background: #d9534f; } .fin-free-key .exp { background: #e08a5a; } .fin-free-key .doodad { border: 2px dashed #8e6bbf; }

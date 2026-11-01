@@ -25,7 +25,8 @@ function finRdKind(c, roomId) {
 }
 // the numbers behind the scorecard
 function finRdNumbers() {
-  const n = finNow(), root = finCvModel(), room = id => (root.children.find(b => b.id === id) || { children: [] }).children, leaves = list => list.flatMap(c => c.type === 'branch' ? leaves(c.children) : [c]);
+  const n = finNow(), f0 = UI.fin.cv.focus; UI.fin.cv.focus = null; let root; try { root = finCvModel(); } finally { UI.fin.cv.focus = f0; }   // all of it, even when one room is in focus
+  const room = id => (root.children.find(b => b.id === id) || { children: [] }).children, leaves = list => list.flatMap(c => c.type === 'branch' ? leaves(c.children) : [c]);
   const amt = c => { const m = /(-?[\d,]+(?:\.\d+)?)/.exec(String(c.val || '').replace(/ /g, ' ')); return m ? Math.abs(parseFloat(m[1].replace(/,/g, ''))) || 0 : 0; };
   let passive = 0, earned = 0; for (const c of leaves(room('inc'))) { const k = finRdKind(c, 'inc'); if (k === 'passive') passive += amt(c); else if (k === 'earned') earned += amt(c); }
   const own = leaves(room('own')), assets = (n.cash || 0) + own.filter(c => finRdKind(c, 'own') === 'asset').reduce((s, c) => s + amt(c), 0);

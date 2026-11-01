@@ -287,6 +287,7 @@ function finGoalsTimeline(plan) {
 function finDetBody(id, plan, n) {
   if (id === 'ov') return finOverviewHTML();
   if (id === 'rd' && typeof finRdScoreHTML === 'function') return finRdScoreHTML();
+  if (id === 'free' && typeof finFreeHTML === 'function') return finFreeHTML();
   if (id === 'gk') return finGoalsHead(plan, n);
   if (id === 'gt') return finGoalsTimeline(plan);
   if (id === 'up') return finUpcomingHTML();
@@ -345,14 +346,15 @@ function finCvCard(c, hue) {
 function finCvRoom(r) {
   const folded = UI.fin.cvCol.has(r.id), fresh = Date.now() < UI.fin.flash.until && UI.fin.flash.ids.has(r.id) ? ' fresh' : '';
   const hasKids = r.kind === 'room' ? r.node.children.length : r.kind !== 'sec';   // overview, coming up and goals fold too
+  const aid = r.addId === undefined ? r.id : r.addId, solo = !r.syn && r.kind !== 'free';   // the Mind map's own branches and centre: no "only this room"
   const titleAct = r.kind === 'sec' ? `data-act="fin-cv-sec" data-s="${esc(r.sec)}"` : r.sec ? `data-act="fin-cv-sec" data-s="${esc(r.sec)}"` : '';
   return `<section class="fin-room ${r.kind}${r.cls ? ' tr-' + r.cls : ''}${fresh}" data-room="${esc(r.id)}" style="left:${r.x}px;top:${r.y}px;width:${r.w}px;height:${r.h}px;--h:${r.hue ?? 200}">
     <div class="fin-room-h">
       <div class="fin-room-t fin-cvn${r.sec && r.kind !== 'sec' && finSecOpen(r.sec) ? ' sel' : ''}" data-node="${esc(r.id)}" ${titleAct} role="button" tabindex="0" title="${r.kind === 'sec' ? 'Close' : r.sec ? 'Open ' + esc(finSecLabel(r.sec)) + ' here' : ''}"><span class="fin-room-ic" aria-hidden="true">${r.icon}</span><div><b>${esc(r.title)}</b>${r.sum ? `<small>${esc(r.sum)}</small>` : ''}</div>${r.sec && r.kind !== 'sec' ? `<span class="fin-room-go">${finSecOpen(r.sec) ? '▴ close' : '▾ open'}</span>` : ''}</div>
       <span class="spacer"></span>
-      ${typeof finCvAddSpec === 'function' && finCvAddSpec(r.id) ? `<button class="btn sm ghost" data-act="fin-cv-add" data-id="${esc(r.id)}" title="Add" aria-label="Add to ${esc(r.title)}">＋</button>` : ''}
+      ${typeof finCvAddSpec === 'function' && aid && finCvAddSpec(aid) ? `<button class="btn sm ghost" data-act="fin-cv-add" data-id="${esc(aid)}" title="Add" aria-label="Add to ${esc(r.title)}">＋</button>` : ''}
       ${r.kind === 'sec' ? `<button class="btn sm ghost" data-act="fin-cv-sec" data-s="${esc(r.sec)}" aria-label="Close ${esc(r.title)}">✕</button>`
-        : `${hasKids ? `<button class="btn sm ghost" data-act="fin-cv-tog" data-id="${esc(r.id)}" aria-expanded="${!folded}" title="${folded ? 'Unfold' : 'Fold'}" aria-label="${folded ? 'Unfold' : 'Fold'} ${esc(r.title)}">${folded ? '▸' : '▾'}</button>` : ''}<button class="btn sm ghost" data-act="fin-cv-focus" data-id="${esc(r.id)}" title="${UI.fin.cv.focus === r.id ? 'Show everything' : 'Show only this room'}" aria-label="${UI.fin.cv.focus === r.id ? 'Show everything' : 'Show only ' + esc(r.title)}">⤢</button>`}
+        : `${hasKids ? `<button class="btn sm ghost" data-act="fin-cv-tog" data-id="${esc(r.id)}" aria-expanded="${!folded}" title="${folded ? 'Unfold' : 'Fold'}" aria-label="${folded ? 'Unfold' : 'Fold'} ${esc(r.title)}">${folded ? '▸' : '▾'}</button>` : ''}${solo ? `<button class="btn sm ghost" data-act="fin-cv-focus" data-id="${esc(r.id)}" title="${UI.fin.cv.focus === r.id ? 'Show everything' : 'Show only this room'}" aria-label="${UI.fin.cv.focus === r.id ? 'Show everything' : 'Show only ' + esc(r.title)}">⤢</button>` : ''}`}
     </div></section>`;
 }
 function finCvBoard() {

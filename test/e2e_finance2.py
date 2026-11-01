@@ -409,22 +409,37 @@ async def main():
         assert await ev("document.querySelectorAll('.fin-flow .fin-flow-r').length") >= 3, 'the ribbons and their moving money'
         await pg.screenshot(path=os.path.join(HERE, 'shots', 'finance-flow.png'))
         await pg.keyboard.press('l'); await pg.wait_for_timeout(1000); assert await ev("window.__FIN.mode()") == 'rich'
-        # the Mind map: My money in the centre, a branch to every room as thick as its money and coloured by its health,
-        # money flowing along the branches (in from income, out to spending, commitments and goals), a thin branch to
-        # every card; a change makes its branch pulse
+        # the Mind map, the Rich Dad way: financial freedom in the centre (how much of your expenses passive income covers,
+        # your pattern, your cash flow, the wealth moves); left, where money comes from — earned income, passive income,
+        # assets; right, where it goes — expenses, liabilities, your choices (goals); the channels carry the money live,
+        # as thick as it is, in from income and out to spending, debt and purchases; the outer channels show assets paying
+        # you and liabilities costing you; a change makes its branch pulse
         await pg.keyboard.press('l'); await pg.wait_for_timeout(1100); assert await ev("window.__FIN.mode()") == 'mind' and await ev("document.getElementById('fin-cv-vp').classList.contains('mode-mind')")
         assert sorted(await ev("[...document.querySelectorAll('#fin-cv-world .fin-leaf[data-node]')].map(c => c.dataset.node)")) == rooms_cards, 'the same cards in the Mind map'
-        nb = await ev("document.querySelectorAll('.fin-mind .mm-branch').length"); nr = await ev("[...document.querySelectorAll('#fin-cv-world .fin-room')].filter(r => !r.classList.contains('ov') && !r.classList.contains('sec')).length")
-        print('MIND', nb, nr, await ev("[...document.querySelectorAll('.fin-mind .mm-l')].map(t => t.textContent)"), await ev("[...document.querySelectorAll('.fin-mind .mm-branch')].map(b => b.getAttribute('class'))"))
-        assert nb == nr, 'a branch from My money to every room'
-        assert await ev("document.querySelectorAll('.fin-mind .mm-branch .flow').length") >= 3 and await ev("!!document.querySelector('.fin-mind .mm-branch .flow.in')"), 'money flows along the branches, income inward'
+        P = await ev("Object.fromEntries(['free', 'mm-earn', 'mm-pass', 'mm-assets', 'exp', 'mm-liab', 'buy'].map(id => [id, window.__AR.UI.fin.cvPos.get(id)]))"); print('MIND ROOMS', {k: (v or {}).get('x') for k, v in P.items()})
+        assert all(P.values()), 'the Rich Dad branches'
+        cx = P['free']['x']; cr = cx + P['free']['w']
+        assert all(P[k]['x'] + P[k]['w'] <= cx for k in ['mm-earn', 'mm-pass', 'mm-assets']) and all(P[k]['x'] >= cr for k in ['exp', 'mm-liab', 'buy']), 'money in on the left, money out on the right'
+        assert P['mm-earn']['y'] < P['mm-pass']['y'] < P['mm-assets']['y'] and P['exp']['y'] < P['mm-liab']['y'] < P['buy']['y'], 'income above assets; expenses above liabilities'
+        pos = lambda node: ev(f"(window.__AR.UI.fin.cvPos.get('{node}') || {{}}).x")
+        assert await pos('a:' + a12['id']) < cx, 'a bank account is an asset'
+        if card: assert await pos('a:' + card['id']) > cr, 'the credit card is a liability'
+        kinds = await ev("[...new Set([...document.querySelectorAll('#fin-cv-world .fin-leaf[data-node]')].flatMap(c => [...c.classList].filter(k => k.startsWith('rd-'))))]"); print('MIND KINDS', sorted(kinds))
+        assert {'rd-earned', 'rd-passive', 'rd-asset', 'rd-liability'} <= set(kinds)
+        fr = await ev("document.querySelector('#fin-cv-world .fin-det[data-det=\"free\"]').textContent"); print('FREE', fr[:400])
+        assert 'cash-flow pattern' in fr and 'rat race' in fr and 'Wealth moves' in fr and await ev("document.querySelectorAll('.fin-free .fin-moves li').length") >= 2
+        ch = await ev("[...document.querySelectorAll('.fin-mind [data-ch]')].map(g => [g.dataset.ch, g.getAttribute('class'), [...g.querySelectorAll('text')].map(t => t.textContent).join(' | ')])"); print('CHANNELS', ch)
+        assert len([c for c in ch if 'mm-branch' in c[1]]) == 6, 'a channel to every branch'
+        assert {'pays', 'costs'} <= {c[0] for c in ch if 'mm-cross' in c[1]}, 'assets pay you; liabilities cost you'
+        assert await ev("document.querySelectorAll('.fin-mind .flow').length") >= 7 and await ev("document.querySelectorAll('.fin-mind .mm-branch .flow.in').length") == 2, 'money flows in from earned and passive income, out everywhere else'
         assert await ev("document.querySelectorAll('#fin-cv-world .fin-twig').length") >= 10, 'a thin branch to each card'
-        P = await ev("Object.fromEntries(['ov', 'exp', 'inc'].map(id => [id, window.__AR.UI.fin.cvPos.get(id)]))")
-        assert P['exp']['x'] > P['ov']['x'] + P['ov']['w'] or P['exp']['x'] + P['exp']['w'] < P['ov']['x'], 'branches stand either side of My money'
+        assert await ev("[...document.querySelectorAll('.fin-mind text')].every(t => { const b = t.getBBox(), m = t.getCTM(); const x = m.a * b.x + m.c * b.y + m.e, y = m.b * b.x + m.d * b.y + m.f, x2 = m.a * (b.x + b.width) + m.c * (b.y + b.height) + m.e; return Math.min(x, x2) >= 0 && y >= 0; })"), 'every channel label on the canvas'
         await ev("(() => { const U = window.__AR.UI.fin, id = document.querySelector('#fin-cv-world .fin-leaf[data-node^=\"a:\"]').dataset.node; U.flash = { ids: new Set([id]), until: Date.now() + 4000 }; window.__FIN.open('map'); })()"); await pg.wait_for_timeout(300)
         assert await ev("!!document.querySelector('.fin-mind .mm-branch.hot')"), 'a change makes its branch pulse'
         fit = await ev("(() => { const v = document.getElementById('fin-cv-vp').getBoundingClientRect(), w = document.getElementById('fin-cv-world').getBoundingClientRect(); return [w.left >= v.left - 1, w.right <= v.right + 1, w.top >= v.top - 1, w.bottom <= v.bottom + 1]; })()")
         assert all(fit), ('Fit shows the whole map', fit)
+        await ev("window.__FIN.show('free')"); await pg.wait_for_timeout(700); await pg.screenshot(path=os.path.join(HERE, 'shots', 'finance-mindmap-centre.png'))
+        await pg.click('[data-act="fin-cv-fit"]'); await pg.wait_for_timeout(600)
         await pg.screenshot(path=os.path.join(HERE, 'shots', 'finance-mindmap.png'))
         await pg.keyboard.press('l'); await pg.wait_for_timeout(1000); assert await ev("window.__FIN.mode()") == 'rooms'
         assert await ev("[...document.querySelectorAll('.fin-cv-bar [data-act=\"fin-cv-mode\"]')].map(b => b.dataset.v).join()") == 'rooms,flow,rich,mind'
