@@ -84,20 +84,21 @@ async def main():
             found = await ev(CHECK)
             if found: problems[f'{w}px canvas'] = found
             if w in (1400, 390): await pg.screenshot(path=os.path.join(HERE, 'shots', f'audit-{w}-canvas.png'))
-            # the second layout (Flow): the same checks, with a card popped out and a part opened in it
-            await ev("window.__FIN.mode('flow')"); await pg.wait_for_timeout(1100)
-            found = await ev(CHECK)
-            if found: problems[f'{w}px canvas (Flow)'] = found
-            if w in (1400, 390): await pg.screenshot(path=os.path.join(HERE, 'shots', f'audit-{w}-flow.png'))
-            for q in ['.fin-leaf[data-node^="a:"]', '.fin-leaf[data-node^="c:"]']:
-                nid = await ev(f"(document.querySelector('{q}') || {{}}).dataset?.node")
-                if not nid: continue
-                await ev(f"window.__FIN.show('{nid}')"); await ev(f"window.__AR.UI.fin.pop = '{nid}'"); await ev("window.__FIN.open('map')"); await pg.wait_for_timeout(600)
+            # the other layouts (Tree and Flow): the same checks, with a card popped out and a part opened in each
+            for mode, name in [('tree', 'Tree'), ('flow', 'Flow')]:
+                await ev("window.__AR.UI.fin.cvOpen = []; window.__AR.UI.fin.pop = null"); await ev(f"window.__FIN.mode('{mode}')"); await pg.wait_for_timeout(1100)
                 found = await ev(CHECK)
-                if found: problems[f'{w}px Flow pop-out {nid}'] = found
-            await ev("window.__AR.UI.fin.pop = null"); await ev("window.__FIN.open('dash')"); await pg.wait_for_timeout(700)
-            found = await ev(CHECK)
-            if found: problems[f'{w}px Flow with a part open'] = found
+                if found: problems[f'{w}px canvas ({name})'] = found
+                if w in (1400, 390): await pg.screenshot(path=os.path.join(HERE, 'shots', f'audit-{w}-{mode}.png'))
+                for q in ['.fin-leaf[data-node^="a:"]', '.fin-leaf[data-node^="c:"]']:
+                    nid = await ev(f"(document.querySelector('{q}') || {{}}).dataset?.node")
+                    if not nid: continue
+                    await ev(f"window.__FIN.show('{nid}')"); await ev(f"window.__AR.UI.fin.pop = '{nid}'"); await ev("window.__FIN.open('map')"); await pg.wait_for_timeout(600)
+                    found = await ev(CHECK)
+                    if found: problems[f'{w}px {name} pop-out {nid}'] = found
+                await ev("window.__AR.UI.fin.pop = null"); await ev("window.__FIN.open('dash')"); await pg.wait_for_timeout(700)
+                found = await ev(CHECK)
+                if found: problems[f'{w}px {name} with a part open'] = found
             await ev("window.__AR.UI.fin.cvOpen = []"); await ev("window.__FIN.mode('rooms')"); await pg.wait_for_timeout(1000)
             # cards popped out beside themselves: an account, a goal, a category, a source of money, an instalment
             ids = await ev("['.fin-leaf[data-node^=\"a:\"]', '.fin-leaf.goal', '.fin-leaf[data-node^=\"c:\"]', '.fin-leaf[data-node=\"src:save\"]', '.fin-leaf[data-node^=\"i:\"]'].map(q => (document.querySelector(q) || {}).dataset?.node).filter(Boolean)")

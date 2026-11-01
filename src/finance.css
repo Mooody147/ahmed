@@ -478,13 +478,62 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 @media (prefers-reduced-motion: no-preference) { .fin-menu { animation: finPopIn .14s ease-out both; transform-origin: top left; } }
 @media (max-width: 700px) { .fin-talk-win { left: 8px !important; right: 8px !important; top: auto !important; bottom: 8px !important; width: auto; resize: none; max-height: 70%; } }
 
-/* ---------- the second layout: Flow ---------- */
 .fin-cv-modes button { display: inline-flex; align-items: center; gap: 4px; }
+
+/* ---------- the second layout: Tree ---------- */
+.fin-cv-vp.mode-tree { --tree-sky1: #6fa6dc; --tree-sky2: #b4d4f0; --tree-sky3: #e3eedf; --tree-soil1: #b98a5e; --tree-soil2: #8d6240; --tree-soil3: #5e4029;
+  --tree-bark1: #9a6a42; --tree-bark2: #6b4528; --tree-grass1: #79b85a; --tree-grass2: #5e9e44; --tree-leaf1: #8fcf7e; --tree-leaf2: #6db866; --tree-leaf3: #a8dc8c; --tree-sap: #ffc93c; --tree-ink: #2b2014;
+  background: var(--tree-sky2); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .fin-cv-vp.mode-tree { --tree-sky1: #1d2f4a; --tree-sky2: #22344d; --tree-sky3: #283b33; --tree-soil1: #5a4330; --tree-soil2: #45321f; --tree-soil3: #2e2116; --tree-bark1: #7a5535; --tree-bark2: #523621; --tree-leaf1: #4f8f4a; --tree-leaf2: #3f7a3c; --tree-leaf3: #5f9d55; --tree-ink: #f3ede4; } }
+:root[data-theme="dark"] .fin-cv-vp.mode-tree { --tree-sky1: #1d2f4a; --tree-sky2: #22344d; --tree-sky3: #283b33; --tree-soil1: #5a4330; --tree-soil2: #45321f; --tree-soil3: #2e2116; --tree-bark1: #7a5535; --tree-bark2: #523621; --tree-leaf1: #4f8f4a; --tree-leaf2: #3f7a3c; --tree-leaf3: #5f9d55; --tree-ink: #f3ede4; }
+.fin-tree-sky { position: absolute; inset: 0; overflow: hidden; pointer-events: none; background: linear-gradient(180deg, var(--tree-sky1) 0%, var(--tree-sky2) 55%, var(--tree-sky3) 100%); }
+/* a soft, low sun and thin high cloud — nothing drawn, only light */
+.fin-tree-sky .sun { position: absolute; right: 4%; top: -140px; width: 520px; height: 520px; border-radius: 50%; background: radial-gradient(circle, rgba(255, 246, 214, .85), rgba(255, 236, 190, .28) 32%, rgba(255, 236, 190, 0) 62%); }
+.fin-tree-sky .cloud { position: absolute; height: 46px; border-radius: 50%; background: rgba(255, 255, 255, .5); filter: blur(22px); will-change: transform; }
+.fin-tree-sky .c1 { left: 6%; top: 12%; width: 520px; } .fin-tree-sky .c2 { left: 44%; top: 6%; width: 380px; opacity: .7; } .fin-tree-sky .c3 { left: 70%; top: 24%; width: 300px; opacity: .55; }
+@media (prefers-reduced-motion: no-preference) { .fin-tree-sky .c1 { animation: finCloud 90s linear infinite alternate; } .fin-tree-sky .c3 { animation: finCloud 120s linear infinite alternate-reverse; } @keyframes finCloud { to { translate: 14vw 0; } } }
+.fin-tree .rootlet { fill: #3b2a1b; }
+.fin-tree .root { opacity: .97; }
+.mode-tree .fin-cv-world { z-index: 1; }
+.fin-tree { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; }
+.fin-tree .sap { fill: none; stroke: var(--tree-sap); stroke-width: 6; stroke-linecap: round; stroke-dasharray: 0.1 34; }
+@media (prefers-reduced-motion: no-preference) { .fin-tree .sap { animation: finSap 3s linear infinite; } @keyframes finSap { to { stroke-dashoffset: -34.1; } } }
+.fin-tree-l { font: 700 24px/1 var(--font, system-ui); paint-order: stroke; stroke-width: 6px; stroke-linejoin: round; }
+.fin-tree-l .what { font-size: 17px; font-weight: 600; }
+.fin-tree-l.sky { fill: var(--tree-ink); stroke: rgba(255, 255, 255, .85); }
+.fin-tree-l.soil { fill: #fff8ec; stroke: rgba(40, 24, 10, .8); }
+.fin-tree-h { font: 800 20px/1 var(--font, system-ui); letter-spacing: .06em; fill: var(--tree-ink); paint-order: stroke; stroke: rgba(255, 255, 255, .8); stroke-width: 5px; }
+.fin-tree-h.soil { fill: #fff3e0; stroke: rgba(40, 24, 10, .7); }
+/* rooms: calm, light panels; under the ground a warm tone; on the trunk the bark shows through the edge */
+.mode-tree .fin-room { background: color-mix(in srgb, var(--surface) 90%, transparent); border: 2px solid hsl(var(--h) 45% 55% / .4); box-shadow: 0 22px 50px -30px rgba(40, 50, 20, .55), var(--elev-1); }
+.mode-tree .fin-room.tr-root { background: color-mix(in srgb, #fff3e3 92%, transparent); border-color: rgba(120, 80, 40, .45); }
+.mode-tree .fin-room.tr-trunk { border: 3px solid var(--tree-bark2); }
+.mode-tree .fin-room.tr-crown { border-color: color-mix(in srgb, var(--tree-leaf2) 70%, transparent); }
+.mode-tree .fin-room-h { height: 84px; }
+.mode-tree .fin-room-t b { font-size: 22px; }
+.mode-tree .mnode.fin-leaf { transform: perspective(800px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); transition: transform .18s ease-out, box-shadow .18s ease; }
+.mode-tree .mnode.fin-leaf:hover { transform: perspective(800px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) translateY(-3px); box-shadow: 0 18px 34px -16px hsl(var(--h) 60% 30% / .5), 0 0 0 1px hsl(var(--h) 70% 60% / .45); }
+.mode-tree .fin-det[data-det="up"] .fin-up-grid { grid-template-columns: minmax(0, 1fr); }
+/* zoomed out: cards show only their name and figure, in big type; room titles grow; details stay */
+.mode-tree.z-far .fin-leaf .mtxt small, .mode-tree.z-far .fin-leaf .fin-spark, .mode-tree.z-far .fin-cv-ic { display: none; }
+.mode-tree.z-far .fin-leaf { padding: 4px 12px; }
+.mode-tree.z-far .fin-leaf .mtxt b { font-size: 23px; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mode-tree.z-far .fin-leaf .fin-cv-v { font-size: 23px; }
+.mode-tree.z-far .fin-room-t b { font-size: 32px; }
+.mode-tree.z-far .fin-room-t small { font-size: 17px; }
+.mode-tree.z-far .fin-room-sub b { font-size: 18px; }
+/* zoomed out, a card is its name over its figure, each on its own line */
+.mode-tree.z-far .mnode.fin-leaf { flex-direction: column; align-items: stretch; justify-content: center; gap: 2px; }
+.mode-tree.z-far .fin-leaf .mtxt { width: 100%; }
+.mode-tree.z-far .fin-leaf .fin-cv-v { text-align: left; line-height: 1.2; }
+.mode-tree .fin-room-go { display: none; }
+
+/* ---------- the third layout: Flow ---------- */
 .fin-cv-vp.mode-flow { background: #0d0a1f; border-color: #2a2147; --flow-ink: #f4f0ff; --flow-dim: #b9aedb; }
 /* the night sky: three soft lights drifting slowly behind the canvas (they never move with it) */
 .fin-flow-sky { position: absolute; inset: 0; overflow: hidden; pointer-events: none; background:
   radial-gradient(1200px 700px at 15% -10%, #3b1d5c 0%, transparent 60%), radial-gradient(900px 600px at 110% 110%, #3a1430 0%, transparent 60%), linear-gradient(160deg, #0f0c26, #120a1c 60%, #0b0f22); }
-.fin-flow-sky i { position: absolute; width: 60vmax; height: 60vmax; border-radius: 50%; filter: blur(60px); opacity: .42; will-change: transform; }
+.fin-flow-sky i { position: absolute; width: 60vmax; height: 60vmax; border-radius: 50%; opacity: .42; will-change: transform; }   /* soft by their own gradient: no blur to redo while moving */
 .fin-flow-sky i:nth-child(1) { left: -12%; top: -18%; background: radial-gradient(circle, #7b3fe4, transparent 65%); }
 .fin-flow-sky i:nth-child(2) { right: -18%; top: 10%; background: radial-gradient(circle, #e0457b, transparent 65%); opacity: .3; }
 .fin-flow-sky i:nth-child(3) { left: 25%; bottom: -30%; background: radial-gradient(circle, #1fb6c9, transparent 65%); opacity: .26; }
@@ -517,7 +566,7 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 .mode-flow .fin-link { stroke: hsl(190 90% 70% / .75); }
 /* the ribbons */
 .fin-flow { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; }
-.fin-flow .glow { filter: blur(14px); opacity: .55; }
+.fin-flow .glow { opacity: .22; stroke: currentColor; stroke-width: 22px; stroke-linejoin: round; }   /* a halo without a blur filter (cheap while moving) */
 .fin-flow .body { opacity: .78; }
 .fin-flow-r.empty .body { opacity: .18; } .fin-flow-r.empty .glow { opacity: 0; }
 .fin-flow .dots { fill: none; stroke: #fff; stroke-width: 3.2; stroke-linecap: round; stroke-dasharray: 0.1 26; opacity: .9; }
@@ -535,3 +584,4 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 .mode-flow .fin-room-h { height: 66px; align-items: flex-start; padding-top: 10px; }
 .mode-flow .fin-room:not(.ov):not(.goals):not(.sec) .fin-room-h { height: 98px; }
 .mode-flow .fin-up-l { white-space: normal; overflow: visible; overflow-wrap: anywhere; }
+

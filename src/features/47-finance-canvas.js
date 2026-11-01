@@ -345,7 +345,7 @@ function finCvRoom(r) {
   const folded = UI.fin.cvCol.has(r.id), fresh = Date.now() < UI.fin.flash.until && UI.fin.flash.ids.has(r.id) ? ' fresh' : '';
   const hasKids = r.kind === 'room' ? r.node.children.length : r.kind !== 'sec';   // overview, coming up and goals fold too
   const titleAct = r.kind === 'sec' ? `data-act="fin-cv-sec" data-s="${esc(r.sec)}"` : r.sec ? `data-act="fin-cv-sec" data-s="${esc(r.sec)}"` : '';
-  return `<section class="fin-room ${r.kind}${fresh}" data-room="${esc(r.id)}" style="left:${r.x}px;top:${r.y}px;width:${r.w}px;height:${r.h}px;--h:${r.hue ?? 200}">
+  return `<section class="fin-room ${r.kind}${r.cls ? ' tr-' + r.cls : ''}${fresh}" data-room="${esc(r.id)}" style="left:${r.x}px;top:${r.y}px;width:${r.w}px;height:${r.h}px;--h:${r.hue ?? 200}">
     <div class="fin-room-h">
       <div class="fin-room-t fin-cvn${r.sec && r.kind !== 'sec' && finSecOpen(r.sec) ? ' sel' : ''}" data-node="${esc(r.id)}" ${titleAct} role="button" tabindex="0" title="${r.kind === 'sec' ? 'Close' : r.sec ? 'Open ' + esc(finSecLabel(r.sec)) + ' here' : ''}"><span class="fin-room-ic" aria-hidden="true">${r.icon}</span><div><b>${esc(r.title)}</b>${r.sum ? `<small>${esc(r.sum)}</small>` : ''}</div>${r.sec && r.kind !== 'sec' ? `<span class="fin-room-go">${finSecOpen(r.sec) ? '▴ close' : '▾ open'}</span>` : ''}</div>
       <span class="spacer"></span>
@@ -355,15 +355,15 @@ function finCvRoom(r) {
     </div></section>`;
 }
 function finCvBoard() {
-  const cv = UI.fin.cv, root = finCvModel(), n = finNow(), plan = finBuyPlan(), rooms = finCvRooms(root), flow = cv.mode === 'flow' && typeof finFlowLayout === 'function', L = flow ? finFlowLayout(rooms, plan, n) : finCvLayout(rooms, plan, n);
+  const cv = UI.fin.cv, root = finCvModel(), n = finNow(), plan = finBuyPlan(), rooms = finCvRooms(root), tree = cv.mode === 'tree' && typeof finTreeLayout === 'function', flow = cv.mode === 'flow' && typeof finFlowLayout === 'function', L = tree ? finTreeLayout(rooms, plan, n) : flow ? finFlowLayout(rooms, plan, n) : finCvLayout(rooms, plan, n);
   const hueOf = new Map(); for (const r of rooms) { const walk = k => { hueOf.set(k.id, r.hue); (k.children || []).forEach(walk); }; if (r.node) walk(r.node); }
   UI.fin.cvSize = { w: L.w, h: L.h }; UI.fin.cvCards = new Map(L.cards.map(c => [c.id, c]));
   if (UI.fin.pop && !UI.fin.cvCards.has(UI.fin.pop)) UI.fin.pop = null;
   const path = e => { const mx = (e.x0 + e.x1) / 2; return `M${e.x0},${e.y0} C${mx},${e.y0} ${mx},${e.y1} ${e.x1},${e.y1}`; };
   // the entrance plays when you open the canvas (within its first moment), not on every redraw after
   const now = Date.now(); if (!UI.fin.cvShownAt) UI.fin.cvShownAt = now; const intro = now - UI.fin.cvShownAt < 700;
-  return `<div class="fin-cv-vp${flow ? ' mode-flow' : ''}${intro ? ' intro' : ''}" id="fin-cv-vp">${flow ? finFlowSky() : ''}<div class="fin-cv-world" id="fin-cv-world" style="width:${L.w}px;height:${L.h}px;transform:translate(${cv.x}px,${cv.y}px) scale(${cv.k})">
-      ${flow ? finFlowSVG(L) : ''}${L.rooms.map(finCvRoom).join('')}
+  return `<div class="fin-cv-vp${tree ? ' mode-tree' : flow ? ' mode-flow' : ''}${intro ? ' intro' : ''}${tree && cv.k < 0.62 ? ' z-far' : ''}" id="fin-cv-vp">${tree ? finTreeSky() : flow ? finFlowSky() : ''}<div class="fin-cv-world" id="fin-cv-world" style="width:${L.w}px;height:${L.h}px;transform:translate(${cv.x}px,${cv.y}px) scale(${cv.k})">
+      ${tree ? finTreeSVG(L) : flow ? finFlowSVG(L) : ''}${L.rooms.map(finCvRoom).join('')}
       <svg class="fin-cv-edges" width="${L.w}" height="${L.h}" aria-hidden="true">${L.edges.map(e => `<path class="${e.cls}" d="${path(e)}"><title>${esc(e.title)}</title></path>`).join('')}</svg>
       ${L.subs.map(s => `<div class="fin-room-sub" style="left:${s.x}px;top:${s.y}px;width:${s.w}px"><b>${esc(s.label)}</b>${s.sum ? ` <small>${esc(s.sum)}</small>` : ''}</div>`).join('')}
       ${L.cards.map(c => finCvCard(c, hueOf.get(c.id) ?? (c.id.startsWith('b:') || c.id.startsWith('src:') || c.id.startsWith('g:') ? 190 : 200))).join('')}
@@ -411,14 +411,16 @@ function finCvApply() {
   // a fast moving layer only while it moves; a moment after, text and lines are drawn sharp at the new size
   if (w) { w.classList.add('moving'); clearTimeout(UI.fin.sharpT); UI.fin.sharpT = setTimeout(() => { const x = $('#fin-cv-world'); if (x) x.classList.remove('moving'); }, 160); }
   const z = $('#fin-cv-z'); if (z) z.textContent = Math.round(cv.k * 100) + '%';
+  const vpz = $('#fin-cv-vp'); if (vpz) vpz.classList.toggle('z-far', cv.mode === 'tree' && cv.k < 0.62);
   finPopPlace(); if (typeof finMiniPlace === 'function') finMiniPlace();
   if (typeof finCvEditorPlace === 'function') finCvEditorPlace();
 }
 // on opening: as wide as the screen allows (readable), from the top; Fit shows all of it
 function finCvFit(all) {
+  if (UI.fin.cv.mode === 'tree') all = true;   // the whole tree is the point of it
   const vp = $('#fin-cv-vp'), s = UI.fin.cvSize, cv = UI.fin.cv; if (!vp || !s) return;
   const W = vp.clientWidth, H = vp.clientHeight; if (!W || !H) return;
-  if (all) { cv.k = Math.max(0.1, Math.min(1, (W - 32) / s.w, (H - 32) / s.h)); cv.x = (W - s.w * cv.k) / 2; cv.y = Math.max(16, (H - s.h * cv.k) / 2); }
+  if (all) { const top = cv.full ? 64 : 16; cv.k = Math.max(0.1, Math.min(1, (W - 32) / s.w, (H - top - 16) / s.h)); cv.x = (W - s.w * cv.k) / 2; cv.y = Math.max(top, top + (H - top - 16 - s.h * cv.k) / 2); }   // full screen: below the floating controls
   else { cv.k = Math.min(1, Math.max(0.42, (W - 32) / s.w)); cv.x = Math.max(16, (W - s.w * cv.k) / 2); cv.y = cv.full ? 64 : 16; }   // full screen: below the floating controls
   cv.fitted = true; finCvApply();
 }

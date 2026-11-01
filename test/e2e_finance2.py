@@ -333,26 +333,42 @@ async def main():
         assert await ev("!!document.querySelector('.fin-cvwrap.full #fin-talk-win #fin-talk-in')"), 'Tell the canvas in full screen'
         await pg.click('#fin-talk-win [data-act="fin-talk-win"][data-v="close"]'); await pg.keyboard.press('Escape'); await pg.wait_for_timeout(250)
 
-        # the second card layout, Flow: the same cards, arranged as a river with ribbons; everything works the same;
-        # L switches back; the choice is remembered
+        # the second card layout, Tree: the same cards as a tree — accounts the trunk, spending and commitments the
+        # branches, goals the crown, income and what you own the roots under the ground; Fit shows all of it; zoomed
+        # out, big type; everything works the same; L switches back; the choice is remembered
         await ev("window.__AR.UI.fin.cvOpen = []; window.__AR.UI.fin.pop = null"); await ev("window.__FIN.open('map')"); await pg.wait_for_timeout(400)
         rooms_cards = sorted(await ev("[...document.querySelectorAll('#fin-cv-world .fin-leaf[data-node]')].map(c => c.dataset.node)"))
-        await pg.click('.fin-cv-bar [data-act="fin-cv-mode"][data-v="flow"]'); await pg.wait_for_timeout(1100)
-        assert await ev("document.getElementById('fin-cv-vp').classList.contains('mode-flow')") and await ev("window.__FIN.mode()") == 'flow'
+        await pg.click('.fin-cv-bar [data-act="fin-cv-mode"][data-v="tree"]'); await pg.wait_for_timeout(1100)
+        assert await ev("document.getElementById('fin-cv-vp').classList.contains('mode-tree')") and await ev("window.__FIN.mode()") == 'tree'
         assert sorted(await ev("[...document.querySelectorAll('#fin-cv-world .fin-leaf[data-node]')].map(c => c.dataset.node)")) == rooms_cards, 'the same cards in both layouts'
-        rib = await ev("[...document.querySelectorAll('.fin-flow .fin-flow-r')].length"); print('RIBBONS', rib, await ev("[...document.querySelectorAll('.fin-flow-l')].map(t => t.textContent)"))
-        assert rib >= 3, 'income, spending and instalments flow as ribbons'
-        lanes = await ev("['inc', 'accts', 'exp'].map(id => window.__AR.UI.fin.cvPos.get(id).x)"); assert lanes[0] < lanes[1] < lanes[2], ('income → accounts → spending, left to right', lanes)
-        assert await ev("document.getElementById('fin-cv-z').textContent") != '', 'the camera fits the new layout'
+        P = await ev("Object.fromEntries(['accts', 'exp', 'com', 'buy', 'inc', 'own'].map(id => [id, window.__AR.UI.fin.cvPos.get(id)]))")
+        assert P['exp']['x'] < P['accts']['x'] < P['com']['x'], 'branches either side of the trunk'
+        assert P['buy']['y'] + P['buy']['h'] <= P['accts']['y'], 'the crown above the trunk'
+        assert P['inc']['y'] > P['accts']['y'] + P['accts']['h'] and P['own']['y'] > P['accts']['y'] + P['accts']['h'], 'the roots under the ground'
+        sap = await ev("document.querySelectorAll('.fin-tree .sap').length"); print('TREE', sap, await ev("[...document.querySelectorAll('.fin-tree-l')].map(t => t.textContent)"))
+        assert sap >= 4, 'roots, trunk and branches with the money flowing'
+        assert await ev("document.querySelectorAll('.fin-tree .rootlet').length") > 20 and await ev("!!document.querySelector('.fin-tree #ftLeafM')"), 'a real tree: rootlets, a crown of leaves'
+        fit = await ev("(() => { const v = document.getElementById('fin-cv-vp').getBoundingClientRect(), w = document.getElementById('fin-cv-world').getBoundingClientRect(); return [w.left >= v.left - 1, w.right <= v.right + 1, w.top >= v.top - 1, w.bottom <= v.bottom + 1]; })()")
+        assert all(fit), ('Fit shows the whole tree', fit)
+        assert await ev("document.getElementById('fin-cv-vp').classList.contains('z-far')") == (await ev("window.__AR.UI.fin.cv.k") < 0.62), 'zoomed out: big type'
         acard = await ev("document.querySelector('#fin-cv-world .fin-leaf[data-node^=\"a:\"]').dataset.node")
         await ev(f"window.__FIN.show('{acard}')"); await pg.wait_for_timeout(500); await pg.click(f'.fin-cvn[data-node="{acard}"]'); await pg.wait_for_timeout(500)
-        assert await ev("!!document.getElementById('fin-pop')"), 'a card pops out in Flow too'
+        assert await ev("!!document.getElementById('fin-pop')"), 'a card pops out in the Tree too'
         await pg.keyboard.press('Escape'); await pg.wait_for_timeout(300)
         await pg.click(f'.fin-cvn[data-node="{acard}"]', button='right'); await pg.wait_for_timeout(200); assert await ev("!!document.getElementById('fin-menu')"), 'and has its menu'; await pg.keyboard.press('Escape')
-        await pg.screenshot(path=os.path.join(HERE, 'shots', 'finance-flow.png'))
-        assert await ev("localStorage.getItem('ar-fin-cv-mode')") == 'flow', 'the choice is remembered'
+        await pg.click('[data-act="fin-cv-fit"]'); await pg.wait_for_timeout(600); await pg.screenshot(path=os.path.join(HERE, 'shots', 'finance-tree.png'))
+        assert await ev("localStorage.getItem('ar-fin-cv-mode')") == 'tree', 'the choice is remembered'
         await ev("document.activeElement && document.activeElement.blur()"); await pg.keyboard.press('l'); await pg.wait_for_timeout(1000)
-        assert await ev("window.__FIN.mode()") == 'rooms' and not await ev("document.getElementById('fin-cv-vp').classList.contains('mode-flow')"), 'L: back to Rooms'
+        assert await ev("window.__FIN.mode()") == 'rooms' and not await ev("document.getElementById('fin-cv-vp').classList.contains('mode-tree')"), 'L: from the Tree back to Rooms'
+        # the third layout, Flow (the river) is still there; L goes Rooms → Flow → Tree → Rooms
+        await pg.keyboard.press('l'); await pg.wait_for_timeout(1000)
+        assert await ev("window.__FIN.mode()") == 'flow' and await ev("document.getElementById('fin-cv-vp').classList.contains('mode-flow')")
+        assert sorted(await ev("[...document.querySelectorAll('#fin-cv-world .fin-leaf[data-node]')].map(c => c.dataset.node)")) == rooms_cards, 'the same cards in Flow'
+        assert await ev("document.querySelectorAll('.fin-flow .fin-flow-r').length") >= 3, 'the ribbons and their moving money'
+        await pg.screenshot(path=os.path.join(HERE, 'shots', 'finance-flow.png'))
+        await pg.keyboard.press('l'); await pg.wait_for_timeout(1000); assert await ev("window.__FIN.mode()") == 'tree'
+        await pg.keyboard.press('l'); await pg.wait_for_timeout(1000); assert await ev("window.__FIN.mode()") == 'rooms'
+        assert await ev("[...document.querySelectorAll('.fin-cv-bar [data-act=\"fin-cv-mode\"]')].map(b => b.dataset.v).join()") == 'rooms,flow,tree'
 
         # only two tabs above the canvas: Canvas and Settings
         tabs = await ev("[...document.querySelectorAll('.fin-tabs button')].map(b => b.textContent.trim())"); print('TABS', tabs)
