@@ -288,9 +288,57 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 /* editing on the canvas */
 .fin-leaf { cursor: pointer; }
 .fin-leaf.editable .fin-cv-v { margin-right: 6px; }
-.fin-cv-ed { position: absolute; z-index: 7; width: min(320px, calc(100% - 16px)); display: grid; gap: 8px; padding: 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--elev-3, 0 12px 32px rgba(0,0,0,.25)); left: 16px; top: 16px; }
+.fin-cv-ed { position: absolute; z-index: 7; width: min(320px, calc(100% - 16px)); max-height: calc(100% - 16px); overflow: auto; box-sizing: border-box; display: grid; gap: 8px; padding: 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--elev-3, 0 12px 32px rgba(0,0,0,.25)); left: 16px; top: 16px; }
 .fin-cv-ed-t { font-size: 14px; }
 .fin-cv-ed-f { display: grid; gap: 3px; font-size: 12px; color: var(--ink-3); }
 .fin-cv-ed-f .input { color: var(--ink); }
 .fin-msg.edit { justify-content: flex-end; }
 .fin-msg.edit .fin-bub { background: var(--bg); border-style: dashed; font-size: 13px; }
+
+/* ---------- rooms on the Money canvas ---------- */
+.fin-room { position: absolute; border-radius: 22px; background: color-mix(in srgb, hsl(var(--h) 60% 92%) 38%, var(--surface)); border: 1.5px solid color-mix(in srgb, hsl(var(--h) 50% 55%) 30%, var(--line)); box-shadow: var(--elev-1); }
+.fin-room.ov, .fin-room.goals { background: color-mix(in srgb, hsl(var(--h) 60% 92%) 28%, var(--surface)); }
+.fin-room.sec { background: var(--bg); border-style: dashed; }
+.fin-room.fresh { box-shadow: 0 0 0 4px var(--warn), var(--elev-2); }
+.fin-room-h { display: flex; align-items: center; gap: 6px; padding: 12px 14px 0 14px; height: 60px; box-sizing: border-box; }
+.fin-room-t { position: static; display: flex; align-items: center; gap: 10px; min-width: 0; cursor: pointer; padding: 4px 8px 4px 4px; border-radius: 12px; }
+.fin-room-t:hover { background: color-mix(in srgb, hsl(var(--h) 60% 50%) 10%, transparent); }
+.fin-room-t b { display: block; font-family: var(--f-display); font-size: 19px; line-height: 1.2; }
+.fin-room-t small { display: block; color: var(--ink-3); font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 360px; }
+.fin-room.ov .fin-room-t small, .fin-room.goals .fin-room-t small, .fin-room.sec .fin-room-t small { max-width: 900px; }
+.fin-room-ic { font-size: 24px; width: 40px; height: 40px; display: grid; place-items: center; border-radius: 12px; background: var(--surface); box-shadow: var(--elev-1); }
+.fin-room-go { font-size: 12px; color: var(--accent); white-space: nowrap; margin-left: 4px; }
+.fin-room-sub { position: absolute; height: 26px; display: flex; align-items: baseline; gap: 8px; font-size: 13.5px; color: var(--ink-2); border-bottom: 1px solid var(--line-2); }
+.fin-room-sub small { color: var(--ink-3); }
+.mnode.fin-leaf.src, .mnode.fin-leaf.goal { padding: 8px 12px; }
+.mnode.fin-leaf.src { background: var(--sunken); border-left-color: var(--accent); }
+.mnode.fin-leaf.goal .mtxt b { font-size: 14px; }
+.mnode.fin-leaf.goal .fin-cv-v { font-size: 14px; }
+.fin-cv-edges path.fin-link { fill: none; stroke-width: 2.6; opacity: .75; }
+.fin-cv-edges path.fin-link.s1 { stroke: var(--fin-s1); } .fin-cv-edges path.fin-link.s2 { stroke: var(--fin-s2); } .fin-cv-edges path.fin-link.s3 { stroke: var(--fin-s3); } .fin-cv-edges path.fin-link.muted { stroke: var(--ink-3); stroke-dasharray: 5 5; }
+/* a card's details, unfolded in place */
+.fin-det { position: absolute; box-sizing: border-box; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--elev-2); cursor: default; }
+.fin-det-in { padding: 14px 16px; display: grid; gap: 10px; }
+.fin-det.sec .fin-det-in { padding: 4px 0 0; background: transparent; }
+.fin-det.sec { background: transparent; border: 0; box-shadow: none; }
+.fin-det h4 { margin: 4px 0 0; font-size: 13px; color: var(--ink-2); }
+.fin-det-kpis { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.fin-det-k { display: grid; gap: 1px; padding: 8px 10px; border-radius: 12px; background: var(--bg); border: 1px solid var(--line-2); min-width: 0; }
+.fin-det-k span { font-size: 11.5px; color: var(--ink-3); }
+.fin-det-k b { font-size: 16px; overflow-wrap: anywhere; }
+.fin-det-k small { font-size: 11.5px; color: var(--ink-3); overflow-wrap: anywhere; }
+.fin-det-bar { height: 8px; border-radius: 99px; background: var(--sunken); overflow: hidden; }
+.fin-det-bar i { display: block; height: 100%; border-radius: 99px; background: var(--fin-s1); }
+.fin-det-bar i.s2 { background: var(--fin-s2); } .fin-det-bar i.s3 { background: var(--fin-s3); } .fin-det-bar i.neg { background: var(--crit); }
+.fin-det-tx { display: grid; gap: 2px; font-size: 12.5px; }
+.fin-det-tx > div { display: grid; grid-template-columns: 92px minmax(0, 1fr) auto; gap: 8px; padding: 3px 0; border-bottom: 1px solid var(--line-2); }
+.fin-det-tx span:nth-child(2) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fin-det-top { display: grid; gap: 6px; font-size: 12.5px; }
+.fin-det-top > div { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) auto; gap: 8px; align-items: center; }
+.fin-det-top span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fin-det-opt { font-size: 12.5px; } .fin-det-opt tr.on td { font-weight: 700; background: var(--accent-soft); }
+.fin-det .fin-tl { overflow-x: auto; }
+.fin-leaf.sel { box-shadow: 0 0 0 3px var(--accent), var(--elev-2); }
+
+/* inside the canvas a part is as long as it needs: the canvas itself is what you move */
+.fin-det .fin-ledger, .fin-det .fin-mini, .fin-det .fin-rev { max-height: none; overflow: visible; }

@@ -114,17 +114,17 @@ async def main():
         assert '3,800' in row and '950' in row and '36%' in row, row
         # a chart month opens its transactions
         await sec('dash'); await pg.wait_for_timeout(300)
-        await ev("document.querySelector('#fin-panel .fin-chart .hit[data-k=\"2026-09\"]').dispatchEvent(new MouseEvent('click', { bubbles: true }))"); await pg.wait_for_selector('#drawer .fin-mini')
+        await ev("document.querySelector('#fin-sec-dash .fin-chart .hit[data-k=\"2026-09\"]').dispatchEvent(new MouseEvent('click', { bubbles: true }))"); await pg.wait_for_selector('#drawer .fin-mini')
         n = await ev("document.querySelectorAll('#drawer .fin-mini-r').length"); print('SEPTEMBER DRILL', n); assert n == 6
         await pg.click('[data-act="close-drawer"] >> nth=0'); await pg.wait_for_timeout(200)
 
         # 8. a filter changes every number together
-        k0 = await ev("document.querySelector('#fin-panel .fin-kpi').textContent")
+        k0 = await ev("document.querySelector('#fin-sec-dash .fin-kpi').textContent")
         acctA = await acc('Bank of Test current account ••3004')
         await pg.select_option('[data-chg="fin-f"][data-k="acct"]', acctA); await pg.wait_for_timeout(300)
         exA = await ev("window.__FIN.an().totals.exp"); print('BANK A EXPENSES', exA)
         assert exA == 10560 - 5000 - 300 - 150 - 400, 'card and bank B left out'
-        kpi = await ev("[...document.querySelectorAll('#fin-panel .fin-kpi')].find(k => k.textContent.startsWith('Total expenses')).textContent"); assert '4,710' in kpi, kpi
+        kpi = await ev("[...document.querySelectorAll('#fin-sec-dash .fin-kpi')].find(k => k.textContent.startsWith('Total expenses')).textContent"); assert '4,710' in kpi, kpi
         await pg.click('[data-act="fin-f-reset"]'); await pg.wait_for_timeout(200)
 
         # 9. a transaction entered by hand updates the analysis (and 10. budgets)
@@ -149,7 +149,7 @@ async def main():
         first = next(r for r in ex['rows'] if r['m'] == nm.strftime('%Y-%m'))
         print('SIM', ex['current'], ex['projected'], first['recurInc'])
         assert ex['current'] == 30000 and ex['projected'] == 33000 and abs(first['recurInc'] - round(3000 * (dim - 14) / dim, 2)) < 0.01, 'partial first month'
-        res = await ev("document.querySelector('#fin-panel .fin-card .fin-tbl').textContent"); assert '33,000' in res
+        res = await ev("document.querySelector('#fin-sec-sim .fin-card .fin-tbl').textContent"); assert '33,000' in res
         await pg.click('[data-act="fin-ch-add"]'); await pg.wait_for_timeout(200)
         await pg.fill('[data-chg="fin-ch"][data-i="1"][data-k="value"]', '5'); await pg.press('[data-chg="fin-ch"][data-i="1"][data-k="value"]', 'Tab'); await pg.wait_for_timeout(200)
         await pg.fill('[data-chg="fin-ch"][data-i="1"][data-k="date"]', (nm + datetime.timedelta(days=62)).replace(day=1).isoformat()); await pg.wait_for_timeout(200)
@@ -161,11 +161,11 @@ async def main():
         await sec('forecast'); await pg.click('[data-act="fin-goal-add"][data-k="emergency"]'); await pg.wait_for_timeout(200)
         await pg.fill('[data-chg="fin-goal"][data-i="0"][data-k="target"]', '2000000'); await pg.press('[data-chg="fin-goal"][data-i="0"][data-k="target"]', 'Tab'); await pg.wait_for_timeout(300)
         await sec('sim'); await pg.wait_for_timeout(300)
-        g1 = await ev("[...document.querySelectorAll('#fin-panel .fin-card li')].find(l => l.textContent.startsWith('Emergency fund:')).textContent")
+        g1 = await ev("[...document.querySelectorAll('#fin-sec-sim .fin-card li')].find(l => l.textContent.startsWith('Emergency fund:')).textContent")
         await pg.fill('[data-chg="fin-alloc"][data-i="1"][data-k="pct"]', '40'); await pg.press('[data-chg="fin-alloc"][data-i="1"][data-k="pct"]', 'Tab'); await pg.wait_for_timeout(300)
         assert 'must be 100%' in await pg.text_content('.fin-alloc') and await ev("!!document.body.textContent.includes('Results are hidden until the shares add up')")
         await pg.fill('[data-chg="fin-alloc"][data-i="0"][data-k="pct"]', '40'); await pg.press('[data-chg="fin-alloc"][data-i="0"][data-k="pct"]', 'Tab'); await pg.wait_for_timeout(300)
-        g2 = await ev("[...document.querySelectorAll('#fin-panel .fin-card li')].find(l => l.textContent.startsWith('Emergency fund:')).textContent")
+        g2 = await ev("[...document.querySelectorAll('#fin-sec-sim .fin-card li')].find(l => l.textContent.startsWith('Emergency fund:')).textContent")
         print('GOAL', g1, '|', g2); assert g1 != g2, 'a bigger goals share brings the goal closer'
 
         # an export from another source with other wording: the likely repeat is skipped (never counted twice) and listed
@@ -207,7 +207,7 @@ async def main():
 
         # 17. forecasts are labelled
         await sec('forecast'); await pg.wait_for_timeout(300)
-        assert 'Forecasts are estimates' in await pg.text_content('#fin-panel .fin-banner') and await ev("document.querySelectorAll('#fin-panel .fin-tbl .fin-est').length") >= 12
+        assert 'Forecasts are estimates' in await pg.text_content('#fin-sec-forecast .fin-banner') and await ev("document.querySelectorAll('#fin-sec-forecast .fin-tbl .fin-est').length") >= 12
         await pg.screenshot(path=os.path.join(HERE, 'shots', 'finance-forecast.png'), full_page=True)
         await sec('dash'); await pg.wait_for_timeout(300); await pg.screenshot(path=os.path.join(HERE, 'shots', 'finance-dash.png'), full_page=True)
 

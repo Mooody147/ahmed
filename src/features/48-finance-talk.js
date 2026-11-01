@@ -137,7 +137,7 @@ async function finTalkClaude(m, text, imgs) {
   const v = r.view || {};
   if (v.dir === 'h' || v.dir === 'v') { UI.fin.cv.dir = v.dir; finCvKeep(); UI.fin.cv.fitted = false; }
   if (v.focus && ['accts', 'inc', 'exp', 'com', 'own', 'third', 'buy'].includes(v.focus)) { UI.fin.cv.focus = v.focus; UI.fin.cv.fitted = false; }
-  if (v.open && FIN_VIEW[v.open]) UI.fin.panel = v.open;
+  if (v.open && FIN_VIEW[v.open]) { if (v.open === 'buy') UI.fin.goto = 'buy'; else { finSetOpen('sec:' + v.open, true); UI.fin.goto = 'sec:' + v.open; } }
 }
 // money you mentioned and changes to your goals
 function finTalkExtras(r) {

@@ -130,11 +130,12 @@ function finCvEditorPlace() {
   const b = UI.fin.cvPos && UI.fin.cvPos.get(E0.add || E0.id), cv = UI.fin.cv, W = vp.clientWidth, H = vp.clientHeight;
   let x = 16, y = 16; if (b) { x = cv.x + b.x * cv.k; y = cv.y + (b.y + b.h) * cv.k + 6; }
   x = Math.max(8, Math.min(x, W - ed.offsetWidth - 8)); if (y + ed.offsetHeight > H - 8) y = Math.max(8, (b ? cv.y + b.y * cv.k : H) - ed.offsetHeight - 6);
-  ed.style.left = x + 'px'; ed.style.top = Math.max(8, y) + 'px';
+  y = Math.max(8, Math.min(y, H - ed.offsetHeight - 8));
+  ed.style.left = x + 'px'; ed.style.top = y + 'px';
 }
 function finCvEditOpen(id, add) {
   const sp = add ? finCvAddSpec(add) : finCvSpec(id); if (!sp) return false;
-  UI.fin.cvEdit = { id: id || null, add: add || null, v: {} }; render();
+  UI.fin.cvEdit = { id: id || null, add: add || null, v: {} }; UI.fin.goto = id || add; render();
   setTimeout(() => { const i = $('#fin-cv-ed-0'); if (i) { i.focus(); try { i.select(); } catch {} } }, 0); return true;
 }
 // a change on the canvas is a line in the conversation, with Undo — the same as a change said in words

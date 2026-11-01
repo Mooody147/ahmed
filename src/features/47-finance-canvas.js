@@ -1,10 +1,12 @@
 // Money is one canvas: the whole picture drawn from the data (accounts, income, spending, card and instalments,
 // investments, other people's money, goals, what Claude sorted out) — like the To-do canvas is drawn from the tasks.
-// Every former tab lives on it: tap a branch or a card and that part opens in a panel inside the canvas.
+// It is laid out in rooms (overview, goals and purchases with their map, accounts, income, spending, card and
+// instalments, investments, others' money, what Claude sorted). Tapping a card unfolds its details and charts right
+// there; tapping a room's title or a tool card opens that whole part as a room of its own — all on the canvas.
 // Below the canvas you talk to it (48-finance-talk.js) and it redraws from what you say.
 FIN_ICON.map = '🧭';
 UI.fin.cv = { x: 20, y: 20, k: 1, fitted: false, focus: null, dir: 'v', full: false };
-UI.fin.panel = null; UI.fin.panelScroll = {}; UI.fin.flash = { ids: new Set(), until: 0 };
+UI.fin.panel = null; UI.fin.cvOpen = []; UI.fin.detH = {}; UI.fin.flash = { ids: new Set(), until: 0 };
 const FIN_CV_LS = 'ar-fin-cv';
 (() => { try { const s = JSON.parse(localStorage.getItem(FIN_CV_LS) || '{}'); UI.fin.cvCol = new Set(s.col || []); if (s.dir === 'h') UI.fin.cv.dir = 'h'; } catch { UI.fin.cvCol = new Set(); } })();
 const finCvKeep = () => { try { localStorage.setItem(FIN_CV_LS, JSON.stringify({ col: [...UI.fin.cvCol], dir: UI.fin.cv.dir })); } catch {} };
@@ -99,77 +101,219 @@ function finCvModel() {
 // every node's label, value and line, to see what a change moved
 function finCvIndex(root) { const m = new Map(), walk = n => { m.set(n.id, [n.label, n.val || '', n.sub || '', n.sum || ''].join('|')); (n.children || []).forEach(walk); }; walk(root || finCvModel()); return m; }
 
-/* --- layout: down (branches in a row, their cards stacked below) or across (root on the left) --- */
-const FCV_W = { root: 250, branch: 240, leaf: 260 }, FCV_H = { root: 76, branch: 62, leaf: 56 };
-function finCvLayout(root) {
-  const nodes = [], edges = [], col = UI.fin.cvCol;
-  const kidsOf = n => n.type === 'root' || !col.has(n.id) ? n.children : [];
-  const size = n => { n.w = FCV_W[n.type]; n.h = FCV_H[n.type]; };
-  if (UI.fin.cv.dir === 'v') {
-    size(root); let cx = 0; const top = root.h + 60;
-    const stack = (n, x, y) => { let iy = y; for (const k of kidsOf(n)) { size(k); k.x = x; k.y = iy; nodes.push(k); edges.push({ a: n, b: k, v: true, hue: n.hue }); iy += k.h + 10; if (k.type === 'branch') iy = stack(k, x + 24, iy); } return iy; };
-    for (const b of root.children) { size(b); b.x = cx; b.y = top; nodes.push(b); edges.push({ a: root, b, hue: b.hue }); stack(b, cx + 18, top + b.h + 16); cx += b.w + 40; }
-    root.x = Math.max(0, (cx - 40) / 2 - root.w / 2); root.y = 0;
-  } else {
-    let cursor = 0;
-    const place = (n, x) => {
-      size(n); n.x = x; const ks = kidsOf(n), nx = x + n.w + 70;
-      if (!ks.length) { n.y = cursor; cursor += n.h + (n.type === 'leaf' ? 10 : 18); }
-      else { ks.forEach(k => place(k, nx)); const a = ks[0], b = ks[ks.length - 1]; n.y = (a.y + b.y + b.h) / 2 - n.h / 2; cursor += n.type === 'root' ? 0 : 16; ks.forEach(k => edges.push({ a: n, b: k, hue: k.type === 'branch' ? k.hue : n.hue })); }
-      nodes.push(n);
-    };
-    place(root, 0);
-    const y0 = Math.min(...nodes.map(n => n.y)); if (y0 < 0) nodes.forEach(n => { n.y -= y0; });
+/* --- rooms: each topic its own area of the canvas, laid out in columns; the big ones span the whole width --- */
+const FR = { W: 568, GAP: 44, COLS: 3, PAD: 18, HEAD: 70, CG: 12, CW: 260, CH: 56, SW: 360, SH: 64, IW: 560, IH: 64 };
+FR.FULL = FR.COLS * FR.W + (FR.COLS - 1) * FR.GAP;
+// which room a part opens next to
+const FIN_SEC_ROOM = { dash: 'ov', accounts: 'accts', import: 'accts', ledger: 'accts', update: 'accts', inc: 'inc', sim: 'inc', exp: 'exp', budget: 'exp', credit: 'com', own: 'own', forecast: 'buy' };
+const finIsOpen = id => UI.fin.cvOpen.includes(id);
+// at most three parts open as rooms at once (the oldest closes), so the canvas stays quick
+function finSetOpen(id, on) { let o = UI.fin.cvOpen.filter(x => x !== id); if (on === undefined ? !finIsOpen(id) : on) o.push(id); const secs = o.filter(x => x.startsWith('sec:')); if (secs.length > 3) o = o.filter(x => x !== secs[0]); UI.fin.cvOpen = o; return o.includes(id); }
+const finSecOpen = k => finIsOpen('sec:' + k);
+
+function finCvRooms(root) {
+  const R = [{ id: 'ov', kind: 'ov', full: true, icon: '💰', title: 'My money', sum: root.sum, hue: 340, sec: 'dash' }];
+  const buy = root.children.find(b => b.id === 'buy');
+  if (buy) R.push({ id: 'buy', kind: 'goals', full: true, node: buy, icon: buy.icon, title: buy.label, sum: buy.sum, hue: buy.hue });
+  for (const b of root.children) if (b.id !== 'buy') R.push({ id: b.id, kind: 'room', node: b, icon: b.icon, title: b.label, sum: b.sum, hue: b.hue, sec: b.sec });
+  // parts opened as rooms, each right after the room it belongs to
+  const out = [];
+  for (const r of R) {
+    out.push(r);
+    for (const id of UI.fin.cvOpen) { if (!id.startsWith('sec:')) continue; const k = id.slice(4); if ((FIN_SEC_ROOM[k] || 'ov') === r.id && FIN_VIEW[k]) out.push({ id, kind: 'sec', full: true, icon: FIN_ICON[k] || '', title: finSecLabel(k), sum: '', hue: r.hue, sec: k, parent: r.id }); }
   }
-  if (!nodes.includes(root)) nodes.push(root);
-  UI.fin.cvRoot = { x: root.x, y: root.y, w: root.w, h: root.h };
-  UI.fin.cvPos = new Map(nodes.map(n => [n.id, { x: n.x, y: n.y, w: n.w, h: n.h }]));
-  const w = Math.max(...nodes.map(n => n.x + n.w)), h = Math.max(...nodes.map(n => n.y + n.h));
-  return { nodes, edges, w, h };
+  const f = UI.fin.cv.focus; return f ? out.filter(r => r.id === f || r.parent === f) : out;
+}
+const finDetH = (id, est) => UI.fin.detH[id] || est;
+function finCvLayout(rooms, plan, n) {
+  const { W, GAP, COLS, PAD, HEAD, CG, CW, CH } = FR, cards = [], dets = [], edges = [], subs = [];
+  let col = Array(COLS).fill(0);
+  const grid = (list, x0, y, w) => {   // cards in rows; an opened card's details right under its row
+    const per = Math.max(1, Math.floor((w + CG) / (CW + CG))); let row = [];
+    const flush = () => { if (!row.length) return; y += CH + CG; for (const c of row) if (finIsOpen(c.id) && !c.cls.includes('tool') && !c.cls.includes('more')) { const h = finDetH(c.id, 300); dets.push({ id: c.id, x: x0, y, w, h }); y += h + CG; } row = []; };
+    for (const c of list) {
+      if (c.type === 'branch') { flush(); subs.push({ id: c.id, label: `${c.icon} ${c.label}`, sum: c.sum, x: x0, y, w }); y += 34; grid(c.children, x0, y, w).forEach(() => {}); y = subs.y2; continue; }
+      c.x = x0 + row.length * (CW + CG); c.y = y; c.w = CW; c.h = CH; cards.push(c); row.push(c); if (row.length === per) flush();
+    }
+    flush(); subs.y2 = y; return [];
+  };
+  for (const r of rooms) {
+    if (r.full) { r.x = 0; r.y = Math.max(...col); r.w = FR.FULL; } else { const c = col.indexOf(Math.min(...col)); r.x = c * (W + GAP); r.y = col[c]; r.w = W; }
+    const x0 = r.x + PAD, iw = r.w - 2 * PAD; let y = r.y + HEAD;
+    if (UI.fin.cvCol.has(r.id)) { r.h = HEAD + 6; }
+    else if (r.kind === 'ov') { const h = finDetH('ov', 420); dets.push({ id: 'ov', x: x0, y, w: iw, h }); y += h; r.h = y + PAD - r.y; }
+    else if (r.kind === 'sec') { const h = finDetH(r.id, 640); dets.push({ id: r.id, x: x0, y, w: iw, h }); y += h; r.h = y + PAD - r.y; }
+    else if (r.kind === 'goals') { y = finGoalsLayout(r, plan, n, x0, y, iw, cards, dets, edges, subs, grid); r.h = y + PAD - r.y; }
+    else { grid(r.node.children, x0, y, iw); y = subs.y2; r.h = Math.max(y - CG, r.y + HEAD + 20) + PAD - r.y; }
+    if (r.full) col = col.map(() => r.y + r.h + GAP); else { const c = Math.round(r.x / (W + GAP)); col[c] = r.y + r.h + GAP; }
+  }
+  const w = FR.FULL, h = Math.max(...rooms.map(r => r.y + r.h), 200);
+  UI.fin.cvPos = new Map([...rooms.map(r => [r.id, { x: r.x, y: r.y, w: r.w, h: r.h }]), ...cards.map(c => [c.id, { x: c.x, y: c.y, w: c.w, h: c.h }]), ...dets.map(d => [d.id + ':det', d])]);
+  UI.fin.cvRoot = UI.fin.cvPos.get('ov');
+  return { rooms, cards, dets, edges, subs, w, h };
+}
+// goals and purchases: where the money comes from on the left, each goal on the right, joined by how it is best paid;
+// the timeline and the savings goals below
+function finGoalsLayout(r, plan, n, x0, y, iw, cards, dets, edges, subs, grid) {
+  const { CG, SW, SH, IW, IH } = FR;
+  const kh = finDetH('gk', 120); dets.push({ id: 'gk', x: x0, y, w: iw, h: kh }); y += kh + 18;
+  const srcs = [['src:cash', '💵', 'Cash now', fk(n.free), `after a ${fk(n.reserve)} safety reserve and others’ money`],
+    ['src:save', '🐖', 'Monthly savings', fk(n.capacity) + ' / month', 'income − usual spending − instalments − goals'],
+    ['src:card', '💳', 'Credit card', n.card && n.card.available !== null && n.card.available !== undefined ? fk(n.card.available) + ' free' : '—', n.card && n.card.limit ? `limit ${fk(n.card.limit)}` : 'no card statement yet'],
+    ['src:halan', '🛒', 'Halan', n.halan && n.halan.available !== null && n.halan.available !== undefined ? fk(n.halan.available) + ' free' : '—', n.halan && n.halan.terms && n.halan.terms.method ? 'terms set' : 'tell the canvas its limit and terms']];
+  const ix = x0 + iw - IW, top = y; let iy = y;
+  const items = plan.items.map(it => {
+    const c = { id: 'b:' + it.id, type: 'leaf', kind: 'goal', label: it.name + (it.focus ? ' ★' : ''), val: fk(it.price), sub: `${FIN_REC[it.rec][0]}${it.ready ? ' · ' + fmon(it.ready) : ''}${it.monthly ? ' · ' + fk(it.monthly) + '/mo' : ''}`, cls: 'goal ' + (it.late ? 'warn' : it.rec === 'not_yet' ? 'muted' : ''), x: ix, y: iy, w: IW, h: IH, it, act: { act: 'fin-cv-det', id: 'b:' + it.id } };
+    cards.push(c); iy += IH + 14;
+    if (finIsOpen(c.id)) { const h = finDetH(c.id, 360); dets.push({ id: c.id, x: ix, y: iy - 6, w: IW, h }); iy += h + 8; }
+    return c;
+  });
+  if (!items.length) { const c = { id: 'b:none', type: 'leaf', label: 'Nothing to buy yet', val: '', sub: 'press ＋ above, or tell the canvas “I want a laptop for 40,000 by March”', cls: 'muted', x: ix, y: iy, w: IW, h: IH, act: { act: 'fin-cv-add', id: 'buy' } }; cards.push(c); iy += IH + 14; }
+  const blockH = Math.max(iy - top, srcs.length * (SH + 16)), step = blockH / srcs.length;
+  srcs.forEach(([id, icon, label, val, sub], i) => { const c = { id, type: 'leaf', kind: 'src', icon, label, val, sub, cls: 'src', x: x0, y: top + i * step + (step - SH) / 2, w: SW, h: SH, act: { act: 'fin-cv-det', id } }; cards.push(c);
+    if (finIsOpen(id)) { const h = finDetH(id, 220); dets.push({ id, x: x0 + SW + 24, y: c.y, w: Math.min(420, ix - x0 - SW - 60), h }); } });
+  const from = it => it.rec === 'cash' ? ['src:cash'] : it.rec === 'save' ? (it.fromCash ? ['src:cash', 'src:save'] : ['src:save']) : it.rec === 'card_full' || it.rec === 'card_plan' ? (it.fromCash ? ['src:cash', 'src:card'] : ['src:card']) : it.rec === 'halan' ? ['src:halan'] : [];
+  for (const c of items) for (const s of from(c.it)) { const a = cards.find(x => x.id === s); if (a) edges.push({ x0: a.x + a.w, y0: a.y + a.h / 2, x1: c.x, y1: c.y + c.h / 2, cls: 'fin-link ' + FIN_REC[c.it.rec][1], title: `${a.label} → ${c.it.name}` }); }
+  y = top + blockH + 22;
+  const th = finDetH('gt', 96); dets.push({ id: 'gt', x: x0, y, w: iw, h: th }); y += th + 18;
+  // savings goals and the forecast
+  const p = finP(), sg = [{ id: 't:forecast', type: 'leaf', label: 'Forecast & savings', val: '', sub: 'the months ahead, before and after handover', cls: 'tool', act: { act: 'fin-cv-sec', s: 'forecast' } },
+    ...(p.goals || []).map(g => ({ id: 'g:' + g.id, type: 'leaf', label: g.name, val: g.target ? fk(+g.target) : '—', sub: g.date ? 'by ' + fday(g.date) : 'savings goal', cls: '', act: { act: 'fin-cv-det', id: 'g:' + g.id } }))];
+  subs.push({ id: 'sg', label: '🎯 Savings goals and the forecast', sum: '', x: x0, y, w: iw }); y += 34;
+  grid(sg, x0, y, iw); return subs.y2 - CG;
 }
 
-const finCvAttrs = a => a ? Object.entries(a).map(([k, v]) => `data-${k}="${esc(v)}"`).join(' ') : '';
-function finCvNode(n, hue) {
-  const st = `left:${n.x}px;top:${n.y}px;width:${n.w}px;height:${n.h}px;--h:${hue ?? 200}`;
-  const open = UI.fin.panel && FIN_SEC_NODE[UI.fin.panel] === n.id ? ' sel' : '', fresh = Date.now() < UI.fin.flash.until && UI.fin.flash.ids.has(n.id) ? ' fresh' : '';
-  if (n.type === 'root') return `<div class="mnode root fin-cvn${open}${fresh}" role="button" tabindex="0" data-act="fin-sec" data-s="dash" data-node="root" title="Overview" style="${st}"><span class="gicon fin-cv-ic" aria-hidden="true">💰</span><div class="mtxt"><b>${esc(n.label)}</b><small>${esc(n.sum)}</small></div></div>`;
-  if (n.type === 'branch') {
-    const hidden = UI.fin.cvCol.has(n.id), kids = n.children.length;
-    return `<div class="mnode project fin-cvn fin-cv-br${open}${fresh}" role="button" tabindex="0" data-act="fin-sec" data-s="${esc(n.sec)}" data-node="${esc(n.id)}" title="Open ${esc(n.label)}" style="${st}">
-      <span class="gicon fin-cv-ic" aria-hidden="true">${n.icon}</span><div class="mtxt"><b>${esc(n.label)}</b><small>${esc(n.sum)}</small></div>
-      ${hidden && kids ? `<span class="mmore">+${kids}</span>` : ''}
-      ${kids ? `<button class="fin-cv-btn tg" data-act="fin-cv-tog" data-id="${esc(n.id)}" aria-expanded="${!hidden}" title="${hidden ? 'Unfold' : 'Fold'}" aria-label="${hidden ? 'Unfold' : 'Fold'} ${esc(n.label)}">${hidden ? '▸' : '▾'}</button>` : ''}${typeof finCvAddSpec === 'function' && finCvAddSpec(n.id) ? `<button class="fin-cv-btn ad" data-act="fin-cv-add" data-id="${esc(n.id)}" title="Add" aria-label="Add to ${esc(n.label)}">＋</button>` : ''}${n.id !== 'rec' ? `<button class="fin-cv-btn fo" data-act="fin-cv-focus" data-id="${esc(n.id)}" title="${UI.fin.cv.focus === n.id ? 'Show everything' : 'Show only this'}" aria-label="${UI.fin.cv.focus === n.id ? 'Show everything' : 'Show only ' + esc(n.label)}">⤢</button>` : ''}</div>`;
+/* --- details unfolded on the canvas --- */
+const finKv = list => `<div class="fin-det-kpis">${list.filter(Boolean).map(([l, v, s]) => `<div class="fin-det-k"><span>${esc(l)}</span><b class="num">${v}</b>${s ? `<small>${s}</small>` : ''}</div>`).join('')}</div>`;
+const finTxList = (tx, n = 6) => tx.length ? `<div class="fin-det-tx">${tx.slice(0, n).map(t => `<div><span class="muted">${fday(t.date)}</span><span>${esc(FIN.cleanDesc(t.desc || ''))}</span><b class="num ${t.amount < 0 ? '' : 'fin-pos'}">${fm(t.amount)}</b></div>`).join('')}</div>` : '<p class="small muted">No transactions yet.</p>';
+const finBar = (v, max, cls) => `<div class="fin-det-bar"><i class="${cls || ''}" style="width:${Math.max(0, Math.min(100, max ? v / max * 100 : 0))}%"></i></div>`;
+const finBtn = (act, label, data = {}) => `<button class="btn sm" data-act="${act}" ${Object.entries(data).map(([k, v]) => `data-${k}="${esc(v)}"`).join(' ')}>${label}</button>`;
+const finMonthsRows = (months, f) => months.slice(-12).map(b => ({ label: fmon(b.m), short: fmon(b.m).split(' ')[0], k: b.m, missing: !b.covered, ...f(b) }));
+function finCardDetail(id) {
+  const p = finP(), n = finNow(), today = finToday(), all = finAll(), [kind, ...rest] = id.split(':'), key = rest.join(':');
+  const edit = typeof finCvSpec === 'function' && finCvSpec(id) ? finBtn('fin-cv-edit', '✎ Edit', { id }) : '';
+  if (kind === 'a') {
+    const a = finAcct(key); if (!a) return ''; const l = finLatest(a), credit = a.kind === 'credit_card' || a.kind === 'bnpl';
+    const an = finAn({ from: null, to: null, acctIds: [a.id], catIds: null }), tx = finTx().filter(t => t.acct === a.id).sort((x, y) => (y.date || '').localeCompare(x.date || ''));
+    return finKv([credit ? ['Owed now', typeof l.owed === 'number' ? fk(l.owed) : '—', l.date ? fday(l.date) : ''] : ['Balance', typeof l.balance === 'number' ? fk(l.balance) : '—', l.date ? `${l.source === 'you' ? 'your update' : 'statement'} · ${fday(l.date)}` : 'no balance yet'],
+      credit && ['Available', l.available !== null && l.available !== undefined ? fk(l.available) : '—', l.limit ? 'limit ' + fk(l.limit) : ''], ['Transactions', String(tx.length), esc(a.bank || '')], a.number && ['Number', '••' + FIN.last4(a.number), FIN_AKINDS.concat([['bnpl', 'Buy now, pay later']]).find(x => x[0] === a.kind)?.[1] || '']])
+      + (credit && l.limit ? finBar(l.owed || 0, l.limit, 's2') : '')
+      + (an.months && an.months.length ? `<h4>Money in and out by month</h4>${finBars(finMonthsRows(an.months, b => ({ a: b.inc, b: b.exp })), { title: 'acct ' + a.id, h: 170, la: 'In', lb: 'Out' })}` : '')
+      + `<h4>Latest</h4>${finTxList(tx)}<div class="row">${edit}${finBtn('fin-acct-ledger', '📒 All its transactions', { id: a.id })}</div>`;
   }
-  const editable = typeof finCvSpec === 'function' && !n.cls.includes('tool') && !n.cls.includes('more') && !!finCvSpec(n.id);
-  return `<div class="mnode fin-cvn fin-leaf ${n.cls}${open}${fresh}${editable ? ' editable' : ''}" role="button" tabindex="0" ${finCvAttrs(n.act)} data-node="${esc(n.id)}" title="${esc(n.label)}${n.val ? ' — ' + esc(n.val) : ''}${n.sub ? '\n' + esc(n.sub) : ''}" style="${st}">
-    <div class="mtxt"><b>${n.cls.includes('tool') ? '<span class="fin-tool-i" aria-hidden="true">' + (FIN_ICON[n.act.s] || '') + '</span>' : ''}${esc(n.label)}</b>${n.sub ? `<small>${esc(n.sub)}</small>` : ''}</div>${n.val ? `<span class="fin-cv-v num">${esc(n.val)}</span>` : ''}${editable ? `<button class="fin-cv-btn ed" data-act="fin-cv-edit" data-id="${esc(n.id)}" title="Edit (or double-click, F2)" aria-label="Edit ${esc(n.label)}">✎</button>` : ''}</div>`;
+  if (kind === 'in') {
+    const inp = (p.inputs || []).find(i => i.id === key), hist = inp ? (p.inputs || []).filter(i => i.key === inp.key).sort((x, y) => (y.from || '').localeCompare(x.from || '')) : [];
+    const mom = key === 'cib' ? p.holdings.find(h => h.id === 'mom') : null;
+    return finKv([['A month', fk(n.income), esc(n.incomeBasis)], mom && ['CIB share', fk(+mom.myShareMonthly), `of ${fk(+mom.principal)} at ${mom.rate}%`]])
+      + `<h4>Income by month</h4>${finBars(finMonthsRows(all.months, b => ({ a: b.inc })), { title: 'income months', h: 160, la: 'Income' })}`
+      + (hist.length ? `<h4>History</h4><div class="fin-det-tx">${hist.map(i => `<div><span class="muted">from ${fday(i.from)}</span><span>${esc(i.label)}</span><b class="num">${fm(+i.amount)}</b></div>`).join('')}</div>` : '')
+      + `<div class="row">${edit}${finBtn('fin-cv-sec', '📈 Income growth', { s: 'sim' })}</div>`;
+  }
+  if (kind === 'c') {
+    const c = finCat(key); if (!c) return ''; const tx = finTx().filter(t => t.cat === key).sort((x, y) => (y.date || '').localeCompare(x.date || ''));
+    const by = {}; for (const t of tx) { const k = FIN.cleanDesc(t.desc || '').slice(0, 40); by[k] = (by[k] || 0) + Math.abs(t.amount || 0); }
+    const top = Object.entries(by).sort((x, y) => y[1] - x[1]).slice(0, 5), max = top.length ? top[0][1] : 1, bud = (p.budgets || {})[key], cur = (all.months.find(b => b.m === today.slice(0, 7)) || { byCat: {} }).byCat[key] || 0;
+    return finKv([['This month', fk(cur), fmon(today.slice(0, 7))], ['Budget', bud !== undefined ? fk(bud) : '—', bud !== undefined ? (cur > bud ? `<span class="fin-neg">over by ${fk(cur - bud)}</span>` : `${fk(bud - cur)} left`) : 'set one with ✎'], ['Transactions', String(tx.length), c.prio || '']])
+      + (bud ? finBar(cur, bud, cur > bud ? 'neg' : 's1') : '')
+      + `<h4>By month</h4>${finBars(finMonthsRows(all.months, b => ({ b: (b.byCat || {})[key] || 0 })), { title: 'cat ' + key, h: 160, lb: c.name })}`
+      + (top.length ? `<h4>Where it goes</h4><div class="fin-det-top">${top.map(([k, v]) => `<div><span>${esc(k)}</span>${finBar(v, max, 's2')}<b class="num">${fk(v)}</b></div>`).join('')}</div>` : '')
+      + `<h4>Latest</h4>${finTxList(tx)}<div class="row">${edit}${finBtn('fin-cat-ledger', '📒 Its transactions', { k: key })}</div>`;
+  }
+  if (kind === 'r') {
+    const r = FIN.recurring(all.entries || []).find(x => x.key === key); if (!r) return '';
+    return finKv([['Each time', fk(r.amount), r.freq || 'monthly'], ['A year', fk(r.annual), `${r.n} times so far`], ['Next', fday(r.next), 'about'], ['Last', fday(r.last), '']]) + `<h4>Payments</h4>${finTxList(r.ids.map(i => FS.by.get(i)).filter(Boolean).sort((x, y) => y.date.localeCompare(x.date)))}`;
+  }
+  if (kind === 'i') {
+    const i = n.inst.find(x => x.key === key); if (!i) return '';
+    const months = []; for (let k = 0, m = today.slice(0, 7); k < 12; k++, m = FIN.addMonths ? FIN.addMonths(m, 1) : m) months.push(m);
+    return finKv([['A month', fk(i.amount), i.status], ['Paid', i.of ? `${i.n} of ${i.of}` : '—', i.remaining !== null && i.remaining !== undefined ? `${i.remaining} left` : 'count not known'], ['Still to pay', i.outstanding ? fk(i.outstanding) : '—', i.end ? 'until ' + fmon(i.end) : '']])
+      + (i.of ? finBar(i.n, i.of, 's3') : '')
+      + `<h4>The coming months</h4>${finBars(months.map(m => ({ label: fmon(m), short: fmon(m).split(' ')[0], k: m, b: FIN.installmentLoad([i], m) })), { title: 'inst ' + key, h: 150, lb: i.name })}<div class="row">${edit}${finBtn('fin-cv-sec', '💳 Card, Halan & instalments', { s: 'credit' })}</div>`;
+  }
+  if (id === 'cm:card' && n.card) { const st = n.card.a.stmt || {}; return finKv([['Owed', fk(n.card.owed), st.date ? 'statement ' + fday(st.date) : ''], ['Available', fk(n.card.available), 'limit ' + fk(n.card.limit)], ['Minimum due', st.minDue ? fk(st.minDue) : '—', st.dueDate ? 'by ' + fday(st.dueDate) : '']]) + finBar(n.card.owed || 0, n.card.limit || 1, 's2') + `<div class="row">${finBtn('fin-cv-det', '💳 The card', { id: 'a:' + n.card.a.id })}</div>`; }
+  if (id === 'cm:halan' && n.halan) { const t = n.halan.terms || {}; let q = null; try { q = t.method ? FIN.financeQuote(10000, t, t.months || 12) : null; } catch {} return finKv([['Limit', n.halan.limit ? fk(n.halan.limit) : '—', ''], ['Available', n.halan.available !== null && n.halan.available !== undefined ? fk(n.halan.available) : '—', ''], ['Terms', t.method ? `${t.rate || 0}% ${t.method === 'reducing' ? 'a year' : 'a month'}` : 'not set', t.months ? t.months + ' months' : '']]) + (q ? `<p class="small">10,000 over ${q.months} months → <b>${fm(q.monthly)}</b> a month, ${fm(q.cost)} extra.</p>` : '') + `<div class="row">${edit}</div>`; }
+  if (kind === 'h' || kind === 'th' || kind === 'l') {
+    const h = p.holdings.find(x => x.id === key); if (!h) return ''; const amt = +(h.principal || h.valuation || 0);
+    return finKv([['Amount', amt ? fk(amt, h.currency) : '—', h.kind === 'property' ? 'value you entered' : ''], h.rate && ['Return', h.rate + '% a year', `${fk(amt * h.rate / 100)} a year · ${fk(amt * h.rate / 1200)} a month`], h.myShareMonthly && ['Your share', fk(+h.myShareMonthly) + ' / month', ''], h.share && ['Share', h.share + '%', h.area ? `of ${h.area - (+h.soldArea || 0)} m²` : ''], h.handover && ['Handover', fmon(h.handover.slice(0, 7)), ''], kind === 'l' && ['Still to pay', fk(finLiab(h).remaining), ''], ['Held', h.custodian && h.custodian !== 'me' ? `in ${esc(h.custodian)}’s name` : 'by you', h.owner && h.owner !== 'me' ? 'belongs to ' + esc(finPartyName(h.owner)) : '']])
+      + (h.note ? `<p class="small muted">${esc(h.note)}</p>` : '') + ((h.history || []).length ? `<h4>Changes</h4><div class="fin-det-tx">${h.history.slice(-5).reverse().map(x => `<div><span class="muted">${fday((x.at || '').slice(0, 10))}</span><span>before</span><b class="num">${x.principal ? fm(+x.principal) : x.valuation ? fm(+x.valuation) : '—'}</b></div>`).join('')}</div>` : '')
+      + `<div class="row">${edit}${finBtn('fin-cv-sec', '🏛️ Ownership', { s: 'own' })}</div>`;
+  }
+  if (kind === 't') { const x = FIN.thirdParty(finTx(), p.parties).find(z => z.id === key); if (!x) return ''; return finKv([['Came in', fk(x.in), ''], ['Went out', fk(x.out), ''], ['Still held', fk(x.held), 'not yours']]) + `<h4>Their money</h4>${finTxList(x.items.slice().sort((a, b) => b.date.localeCompare(a.date)))}<div class="row">${edit}</div>`; }
+  if (kind === 'b') {
+    const it = finBuyPlan().items.find(z => z.id === key); if (!it) return ''; const o = it.options || {};
+    const opt = (label, ok, q) => `<tr class="${it.rec === label[1] ? 'on' : ''}"><td>${label[0]}</td><td>${ok ? '✓' : '—'}</td><td class="num">${q ? fm(q.monthly) + ' × ' + q.months : ''}</td><td class="num">${q ? fm(q.cost) : ''}</td></tr>`;
+    return finKv([['Price', fk(it.price), it.wantBy ? 'wanted by ' + fday(it.wantBy) : 'no date'], ['Best way', FIN_REC[it.rec][0], it.ready ? 'ready ' + fmon(it.ready) : ''], ['From cash now', fk(it.fromCash), ''], ['A month', it.monthly ? fk(it.monthly) : '—', it.months ? it.months + ' months' : '']])
+      + finBar(it.fromCash || 0, it.price, 's3') + `<p class="small">${esc(it.why)}</p>`
+      + `<table class="tbl fin-det-opt"><thead><tr><th>Way to pay</th><th>Fits</th><th class="num">A month</th><th class="num">Extra cost</th></tr></thead><tbody>${opt(['Cash now', 'cash'], o.cash)}${opt(['Card, paid in full', 'card_full'], o.cardFull)}${opt(['Card instalments', 'card_plan'], !!o.cardPlan, o.cardPlan)}${opt(['Halan instalments', 'halan'], !!o.halan, o.halan)}</tbody></table>`
+      + `<div class="row">${edit}${finBtn('fin-buy-star', it.focus ? '☆ Not first' : '★ Do this first', { id: key })}${finBtn('fin-buy-done', '✓ Bought', { id: key })}</div>`;
+  }
+  if (kind === 'g') { const g = (p.goals || []).find(z => z.id === key); if (!g) return ''; const t = +g.target || 0, sv = +g.saved || 0; return finKv([['Target', t ? fk(t) : '—', g.date ? 'by ' + fday(g.date) : ''], ['Saved', fk(sv), t ? Math.round(sv / t * 100) + '%' : ''], ['A month', g.monthly ? fk(+g.monthly) : '—', '']]) + (t ? finBar(sv, t, 's3') : '') + `<div class="row">${edit}${finBtn('fin-cv-sec', '🔭 Forecast', { s: 'forecast' })}</div>`; }
+  if (kind === 'src') {
+    const map = { cash: [['Free cash now', fk(n.free), `cash ${fk(n.cash)} − reserve ${fk(n.reserve)} − others’ ${fk(n.held)}`]], save: [['Income', fk(n.income), esc(n.incomeBasis)], ['Usual spending', fk(n.spending), esc(n.spendBasis)], ['Instalments', fk(n.instMonthly), ''], ['Left to save', fk(n.capacity), 'a month']], card: [['Available', n.card ? fk(n.card.available) : '—', n.card ? 'limit ' + fk(n.card.limit) : '']], halan: [['Available', n.halan && n.halan.available !== null && n.halan.available !== undefined ? fk(n.halan.available) : '—', '']] }[key] || [];
+    return finKv(map) + (key === 'card' || key === 'halan' ? `<div class="row">${finBtn('fin-cv-sec', '💳 Terms', { s: 'credit' })}</div>` : '');
+  }
+  if (kind === 'd') { const x = (typeof finAutoLog === 'function' ? finAutoLog() : []).find(z => z.id === key); if (!x) return ''; return `<p><b>${esc(x.label)}</b></p><p>Decided: <b>${esc(x.how)}</b> ${x.by === 'rule' ? '<span class="fin-tag">rule</span>' : '<span class="fin-tag">Claude</span>'}</p>${x.why ? `<p class="small muted">${esc(x.why)}</p>` : ''}<p class="small">${fmtDateTime(x.at)} · tell the canvas if it is wrong.</p>`; }
+  if (kind === 'q') { const q = finQuestions().find(z => z.id === key); return q ? `<p>${q.text}</p>${finBtn('fin-cv-sec', '✍️ Answer', { s: 'update' })}` : ''; }
+  return '';
+}
+function finOverviewHTML() {
+  const n = finNow(), own = finPosition(), all = finAll();
+  return finKv([['Net worth', own.net !== null ? fk(own.net) : '—', own.estimated ? 'includes estimates' : 'own money only'], ['Cash', fk(n.cash), `${n.cashKnown} of ${n.cashAccts} accounts known`], ['Free cash', fk(n.free), `after a ${fk(n.reserve)} reserve`], ['Income', fk(n.income) + '/mo', esc(n.incomeBasis)], ['Usual spending', fk(n.spending) + '/mo', esc(n.spendBasis)], ['Saving', fk(n.capacity) + '/mo', 'what is left'], ['Instalments', fk(n.instMonthly) + '/mo', `${n.inst.filter(i => i.status === 'active' || i.status === 'missing').length} running`], n.card && ['Card', 'owes ' + fk(n.card.owed), fk(n.card.available) + ' free'], n.health.score !== null && ['Health', n.health.score + '/100', '']])
+    + `<div class="fin-ov-chart"><h4>Income and spending by month</h4>${finBars(finMonthsRows(all.months, b => ({ a: b.inc, b: b.exp, net: b.covered ? FIN.r2(b.inc - b.exp) : null })), { title: 'overview months', h: 190, net: true })}</div>`
+    + `<div class="row">${finBtn('fin-cv-sec', '📊 Full dashboard', { s: 'dash' })}${finBtn('fin-cv-sec', '🎯 Budget', { s: 'budget' })}${finBtn('fin-cv-sec', '🔭 Forecast', { s: 'forecast' })}${finBtn('fin-cv-sec', '✍️ Balances', { s: 'update' })}</div>`;
+}
+function finGoalsHead(plan, n) {
+  const focus = !!finP().buyFocus;
+  return finKv([['To buy', fk(plan.total), `${plan.items.length} item${plan.items.length === 1 ? '' : 's'}`], ['From cash now', fk(plan.fromCash), `free cash ${fk(n.free)}`], ['Saving a month', fk(plan.monthly), `of ${fk(n.capacity)} you can save`], ['Card repayments', fk(plan.cardRepay), 'paid in full next statement'], ['Everything by', plan.allBy ? fmon(plan.allBy) : '—', (() => { const late = plan.items.filter(i => i.late).length; return late ? `${late} after the date you want` : 'on your dates'; })()]])
+    + `<div class="row"><div class="seg" role="group" aria-label="Order"><button data-act="fin-buy-focus" data-v="0" aria-pressed="${!focus}">All goals</button><button data-act="fin-buy-focus" data-v="1" aria-pressed="${focus}">★ Focus first</button></div>${finBtn('fin-cv-add', '＋ Add a goal', { id: 'buy' })}</div>`;
+}
+function finGoalsTimeline(plan) {
+  const months = [...new Set(plan.items.map(i => i.ready).filter(Boolean))].sort();
+  return `<h4>When each becomes affordable</h4>${months.length ? `<div class="fin-tl">${months.map(m => `<div class="fin-tl-m"><b>${fmon(m)}</b>${plan.items.filter(i => i.ready === m).map(i => `<span class="fin-tag ${i.late ? 'crit' : 'ok'}">${esc(i.name)}</span>`).join('')}</div>`).join('')}</div>` : '<p class="small muted">Nothing planned yet.</p>'}`;
+}
+function finDetBody(id, plan, n) {
+  if (id === 'ov') return finOverviewHTML();
+  if (id === 'gk') return finGoalsHead(plan, n);
+  if (id === 'gt') return finGoalsTimeline(plan);
+  if (id.startsWith('sec:')) { const k = id.slice(4); try { return (['dash', 'ledger', 'exp', 'inc'].includes(k) ? finFilterBar() : '') + FIN_VIEW[k](); } catch (e) { console.error(e); return `<p class="small muted">This part could not be drawn (${esc(e.message || String(e))}).</p>`; } }
+  try { return finCardDetail(id) || '<p class="small muted">Nothing more to show.</p>'; } catch (e) { console.error(e); return `<p class="small muted">Could not show this (${esc(e.message || String(e))}).</p>`; }
+}
+
+/* --- drawing --- */
+const finCvAttrs = a => a ? Object.entries(a).map(([k, v]) => `data-${k}="${esc(v)}"`).join(' ') : '';
+function finCvCard(c, hue) {
+  const st = `left:${c.x}px;top:${c.y}px;width:${c.w}px;height:${c.h}px;--h:${hue ?? 200}`;
+  const tool = c.cls.includes('tool'), open = finIsOpen(c.id) || (tool && c.act && finSecOpen(c.act.s)) ? ' sel' : '', fresh = Date.now() < UI.fin.flash.until && UI.fin.flash.ids.has(c.id) ? ' fresh' : '';
+  const act = tool || c.cls.includes('more') ? { act: 'fin-cv-sec', s: (c.act && c.act.s) || 'ledger' } : c.act && c.act.act === 'fin-cv-add' ? c.act : { act: 'fin-cv-det', id: c.id };
+  const editable = typeof finCvSpec === 'function' && !tool && !c.cls.includes('more') && !!finCvSpec(c.id);
+  return `<div class="mnode fin-cvn fin-leaf ${c.cls}${open}${fresh}${editable ? ' editable' : ''}" role="button" tabindex="0" aria-expanded="${!!open}" ${finCvAttrs(act)} data-node="${esc(c.id)}" title="${esc(c.label)}${c.val ? ' — ' + esc(c.val) : ''}${c.sub ? '\n' + esc(c.sub) : ''}" style="${st}">
+    ${c.icon ? `<span class="gicon fin-cv-ic" aria-hidden="true">${c.icon}</span>` : ''}<div class="mtxt"><b>${tool ? '<span class="fin-tool-i" aria-hidden="true">' + (FIN_ICON[act.s] || '') + '</span>' : ''}${esc(c.label)}</b>${c.sub ? `<small>${esc(c.sub)}</small>` : ''}</div>${c.val ? `<span class="fin-cv-v num">${esc(c.val)}</span>` : ''}${editable ? `<button class="fin-cv-btn ed" data-act="fin-cv-edit" data-id="${esc(c.id)}" title="Edit (or double-tap, F2)" aria-label="Edit ${esc(c.label)}">✎</button>` : ''}</div>`;
+}
+function finCvRoom(r) {
+  const folded = UI.fin.cvCol.has(r.id), fresh = Date.now() < UI.fin.flash.until && UI.fin.flash.ids.has(r.id) ? ' fresh' : '';
+  const hasKids = r.kind === 'room' ? r.node.children.length : r.kind !== 'sec';
+  const titleAct = r.kind === 'sec' ? `data-act="fin-cv-sec" data-s="${esc(r.sec)}"` : r.sec ? `data-act="fin-cv-sec" data-s="${esc(r.sec)}"` : '';
+  return `<section class="fin-room ${r.kind}${fresh}" data-room="${esc(r.id)}" style="left:${r.x}px;top:${r.y}px;width:${r.w}px;height:${r.h}px;--h:${r.hue ?? 200}">
+    <div class="fin-room-h">
+      <div class="fin-room-t fin-cvn${r.sec && r.kind !== 'sec' && finSecOpen(r.sec) ? ' sel' : ''}" data-node="${esc(r.id)}" ${titleAct} role="button" tabindex="0" title="${r.kind === 'sec' ? 'Close' : r.sec ? 'Open ' + esc(finSecLabel(r.sec)) + ' here' : ''}"><span class="fin-room-ic" aria-hidden="true">${r.icon}</span><div><b>${esc(r.title)}</b>${r.sum ? `<small>${esc(r.sum)}</small>` : ''}</div>${r.sec && r.kind !== 'sec' ? `<span class="fin-room-go">${finSecOpen(r.sec) ? '▴ close' : '▾ open'}</span>` : ''}</div>
+      <span class="spacer"></span>
+      ${typeof finCvAddSpec === 'function' && finCvAddSpec(r.id) ? `<button class="btn sm ghost" data-act="fin-cv-add" data-id="${esc(r.id)}" title="Add" aria-label="Add to ${esc(r.title)}">＋</button>` : ''}
+      ${r.kind === 'sec' ? `<button class="btn sm ghost" data-act="fin-cv-sec" data-s="${esc(r.sec)}" aria-label="Close ${esc(r.title)}">✕</button>`
+        : `${hasKids ? `<button class="btn sm ghost" data-act="fin-cv-tog" data-id="${esc(r.id)}" aria-expanded="${!folded}" title="${folded ? 'Unfold' : 'Fold'}" aria-label="${folded ? 'Unfold' : 'Fold'} ${esc(r.title)}">${folded ? '▸' : '▾'}</button>` : ''}<button class="btn sm ghost" data-act="fin-cv-focus" data-id="${esc(r.id)}" title="${UI.fin.cv.focus === r.id ? 'Show everything' : 'Show only this room'}" aria-label="${UI.fin.cv.focus === r.id ? 'Show everything' : 'Show only ' + esc(r.title)}">⤢</button>`}
+    </div></section>`;
 }
 function finCvBoard() {
-  const cv = UI.fin.cv, root = finCvModel(), L = finCvLayout(root);
-  const hueOf = new Map(); const walk = (n, h) => { const hh = n.type === 'branch' ? n.hue : h; hueOf.set(n, hh); (n.children || []).forEach(k => walk(k, hh)); }; walk(root, 200);
-  const path = e => {
-    const { a, b } = e;
-    if (cv.dir === 'v') {
-      if (e.v) return `M${a.x + 14},${a.y + a.h} V${b.y + b.h / 2} H${b.x}`;
-      const x0 = a.x + a.w / 2, y0 = a.y + a.h, x1 = b.x + b.w / 2, y1 = b.y, my = (y0 + y1) / 2; return `M${x0},${y0} C${x0},${my} ${x1},${my} ${x1},${y1}`;
-    }
-    const x0 = a.x + a.w, y0 = a.y + a.h / 2, x1 = b.x, y1 = b.y + b.h / 2, mx = (x0 + x1) / 2; return `M${x0},${y0} C${mx},${y0} ${mx},${y1} ${x1},${y1}`;
-  };
+  const cv = UI.fin.cv, root = finCvModel(), n = finNow(), plan = finBuyPlan(), rooms = finCvRooms(root), L = finCvLayout(rooms, plan, n);
+  const hueOf = new Map(); for (const r of rooms) { const walk = k => { hueOf.set(k.id, r.hue); (k.children || []).forEach(walk); }; if (r.node) walk(r.node); }
   UI.fin.cvSize = { w: L.w, h: L.h };
+  const path = e => { const mx = (e.x0 + e.x1) / 2; return `M${e.x0},${e.y0} C${mx},${e.y0} ${mx},${e.y1} ${e.x1},${e.y1}`; };
   return `<div class="fin-cv-vp" id="fin-cv-vp"><div class="fin-cv-world" id="fin-cv-world" style="width:${L.w}px;height:${L.h}px;transform:translate(${cv.x}px,${cv.y}px) scale(${cv.k})">
-      <svg class="fin-cv-edges" width="${L.w}" height="${L.h}" aria-hidden="true">${L.edges.map(e => `<path d="${path(e)}" style="--h:${e.hue ?? 200}"/>`).join('')}</svg>
-      ${L.nodes.map(n => finCvNode(n, hueOf.get(n))).join('')}</div></div>`;
-}
-// the part you opened, inside the canvas
-function finPanelHTML() {
-  const k = UI.fin.panel; if (!k || !FIN_VIEW[k]) return '';
-  const label = finSecLabel(k), filt = ['dash', 'ledger', 'exp', 'inc'].includes(k);
-  let body; try { body = FIN_VIEW[k](); } catch (e) { console.error(e); body = `<p class="small muted">This part could not be drawn (${esc(e.message || String(e))}). Everything else keeps working.</p>`; }
-  return `<aside class="fin-panel ${UI.fin.panelWide ? 'wide' : ''}" id="fin-panel" role="region" aria-label="${esc(label)}">
-    <div class="fin-panel-h"><span class="fin-panel-ic" aria-hidden="true">${FIN_ICON[k] || ''}</span><h2>${esc(label)}</h2><span class="spacer"></span>
-      <button class="icon-btn fin-panel-w" data-act="fin-panel-wide" title="${UI.fin.panelWide ? 'Narrower' : 'Wider'}" aria-label="${UI.fin.panelWide ? 'Make the panel narrower' : 'Make the panel wider'}">⇔</button>
-      <button class="icon-btn" data-act="fin-panel-x" title="Close (Esc)" aria-label="Close ${esc(label)}">${I.x}</button></div>
-    <div class="fin-panel-b" id="fin-panel-b">${filt ? finFilterBar() : ''}${body}</div></aside>`;
+      ${L.rooms.map(finCvRoom).join('')}
+      <svg class="fin-cv-edges" width="${L.w}" height="${L.h}" aria-hidden="true">${L.edges.map(e => `<path class="${e.cls}" d="${path(e)}"><title>${esc(e.title)}</title></path>`).join('')}</svg>
+      ${L.subs.map(s => `<div class="fin-room-sub" style="left:${s.x}px;top:${s.y}px;width:${s.w}px"><b>${esc(s.label)}</b>${s.sum ? ` <small>${esc(s.sum)}</small>` : ''}</div>`).join('')}
+      ${L.cards.map(c => finCvCard(c, hueOf.get(c.id) ?? (c.id.startsWith('b:') || c.id.startsWith('src:') || c.id.startsWith('g:') ? 190 : 200))).join('')}
+      ${L.dets.map(d => `<div class="fin-det ${d.id.startsWith('sec:') ? 'sec' : ''}" data-det="${esc(d.id)}" style="left:${d.x}px;top:${d.y}px;width:${d.w}px" ${d.id.startsWith('sec:') ? `id="fin-${esc(d.id.replace(':', '-'))}"` : ''}><div class="fin-det-in">${finDetBody(d.id, plan, n)}</div></div>`).join('')}
+    </div></div>`;
 }
 
 const finTabs = () => `<div class="seg fin-tabs" role="tablist" aria-label="Money">${[['canvas', '🧭 Canvas'], ['settings', '⚙️ Settings']].map(([k, l]) => `<button role="tab" data-act="fin-tab" data-v="${k}" aria-selected="${(UI.fin.tab || 'canvas') === k}" aria-pressed="${(UI.fin.tab || 'canvas') === k}">${l}</button>`).join('')}</div>`;
@@ -177,15 +321,15 @@ VIEW_FN.finance = () => {
   const cv = UI.fin.cv;
   if (UI.fin.tab === 'settings') return `<div class="wrap fin fin-settings-page"><div class="fin-cv-bar"><h1>Money</h1>${finTabs()}</div>${FIN_VIEW.settings()}</div>`;
   return `<div class="wrap fin fin-canvas-page">
-  <section class="fin-cvwrap ${cv.full ? 'full' : ''} ${UI.fin.panel ? 'has-panel' : ''}" id="fin-s-map" aria-label="Money canvas">
-    <div class="fin-cv-bar"><h1>Money</h1>${finTabs()}<span class="small muted fin-cv-hint">Tap to open · ✎ to edit · or tell the canvas below</span><span class="spacer"></span>
+  <section class="fin-cvwrap ${cv.full ? 'full' : ''}" id="fin-s-map" aria-label="Money canvas">
+    <div class="fin-cv-bar"><h1>Money</h1>${finTabs()}<span class="small muted fin-cv-hint">Tap a card for its details · a room’s title opens it fully · ✎ to edit · or tell the canvas below</span><span class="spacer"></span>
       ${cv.focus ? `<button class="btn sm" data-act="fin-cv-focus" data-id="">Show everything</button>` : ''}
+      ${UI.fin.cvOpen.length ? `<button class="btn sm" data-act="fin-cv-close-all" title="Fold every opened detail and part">Close details</button>` : ''}
       <button class="btn sm" data-act="fin-new-tx" title="Add a transaction by hand">${I.plus} Transaction</button>
-      <div class="seg" role="group" aria-label="Direction"><button data-act="fin-cv-dir" data-v="v" aria-pressed="${cv.dir === 'v'}" title="Branches down">↓ Down</button><button data-act="fin-cv-dir" data-v="h" aria-pressed="${cv.dir === 'h'}" title="Branches across">→ Across</button></div>
-      <button class="btn sm" data-act="fin-cv-all" data-v="open" title="Unfold every branch">Unfold all</button><button class="btn sm" data-act="fin-cv-all" data-v="fold" title="Fold every branch">Fold all</button>
+      <button class="btn sm" data-act="fin-cv-all" data-v="open" title="Unfold every room">Unfold all</button><button class="btn sm" data-act="fin-cv-all" data-v="fold" title="Fold every room to its title">Fold all</button>
       <div class="seg zoom" role="group" aria-label="Zoom"><button data-act="fin-cv-zoom" data-v="out" aria-label="Zoom out">−</button><button data-act="fin-cv-fit" title="Fit to the screen"><span id="fin-cv-z">${Math.round(cv.k * 100)}%</span></button><button data-act="fin-cv-zoom" data-v="in" aria-label="Zoom in">+</button></div>
       <button class="btn sm" data-act="fin-cv-full" aria-pressed="${cv.full}" title="${cv.full ? 'Back (Esc)' : 'Full screen'}">${cv.full ? '✕ Close' : '⤢ Full screen'}</button></div>
-    <div class="fin-cv-stage">${finCvBoard()}${finPanelHTML()}${typeof finCvEditorHTML === 'function' ? finCvEditorHTML() : ''}</div>
+    <div class="fin-cv-stage">${finCvBoard()}${typeof finCvEditorHTML === 'function' ? finCvEditorHTML() : ''}</div>
     ${typeof finTalkHTML === 'function' ? finTalkHTML() : ''}
   </section>
 </div>`;
@@ -197,35 +341,32 @@ function finCvApply() {
   const z = $('#fin-cv-z'); if (z) z.textContent = Math.round(cv.k * 100) + '%';
   if (typeof finCvEditorPlace === 'function') finCvEditorPlace();
 }
-// on opening: a readable size (all of it when it fits, else starting from "My money"); Fit shows all of it
+// on opening: as wide as the screen allows (readable), from the top; Fit shows all of it
 function finCvFit(all) {
-  const vp = $('#fin-cv-vp'), s = UI.fin.cvSize, cv = UI.fin.cv, r = UI.fin.cvRoot; if (!vp || !s) return;
+  const vp = $('#fin-cv-vp'), s = UI.fin.cvSize, cv = UI.fin.cv; if (!vp || !s) return;
   const W = vp.clientWidth, H = vp.clientHeight; if (!W || !H) return;
-  const k0 = Math.min(1, (W - 32) / s.w, (H - 32) / s.h);
-  if (all || k0 >= 0.5 || !r) { cv.k = Math.max(0.12, k0); cv.x = (W - s.w * cv.k) / 2; cv.y = (H - s.h * cv.k) / 2; }
-  else {
-    cv.k = Math.min(1, Math.max(0.5, Math.min((W - 32) / s.w, (H - 32) / s.h)));
-    const cx = r.x + r.w / 2, cy = r.y + r.h / 2;
-    cv.x = Math.min(16, Math.max(W - 16 - s.w * cv.k, W / 2 - cx * cv.k));
-    cv.y = cv.dir === 'v' ? 16 : Math.min(16, Math.max(H - 16 - s.h * cv.k, H / 2 - cy * cv.k));
-    if (cv.dir !== 'v' && s.w * cv.k > W) cv.x = 16;
-  }
+  if (all) { cv.k = Math.max(0.1, Math.min(1, (W - 32) / s.w, (H - 32) / s.h)); cv.x = (W - s.w * cv.k) / 2; cv.y = Math.max(16, (H - s.h * cv.k) / 2); }
+  else { cv.k = Math.min(1, Math.max(0.42, (W - 32) / s.w)); cv.x = Math.max(16, (W - s.w * cv.k) / 2); cv.y = 16; }
   cv.fitted = true; finCvApply();
 }
 function finCvZoomAt(f, cx, cy) {
   const vp = $('#fin-cv-vp'), cv = UI.fin.cv; if (!vp) return; const r = vp.getBoundingClientRect();
-  const px = cx === undefined ? r.width / 2 : cx - r.left, py = cy === undefined ? r.height / 2 : cy - r.top, k2 = Math.max(0.2, Math.min(2.5, cv.k * f));
+  const px = cx === undefined ? r.width / 2 : cx - r.left, py = cy === undefined ? r.height / 2 : cy - r.top, k2 = Math.max(0.1, Math.min(2.5, cv.k * f));
   cv.x = px - (px - cv.x) * (k2 / cv.k); cv.y = py - (py - cv.y) * (k2 / cv.k); cv.k = k2; cv.user = true; finCvApply();
 }
-// bring a card into view (left of an open panel) and make it glow
-function finCvGoto(id) {
-  const vp = $('#fin-cv-vp'), b = UI.fin.cvPos && UI.fin.cvPos.get(id), cv = UI.fin.cv; if (!vp || !b) return;
-  const pan = $('#fin-panel'), W = vp.clientWidth - (pan && pan.offsetWidth < vp.clientWidth ? pan.offsetWidth : 0), H = vp.clientHeight;
-  cv.k = Math.max(cv.k, 0.6); cv.x = W / 2 - (b.x + b.w / 2) * cv.k; cv.y = H / 2 - (b.y + b.h / 2) * cv.k; cv.user = true; finCvApply();
+// bring a card, a room or an opened detail into view (a tall one from its top) and make it glow
+function finCvGoto(id, onlyIfHidden) {
+  const vp = $('#fin-cv-vp'), P = UI.fin.cvPos, cv = UI.fin.cv; if (!vp || !P) return;
+  const b = P.get(id), d = P.get(id + ':det'); if (!b) return;
+  const box = d ? { x: Math.min(b.x, d.x), y: b.y, w: Math.max(b.x + b.w, d.x + d.w) - Math.min(b.x, d.x), h: d.y + d.h - b.y } : b;
+  const W = vp.clientWidth, H = vp.clientHeight, k = Math.max(cv.k, Math.min(0.75, (W - 40) / box.w));
+  if (onlyIfHidden) { const sx = cv.x + box.x * cv.k, sy = cv.y + box.y * cv.k; if (sx >= 0 && sy >= 0 && sx + box.w * cv.k <= W && sy + Math.min(box.h, H / cv.k * 0.9) * cv.k <= H) return; }
+  cv.k = k; cv.x = box.w * k < W ? W / 2 - (box.x + box.w / 2) * k : 20 - box.x * k; cv.y = box.h * k < H - 40 ? H / 2 - (box.y + box.h / 2) * k : 20 - box.y * k; cv.user = true; finCvApply();
 }
 const FCV = { ptrs: new Map(), start: null, pinch: null, moved: false };
 document.addEventListener('pointerdown', e => {
   if (!e.target.closest || !e.target.closest('#fin-cv-vp') || e.button > 0) return;
+  if (e.target.closest('input, select, textarea, [contenteditable]')) return;   // typing and choosing inside an unfolded part
   FCV.ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
   if (FCV.ptrs.size === 1) { FCV.moved = false; FCV.start = { x: e.clientX, y: e.clientY, ox: UI.fin.cv.x, oy: UI.fin.cv.y }; }
   if (FCV.ptrs.size === 2) { const [a, b] = [...FCV.ptrs.values()]; FCV.pinch = { d: Math.hypot(a.x - b.x, a.y - b.y) || 1, k: UI.fin.cv.k }; FCV.start = null; }
@@ -246,46 +387,57 @@ const finCvEnd = e => {
 document.addEventListener('pointerup', finCvEnd); document.addEventListener('pointercancel', finCvEnd);
 // a drag that ends on a card is not a tap on it
 document.addEventListener('click', e => { if (FCV.moved && e.target.closest && e.target.closest('#fin-cv-vp')) { e.stopImmediatePropagation(); e.preventDefault(); FCV.moved = false; } }, true);
-// scrolling over the canvas zooms it (the canvas is the page); Ctrl + scroll and a trackpad pinch too
+// scrolling moves around the canvas (it is the page); Ctrl + scroll, and a trackpad pinch, zoom
 document.addEventListener('wheel', e => {
   if (!e.target.closest || !e.target.closest('#fin-cv-vp')) return;
-  e.preventDefault(); finCvZoomAt(Math.exp(-e.deltaY * (e.ctrlKey ? 0.01 : 0.0015)), e.clientX, e.clientY);
+  e.preventDefault();
+  if (e.ctrlKey || e.metaKey) finCvZoomAt(Math.exp(-e.deltaY * 0.01), e.clientX, e.clientY);
+  else { UI.fin.cv.x -= e.shiftKey ? e.deltaY : e.deltaX; UI.fin.cv.y -= e.shiftKey ? 0 : e.deltaY; UI.fin.cv.user = true; finCvApply(); }
 }, { passive: false });
 document.addEventListener('keydown', e => {
   if (UI.view !== 'finance') return;
-  if (e.key === 'Escape') { if (UI.drawer || !$('#modal').hidden) return; if (UI.fin.panel) { UI.fin.panel = null; render(); return; } if (UI.fin.cv.full) { finCvFull(false); return; } }
+  if (e.key === 'Escape') { if (UI.drawer || !$('#modal').hidden) return; if (UI.fin.cvOpen.length) { UI.fin.cvOpen = UI.fin.cvOpen.slice(0, -1); render(); return; } if (UI.fin.cv.full) { finCvFull(false); return; } }
   const br = e.target.closest && e.target.closest('.fin-cvn[role="button"]'); if (br && (e.key === 'Enter' || e.key === ' ') && e.target === br) { e.preventDefault(); br.click(); }
 });
 function finCvFull(on) { UI.fin.cv.full = on; UI.fin.cv.fitted = false; document.documentElement.classList.toggle('fin-cv-lock', on); render(); }
-function finOpen(k) { if (k === 'map') k = null; if (k === 'settings') { UI.fin.tab = 'settings'; UI.fin.panel = null; if (UI.view !== 'finance') go('finance'); else { render(); window.scrollTo(0, 0); } return; } UI.fin.tab = 'canvas'; UI.fin.panel = k && FIN_VIEW[k] ? k : null; if (k) UI.fin.sec = k; if (UI.view !== 'finance') go('finance'); else render(); }
+// a part asked for (from a button, a sentence, an old link) opens as a room on the canvas
+function finOpen(k) {
+  if (k === 'settings') { UI.fin.tab = 'settings'; if (UI.view !== 'finance') go('finance'); else { render(); window.scrollTo(0, 0); } return; }
+  UI.fin.tab = 'canvas';
+  if (!k || k === 'map') UI.fin.cvOpen = UI.fin.cvOpen.filter(x => !x.startsWith('sec:'));
+  else if (k === 'buy') { UI.fin.cvCol.delete('buy'); UI.fin.goto = 'buy'; }
+  else if (FIN_VIEW[k]) { finSetOpen('sec:' + k, true); UI.fin.sec = k; UI.fin.goto = 'sec:' + k; }
+  if (UI.view !== 'finance') go('finance'); else render();
+}
 
-// a redraw keeps where you were in the open panel
-HOOKS.beforeRender.push(() => { const b = $('#fin-panel-b'); if (b && UI.fin.panel) UI.fin.panelScroll[UI.fin.panel] = b.scrollTop; });
 HOOKS.afterRender.push(() => {
   if (UI.view !== 'finance') { document.documentElement.classList.remove('fin-cv-lock'); return; }
   { const r = document.querySelector('.rail'), w = document.querySelector('.fin'); if (r && w) { const b = r.getBoundingClientRect(); w.style.setProperty('--fin-top', (getComputedStyle(r).position === 'sticky' && b.height < 160 ? Math.round(b.bottom) : 0) + 'px'); } }
-  if (UI.fin.jump) { const k = UI.fin.jump; UI.fin.jump = null; UI.fin.panel = FIN_VIEW[k] ? k : null; scheduleRender(); return; }
-  const b = $('#fin-panel-b'); if (b && UI.fin.panelScroll[UI.fin.panel]) b.scrollTop = UI.fin.panelScroll[UI.fin.panel];
-  // the card you opened stays in sight, left of the panel
-  if (UI.fin.panelGoto) { const id = UI.fin.panelGoto; UI.fin.panelGoto = null; const pan = $('#fin-panel'), el = document.querySelector(`.fin-cvn[data-node="${CSS.escape(id)}"]`); if (pan && el && el.getBoundingClientRect().right > pan.getBoundingClientRect().left - 8 && pan.offsetWidth < ($('#fin-cv-vp') || {}).clientWidth) finCvGoto(id); }
-  // the view follows the tree as it grows, until you move or zoom it yourself
-  const sz = UI.fin.cvSize ? UI.fin.cvSize.w + 'x' + UI.fin.cvSize.h : ''; if (!UI.fin.cv.fitted || (!UI.fin.cv.user && sz !== UI.fin.cv.sz)) finCvFit(); UI.fin.cv.sz = sz;
-  if (UI.fin.flash.until > Date.now()) { clearTimeout(UI.fin.flashT); UI.fin.flashT = setTimeout(() => { if (UI.view === 'finance') document.querySelectorAll('.fin-cvn.fresh').forEach(n => n.classList.remove('fresh')); }, UI.fin.flash.until - Date.now()); }
+  if (UI.fin.jump) { const k = UI.fin.jump; UI.fin.jump = null; finOpen(k); return; }
+  // unfolded details take the room they need: measured, and the canvas laid out again (a few times at most)
+  UI.fin.detChain = UI.fin.detSelf ? (UI.fin.detChain || 0) + 1 : 0; UI.fin.detSelf = false;
+  if (UI.fin.detChain <= 4) { let again = false; document.querySelectorAll('#fin-cv-world .fin-det').forEach(d => { const h = d.offsetHeight; if (Math.abs(h - (UI.fin.detH[d.dataset.det] || 0)) > 3) { UI.fin.detH[d.dataset.det] = h; again = true; } }); if (again) { UI.fin.detSelf = true; scheduleRender(); return; } }
+  const w = UI.fin.cvSize ? UI.fin.cvSize.w : 0; if (!UI.fin.cv.fitted || (!UI.fin.cv.user && w !== UI.fin.cv.sw)) finCvFit(); UI.fin.cv.sw = w;
+  if (UI.fin.goto) { const id = UI.fin.goto; UI.fin.goto = null; finCvGoto(id, true); }
+  if (UI.fin.flash.until > Date.now()) { clearTimeout(UI.fin.flashT); UI.fin.flashT = setTimeout(() => { if (UI.view === 'finance') document.querySelectorAll('.fin-cvn.fresh, .fin-room.fresh').forEach(n => n.classList.remove('fresh')); }, UI.fin.flash.until - Date.now()); }
 });
 
 Object.assign(ACT, {
-  'fin-sec': el => { UI.fin.sel.clear(); const n = el.closest && el.closest('#fin-cv-vp [data-node]'); UI.fin.panelGoto = n ? n.dataset.node : null; finOpen(el.dataset.s); },
-  'fin-panel-x': () => { UI.fin.panel = null; render(); },
+  'fin-sec': el => { UI.fin.sel.clear(); finOpen(el.dataset.s); },
+  'fin-cv-sec': el => { const k = el.dataset.s; if (k === 'buy') return finOpen('buy'); if (finSetOpen('sec:' + k)) UI.fin.goto = 'sec:' + k; render(); },
+  'fin-cv-det': el => { const id = el.dataset.id; if (finSetOpen(id)) UI.fin.goto = id; render(); },
+  'fin-cv-close-all': () => { UI.fin.cvOpen = []; render(); },
+  'fin-panel-x': () => { UI.fin.cvOpen = UI.fin.cvOpen.filter(x => !x.startsWith('sec:')); render(); },
   'fin-tab': el => { if (el.dataset.v === 'settings') finOpen('settings'); else { UI.fin.tab = 'canvas'; UI.fin.cv.fitted = false; render(); } },
-  'fin-panel-wide': () => { UI.fin.panelWide = !UI.fin.panelWide; render(); },
-  'fin-buy-edit': el => { UI.fin.buyEdit = el.dataset.id; UI.fin.panel = 'buy'; UI.fin.panelScroll.buy = 0; render(); const n = $('#by-name'); if (n) n.scrollIntoView({ block: 'center' }); },
+  'fin-buy-edit': el => { if (typeof finCvEditOpen === 'function') { finSetOpen('b:' + el.dataset.id, true); finCvEditOpen('b:' + el.dataset.id); } },
+  'fin-buy-star': el => { finSave(q => { const b = (q.buys || []).find(x => x.id === el.dataset.id); if (b) { b.focus = !b.focus; if (b.focus) q.buyFocus = true; } }); render(); },
+  'fin-cat-ledger': el => { UI.fin.l = { ...UI.fin.l, cat: el.dataset.k, acct: '', ids: null, page: 0 }; finOpen('ledger'); },
   'fin-cv-tog': (el, e) => { e && e.stopPropagation && e.stopPropagation(); const id = el.dataset.id, c = UI.fin.cvCol; c.has(id) ? c.delete(id) : c.add(id); finCvKeep(); render(); },
-  'fin-cv-all': el => { const c = UI.fin.cvCol; c.clear(); if (el.dataset.v === 'fold') { const r = finCvModel(); const add = n => (n.children || []).forEach(k => { if (k.type === 'branch' && k.children.length) { c.add(k.id); add(k); } }); add(r); } finCvKeep(); UI.fin.cv.fitted = false; render(); },
-  'fin-cv-focus': el => { const id = el.dataset.id || null; UI.fin.cv.focus = UI.fin.cv.focus === id ? null : id; if (id) UI.fin.cvCol.delete(id); UI.fin.cv.fitted = false; render(); },
-  'fin-cv-dir': el => { UI.fin.cv.dir = el.dataset.v === 'h' ? 'h' : 'v'; finCvKeep(); UI.fin.cv.fitted = false; render(); },
+  'fin-cv-all': el => { const c = UI.fin.cvCol; c.clear(); if (el.dataset.v === 'fold') { finCvRooms(finCvModel()).forEach(r => { if (r.kind !== 'sec') c.add(r.id); }); UI.fin.cvOpen = []; } finCvKeep(); UI.fin.cv.fitted = false; UI.fin.cv.user = false; render(); },
+  'fin-cv-focus': el => { const id = el.dataset.id || null; UI.fin.cv.focus = UI.fin.cv.focus === id ? null : id; if (id) UI.fin.cvCol.delete(id); UI.fin.cv.fitted = false; UI.fin.cv.user = false; render(); },
   'fin-cv-zoom': el => finCvZoomAt(el.dataset.v === 'in' ? 1.25 : 0.8),
   'fin-cv-fit': () => { UI.fin.cv.user = false; finCvFit(true); },
   'fin-cv-full': () => finCvFull(!UI.fin.cv.full),
-  'fin-cv-goto': el => { const id = el.dataset.id; UI.fin.flash = { ids: new Set([id]), until: Date.now() + 2500 }; const br = id.split(':')[0]; render(); finCvGoto(id); },
+  'fin-cv-goto': el => { const id = el.dataset.id; UI.fin.flash = { ids: new Set([id]), until: Date.now() + 2500 }; render(); finCvGoto(id); },
 });
 Object.assign(window.__FIN, { open: k => finOpen(k), model: () => finCvModel(), show: id => finCvGoto(id) });
