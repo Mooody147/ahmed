@@ -128,8 +128,8 @@ document.addEventListener('keydown', e => {
   if (k === '/') { own(); const q = $('#fin-cv-q'); if (q) q.focus(); else { UI.fin.cv.full = false; render(); setTimeout(() => { const x = $('#fin-cv-q'); if (x) x.focus(); }, 0); } }
   else if (k === 'f' || k === 'F') { own(); finCvFull(!UI.fin.cv.full); }
   else if (k === '0') { own(); UI.fin.cv.user = false; finCvGlide(); finCvFit(true); }
-  else if (k === '+' || k === '=') { own(); finCvGlide(); finCvZoomAt(1.25); }
-  else if (k === '-' || k === '_') { own(); finCvGlide(); finCvZoomAt(0.8); }
+  else if (k === '+' || k === '=') { own(); finCvZoomSmooth(1.15); }
+  else if (k === '-' || k === '_') { own(); finCvZoomSmooth(1 / 1.15); }
   else if (k === '?') { own(); UI.fin.help = !UI.fin.help; render(); }
   else if (/^[1-9]$/.test(k)) { const r = (UI.fin.cvRoomsList || []).filter(x => x.kind !== 'sec')[+k - 1]; if (r) { own(); finCvZoomRoom(r.id); } }
 }, true);

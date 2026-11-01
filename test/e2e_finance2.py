@@ -210,7 +210,13 @@ async def main():
         await ev("document.querySelector('.fin-room[data-room=\"accts\"] [data-act=\"fin-cv-focus\"]').click()"); await pg.wait_for_timeout(250)
         assert await ev("[...document.querySelectorAll('.fin-room')].map(r => r.dataset.room).join()") == 'accts', 'only the chosen room'
         await pg.click('[data-act="fin-cv-focus"][data-id=""]'); await pg.wait_for_timeout(250)
-        k0 = await ev(f"{U}.cv.k"); await pg.click('[data-act="fin-cv-zoom"][data-v="in"]'); assert await ev(f"{U}.cv.k") > k0
+        k0 = await ev(f"{U}.cv.k"); await pg.click('[data-act="fin-cv-zoom"][data-v="in"]'); await pg.wait_for_timeout(500); k1 = await ev(f"{U}.cv.k")
+        assert 1.12 < k1 / k0 < 1.18, ('the zoom button: about 15%, not a jump', k0, k1)
+        # a wheel notch with Ctrl: a small step that glides (in between values on the way, never a jump)
+        vpb = await pg.locator('#fin-cv-vp').bounding_box(); await pg.mouse.move(vpb['x'] + vpb['width'] / 2, vpb['y'] + vpb['height'] / 2)
+        await pg.keyboard.down('Control'); await pg.mouse.wheel(0, -100); await pg.keyboard.up('Control')
+        mid = await ev(f"new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r({U}.cv.k))))"); await pg.wait_for_timeout(600); k2 = await ev(f"{U}.cv.k")
+        print('ZOOM', round(k0, 3), round(k1, 3), round(mid, 3), round(k2, 3)); assert 1.08 < k2 / k1 < 1.16 and k1 < mid < k2, 'a smooth, small step'
         vp = await pg.locator('#fin-cv-vp').bounding_box(); x0 = await ev(f"{U}.cv.x")
         await pg.mouse.move(vp['x'] + vp['width'] - 160, vp['y'] + vp['height'] - 20); await pg.mouse.down(); await pg.mouse.move(vp['x'] + vp['width'] - 60, vp['y'] + vp['height'] - 10, steps=5); await pg.mouse.up()   # away from the minimap in the corner
         assert abs(await ev(f"{U}.cv.x") - x0 - 100) < 2, 'dragging moves the canvas'
@@ -292,7 +298,7 @@ async def main():
         inroom = await ev("(() => { const r = document.querySelector('.fin-room[data-room=\"own\"]').getBoundingClientRect(), v = document.getElementById('fin-cv-vp').getBoundingClientRect(); return r.top >= v.top - 2 && r.left >= v.left - 2 && r.right <= v.right + 2; })()"); assert inroom, 'Go to shows the whole room'
         await pg.mouse.click(10, 10); await pg.keyboard.press('1'); await pg.wait_for_timeout(500)
         assert await ev("(() => { const r = document.querySelector('.fin-room[data-room=\"ov\"]').getBoundingClientRect(), v = document.getElementById('fin-cv-vp').getBoundingClientRect(); return r.top >= v.top - 2 && r.left >= v.left - 2; })()"), 'key 1: the first room'
-        k1 = await ev(f"{U}.cv.k"); await pg.keyboard.press('+'); await pg.wait_for_timeout(450); assert await ev(f"{U}.cv.k") > k1
+        k1 = await ev(f"{U}.cv.k"); await pg.keyboard.press('+'); await pg.wait_for_timeout(600); assert await ev(f"{U}.cv.k") > k1
         await pg.keyboard.press('0'); await pg.wait_for_timeout(450); assert await ev(f"{U}.cv.k") < k1 + 0.01, 'key 0: fit'
         await pg.keyboard.press('?'); await pg.wait_for_timeout(250); assert await ev("!!document.querySelector('.fin-cv-keys')") and await ev("document.getElementById('modal').hidden"), 'the canvas keys, not the app’s'
         await pg.keyboard.press('?'); await pg.wait_for_timeout(200)

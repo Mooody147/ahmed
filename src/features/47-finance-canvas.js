@@ -414,6 +414,19 @@ function finCvFit(all) {
   else { cv.k = Math.min(1, Math.max(0.42, (W - 32) / s.w)); cv.x = Math.max(16, (W - s.w * cv.k) / 2); cv.y = cv.full ? 64 : 16; }   // full screen: below the floating controls
   cv.fitted = true; finCvApply();
 }
+// smooth zoom: each wheel notch, key or button sets where the zoom should go; it glides there frame by frame,
+// around the same point, so it never jumps (quick notches simply add up)
+const FZ = { k: null, cx: undefined, cy: undefined, raf: 0 };
+function finCvZoomSmooth(f, cx, cy) {
+  const cv = UI.fin.cv; FZ.k = Math.max(0.1, Math.min(2.5, (FZ.raf ? FZ.k : cv.k) * f)); FZ.cx = cx; FZ.cy = cy;
+  if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) { finCvZoomAt(FZ.k / cv.k, cx, cy); return; }
+  if (!FZ.raf) FZ.raf = requestAnimationFrame(finCvZoomStep);
+}
+function finCvZoomStep() {
+  const cv = UI.fin.cv, d = FZ.k - cv.k;
+  if (Math.abs(d) < 0.002) { finCvZoomAt(FZ.k / cv.k, FZ.cx, FZ.cy); FZ.raf = 0; return; }
+  finCvZoomAt((cv.k + d * 0.22) / cv.k, FZ.cx, FZ.cy); FZ.raf = requestAnimationFrame(finCvZoomStep);
+}
 function finCvZoomAt(f, cx, cy) {
   const vp = $('#fin-cv-vp'), cv = UI.fin.cv; if (!vp) return; const r = vp.getBoundingClientRect();
   const px = cx === undefined ? r.width / 2 : cx - r.left, py = cy === undefined ? r.height / 2 : cy - r.top, k2 = Math.max(0.1, Math.min(2.5, cv.k * f));
@@ -433,6 +446,7 @@ document.addEventListener('pointerdown', e => {
   if (!e.target.closest || !e.target.closest('#fin-cv-vp') || e.button > 0) return;
   if (e.target.closest('input, select, textarea, [contenteditable]')) return;   // typing and choosing inside an unfolded part
   FCV.ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (FZ.raf) { cancelAnimationFrame(FZ.raf); FZ.raf = 0; }
   if (FCV.ptrs.size === 1) { FCV.moved = false; FCV.start = { x: e.clientX, y: e.clientY, ox: UI.fin.cv.x, oy: UI.fin.cv.y }; }
   if (FCV.ptrs.size === 2) { const [a, b] = [...FCV.ptrs.values()]; FCV.pinch = { d: Math.hypot(a.x - b.x, a.y - b.y) || 1, k: UI.fin.cv.k }; FCV.start = null; }
 });
@@ -456,7 +470,8 @@ document.addEventListener('click', e => { if (FCV.moved && e.target.closest && e
 document.addEventListener('wheel', e => {
   if (!e.target.closest || !e.target.closest('#fin-cv-vp')) return;
   e.preventDefault();
-  if (e.ctrlKey || e.metaKey) finCvZoomAt(Math.exp(-e.deltaY * 0.01), e.clientX, e.clientY);
+  // a wheel notch (about 100) zooms about 12%; a trackpad pinch sends many small steps — all of it glides
+  if (e.ctrlKey || e.metaKey) { const dy = Math.max(-60, Math.min(60, e.deltaY * (e.deltaMode === 1 ? 16 : 1))); finCvZoomSmooth(Math.exp(-dy * 0.0022), e.clientX, e.clientY); }
   else { UI.fin.cv.x -= e.shiftKey ? e.deltaY : e.deltaX; UI.fin.cv.y -= e.shiftKey ? 0 : e.deltaY; UI.fin.cv.user = true; finCvApply(); }
 }, { passive: false });
 document.addEventListener('keydown', e => {
@@ -503,7 +518,7 @@ Object.assign(ACT, {
   'fin-cv-tog': (el, e) => { e && e.stopPropagation && e.stopPropagation(); const id = el.dataset.id, c = UI.fin.cvCol; c.has(id) ? c.delete(id) : c.add(id); finCvKeep(); render(); },
   'fin-cv-all': el => { const c = UI.fin.cvCol; c.clear(); if (el.dataset.v === 'fold') { finCvRooms(finCvModel()).forEach(r => { if (r.kind !== 'sec') c.add(r.id); }); UI.fin.cvOpen = []; } finCvKeep(); UI.fin.cv.fitted = false; UI.fin.cv.user = false; render(); },
   'fin-cv-focus': el => { const id = el.dataset.id || null; UI.fin.cv.focus = UI.fin.cv.focus === id ? null : id; if (id) UI.fin.cvCol.delete(id); UI.fin.cv.fitted = false; UI.fin.cv.user = false; render(); },
-  'fin-cv-zoom': el => { finCvGlide(); finCvZoomAt(el.dataset.v === 'in' ? 1.25 : 0.8); },
+  'fin-cv-zoom': el => finCvZoomSmooth(el.dataset.v === 'in' ? 1.15 : 1 / 1.15),
   'fin-cv-fit': () => { UI.fin.cv.user = false; finCvGlide(); finCvFit(true); },
   'fin-cv-full': () => finCvFull(!UI.fin.cv.full),
   'fin-cv-goto': el => { const id = el.dataset.id; UI.fin.flash = { ids: new Set([id]), until: Date.now() + 2500 }; render(); finCvGoto(id); },
