@@ -675,3 +675,7 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 .fin-box-list .fin-logo, .fin-box-bars .fin-logo { margin-right: 6px; }
 .fin-box-list > div > .fin-logo { margin-right: 0; }
 .fin-cv-vp.z-far .fin-logo.card { display: none; }
+
+/* while you move or zoom the canvas, the money on the channels holds still (it is costly to redraw), so moving stays
+   smooth; it flows again the moment you stop */
+#fin-cv-world.moving .flow, .fin-cv-vp.panning .flow, #fin-cv-world.moving .dots, .fin-cv-vp.panning .dots { animation-play-state: paused; }

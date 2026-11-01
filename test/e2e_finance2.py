@@ -68,11 +68,18 @@ async def main():
             await pg.fill('#fin-talk-in', text); await pg.click('[data-act="fin-talk-send"]'); await pg.wait_for_timeout(200); await idle()
             return (await ev("window.__FIN.talk()"))[-1]
         async def tap(node):
-            # dragged into view — and kept there: a camera move queued by the step before can land after this one
-            for _ in range(20):
-                await ev(f"window.__FIN.show('{node}')"); await pg.wait_for_timeout(120)
-                if await ev(f"(() => {{ const e = document.querySelector('.fin-cvn[data-node=\"{node}\"] b'), v = document.getElementById('fin-cv-vp'); if (!e || !v) return false; const r = e.getBoundingClientRect(), b = v.getBoundingClientRect(); return r.width > 0 && r.left >= b.left && r.right <= b.right && r.top >= b.top && r.bottom <= b.bottom; }})()"): break
-            await pg.click(f'.fin-cvn[data-node="{node}"] b'); await pg.wait_for_timeout(450)
+            # dragged into view and still there (a glide queued by the step before can land late), then clicked; a
+            # click that misses because the camera moved under it is tried again from the start
+            inview = f"""(() => {{ const e = document.querySelector('.fin-cvn[data-node="{node}"] b'), v = document.getElementById('fin-cv-vp'), w = document.getElementById('fin-cv-world'); if (!e || !v || (w && w.classList.contains('glide'))) return false; const r = e.getBoundingClientRect(), b = v.getBoundingClientRect(); return r.width > 0 && r.left >= b.left && r.right <= b.right && r.top >= b.top && r.bottom <= b.bottom; }})()"""
+            for attempt in range(6):
+                await ev(f"window.__FIN.show('{node}')"); calm = 0
+                for _ in range(30):
+                    await pg.wait_for_timeout(120); calm = calm + 1 if await ev(inview) else 0
+                    if calm >= 2: break
+                try: await pg.click(f'.fin-cvn[data-node="{node}"] b', timeout=4000); break
+                except Exception:
+                    if attempt == 5: raise
+            await pg.wait_for_timeout(450)
         opened = lambda part: ev(f"window.__AR.UI.fin.cvOpen.includes('sec:{part}') && !!document.getElementById('fin-sec-{part}')")
         await pg.click('[data-nav="finance"]'); await pg.wait_for_timeout(600)
         assert await ev("!!document.getElementById('fin-cv-vp') && !!document.getElementById('fin-talk-in')"), 'the canvas with the talk box under it'
