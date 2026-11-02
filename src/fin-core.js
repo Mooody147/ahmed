@@ -855,7 +855,8 @@ function restOfMonth(o) {
   const need = verdict === 'short' ? r2(Math.max(-endBal, lowPoint ? -lowPoint.bal : 0)) : verdict === 'tight' ? r2(reserve - endBal) : 0;
   return { today, start, end, asOf: o.asOf || null, gapDays: days.filter(d => d < today).length, leftDays, months: H.length, cash, reserve, events: ev, income, bills,
     expected, lowS, highS, gapSpend, usualFromToday, cats, points, lowPoint, firstNeg, endBal, endIfLow: endBal === null || lowS === null ? null : r2(endBal + expected - lowS), endIfHigh: endBal === null || highS === null ? null : r2(endBal + expected - highS),
-    room, perDay, perDayAll, untilPay, pace, weeks, verdict, need, assumedIn };
+    room, perDay, perDayAll, untilPay, pace, weeks, verdict, need, assumedIn,
+    perM: H.map((h, i) => ({ m: h.m, amount: r2(per[i]), from: segs.map(sg => from(sg, h.n)) })) };   // each month learned from: the same days, and from which day
 }
 // spending far above what this category usually costs: above Q3 + 3×IQR of its own history and at least twice
 // its median, with at least 5 earlier transactions to compare with

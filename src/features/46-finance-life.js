@@ -180,6 +180,11 @@ function finLatestBase(a) {
 }
 
 /* --- the one state every page uses --- */
+// a payment that is your pay: categorised as salary, or a transfer named as payroll / salary
+const FIN_PAYROLL = /payroll|salar(?:y|ies)|راتب|مرتب|رواتب/i;
+// when the only income you stated is your salary, it replaces your pay alone — other repeating income in your
+// statements (a certificate's interest, rent…) still counts
+const finSalaryOnly = ins => ins.length > 0 && ins.every(i => i.key === 'salary');
 function finNow() {
   const p = finP(), today = finToday(), cur = today.slice(0, 7), key = JSON.stringify([FS.key, (St.cols.prefs.get('finance') || {}).updatedAt, colList('finbal').map(d => d.updatedAt).join(), today]);
   if (finNow.k === key) return finNow.v;
@@ -194,7 +199,8 @@ function finNow() {
   const ins = (p.inputs || []).filter(i => i.kind === 'income' && (!i.from || i.from <= today) && (!i.to || i.to >= today));
   const ib = FIN.incomeBase(all, today), mom = p.holdings.find(h => h.id === 'mom');
   let income, incomeBasis;
-  if (ins.length) { income = FIN.r2(ins.reduce((s, i) => s + (+i.amount || 0), 0)); incomeBasis = ins.map(i => `${i.label} ${fm(+i.amount)}`).join(' + '); }
+  if (ins.length) { income = FIN.r2(ins.reduce((s, i) => s + (+i.amount || 0), 0)); incomeBasis = ins.map(i => `${i.label} ${fm(+i.amount)}`).join(' + ');
+    if (finSalaryOnly(ins)) { const other = (ib.otherRecurring || []).filter(r => !FIN_PAYROLL.test(r.name)); if (other.length) { income = FIN.r2(income + other.reduce((s, r) => s + r.perMonth, 0)); incomeBasis += ' + ' + other.map(r => `${FIN.cleanDesc(r.name)} ${fm(r.perMonth)} (statements)`).join(' + '); } } }
   else { income = FIN.r2((ib.salary || 0) + ib.otherRecurringMonthly); incomeBasis = ib.salary !== null ? `salary ${fm(ib.salary)} (${ib.verified ? 'verified' : 'not verified'}) from the statements` : 'no salary found yet'; }
   if (mom && +mom.myShareMonthly && !ins.some(i => i.key === 'cib_share') && !tx.some(t => t.holding === 'mom' && t.amount > 0)) { income = FIN.r2(income + +mom.myShareMonthly); incomeBasis += ` + CIB share ${fm(+mom.myShareMonthly)}`; }
   const expIn = FIN.activeInput(p.inputs, 'expenses', today);

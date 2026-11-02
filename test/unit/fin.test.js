@@ -399,6 +399,7 @@ eq(F.upcoming({ today: '2026-11-01', installments: [{ name: 'X', amount: 100, la
   const R = F.restOfMonth({ ...base, cash: 5000, events: ev });
   eq([R.start, R.end, R.leftDays, R.gapDays, R.months], ['2026-11-16', '2026-11-30', 15, 0, 3], 'from the day after the balances to the month end');
   eq([R.expected, R.lowS, R.highS], [2100, 2050, 2100], 'the same stretch of each past month (aligned to its end): 16 days of a 31-day month, 15 of a 30-day one, and the 28th');
+  eq(R.perM.map(x => [x.m, x.amount, x.from[0]]), [['2026-08', 2100, 16], ['2026-09', 2000, 16], ['2026-10', 2100, 16]], 'each month learned from: what the same days cost, from which day');
   eq(R.cats.map(c => [c.cat, c.usual, c.prio]), [['food', 1600, 'essential'], ['fun', 500, 'optional']], 'what the remaining days usually cost, by category');
   eq(R.events.map(e => e.label), ['Gym', 'Salary'], 'only bills and income inside the rest of the month');
   eq([R.income, R.bills, R.endBal, R.verdict], [20000, 3000, 19900, 'ok'], 'money now + income − bills − the usual spending = the month end');

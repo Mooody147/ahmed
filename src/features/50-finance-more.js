@@ -18,12 +18,14 @@ function finUpcomingArgs() {
   const instKeys = n.inst.map(i => FIN.norm(i.name).slice(0, 10));
   const byId = new Map((all.entries || []).map(e => [e.id, e]));
   const recNow = typeof finRec === 'function' ? new Map(finRec().items.map(i => [i.key, i.status])) : null;   // only payments running today — not every one an old statement shows
-  const rec = FIN.recurring(all.entries || []).filter(r => r.freq === 'monthly' && !(ins.length && r.dir > 0) && !instKeys.some(k => k && FIN.norm(FIN.cleanDesc(r.name)).startsWith(k)) && (r.dir > 0 || !recNow || recNow.get('r:' + r.key) === 'active'))   // a payment counts only when the recurring audit finds it running (shopping that varies is spending, not a bill)
+  const onlySal = finSalaryOnly(ins), isPay = e => e.flow === 'inc' && e.v > 0 && (e.cat === 'salary' || FIN_PAYROLL.test(e.desc || ''));
+  // income you stated replaces what the statements show: your salary replaces your pay alone, anything else all of it
+  const rec = FIN.recurring(all.entries || []).filter(r => r.freq === 'monthly' && !(ins.length && r.dir > 0 && (!onlySal || r.cat === 'salary' || FIN_PAYROLL.test(r.name))) && !instKeys.some(k => k && FIN.norm(FIN.cleanDesc(r.name)).startsWith(k)) && (r.dir > 0 || !recNow || recNow.get('r:' + r.key) === 'active'))   // a payment counts only when the recurring audit finds it running (shopping that varies is spending, not a bill)
     .map(r => ({ ...r, name: FIN.cleanDesc(r.name), onCard: r.ids.length > 0 && r.ids.every(id => cardIds.has((byId.get(id) || {}).acct)) }));
   // income you entered arrives on the day the salary usually comes in
-  const salDay = (() => { const s = (all.entries || []).filter(e => e.cat === 'salary').map(e => e.date).sort().pop(); return s ? +s.slice(8, 10) : 1; })();
+  const salDay = (() => { const s = (all.entries || []).filter(isPay).map(e => e.date).sort().pop(); return s ? +s.slice(8, 10) : 1; })();
   // a salary already received this month is not expected again before next month
-  const gotThisMonth = (all.entries || []).some(e => e.cat === 'salary' && e.m === cur && e.v > 0), from = gotThisMonth ? FIN.addMonths(cur, 1) : cur;
+  const gotThisMonth = (all.entries || []).some(e => isPay(e) && e.m === cur), from = gotThisMonth ? FIN.addMonths(cur, 1) : cur;
   const incomes = ins.map(i => ({ label: i.label, amount: +i.amount, day: salDay, from }));
   // a salary whose line changes each month ("SALARY OCTOBER", "SALARY NOVEMBER") is not seen as repeating: expect it anyway
   if (!ins.length && !rec.some(r => r.dir > 0 && r.cat === 'salary')) { const ib = FIN.incomeBase(all, today); if (ib.salary) incomes.push({ label: 'Salary (expected)', amount: ib.salary, day: salDay, from }); }

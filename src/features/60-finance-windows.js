@@ -5,9 +5,9 @@
 const FWIN = { drag: null };
 // which window a title belongs to, and the key its place is kept under (a new card's pop-out / form starts beside it again)
 function finWinOf(t) {
-  const h = t.closest && t.closest('#fin-pop .fin-pop-h, #fin-cv-ed .fin-cv-ed-t, #fin-bal-win .fin-talk-win-h, #fin-health-win .fin-talk-win-h, #fin-ch-win .fin-talk-win-h'); if (!h) return null;
-  const el = h.closest('#fin-pop, #fin-cv-ed, #fin-bal-win, #fin-health-win, #fin-ch-win'), E0 = UI.fin.cvEdit;
-  const key = el.id === 'fin-pop' ? 'pop:' + UI.fin.pop : el.id === 'fin-cv-ed' ? 'ed:' + (E0 ? E0.add || E0.id : '') : el.id === 'fin-health-win' ? 'health' : el.id === 'fin-ch-win' ? 'chan' : 'bal';
+  const h = t.closest && t.closest('#fin-pop .fin-pop-h, #fin-cv-ed .fin-cv-ed-t, #fin-bal-win .fin-talk-win-h, #fin-health-win .fin-talk-win-h, #fin-ch-win .fin-talk-win-h, #fin-mo-win .fin-talk-win-h'); if (!h) return null;
+  const el = h.closest('#fin-pop, #fin-cv-ed, #fin-bal-win, #fin-health-win, #fin-ch-win, #fin-mo-win'), E0 = UI.fin.cvEdit;
+  const key = el.id === 'fin-pop' ? 'pop:' + UI.fin.pop : el.id === 'fin-cv-ed' ? 'ed:' + (E0 ? E0.add || E0.id : '') : el.id === 'fin-health-win' ? 'health' : el.id === 'fin-ch-win' ? 'chan' : el.id === 'fin-mo-win' ? 'month' : 'bal';
   return { h, el, key };
 }
 const finWinPos = key => (UI.fin.winPos || {})[key] || null;
@@ -39,6 +39,8 @@ function finWinKeep() {
   if (p4) Object.assign(hw.style, { left: p4.x + 'px', top: p4.y + 'px', right: 'auto', bottom: 'auto' });
   const cw = $('#fin-ch-win'), p5 = cw && finWinPos('chan');
   if (p5) Object.assign(cw.style, { left: p5.x + 'px', top: p5.y + 'px', right: 'auto', bottom: 'auto', margin: 0 });
+  const mw = $('#fin-mo-win'), p6 = mw && finWinPos('month');
+  if (p6) Object.assign(mw.style, { left: p6.x + 'px', top: p6.y + 'px', right: 'auto', bottom: 'auto', margin: 0 });
 }
 HOOKS.afterRender.push(finWinKeep);
 Object.assign(window.__FIN, { winPos: () => UI.fin.winPos || {} });
