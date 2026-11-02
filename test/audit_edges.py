@@ -93,6 +93,12 @@ async def main():
                     await nav('finance'); await ev("window.__AR.UI.fin.tab = 'canvas'; window.__AR.UI.fin.cvOpen = []; window.__AR.UI.fin.pop = null"); await ev("window.__FIN.open('map')"); await pg.wait_for_timeout(400)
                     if page == 'finance:pop': await ev("document.querySelector('[data-act=\"fin-cv-det\"]').click()"); await pg.wait_for_timeout(700)
                     if page == 'finance:dash': await ev("window.__FIN.open('dash')"); await pg.wait_for_timeout(800)
+                    # measure only once the camera has stopped gliding (its zoom is what the check scales by)
+                    last = None
+                    for _ in range(40):
+                        cur = await ev("(document.getElementById('fin-cv-world') || {}).style?.transform || ''")
+                        if cur == last: break
+                        last = cur; await pg.wait_for_timeout(150)
                 else:
                     await nav(page)
                     if page == 'review' and w == WIDTHS[0][0]:
