@@ -853,3 +853,4 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 .fin-mo-tabs { display: flex; flex-wrap: wrap; gap: 6px; padding-top: 8px; border-top: 1px solid var(--line); }
 .fin-mo-tabs button { font: 600 12px/1.2 var(--font, system-ui); padding: 6px 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: inherit; cursor: pointer; }
 .fin-mo-tabs button.on { border-color: #c9a227; background: color-mix(in srgb, #c9a227 14%, var(--surface)); }
+.fin-room-t { padding-top: 6px; padding-bottom: 6px; }   /* a selected (highlighted) title keeps its words clear of its edge */
