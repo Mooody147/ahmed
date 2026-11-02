@@ -15,6 +15,10 @@ function appSource(keep) {
   const i = app.indexOf(mark); if (i < 0) throw new Error('app.js: boot marker missing');
   const dir = 'src/features';
   const parts = fs.existsSync(dir) ? fs.readdirSync(dir).filter(f => f.endsWith('.js') && (keep ? keep.includes(f.slice(0, 2)) : !LITE_ONLY.includes(f.slice(0, 2)))).sort().map(f => `/* ===== features/${f} ===== */\n` + read(path.join(dir, f))) : [];
+  // two modules defining the same function: the later one silently replaces the earlier everywhere — refuse to build
+  const seen = new Map(), dup = [];
+  for (const part of [app, ...parts]) { const file = (part.match(/^\/\* ===== (features\/[^ ]+) =====/) || [, 'app.js'])[1]; for (const m of part.matchAll(/^function ([A-Za-z0-9_$]+)\s*\(/gm)) { if (seen.has(m[1])) dup.push(`${m[1]} (${seen.get(m[1])} and ${file})`); else seen.set(m[1], file); } }
+  if (dup.length) throw new Error('the same function is defined twice: ' + dup.join(', '));
   return app.slice(0, i) + parts.join('\n') + '\n' + app.slice(i);
 }
 // the workbook engine and converter run next to core.js (they set globalThis.WBE / WBC)

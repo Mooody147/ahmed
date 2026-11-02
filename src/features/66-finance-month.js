@@ -84,7 +84,7 @@ function finMonthHTML() {
   const cats = R.cats.length ? `<h4>${R.cuts.list.length ? 'Where to hold back' : 'What these days usually cost'}</h4><div class="fin-box-scroll"><table class="fin-box-t fin-mo-cat"><thead><tr><th>Category</th><th class="num">Usual for these days</th><th class="num">Aim for</th></tr></thead><tbody>${R.cats.slice(0, 8).map(c => { const x = cut.get(c.cat);
       return `<tr class="${x ? 'cut' : ''}"><td>${esc(finMoCat(c.cat))}${c.prio ? ` <small class="muted">${esc(c.prio)}</small>` : ''}</td><td class="num">${fkr(c.usual)}</td><td class="num">${x ? `<b>${fkr(x.cap)}</b><br><small>saves ${fkr(x.cut)}</small>` : fkr(c.usual)}</td></tr>`; }).join('')}</tbody></table></div>` : '';
   const ev = R.events.length ? `<h4>Still due and still coming</h4><div class="fin-box-list">${R.events.map(e => `<div>${logo(e.label)}<span><b>${esc(e.label)}</b><small>${finMoDay(e.date)} · ${{ income: 'income', bill: 'bill', instalment: 'instalment', card: 'card bill' }[e.kind] || e.kind}${e.onCard ? ' · on the card' : ''}${e.date < today ? ' · may already be paid (after your latest figures)' : ''}</small></span><b class="num ${e.amount < 0 ? 'fin-neg' : ''}">${fm(e.amount, null, { plus: true, dec: 0 })}</b></div>`).join('')}</div>` : '';
-  const todo = finMonthActions(R);
+  const todo = finMoActions(R);
   return `<div class="fin-mo ${R.verdict}">
     <div class="fin-mo-top"><span class="ic" aria-hidden="true">${V[0]}</span><div><b>${esc(V[1])}</b><span class="small">${V[2]}</span></div></div>
     ${stale ? `<p class="fin-mo-stale small">Your figures stop on ${finMoDay(R.asOf)}: the ${R.gapDays} day${R.gapDays === 1 ? '' : 's'} since are estimated (${fkr(R.gapSpend)} of usual spending). <button class="btn sm" data-act="fin-bal-win">🏦 Enter today’s balances</button></p>` : ''}
@@ -96,7 +96,7 @@ function finMonthHTML() {
   </div>`;
 }
 // what to do, in order
-function finMonthActions(R) {
+function finMoActions(R) {
   const out = [], b = (act, label) => ` <button class="btn sm ghost" data-act="${act}">${label}</button>`;
   if (R.cash === null || R.noBalance > 0) out.push(`<b>Enter your balances</b>${R.noBalance > 0 && R.cash !== null ? ` — ${R.noBalance} account${R.noBalance === 1 ? ' has' : 's have'} none, so the money now may be more than shown` : ''}.${b('fin-bal-win', '🏦 Balances')}`);
   else if (R.gapDays > 1) out.push(`<b>Update today’s balances</b> — the forecast then starts from what your bank shows now, not from ${finMoDay(R.asOf)}.${b('fin-bal-win', '🏦 Balances')}`);
@@ -115,4 +115,4 @@ function finMonthActions(R) {
   if (R.verify) out.push(`<b>${R.verify} recurring payment${R.verify === 1 ? ' is' : 's are'} waiting for you to confirm</b> — not counted; if still running ${R.verify === 1 ? 'it adds' : 'they add'} up to ${fkr(R.verifyMonthly)} a month. Check them in Recurring payments.`);
   return out;
 }
-Object.assign(window.__FIN, { month: () => { const R = finMonth(); return { start: R.start, end: R.end, asOf: R.asOf, leftDays: R.leftDays, gapDays: R.gapDays, months: R.months, cash: R.cash, income: R.income, bills: R.bills, expected: R.expected, usualFromToday: R.usualFromToday, endBal: R.endBal, perDay: R.perDay, perDayAll: R.perDayAll, verdict: R.verdict, need: R.need, lowPoint: R.lowPoint, untilPay: R.untilPay, events: R.events.map(e => [e.date, e.kind, e.label, e.amount]), cats: R.cats.map(c => [c.cat, c.usual, c.low, c.prio]), cuts: R.cuts.list.map(c => [c.cat, c.cap]), weeks: R.weeks.map(w => [w.from, w.to, w.cap]), actions: finMonthActions(R).map(finTxt) }; } });
+Object.assign(window.__FIN, { month: () => { const R = finMonth(); return { start: R.start, end: R.end, asOf: R.asOf, leftDays: R.leftDays, gapDays: R.gapDays, months: R.months, cash: R.cash, income: R.income, bills: R.bills, expected: R.expected, usualFromToday: R.usualFromToday, endBal: R.endBal, perDay: R.perDay, perDayAll: R.perDayAll, verdict: R.verdict, need: R.need, lowPoint: R.lowPoint, untilPay: R.untilPay, events: R.events.map(e => [e.date, e.kind, e.label, e.amount]), cats: R.cats.map(c => [c.cat, c.usual, c.low, c.prio]), cuts: R.cuts.list.map(c => [c.cat, c.cap]), weeks: R.weeks.map(w => [w.from, w.to, w.cap]), actions: finMoActions(R).map(finTxt) }; } });
