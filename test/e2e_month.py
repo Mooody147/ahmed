@@ -88,4 +88,4 @@ async def main():
         await b.close()
         if errors: print('\n'.join(errors)); sys.exit(1)
         print('MONTH OK')
-asyncio.run(main())
+if __name__ == "__main__": asyncio.run(main())

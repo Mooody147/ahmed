@@ -115,7 +115,8 @@ function finRichSVG(L) {
     const d = curve(f.a, f.b, f.v), lx = f.job ? f.a.x - 30 : f.v ? (f.a.x + f.b.x) / 2 + f.t / 2 + 16 : (f.a.x + f.b.x) / 2, ly = f.job ? f.a.y - 64 : f.v ? (f.a.y + f.b.y) / 2 - 8 : f.a.y - f.t / 2 - 38, anchor = f.v || f.job ? 'start' : 'middle';
     out += `<g class="rd-flow ${f.cls}" data-ch="${esc(f.id)}"><path class="pipe" d="${d}" style="stroke-width:${f.t}px"/><path class="flow" d="${d}"/>
       ${f.job ? `<rect class="rd-job" x="${f.a.x - 30}" y="${f.a.y - 22}" width="150" height="44" rx="22"/><text class="rd-jobt" x="${f.a.x + 45}" y="${f.a.y + 6}" text-anchor="middle">💼 Your job</text>` : ''}
-      <text class="rd-l" x="${lx}" y="${ly}" text-anchor="${anchor}">${esc(f.label[0])}<tspan class="per">${esc(f.label[1])}</tspan></text>${f.line ? `<text class="rd-i" x="${lx}" y="${ly + 22}" text-anchor="${anchor}">${esc(f.line)}</text>` : ''}</g>`;
+      ${typeof finArrowHead === 'function' ? (f.v ? finArrowHead(f.b, 0, f.b.y > f.a.y ? 1 : -1, f.t, f.cls) : finArrowHead(f.b, f.b.x > f.a.x ? 1 : -1, 0, f.t, f.cls)) : ''}
+      ${typeof finChanWords === 'function' && finChKey('rich', f.id) ? finChanWords(finChKey('rich', f.id), lx, ly, anchor, 'rd', f.label) : `<text class="rd-l" x="${lx}" y="${ly}" text-anchor="${anchor}">${esc(f.label[0])}<tspan class="per">${esc(f.label[1])}</tspan></text>${f.line ? `<text class="rd-i" x="${lx}" y="${ly + 22}" text-anchor="${anchor}">${esc(f.line)}</text>` : ''}`}</g>`;
   }
   return `<svg class="fin-rich" width="${L.w}" height="${L.h}" aria-hidden="true">${out}</svg>`;
 }

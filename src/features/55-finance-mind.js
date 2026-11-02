@@ -164,15 +164,15 @@ function finMindLayout(rooms0, plan, n) {
   const C = { x: center.x, y: center.y, w: center.w, h: center.h };
   const main = all.map(r => {
     const I = info[r.id] || { m: 0, dir: 'none', health: 'calm', line: '' }, L = r.side === 'L', hub = { x: L ? r.x + r.w : r.x, y: r.y + 44 }, from = { x: L ? C.x : C.x + C.w, y: Math.min(C.y + C.h - 40, Math.max(C.y + 40, hub.y)) };
-    return { id: r.id, a: from, b: hub, t: thick(I.m), health: I.health, dir: I.dir, label: [fk(I.m).replace(/\.00$/, ''), ' a month'], line: I.line, line2: I.line2 || '', hot: hot.has(r.id), side: r.side };
+    return { id: r.id, a: from, b: hub, t: thick(I.m), health: I.health, dir: I.dir, label: [fk(I.m).replace(/\.00$/, ''), ' a month'], line: I.line, line2: I.line2 || '', hot: hot.has(r.id), side: r.side, ck: typeof finChKey === 'function' ? finChKey('mind', r.id) : null };
   });
   // the channels the book is about: assets paying you, liabilities costing you, assets paying liabilities
   const cross = [], A = ins('mm-assets'), P = ins('mm-pass'), Lb = ins('mm-liab'), Ex = ins('exp');
-  if (A && P) cross.push({ id: 'pays', cls: 'gold', side: 'L', a: { x: A.x, y: A.y + 50 }, b: { x: P.x, y: P.y + 50 }, t: thick(R.passive), label: R.passive ? [fk(R.passive), ' a month'] : ['—', ''], line: R.passive ? 'your assets pay you' : 'no asset pays you yet' });
-  if (Lb && Ex) cross.push({ id: 'costs', cls: 'red', side: 'R', a: { x: Lb.x + Lb.w, y: Lb.y + 50 }, b: { x: Ex.x + Ex.w, y: Ex.y + 50 }, t: thick(n.instMonthly || 0), label: [fk(n.instMonthly || 0), ' a month'], line: 'your liabilities cost you' });
+  if (A && P) cross.push({ id: 'pays', ck: 'pays', cls: 'gold', side: 'L', a: { x: A.x, y: A.y + 50 }, b: { x: P.x, y: P.y + 50 }, t: thick(R.passive), label: R.passive ? [fk(R.passive), ' a month'] : ['—', ''], line: R.passive ? 'your assets pay you' : 'no asset pays you yet' });
+  if (Lb && Ex) cross.push({ id: 'costs', ck: 'costs', cls: 'red', side: 'R', a: { x: Lb.x + Lb.w, y: Lb.y + 50 }, b: { x: Ex.x + Ex.w, y: Ex.y + 50 }, t: thick(n.instMonthly || 0), label: [fk(n.instMonthly || 0), ' a month'], line: 'your liabilities cost you' });
   // assets paying a liability: from the inner edge of Assets to the inner edge of Liabilities, dipping under the centre —
   // never across a box that hangs under either of them
-  if (A && Lb && W.payLiab > 0) cross.push({ id: 'assetpays', cls: 'green under', a: { x: A.x + A.w, y: A.y + A.h - 36 }, b: { x: Lb.x, y: Lb.y + Lb.h - 36 }, low: mapB + 150, side: 'in', t: thick(W.payLiab), label: [fk(W.payLiab), ' a month'], line: 'your assets pay a liability (estimate)' });
+  if (A && Lb && W.payLiab > 0) cross.push({ id: 'assetpays', ck: 'assetpays', cls: 'green under', a: { x: A.x + A.w, y: A.y + A.h - 36 }, b: { x: Lb.x, y: Lb.y + Lb.h - 36 }, low: mapB + 150, side: 'in', t: thick(W.payLiab), label: [fk(W.payLiab), ' a month'], line: 'your assets pay a liability (estimate)' });
   for (const r of all) {
     const L = r.side === 'L', hub = { x: L ? r.x + r.w - 9 : r.x + 9, y: r.y + FMM.HEAD - 2 }, own = cards.filter(c => c.room === r.id), mx = Math.max(1, ...own.map(finMindAmt)), h = (info[r.id] || {}).health || 'calm';
     // a comb along the box's inner edge: one trunk down from the title, a short rounded stub into each row of cards (the
@@ -209,7 +209,10 @@ function finMindSVG(L) {
     const d = curve(b.a, b.b), dl = b.dir === 'in' ? curve(b.b, b.a) : d;
     out += `<g class="mm-branch ${b.health}${b.hot ? ' hot' : ''}" data-ch="${esc(b.id)}"><path class="limb" d="${taper(b.a, b.b, b.t + 6, Math.max(4, b.t * 0.55))}"/>`;
     if (b.dir !== 'none') out += `<path class="flow${b.dir === 'in' ? ' in' : ''}" d="${dl}" style="animation-duration:${speed(b.t)}s"/>`;
-    out += text((b.a.x + b.b.x) / 2, (b.a.y + b.b.y) / 2 - b.t / 2 - (b.line2 ? 60 : 40), b.label, b.line, 'middle', b.line2) + `</g>`;
+    const wx = (b.a.x + b.b.x) / 2, wy = (b.a.y + b.b.y) / 2 - b.t / 2 - (b.line2 ? 60 : 40);
+    // which way the money goes: an arrowhead where it arrives (at the branch, or at the centre for money coming in)
+    if (b.dir !== 'none' && typeof finArrowHead === 'function') out += b.dir === 'in' ? finArrowHead(b.a, b.a.x > b.b.x ? 1 : -1, 0, b.t, b.health) : finArrowHead(b.b, b.b.x > b.a.x ? 1 : -1, 0, b.t, b.health);
+    out += (b.ck && typeof finChanWords === 'function' ? finChanWords(b.ck, wx, wy, 'middle', 'mm', b.label, b.line2) : text(wx, wy, b.label, b.line, 'middle', b.line2)) + `</g>`;
   }
   for (const c of M.cross) {
     let d, lx, ly, anchor = 'middle';
@@ -217,8 +220,10 @@ function finMindSVG(L) {
     else if (c.low) { d = `M${c.a.x},${c.a.y} C${c.a.x},${c.low} ${c.b.x},${c.low} ${c.b.x},${c.b.y}`; lx = (c.a.x + c.b.x) / 2; ly = c.low - c.t / 2 - 50; }
     else { const L = c.side === 'L', o = L ? -(FMM.OUT - 110) : FMM.OUT - 110, ox = c.a.x + o; d = `M${c.a.x},${c.a.y} C${ox},${c.a.y} ${ox},${c.b.y} ${c.b.x},${c.b.y}`; lx = c.a.x + o * 0.75 + (L ? -1 : 1) * (c.t / 2 + 40); ly = (c.a.y + c.b.y) / 2; }
     // beside the outer channels the words run along the channel, so they stay on the canvas
-    const words = c.low ? text(lx, ly, c.label, c.line, anchor) : `<g transform="translate(${lx},${ly}) rotate(${c.side === 'L' ? -90 : 90})">${text(0, 0, c.label, c.line, 'middle')}</g>`;
-    out += `<g class="mm-cross ${c.cls}" data-ch="${esc(c.id)}"><path class="pipe" d="${d}" style="stroke-width:${c.t}px"/><path class="flow" d="${d}" style="animation-duration:${speed(c.t)}s"/>${words}</g>`;
+    const W1 = (x, y, a) => c.ck && typeof finChanWords === 'function' ? finChanWords(c.ck, x, y, a, 'mm', c.label) : text(x, y, c.label, c.line, a);
+    const words = c.low ? W1(lx, ly + 10, anchor) : `<g transform="translate(${lx},${ly}) rotate(${c.side === 'L' ? -90 : 90})">${W1(0, 0, 'middle')}</g>`;
+    const head = typeof finArrowHead !== 'function' ? '' : c.low && c.side === 'in' ? finArrowHead(c.b, 1, 0, c.t, c.cls) : c.low ? finArrowHead(c.b, 0, c.b.y > c.low ? 1 : -1, c.t, c.cls) : finArrowHead(c.b, c.b.x > c.a.x + (c.side === 'L' ? -(FMM.OUT - 110) : FMM.OUT - 110) ? 1 : -1, 0, c.t, c.cls);
+    out += `<g class="mm-cross ${c.cls}" data-ch="${esc(c.id)}"><path class="pipe" d="${d}" style="stroke-width:${c.t}px"/><path class="flow" d="${d}" style="animation-duration:${speed(c.t)}s"/>${head}${words}</g>`;
   }
   return `<svg class="fin-mind" width="${L.w}" height="${L.h}" aria-hidden="true">${out}</svg>`;
 }

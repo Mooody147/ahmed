@@ -84,13 +84,16 @@ function finFlowSVG(L) {
   };
   const mid = f => f.down ? `M${f.a.x},${f.a.y} C${f.a.x},${(f.a.y + f.b.y) / 2} ${f.b.x},${(f.a.y + f.b.y) / 2} ${f.b.x},${f.b.y}` : `M${f.a.x},${f.a.y} C${(f.a.x + f.b.x) / 2},${f.a.y} ${(f.a.x + f.b.x) / 2},${f.b.y} ${f.b.x},${f.b.y}`;
   return `<svg class="fin-flow" width="${L.w}" height="${L.h}" aria-hidden="true"><defs>${L.flows.map(f => `<linearGradient id="ffg-${f.id}" gradientUnits="userSpaceOnUse" x1="${f.a.x}" y1="${f.a.y}" x2="${f.b.x}" y2="${f.b.y}"><stop offset="0" stop-color="${col(f.h0)}"/><stop offset="1" stop-color="${col(f.h1)}"/></linearGradient>`).join('')}</defs>
-    ${L.flows.map(f => `<g class="fin-flow-r ${f.empty ? 'empty' : ''}"><path class="glow" d="${ribbon(f)}" fill="url(#ffg-${f.id})" stroke="url(#ffg-${f.id})"/><path class="body" d="${ribbon(f)}" fill="url(#ffg-${f.id})"/>${f.empty ? '' : `<path class="dots" d="${mid(f)}" style="animation-duration:${Math.max(1.6, 5 - f.t / 12).toFixed(1)}s"/>`}
-      ${finFlowLabel(f)}</g>`).join('')}
+    ${L.flows.map(f => `<g class="fin-flow-r ${f.empty ? 'empty' : ''}" data-ch="${esc(f.id)}"><path class="glow" d="${ribbon(f)}" fill="url(#ffg-${f.id})" stroke="url(#ffg-${f.id})"/><path class="body" d="${ribbon(f)}" fill="url(#ffg-${f.id})"/>${f.empty ? '' : `<path class="dots" d="${mid(f)}" style="animation-duration:${Math.max(1.6, 5 - f.t / 12).toFixed(1)}s"/>`}
+      ${typeof finArrowHead === 'function' ? finArrowHead(f.b, f.down ? 0 : 1, f.down ? 1 : 0, f.t, 'river') : ''}${finFlowLabel(f)}</g>`).join('')}
     ${(L.heads || []).map(h => `<text class="fin-flow-h" x="${h.x}" y="${h.y}">${esc(h.label)}</text>`).join('')}</svg>`;
 }
 // the amount and what it is, on two short lines: in the gap between two lanes (beside the ribbon going down)
 function finFlowLabel(f) {
-  const x = f.down ? f.a.x + f.t / 2 + 14 : f.a.x + 18, y = f.down ? (f.a.y + f.b.y) / 2 - 6 : Math.max(f.a.y, f.b.y) + f.t / 2 + 26;
+  const x = f.down ? f.a.x + f.t / 2 + 14 : f.a.x + 10, y = f.down ? (f.a.y + f.b.y) / 2 - 6 : Math.max(f.a.y, f.b.y) + f.t / 2 + 26;
+  const c = typeof finChan === 'function' ? finChan(finChKey('flow', f.id)) : null;
+  // the gaps between lanes are narrow: short lines, one under the other
+  if (c) return `<g class="ch-tag" data-act="fin-ch" data-id="${esc(c.key)}"><title>${esc(c.title)} — tap to see what moves here</title><text class="fin-flow-l" x="${x}" y="${y}"><tspan class="ttl">${FIN_STEP[c.n]} ${esc(c.from)} →</tspan><tspan class="ttl" x="${x}" dy="17">${esc(c.to)}</tspan><tspan class="amt" x="${x}" dy="20">${esc(f.amt)}</tspan><tspan class="per"> /month</tspan>${c.pct !== null ? `<tspan class="what" x="${x}" dy="17">${c.pct}% of income</tspan>` : ''}<tspan class="what" x="${x}" dy="17">${esc(f.empty ? f.what : c.short || c.how)}</tspan></text></g>`;
   return `<text class="fin-flow-l" x="${x}" y="${y}"><tspan class="amt">${esc(f.amt)}</tspan><tspan class="what" x="${x}" dy="18">${esc(f.what)}</tspan></text>`;
 }
 // the night sky behind the Flow layout (it does not move with the canvas, so moving stays light)

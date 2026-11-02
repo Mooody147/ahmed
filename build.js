@@ -9,7 +9,7 @@ const read = f => fs.readFileSync(f, 'utf8').replace(/\r\n/g, '\n');
 // app.js plus src/features/*.js (in name order), inserted before app.js's boot section so the
 // feature files share its scope (state, helpers, action tables)
 // the Money tab (features 42–45 and src/fin-core.js) is part of the claude.ai artifact only
-const LITE_ONLY = ['42', '43', '44', '45', '46', '47', '48', '49', '50', '51', '52', '53', '54', '55', '56', '57', '58', '59', '60', '61', '62', '63', '64', '65', '66'];
+const LITE_ONLY = ['42', '43', '44', '45', '46', '47', '48', '49', '50', '51', '52', '53', '54', '55', '56', '57', '58', '59', '60', '61', '62', '63', '64', '65', '66', '67'];
 function appSource(keep) {
   const app = read('src/app.js'); const mark = '/* ---------- boot ---------- */';
   const i = app.indexOf(mark); if (i < 0) throw new Error('app.js: boot marker missing');

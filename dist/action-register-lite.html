@@ -2336,7 +2336,7 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 .fin-flow-r.empty .body { opacity: .18; } .fin-flow-r.empty .glow { opacity: 0; }
 .fin-flow .dots { fill: none; stroke: #fff; stroke-width: 3.2; stroke-linecap: round; stroke-dasharray: 0.1 26; opacity: .9; }
 @media (prefers-reduced-motion: no-preference) { .fin-flow .dots { animation: finFlowDots 3s linear infinite; } @keyframes finFlowDots { to { stroke-dashoffset: -26.1; } } }
-.fin-flow-l .what { font-size: 12px; font-weight: 500; fill: var(--flow-dim, #ccc); }
+.fin-flow-l .what { font-size: 11.5px; font-weight: 500; fill: var(--flow-dim, #ccc); }
 .fin-flow-l { fill: var(--flow-ink, #fff); font: 700 15px/1 var(--font, system-ui); paint-order: stroke; stroke: rgba(10, 6, 24, .85); stroke-width: 5px; stroke-linejoin: round; }
 .fin-flow-h { fill: var(--flow-dim, #ccc); font: 700 13px/1 var(--font, system-ui); letter-spacing: .14em; text-transform: uppercase; }
 .cosmic ~ .fin-cvmini, .fin-cv-stage:has(.cosmic) .fin-cvmini { background: rgba(16, 12, 36, .85); border-color: rgba(255,255,255,.15); }
@@ -2620,6 +2620,33 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 .fin-mo-do { margin: 0; padding-left: 22px; display: grid; gap: 6px; } .fin-mo-do li { line-height: 1.45; } .fin-mo-do .btn { margin-left: 4px; vertical-align: middle; }
 .fin-mo-wk td:nth-child(2) { display: flex; flex-wrap: wrap; gap: 4px; } .fin-mo-cat tr.cut td { background: color-mix(in srgb, #e0a030 8%, transparent); }
 .fin-mo-basis { margin: 4px 0 0; line-height: 1.45; }
+
+/* the pipelines, explained (67-finance-channels): step + where the money goes, amount, what happens; arrowheads */
+.mm-t, .rd-t { font: 800 15px/1 var(--font, system-ui); fill: #ffe9a8; letter-spacing: .01em; paint-order: stroke; stroke: rgba(10, 6, 24, .9); stroke-width: 6px; stroke-linejoin: round; }
+.fin-flow-l .ttl { font-size: 12px; font-weight: 800; fill: #ffe9a8; } .fin-flow-l .per { font-size: 11px; font-weight: 600; fill: var(--flow-dim, #ccc); }
+.ch-tag { pointer-events: bounding-box; cursor: pointer; }
+.ch-tag:hover text, .ch-tag:focus text { text-decoration: underline; text-decoration-thickness: 1px; }
+.ch-head { fill: #8b9dbb; stroke: rgba(10, 6, 24, .7); stroke-width: 1.5px; }
+.ch-head.green, .ch-head.save { fill: #4caf72; } .ch-head.amber { fill: #e0a030; } .ch-head.red, .ch-head.expense { fill: #d9534f; } .ch-head.work, .ch-head.earned { fill: #3b82c4; } .ch-head.gold, .ch-head.passive { fill: #c9a227; } .ch-head.liability { fill: #a2466f; }
+.ch-head.river { fill: rgba(255, 255, 255, .85); }
+.mm-cross.green.under .ch-head, .mm-cross.green .ch-head { fill: #4caf72; } .mm-cross.gold .ch-head { fill: #c9a227; } .mm-cross.red .ch-head { fill: #d9534f; }
+#fin-cv-world.ch-focus [data-ch]:not(.ch-sel) { opacity: .22; transition: opacity .25s; }
+#fin-cv-world.ch-focus [data-ch].ch-sel { filter: drop-shadow(0 0 10px rgba(255, 233, 168, .55)); }
+.fin-ch-win { left: 16px; right: 16px; margin: 0 auto; top: 16px; bottom: auto; width: min(620px, calc(100% - 32px)); max-height: calc(100% - 32px); }
+.fin-ch { display: grid; gap: 10px; }
+.fin-ch-strip { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr) minmax(0, 1fr); align-items: center; gap: 6px; }
+.fin-ch-strip .box::first-letter { text-transform: uppercase; }
+.fin-ch-strip .box { padding: 10px 8px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface-2, var(--bg)); text-align: center; font-weight: 700; overflow-wrap: anywhere; }
+.fin-ch-strip .pipe { position: relative; display: grid; justify-items: center; gap: 2px; padding-bottom: 14px; text-align: center; }
+.fin-ch-strip .pipe i { position: absolute; left: 4px; right: 12px; bottom: 4px; height: 4px; border-radius: 2px; background: linear-gradient(90deg, #3b82c4, #2e9e5b); }
+.fin-ch-strip .pipe i::after { content: ""; position: absolute; right: -10px; top: -5px; border: 7px solid transparent; border-left: 10px solid #2e9e5b; }
+.fin-ch-strip .pipe small { color: var(--ink-2); font-size: 11px; }
+.fin-ch-kv { display: grid; grid-template-columns: max-content 1fr; gap: 6px 12px; margin: 0; } .fin-ch-kv dt { color: var(--ink-2); font-size: 12px; padding-top: 2px; } .fin-ch-kv dd { margin: 0; }
+@media (max-width: 520px) { .fin-ch-kv { grid-template-columns: 1fr; } .fin-ch-kv dd { margin-bottom: 4px; } }
+.fin-ch-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.fin-ch-steps button { width: 100%; display: flex; gap: 10px; align-items: center; text-align: left; padding: 7px 8px; border-radius: 10px; border: 1px solid transparent; background: none; color: inherit; cursor: pointer; font: inherit; }
+.fin-ch-steps button:hover { background: var(--surface-2, var(--bg)); } .fin-ch-steps li.on button { border-color: #c9a227; background: color-mix(in srgb, #c9a227 10%, var(--surface)); }
+.fin-ch-steps .n { font-size: 18px; width: 22px; flex: none; } .fin-ch-steps span:nth-child(2) { flex: 1; display: grid; gap: 1px; min-width: 0; } .fin-ch-steps small { color: var(--ink-2); }
 
 </style>
 <div class="titlestrip" id="titlestrip"><span class="ts-brand"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c3.3 4 6 7.2 6 10.4a6 6 0 0 1-12 0C6 10.2 8.7 7 12 3z"/><path d="m9.3 13.6 1.9 1.9 3.6-4.1"/></svg> Action Register</span><button class="ts-search" data-act="palette" title="Search and commands (Ctrl+K)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg><span>Search or type a command</span><kbd>Ctrl K</kbd></button><span class="ts-space"></span></div>
@@ -16701,7 +16728,7 @@ VIEW_FN.finance = () => {
   const cv = UI.fin.cv;
   // full screen: the canvas alone — no title, no description, no talk box; a few controls float in its corner
   if (cv.full) return `<div class="wrap fin fin-canvas-page"><section class="fin-cvwrap full" id="fin-s-map" aria-label="Money canvas, full screen">
-    <div class="fin-cv-stage">${finCvBoard()}${finPopHTML()}${typeof finCvMiniHTML === 'function' ? finCvMiniHTML() + finCvHelpHTML() : ''}${typeof finCvEditorHTML === 'function' ? finCvEditorHTML() : ''}${typeof finTalkWinHTML === 'function' ? finTalkWinHTML() + finMenuHTML() : ''}${typeof finBalWinHTML === 'function' ? finBalTabHTML() + finBalWinHTML() : ''}${typeof finHealthHTML === 'function' && UI.fin.healthWin ? finHealthHTML() : ''}
+    <div class="fin-cv-stage">${finCvBoard()}${finPopHTML()}${typeof finCvMiniHTML === 'function' ? finCvMiniHTML() + finCvHelpHTML() : ''}${typeof finCvEditorHTML === 'function' ? finCvEditorHTML() : ''}${typeof finTalkWinHTML === 'function' ? finTalkWinHTML() + finMenuHTML() : ''}${typeof finBalWinHTML === 'function' ? finBalTabHTML() + finBalWinHTML() : ''}${typeof finHealthHTML === 'function' && UI.fin.healthWin ? finHealthHTML() : ''}${typeof finChanWinHTML === 'function' && UI.fin.chWin ? finChanWinHTML() : ''}
       <div class="fin-cv-float" role="toolbar" aria-label="Canvas controls">${typeof finCvToolsHTML === 'function' ? finCvToolsHTML() : ''}
         ${UI.fin.cvOpen.length || UI.fin.pop ? `<button class="btn sm" data-act="fin-cv-close-all" title="Fold every opened detail and part">Close details</button>` : ''}
         <div class="seg zoom" role="group" aria-label="Zoom"><button data-act="fin-cv-zoom" data-v="out" aria-label="Zoom out">−</button><button data-act="fin-cv-fit" title="Fit to the screen"><span id="fin-cv-z">${Math.round(cv.k * 100)}%</span></button><button data-act="fin-cv-zoom" data-v="in" aria-label="Zoom in">+</button></div>
@@ -16719,7 +16746,7 @@ VIEW_FN.finance = () => {
       <button class="btn sm" data-act="fin-cv-all" data-v="open" title="Unfold every room">Unfold all</button><button class="btn sm" data-act="fin-cv-all" data-v="fold" title="Fold every room to its title">Fold all</button>
       <div class="seg zoom" role="group" aria-label="Zoom"><button data-act="fin-cv-zoom" data-v="out" aria-label="Zoom out">−</button><button data-act="fin-cv-fit" title="Fit to the screen"><span id="fin-cv-z">${Math.round(cv.k * 100)}%</span></button><button data-act="fin-cv-zoom" data-v="in" aria-label="Zoom in">+</button></div>
       <button class="btn sm" data-act="fin-cv-full" aria-pressed="${cv.full}" title="${cv.full ? 'Back (Esc)' : 'Full screen'}">${cv.full ? '✕ Close' : '⤢ Full screen'}</button></div>
-    <div class="fin-cv-stage">${finCvBoard()}${finPopHTML()}${typeof finCvMiniHTML === 'function' ? finCvMiniHTML() + finCvHelpHTML() : ''}${typeof finCvEditorHTML === 'function' ? finCvEditorHTML() : ''}${typeof finTalkWinHTML === 'function' ? finTalkWinHTML() + finMenuHTML() : ''}${typeof finBalWinHTML === 'function' ? finBalTabHTML() + finBalWinHTML() : ''}${typeof finHealthHTML === 'function' && UI.fin.healthWin ? finHealthHTML() : ''}</div>
+    <div class="fin-cv-stage">${finCvBoard()}${finPopHTML()}${typeof finCvMiniHTML === 'function' ? finCvMiniHTML() + finCvHelpHTML() : ''}${typeof finCvEditorHTML === 'function' ? finCvEditorHTML() : ''}${typeof finTalkWinHTML === 'function' ? finTalkWinHTML() + finMenuHTML() : ''}${typeof finBalWinHTML === 'function' ? finBalTabHTML() + finBalWinHTML() : ''}${typeof finHealthHTML === 'function' && UI.fin.healthWin ? finHealthHTML() : ''}${typeof finChanWinHTML === 'function' && UI.fin.chWin ? finChanWinHTML() : ''}</div>
   </section>
   ${typeof finTalkHTML === 'function' ? `<section class="card fin-card fin-talk-card" aria-label="Tell the canvas"><div class="row"><h2>Tell the canvas</h2><span class="spacer"></span>${UI.fin.talk.win ? '' : `<button class="btn sm ghost" data-act="fin-talk-win" title="Open it in a window on the canvas ( T )">⧉ Open on the canvas</button>`}</div>${UI.fin.talk.win ? finTalkDockedHTML() : finTalkHTML()}</section>` : ''}
 </div>`;
@@ -17890,7 +17917,8 @@ function finRichSVG(L) {
     const d = curve(f.a, f.b, f.v), lx = f.job ? f.a.x - 30 : f.v ? (f.a.x + f.b.x) / 2 + f.t / 2 + 16 : (f.a.x + f.b.x) / 2, ly = f.job ? f.a.y - 64 : f.v ? (f.a.y + f.b.y) / 2 - 8 : f.a.y - f.t / 2 - 38, anchor = f.v || f.job ? 'start' : 'middle';
     out += `<g class="rd-flow ${f.cls}" data-ch="${esc(f.id)}"><path class="pipe" d="${d}" style="stroke-width:${f.t}px"/><path class="flow" d="${d}"/>
       ${f.job ? `<rect class="rd-job" x="${f.a.x - 30}" y="${f.a.y - 22}" width="150" height="44" rx="22"/><text class="rd-jobt" x="${f.a.x + 45}" y="${f.a.y + 6}" text-anchor="middle">💼 Your job</text>` : ''}
-      <text class="rd-l" x="${lx}" y="${ly}" text-anchor="${anchor}">${esc(f.label[0])}<tspan class="per">${esc(f.label[1])}</tspan></text>${f.line ? `<text class="rd-i" x="${lx}" y="${ly + 22}" text-anchor="${anchor}">${esc(f.line)}</text>` : ''}</g>`;
+      ${typeof finArrowHead === 'function' ? (f.v ? finArrowHead(f.b, 0, f.b.y > f.a.y ? 1 : -1, f.t, f.cls) : finArrowHead(f.b, f.b.x > f.a.x ? 1 : -1, 0, f.t, f.cls)) : ''}
+      ${typeof finChanWords === 'function' && finChKey('rich', f.id) ? finChanWords(finChKey('rich', f.id), lx, ly, anchor, 'rd', f.label) : `<text class="rd-l" x="${lx}" y="${ly}" text-anchor="${anchor}">${esc(f.label[0])}<tspan class="per">${esc(f.label[1])}</tspan></text>${f.line ? `<text class="rd-i" x="${lx}" y="${ly + 22}" text-anchor="${anchor}">${esc(f.line)}</text>` : ''}`}</g>`;
   }
   return `<svg class="fin-rich" width="${L.w}" height="${L.h}" aria-hidden="true">${out}</svg>`;
 }
@@ -18031,13 +18059,16 @@ function finFlowSVG(L) {
   };
   const mid = f => f.down ? `M${f.a.x},${f.a.y} C${f.a.x},${(f.a.y + f.b.y) / 2} ${f.b.x},${(f.a.y + f.b.y) / 2} ${f.b.x},${f.b.y}` : `M${f.a.x},${f.a.y} C${(f.a.x + f.b.x) / 2},${f.a.y} ${(f.a.x + f.b.x) / 2},${f.b.y} ${f.b.x},${f.b.y}`;
   return `<svg class="fin-flow" width="${L.w}" height="${L.h}" aria-hidden="true"><defs>${L.flows.map(f => `<linearGradient id="ffg-${f.id}" gradientUnits="userSpaceOnUse" x1="${f.a.x}" y1="${f.a.y}" x2="${f.b.x}" y2="${f.b.y}"><stop offset="0" stop-color="${col(f.h0)}"/><stop offset="1" stop-color="${col(f.h1)}"/></linearGradient>`).join('')}</defs>
-    ${L.flows.map(f => `<g class="fin-flow-r ${f.empty ? 'empty' : ''}"><path class="glow" d="${ribbon(f)}" fill="url(#ffg-${f.id})" stroke="url(#ffg-${f.id})"/><path class="body" d="${ribbon(f)}" fill="url(#ffg-${f.id})"/>${f.empty ? '' : `<path class="dots" d="${mid(f)}" style="animation-duration:${Math.max(1.6, 5 - f.t / 12).toFixed(1)}s"/>`}
-      ${finFlowLabel(f)}</g>`).join('')}
+    ${L.flows.map(f => `<g class="fin-flow-r ${f.empty ? 'empty' : ''}" data-ch="${esc(f.id)}"><path class="glow" d="${ribbon(f)}" fill="url(#ffg-${f.id})" stroke="url(#ffg-${f.id})"/><path class="body" d="${ribbon(f)}" fill="url(#ffg-${f.id})"/>${f.empty ? '' : `<path class="dots" d="${mid(f)}" style="animation-duration:${Math.max(1.6, 5 - f.t / 12).toFixed(1)}s"/>`}
+      ${typeof finArrowHead === 'function' ? finArrowHead(f.b, f.down ? 0 : 1, f.down ? 1 : 0, f.t, 'river') : ''}${finFlowLabel(f)}</g>`).join('')}
     ${(L.heads || []).map(h => `<text class="fin-flow-h" x="${h.x}" y="${h.y}">${esc(h.label)}</text>`).join('')}</svg>`;
 }
 // the amount and what it is, on two short lines: in the gap between two lanes (beside the ribbon going down)
 function finFlowLabel(f) {
-  const x = f.down ? f.a.x + f.t / 2 + 14 : f.a.x + 18, y = f.down ? (f.a.y + f.b.y) / 2 - 6 : Math.max(f.a.y, f.b.y) + f.t / 2 + 26;
+  const x = f.down ? f.a.x + f.t / 2 + 14 : f.a.x + 10, y = f.down ? (f.a.y + f.b.y) / 2 - 6 : Math.max(f.a.y, f.b.y) + f.t / 2 + 26;
+  const c = typeof finChan === 'function' ? finChan(finChKey('flow', f.id)) : null;
+  // the gaps between lanes are narrow: short lines, one under the other
+  if (c) return `<g class="ch-tag" data-act="fin-ch" data-id="${esc(c.key)}"><title>${esc(c.title)} — tap to see what moves here</title><text class="fin-flow-l" x="${x}" y="${y}"><tspan class="ttl">${FIN_STEP[c.n]} ${esc(c.from)} →</tspan><tspan class="ttl" x="${x}" dy="17">${esc(c.to)}</tspan><tspan class="amt" x="${x}" dy="20">${esc(f.amt)}</tspan><tspan class="per"> /month</tspan>${c.pct !== null ? `<tspan class="what" x="${x}" dy="17">${c.pct}% of income</tspan>` : ''}<tspan class="what" x="${x}" dy="17">${esc(f.empty ? f.what : c.short || c.how)}</tspan></text></g>`;
   return `<text class="fin-flow-l" x="${x}" y="${y}"><tspan class="amt">${esc(f.amt)}</tspan><tspan class="what" x="${x}" dy="18">${esc(f.what)}</tspan></text>`;
 }
 // the night sky behind the Flow layout (it does not move with the canvas, so moving stays light)
@@ -18275,15 +18306,15 @@ function finMindLayout(rooms0, plan, n) {
   const C = { x: center.x, y: center.y, w: center.w, h: center.h };
   const main = all.map(r => {
     const I = info[r.id] || { m: 0, dir: 'none', health: 'calm', line: '' }, L = r.side === 'L', hub = { x: L ? r.x + r.w : r.x, y: r.y + 44 }, from = { x: L ? C.x : C.x + C.w, y: Math.min(C.y + C.h - 40, Math.max(C.y + 40, hub.y)) };
-    return { id: r.id, a: from, b: hub, t: thick(I.m), health: I.health, dir: I.dir, label: [fk(I.m).replace(/\.00$/, ''), ' a month'], line: I.line, line2: I.line2 || '', hot: hot.has(r.id), side: r.side };
+    return { id: r.id, a: from, b: hub, t: thick(I.m), health: I.health, dir: I.dir, label: [fk(I.m).replace(/\.00$/, ''), ' a month'], line: I.line, line2: I.line2 || '', hot: hot.has(r.id), side: r.side, ck: typeof finChKey === 'function' ? finChKey('mind', r.id) : null };
   });
   // the channels the book is about: assets paying you, liabilities costing you, assets paying liabilities
   const cross = [], A = ins('mm-assets'), P = ins('mm-pass'), Lb = ins('mm-liab'), Ex = ins('exp');
-  if (A && P) cross.push({ id: 'pays', cls: 'gold', side: 'L', a: { x: A.x, y: A.y + 50 }, b: { x: P.x, y: P.y + 50 }, t: thick(R.passive), label: R.passive ? [fk(R.passive), ' a month'] : ['—', ''], line: R.passive ? 'your assets pay you' : 'no asset pays you yet' });
-  if (Lb && Ex) cross.push({ id: 'costs', cls: 'red', side: 'R', a: { x: Lb.x + Lb.w, y: Lb.y + 50 }, b: { x: Ex.x + Ex.w, y: Ex.y + 50 }, t: thick(n.instMonthly || 0), label: [fk(n.instMonthly || 0), ' a month'], line: 'your liabilities cost you' });
+  if (A && P) cross.push({ id: 'pays', ck: 'pays', cls: 'gold', side: 'L', a: { x: A.x, y: A.y + 50 }, b: { x: P.x, y: P.y + 50 }, t: thick(R.passive), label: R.passive ? [fk(R.passive), ' a month'] : ['—', ''], line: R.passive ? 'your assets pay you' : 'no asset pays you yet' });
+  if (Lb && Ex) cross.push({ id: 'costs', ck: 'costs', cls: 'red', side: 'R', a: { x: Lb.x + Lb.w, y: Lb.y + 50 }, b: { x: Ex.x + Ex.w, y: Ex.y + 50 }, t: thick(n.instMonthly || 0), label: [fk(n.instMonthly || 0), ' a month'], line: 'your liabilities cost you' });
   // assets paying a liability: from the inner edge of Assets to the inner edge of Liabilities, dipping under the centre —
   // never across a box that hangs under either of them
-  if (A && Lb && W.payLiab > 0) cross.push({ id: 'assetpays', cls: 'green under', a: { x: A.x + A.w, y: A.y + A.h - 36 }, b: { x: Lb.x, y: Lb.y + Lb.h - 36 }, low: mapB + 150, side: 'in', t: thick(W.payLiab), label: [fk(W.payLiab), ' a month'], line: 'your assets pay a liability (estimate)' });
+  if (A && Lb && W.payLiab > 0) cross.push({ id: 'assetpays', ck: 'assetpays', cls: 'green under', a: { x: A.x + A.w, y: A.y + A.h - 36 }, b: { x: Lb.x, y: Lb.y + Lb.h - 36 }, low: mapB + 150, side: 'in', t: thick(W.payLiab), label: [fk(W.payLiab), ' a month'], line: 'your assets pay a liability (estimate)' });
   for (const r of all) {
     const L = r.side === 'L', hub = { x: L ? r.x + r.w - 9 : r.x + 9, y: r.y + FMM.HEAD - 2 }, own = cards.filter(c => c.room === r.id), mx = Math.max(1, ...own.map(finMindAmt)), h = (info[r.id] || {}).health || 'calm';
     // a comb along the box's inner edge: one trunk down from the title, a short rounded stub into each row of cards (the
@@ -18320,7 +18351,10 @@ function finMindSVG(L) {
     const d = curve(b.a, b.b), dl = b.dir === 'in' ? curve(b.b, b.a) : d;
     out += `<g class="mm-branch ${b.health}${b.hot ? ' hot' : ''}" data-ch="${esc(b.id)}"><path class="limb" d="${taper(b.a, b.b, b.t + 6, Math.max(4, b.t * 0.55))}"/>`;
     if (b.dir !== 'none') out += `<path class="flow${b.dir === 'in' ? ' in' : ''}" d="${dl}" style="animation-duration:${speed(b.t)}s"/>`;
-    out += text((b.a.x + b.b.x) / 2, (b.a.y + b.b.y) / 2 - b.t / 2 - (b.line2 ? 60 : 40), b.label, b.line, 'middle', b.line2) + `</g>`;
+    const wx = (b.a.x + b.b.x) / 2, wy = (b.a.y + b.b.y) / 2 - b.t / 2 - (b.line2 ? 60 : 40);
+    // which way the money goes: an arrowhead where it arrives (at the branch, or at the centre for money coming in)
+    if (b.dir !== 'none' && typeof finArrowHead === 'function') out += b.dir === 'in' ? finArrowHead(b.a, b.a.x > b.b.x ? 1 : -1, 0, b.t, b.health) : finArrowHead(b.b, b.b.x > b.a.x ? 1 : -1, 0, b.t, b.health);
+    out += (b.ck && typeof finChanWords === 'function' ? finChanWords(b.ck, wx, wy, 'middle', 'mm', b.label, b.line2) : text(wx, wy, b.label, b.line, 'middle', b.line2)) + `</g>`;
   }
   for (const c of M.cross) {
     let d, lx, ly, anchor = 'middle';
@@ -18328,8 +18362,10 @@ function finMindSVG(L) {
     else if (c.low) { d = `M${c.a.x},${c.a.y} C${c.a.x},${c.low} ${c.b.x},${c.low} ${c.b.x},${c.b.y}`; lx = (c.a.x + c.b.x) / 2; ly = c.low - c.t / 2 - 50; }
     else { const L = c.side === 'L', o = L ? -(FMM.OUT - 110) : FMM.OUT - 110, ox = c.a.x + o; d = `M${c.a.x},${c.a.y} C${ox},${c.a.y} ${ox},${c.b.y} ${c.b.x},${c.b.y}`; lx = c.a.x + o * 0.75 + (L ? -1 : 1) * (c.t / 2 + 40); ly = (c.a.y + c.b.y) / 2; }
     // beside the outer channels the words run along the channel, so they stay on the canvas
-    const words = c.low ? text(lx, ly, c.label, c.line, anchor) : `<g transform="translate(${lx},${ly}) rotate(${c.side === 'L' ? -90 : 90})">${text(0, 0, c.label, c.line, 'middle')}</g>`;
-    out += `<g class="mm-cross ${c.cls}" data-ch="${esc(c.id)}"><path class="pipe" d="${d}" style="stroke-width:${c.t}px"/><path class="flow" d="${d}" style="animation-duration:${speed(c.t)}s"/>${words}</g>`;
+    const W1 = (x, y, a) => c.ck && typeof finChanWords === 'function' ? finChanWords(c.ck, x, y, a, 'mm', c.label) : text(x, y, c.label, c.line, a);
+    const words = c.low ? W1(lx, ly + 10, anchor) : `<g transform="translate(${lx},${ly}) rotate(${c.side === 'L' ? -90 : 90})">${W1(0, 0, 'middle')}</g>`;
+    const head = typeof finArrowHead !== 'function' ? '' : c.low && c.side === 'in' ? finArrowHead(c.b, 1, 0, c.t, c.cls) : c.low ? finArrowHead(c.b, 0, c.b.y > c.low ? 1 : -1, c.t, c.cls) : finArrowHead(c.b, c.b.x > c.a.x + (c.side === 'L' ? -(FMM.OUT - 110) : FMM.OUT - 110) ? 1 : -1, 0, c.t, c.cls);
+    out += `<g class="mm-cross ${c.cls}" data-ch="${esc(c.id)}"><path class="pipe" d="${d}" style="stroke-width:${c.t}px"/><path class="flow" d="${d}" style="animation-duration:${speed(c.t)}s"/>${head}${words}</g>`;
   }
   return `<svg class="fin-mind" width="${L.w}" height="${L.h}" aria-hidden="true">${out}</svg>`;
 }
@@ -18793,9 +18829,9 @@ Object.assign(window.__FIN, { balAge: () => finBalAge() });
 const FWIN = { drag: null };
 // which window a title belongs to, and the key its place is kept under (a new card's pop-out / form starts beside it again)
 function finWinOf(t) {
-  const h = t.closest && t.closest('#fin-pop .fin-pop-h, #fin-cv-ed .fin-cv-ed-t, #fin-bal-win .fin-talk-win-h, #fin-health-win .fin-talk-win-h'); if (!h) return null;
-  const el = h.closest('#fin-pop, #fin-cv-ed, #fin-bal-win, #fin-health-win'), E0 = UI.fin.cvEdit;
-  const key = el.id === 'fin-pop' ? 'pop:' + UI.fin.pop : el.id === 'fin-cv-ed' ? 'ed:' + (E0 ? E0.add || E0.id : '') : el.id === 'fin-health-win' ? 'health' : 'bal';
+  const h = t.closest && t.closest('#fin-pop .fin-pop-h, #fin-cv-ed .fin-cv-ed-t, #fin-bal-win .fin-talk-win-h, #fin-health-win .fin-talk-win-h, #fin-ch-win .fin-talk-win-h'); if (!h) return null;
+  const el = h.closest('#fin-pop, #fin-cv-ed, #fin-bal-win, #fin-health-win, #fin-ch-win'), E0 = UI.fin.cvEdit;
+  const key = el.id === 'fin-pop' ? 'pop:' + UI.fin.pop : el.id === 'fin-cv-ed' ? 'ed:' + (E0 ? E0.add || E0.id : '') : el.id === 'fin-health-win' ? 'health' : el.id === 'fin-ch-win' ? 'chan' : 'bal';
   return { h, el, key };
 }
 const finWinPos = key => (UI.fin.winPos || {})[key] || null;
@@ -18825,6 +18861,8 @@ function finWinKeep() {
   if (p3) Object.assign(bw.style, { left: p3.x + 'px', top: p3.y + 'px', right: 'auto', bottom: 'auto' });
   const hw = $('#fin-health-win'), p4 = hw && finWinPos('health');
   if (p4) Object.assign(hw.style, { left: p4.x + 'px', top: p4.y + 'px', right: 'auto', bottom: 'auto' });
+  const cw = $('#fin-ch-win'), p5 = cw && finWinPos('chan');
+  if (p5) Object.assign(cw.style, { left: p5.x + 'px', top: p5.y + 'px', right: 'auto', bottom: 'auto', margin: 0 });
 }
 HOOKS.afterRender.push(finWinKeep);
 Object.assign(window.__FIN, { winPos: () => UI.fin.winPos || {} });
@@ -19297,6 +19335,112 @@ function finMoActions(R) {
   return out;
 }
 Object.assign(window.__FIN, { month: () => { const R = finMonth(); return { start: R.start, end: R.end, asOf: R.asOf, leftDays: R.leftDays, gapDays: R.gapDays, months: R.months, cash: R.cash, income: R.income, bills: R.bills, expected: R.expected, usualFromToday: R.usualFromToday, endBal: R.endBal, perDay: R.perDay, perDayAll: R.perDayAll, verdict: R.verdict, need: R.need, lowPoint: R.lowPoint, untilPay: R.untilPay, events: R.events.map(e => [e.date, e.kind, e.label, e.amount]), cats: R.cats.map(c => [c.cat, c.usual, c.low, c.prio]), cuts: R.cuts.list.map(c => [c.cat, c.cap]), weeks: R.weeks.map(w => [w.from, w.to, w.cap]), actions: finMoActions(R).map(finTxt) }; } });
+
+/* ===== features/67-finance-channels.js ===== */
+// Money canvas — the pipelines between the boxes, explained. Every channel on every layout (Mind map, Rich Dad, Flow)
+// says on the canvas, in its own words:
+//   ① its step in the money's journey, and where the money goes: "Earned income → your pocket"
+//   ② how much moves along it a month, and what share of your income that is
+//   ③ what happens at that hand-off: "your pay lands in your accounts"
+// and an arrowhead shows which way the money moves. Tapping a channel's words opens a small window: what moves, from
+// where to where, what happens there, what it is made of (the cards behind it), why it matters, and the whole journey
+// step by step — tap any step to follow the money. The same channel means the same thing on every layout.
+
+const FIN_STEP = ['', '①', '②', '③', '④', '⑤', '⑥', '⑦', '⑧', '⑨'];
+// which channel each layout draws (its own id) → the one meaning behind it
+const FIN_CH_OF = {
+  mind: { 'mm-earn': 'earn', 'mm-pass': 'passive', exp: 'spend', 'mm-liab': 'debt', buy: 'choices', 'mm-assets': 'invest', pays: 'pays', costs: 'costs', assetpays: 'assetpays' },
+  rich: { job: 'job', spend: 'spendR', save: 'investR', passive: 'pays', debt: 'costs', assetpays: 'assetpays' },
+  flow: { inc: 'rin', exp: 'rexp', com: 'rcom', save: 'rsave' },
+};
+const finChKey = (mode, id) => (FIN_CH_OF[mode] || {})[id] || null;
+
+function finChans() {
+  const key = finNow.k; if (finChans.k === key) return finChans.v;
+  const W = finWealth(), R = W.R, n = W.n, inc = n.income || R.income || 0, pc = v => inc > 0 && v > 0 ? Math.round(v / inc * 100) : null;
+  const D = {
+    earn: { n: 1, from: 'Earned income', to: 'your pocket', amt: R.earned, what: 'your salary and any other pay for work', how: 'your pay lands in your accounts', why: 'You work for money: it stops when you stop working. Rich Dad’s first lesson is to turn part of it into assets.' },
+    job: { n: 1, from: 'Your job', to: 'Earned income', amt: R.earned, what: 'your salary and any other pay for work', how: 'you trade your time for pay', why: 'You work for money: it stops when you stop working. Rich Dad’s first lesson is to turn part of it into assets.' },
+    passive: { n: 2, from: 'Passive income', to: 'your pocket', amt: R.passive, what: 'returns from what you own: interest, rent, profits', how: R.passive ? 'arrives without you working' : 'nothing flows yet — the goal', why: 'Money working for you. When this covers your expenses you are financially free.' },
+    spend: { n: 3, from: 'your pocket', to: 'Expenses', amt: n.spending || 0, what: 'money for living: shops, bills, transport, subscriptions', how: 'paid out for living — gone for good', why: 'Expenses leave your pocket for good. Every pound kept out of here can go to assets instead.' },
+    spendR: { n: 3, from: 'Income', to: 'Expenses', amt: n.spending || 0, what: 'money for living: shops, bills, transport, subscriptions', how: 'paid out for living — gone for good', why: 'Expenses leave your pocket for good. Every pound kept out of here can go to assets instead.' },
+    debt: { n: 4, from: 'your pocket', to: 'Liabilities', amt: n.instMonthly || 0, what: 'instalments and card repayments', how: 'repays what you owe, month by month', why: 'Liabilities take money out of your pocket every month until they are paid off.' },
+    choices: { n: 5, from: 'your pocket', to: 'Your choices', amt: W.plan.monthly || 0, what: 'savings set aside for your goals and purchases', how: W.doodads.length ? 'set aside until each one is affordable' : 'set aside for your goals', why: 'Things you buy that do not pay you back (Rich Dad calls them doodads) are better bought after assets, not instead of them.' },
+    invest: { n: 6, from: 'your pocket', to: 'Assets', amt: W.toAssets, what: 'the surplus left after expenses, debts and goals', how: W.toAssets > 0 ? 'kept or invested — it becomes an asset' : 'nothing is left over yet', why: 'Every asset you buy can pay you back (step ⑦) — this is the channel that builds wealth.' },
+    investR: { n: 6, from: 'Income', to: 'Assets', amt: W.toAssets, what: 'the surplus left after expenses, debts and goals', how: W.toAssets > 0 ? 'the surplus buys assets' : 'nothing is left over yet', why: 'Every asset you buy can pay you back (step ⑦) — this is the channel that builds wealth.' },
+    pays: { n: 7, from: 'Assets', to: 'Passive income', amt: R.passive, what: 'interest, rent and profits from what you own', how: R.passive ? 'your assets pay you back' : 'no asset pays you yet', why: 'The loop that makes you free: assets → passive income → more assets.' },
+    costs: { n: 8, from: 'Liabilities', to: 'Expenses', amt: n.instMonthly || 0, what: 'the monthly instalments on what you owe', how: 'what you owe becomes a monthly cost', why: 'Each liability adds a cost to every month — fewer liabilities, more money left to invest.' },
+    assetpays: { n: 9, from: 'Assets', to: 'Liabilities', amt: W.payLiab, what: 'the part of an asset’s return set to pay a debt', how: 'an asset’s income pays a debt (estimate)', why: 'Letting an asset pay a liability keeps your own income free — an estimate from the rate you entered.' },
+    rin: { n: 1, from: 'Income', to: 'Accounts', amt: inc, what: 'your salary and other income', how: 'lands in your bank accounts', short: 'lands in your bank', why: 'Everything starts here: the money you have to work with each month.' },
+    rexp: { n: 3, from: 'Accounts', to: 'Spending', amt: n.spending || 0, what: 'money for living: shops, bills, transport, subscriptions', how: 'paid out for living', short: 'paid out for living', why: 'Spending leaves your accounts for good — the river’s biggest outflow for most people.' },
+    rcom: { n: 4, from: 'Accounts', to: 'Card & instalments', amt: n.instMonthly || 0, what: 'instalments and card repayments', how: 'repays what you owe', short: 'repays what you owe', why: 'Each instalment takes its share every month until it ends.' },
+    rsave: { n: 5, from: 'Accounts', to: 'Goals', amt: Math.max(0, n.capacity || 0), what: 'what is left after spending and instalments', how: 'what’s left goes to your goals', short: 'what’s left is saved', why: 'Whatever reaches the end of the river is yours to save, invest or spend on a goal.' },
+  };
+  for (const [k, d] of Object.entries(D)) { d.key = k; d.pct = pc(d.amt); d.title = `${FIN_STEP[d.n]} ${d.from} → ${d.to}`; }
+  finChans.k = key; finChans.v = D; return D;
+}
+const finChan = key => key ? finChans()[key] || null : null;
+// the words on the canvas: the step and where the money goes, the amount, what happens — tap them to read more
+function finChanWords(key, x, y, anchor, cls, lab, line2) {
+  const c = finChan(key); if (!c) return '';
+  const a = anchor || 'middle', amt = lab || [fk(c.amt).replace(/\.00$/, ''), ' a month'];
+  return `<g class="ch-tag" data-act="fin-ch" data-id="${esc(key)}"><title>${esc(c.title)} — tap to see what moves here</title>
+    <text class="${cls}-t" x="${x}" y="${y - 26}" text-anchor="${a}">${esc(c.title)}</text>
+    <text class="${cls}-l" x="${x}" y="${y}" text-anchor="${a}">${esc(amt[0])}<tspan class="per">${esc(amt[1])}${c.pct !== null ? ` · ${c.pct}% of income` : ''}</tspan></text>
+    <text class="${cls}-i" x="${x}" y="${y + 24}" text-anchor="${a}">${esc(c.how)}</text>${line2 ? `<text class="${cls}-i" x="${x}" y="${y + 44}" text-anchor="${a}">${esc(line2)}</text>` : ''}</g>`;
+}
+// an arrowhead at the end the money flows to
+function finArrowHead(p, dx, dy, t, cls) {
+  const L = Math.hypot(dx, dy) || 1, ux = dx / L, uy = dy / L, s = Math.max(16, Math.min(34, (t || 10) * 0.7 + 12)), w = s * 0.62;
+  const bx = p.x - ux * s, by = p.y - uy * s;
+  return `<path class="ch-head ${cls || ''}" d="M${p.x.toFixed(1)},${p.y.toFixed(1)} L${(bx - uy * w).toFixed(1)},${(by + ux * w).toFixed(1)} L${(bx + uy * w).toFixed(1)},${(by - ux * w).toFixed(1)} Z"/>`;
+}
+
+// what a channel is made of: the cards behind it
+function finChanMade(key) {
+  const f0 = UI.fin.cv.focus; UI.fin.cv.focus = null; let root; try { root = finCvModel(); } finally { UI.fin.cv.focus = f0; }
+  const room = id => (root.children.find(b => b.id === id) || { children: [] }).children, leaves = list => list.flatMap(c => c.type === 'branch' ? leaves(c.children) : [c]);
+  const real = c => !/(none|more)$/.test(c.id) && !(c.cls || '').includes('tool') && !(c.cls || '').includes('muted');
+  const pick = (list, f) => leaves(list).filter(real).filter(f || (() => true)).slice(0, 6).map(c => [c.label, c.val || '', c.sub || '']);
+  const isP = c => finRdKind(c, 'inc') === 'passive';
+  switch (key) {
+    case 'earn': case 'job': return pick(room('inc'), c => !isP(c));
+    case 'rin': return pick(room('inc'));
+    case 'passive': case 'pays': return pick(room('inc'), isP);
+    case 'spend': case 'spendR': case 'rexp': return pick(room('exp'));
+    case 'debt': case 'costs': case 'rcom': return pick(room('com'));
+    case 'choices': case 'rsave': return pick(room('buy'));
+    case 'invest': case 'investR': return pick(room('own'), c => finRdKind(c, 'own') === 'asset');
+    case 'assetpays': return finWealth().payL.map(x => [x.h.name, fk(x.amt), 'a month (estimate)']);
+  }
+  return [];
+}
+// the window: one channel, explained — and the whole journey
+function finChanWinHTML() {
+  const key = UI.fin.chWin, c = finChan(key); if (!c) return '';
+  const mode = UI.fin.cv.mode || 'mind', keys = [...new Set(Object.values(FIN_CH_OF[mode] || {}))].map(finChan).filter(Boolean).sort((a, b) => a.n - b.n);
+  const made = finChanMade(key);
+  return `<section class="fin-talk-win fin-ch-win" id="fin-ch-win" role="dialog" aria-label="${esc(c.title)}">
+    <div class="fin-talk-win-h"><span aria-hidden="true">🔀</span><b>${esc(c.title)}</b><span class="spacer"></span><button class="icon-btn" data-act="fin-ch" data-v="close" aria-label="Close">${I.x}</button></div>
+    <div class="fin-talk-win-b fin-ch">
+      <div class="fin-ch-strip"><div class="box">${esc(c.from)}</div><div class="pipe"><b class="num">${fk(c.amt).replace(/\.00$/, '')}</b><small>a month${c.pct !== null ? ` · ${c.pct}% of income` : ''}</small><i aria-hidden="true"></i></div><div class="box">${esc(c.to)}</div></div>
+      <dl class="fin-ch-kv"><dt>What moves</dt><dd>${esc(c.what)}</dd><dt>What happens here</dt><dd>${esc(c.how)}</dd><dt>Why it matters</dt><dd>${esc(c.why)}</dd></dl>
+      ${made.length ? `<h4>Made of</h4><div class="fin-box-list">${made.map(([l, v, s]) => `<div>${typeof finLogo === 'function' ? finLogo(l, 'sm') : ''}<span><b>${esc(l)}</b>${s ? `<small>${esc(s)}</small>` : ''}</span><b class="num">${esc(v)}</b></div>`).join('')}</div>` : ''}
+      <h4>The whole journey${mode === 'flow' ? ' on this river' : ''}</h4>
+      <ol class="fin-ch-steps">${keys.map(k => `<li class="${k.key === key ? 'on' : ''}"><button class="linkish" data-act="fin-ch" data-id="${esc(k.key)}"><span class="n">${FIN_STEP[k.n]}</span><span><b>${esc(k.from)} → ${esc(k.to)}</b><small>${esc(k.how)}</small></span><b class="num">${fk(k.amt).replace(/\.00$/, '')}</b></button></li>`).join('')}</ol>
+      <p class="small muted">Amounts are a usual month, from the same figures as every card. Arrows on the canvas point the way the money moves; the thicker a channel, the more money moves along it.</p>
+    </div></section>`;
+}
+// the chosen channel stands out on the canvas; the others step back
+function finChanMark() {
+  const w = document.getElementById('fin-cv-world'); if (!w) return; const key = UI.fin.chWin, mode = UI.fin.cv.mode || 'mind';
+  w.classList.toggle('ch-focus', !!key);
+  for (const g of w.querySelectorAll('[data-ch]')) g.classList.toggle('ch-sel', !!key && finChKey(mode, g.dataset.ch) === key);
+}
+HOOKS.afterRender.push(finChanMark);
+Object.assign(ACT, { 'fin-ch': el => { UI.fin.chWin = el.dataset.v === 'close' || (el.dataset.id === UI.fin.chWin && el.closest('#fin-cv-world')) ? null : el.dataset.id; render(); } });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && UI.fin.chWin && UI.view === 'finance') { UI.fin.chWin = null; render(); } }, true);
+Object.assign(window.__FIN, { chans: () => Object.fromEntries(Object.entries(finChans()).map(([k, c]) => [k, { title: c.title, amt: c.amt, pct: c.pct, how: c.how, what: c.what }])), chanMade: k => finChanMade(k) });
 
 /* ---------- boot ---------- */
 const startView = (location.hash || '').replace('#', '');
