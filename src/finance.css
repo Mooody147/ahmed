@@ -837,3 +837,5 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 .fin-ch-steps button { width: 100%; display: flex; gap: 10px; align-items: center; text-align: left; padding: 7px 8px; border-radius: 10px; border: 1px solid transparent; background: none; color: inherit; cursor: pointer; font: inherit; }
 .fin-ch-steps button:hover { background: var(--surface-2, var(--bg)); } .fin-ch-steps li.on button { border-color: #c9a227; background: color-mix(in srgb, #c9a227 10%, var(--surface)); }
 .fin-ch-steps .n { font-size: 18px; width: 22px; flex: none; } .fin-ch-steps span:nth-child(2) { flex: 1; display: grid; gap: 1px; min-width: 0; } .fin-ch-steps small { color: var(--ink-2); }
+/* a room's title stays on one line (a long one ends in "…" when zoomed far out) so it never spills out of its header */
+.fin-room-t > div { min-width: 0; } .fin-room-t b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
