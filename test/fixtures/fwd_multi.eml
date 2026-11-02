@@ -1,0 +1,69 @@
+From: Mahmoud Sobeah <m.sobeah@contractor.example>
+To: Mahmoud Sobeah <m.sobeah@contractor.example>
+Subject: Fw: two emails
+Date: Thu, 22 Oct 2026 12:00:00 +0300
+Message-ID: <outer@contractor.example>
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="OO"
+
+--OO
+Content-Type: text/plain; charset=utf-8
+
+
+--OO
+Content-Type: message/rfc822
+Content-Disposition: attachment; filename="Valve schedule comments.eml"
+
+From: Rania Hassan <rania@consultant.example>
+To: Mahmoud Sobeah <m.sobeah@contractor.example>
+Subject: Valve schedule comments
+Date: Thu, 22 Oct 2026 09:00:00 +0300
+Message-ID: <a1@consultant.example>
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="AA"
+
+--AA
+Content-Type: text/plain; charset=utf-8
+
+Dear Mahmoud,
+Please update the valve schedule per our comments by 29 October. The marked-up drawings are on SharePoint: https://contoso.sharepoint.com/sites/ELM/Shared%20Documents/markups
+Regards, Rania
+--AA
+Content-Type: application/vnd.ms-office.rpmsg; name="message.rpmsg"
+Content-Disposition: attachment; filename="message.rpmsg"
+Content-Transfer-Encoding: base64
+
+AAFwcm90ZWN0ZWQ=
+
+--AA--
+
+--OO
+Content-Type: message/rfc822
+Content-Disposition: attachment; filename="RAS pump curve.eml"
+
+From: Hany Adel <hany@vendor.example>
+To: Mahmoud Sobeah <m.sobeah@contractor.example>
+Subject: RAS pump curve
+Date: Thu, 22 Oct 2026 11:00:00 +0300
+Message-ID: <b1@vendor.example>
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="BB"
+
+--BB
+Content-Type: text/plain; charset=utf-8
+
+See attached.
+--BB
+Content-Type: application/ms-tnef; name="winmail.dat"
+Content-Disposition: attachment; filename="winmail.dat"
+Content-Transfer-Encoding: base64
+
+eJ8+IjQSAQyAAgBFAAAAUGxlYXNlIHNlZSB0aGUgcHVtcCBjdXJ2ZSBhdHRhY2hlZCAoc2VudCBm
+cm9tIE91dGxvb2sgaW4gcmljaCB0ZXh0KS4AeRgCApAGAA4AAAABAP////8AAAAAAAAAAP0DAhCA
+AQAPAAAAcHVtcF9jdXJ2ZS50eHQA1AUCD4AGAHMAAABSQVMgcHVtcCBQLTIwMSBkdXR5IHBvaW50
+IDQxMCBtMy9oIGF0IDE0LjUgbS4gTlBTSHIgNC4yIG0uIFBsZWFzZSBjb25maXJtIHRoZSBtb3Rv
+ciByYXRpbmcgb2YgMzcga1cgYnkgMyBOb3ZlbWJlci4KKiM=
+
+--BB--
+
+--OO--

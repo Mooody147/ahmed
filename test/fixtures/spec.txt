@@ -1,0 +1,10 @@
+SECTION 11 21 00 — SUBMERSIBLE PUMPS
+1. GENERAL
+1.1 Scope. This section covers the RAS pumps P-101A/B.
+2. PRODUCTS
+2.1 Motors shall be rated IP68 for continuous submergence to 20 m.
+2.2 The impeller shall be duplex stainless steel ASTM A890 Grade 4A.
+3. SUBMITTALS
+3.1 The Contractor shall submit pump curves, motor data and the NPSH calculation for approval.
+4. TESTING
+4.1 Each pump shall be performance tested at the factory to ISO 9906 Grade 2B.

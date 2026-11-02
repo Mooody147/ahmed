@@ -1,0 +1,95 @@
+name: Desktop app
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run test:unit
+      - name: Desktop end-to-end test
+        run: |
+          sudo apt-get update && sudo apt-get install -y xvfb
+          npx playwright install --with-deps chromium   # the share-link viewer page is checked in a plain browser
+          xvfb-run -a npm run test:desktop
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: desktop-e2e-screenshots
+          path: test/desktop/out/
+
+  build:
+    needs: test
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    env:
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run dist -- --publish never
+      - uses: actions/upload-artifact@v4
+        with:
+          name: action-register-${{ matrix.os }}
+          path: |
+            release/*.exe
+            release/*.dmg
+            release/*.yml
+            release/*.blockmap
+          if-no-files-found: error
+
+  # Publishes the installers as a GitHub Release tagged v<version> and marked latest, so they can be
+  # downloaded from https://github.com/<owner>/<repo>/releases/latest without signing in, and so
+  # installed copies update themselves (electron-updater reads latest.yml from that release).
+  release:
+    needs: build
+    # publish only when the commit asks for it, so work in progress never reaches installed copies
+    if: github.event_name == 'push' && contains(github.event.head_commit.message, '[release]')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: action-register-*
+          path: installers
+          merge-multiple: true
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          TAG="v$VERSION"
+          rm -f installers/builder-debug.yml
+          ls -l installers
+          gh release delete latest --repo "$GITHUB_REPOSITORY" --yes --cleanup-tag || true
+          gh release delete "$TAG" --repo "$GITHUB_REPOSITORY" --yes --cleanup-tag || true
+          gh release create "$TAG" installers/* \
+            --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --latest \
+            --title "Action Register $VERSION" \
+            --notes "Built from ${GITHUB_SHA::7} on ${GITHUB_REF_NAME}.
+
+          Windows: download Action-Register-Setup-$VERSION.exe (installer, updates itself) or Action-Register-Portable-$VERSION.exe (no install needed).
+          macOS: the arm64 .dmg is for Apple Silicon (M1 and later), the x64 .dmg for Intel Macs.
+
+          Installed copies update themselves from this release. What's new: see the README section \"What's new\".
+
+          The app is not code-signed. Windows: More info › Run anyway. macOS: right-click › Open the first time."

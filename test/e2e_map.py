@@ -1,0 +1,121 @@
+import asyncio, json, os, sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from playwright.async_api import async_playwright
+from harness import *
+SHOTS = os.path.join(HERE, 'shots'); os.makedirs(SHOTS, exist_ok=True)
+
+async def main():
+    async with async_playwright() as p:
+        b=await p.chromium.launch(); ctx=await b.new_context(viewport={'width':1440,'height':950}); pg=await ctx.new_page()
+        pg.on('pageerror',lambda e: errors.append('PAGEERROR '+str(e)))
+        await pg.route('**/*',route); await pg.goto('https://app.test/'); await pg.wait_for_selector('h1')
+        await pg.wait_for_timeout(1500); await idle(pg)
+        await pg.fill('#su-emails','m.sobeah@contractor.example'); await pg.click('[data-act="save-quick-setup"]')
+        await pg.click('.rail [data-nav="review"]'); await pg.wait_for_timeout(200); await pg.click('[data-act="approve-all"]'); await pg.wait_for_timeout(300)
+        # add WTP task via paste
+        await pg.click('.rail [data-nav="import"]'); await pg.click('[data-act="toggle-paste"]')
+        await pg.fill('#paste-text','From: Lina Morsy <lina@example.com>\nSent: Thursday, October 23, 2026 9:00 AM\nTo: Mahmoud Sobeah\nSubject: RE: WTP-21 Fine screens datasheet – CRS Rev B\n\nKindly address the open comments.')
+        await pg.click('[data-act="add-paste"]'); await pg.wait_for_timeout(800); await pg.click('[data-act="analyze"]'); await pg.wait_for_timeout(600); await idle(pg)
+        await pg.click('.rail [data-nav="review"]'); await pg.wait_for_timeout(200)
+        bt=await pg.query_selector('[data-act="approve"]:not([disabled])')
+        if bt: await bt.click()
+        await pg.click('.rail [data-nav="todo"]'); await pg.wait_for_timeout(1800)
+        print('MODE', await pg.evaluate("window.__AR.UI.todoMode"), 'nodes', await pg.eval_on_selector_all('.mnode','e=>e.map(x=>x.dataset.type||"root").join(",")'))
+        await pg.screenshot(path=SHOTS+'/70-map.png')
+        # manual task -> AI placement + link
+        await pg.click('[data-act="new-task"]'); await pg.wait_for_selector('#d-title')
+        await pg.fill('#d-title','Check pump NPSH for PS-2 wet well'); await pg.dispatch_event('#d-title','change'); await pg.wait_for_timeout(900)
+        t=await pg.evaluate("[...window.__AR.St.tasks.values()].filter(t=>/NPSH/.test(t.title)).map(t=>({rel:t.relatedIds,pl:t.placement&&t.placement.status,opts:(t.placement&&t.placement.options||[]).length}))")
+        print('PLACEMENT', t)
+        # Claude was not sure: the task is placed anyway (no question), its other options kept in the task panel
+        assert t and t[0]['pl'] == 'auto' and t[0]['opts'] >= 1, t
+        await pg.wait_for_timeout(300)
+        assert await pg.evaluate("!document.querySelector('[data-act=\"map-next-suggest\"]') && !document.querySelectorAll('.mnode.suggest').length"), 'no "Claude was not sure" banner'
+        nid = await pg.evaluate("[...window.__AR.St.tasks.values()].find(t=>/NPSH/.test(t.title)).id")
+        await pg.click('[data-act="close-drawer"]'); await pg.wait_for_timeout(300); await pg.click('[data-act="map-fit"]'); await pg.wait_for_timeout(500)
+        await pg.evaluate("document.querySelector('#minimap') && (document.querySelector('#minimap').style.display = 'none')")  # the box can sit under the minimap after Fit
+        await pg.click(f'.mnode.task[data-tid="{nid}"] .mtxt'); await pg.wait_for_selector('#drawer:not([hidden])'); await pg.wait_for_timeout(300)
+        assert 'not sure' not in (await pg.text_content('#drawer'))
+        await pg.click('details.wrong-place > summary'); await pg.wait_for_timeout(200)
+        await pg.screenshot(path=SHOTS+'/72-drawer-suggest.png')
+        await pg.click('[data-act="use-placement"][data-i="0"]'); await pg.wait_for_timeout(300)
+        print('AFTER CHOOSE', await pg.evaluate("[...window.__AR.St.tasks.values()].filter(t=>/NPSH/.test(t.title)).map(t=>[t.project,t.discipline,t.placement.status,t.relatedIds.length])"))
+        await pg.click('[data-act="close-drawer"]'); await pg.wait_for_timeout(300)
+        await pg.click('[data-act="map-fit"]'); await pg.wait_for_timeout(500)
+        await pg.screenshot(path=SHOTS+'/71-map-suggest.png')
+        # drag T-0001 onto WTP-21 project node
+        src=await pg.query_selector('.mnode.task[data-tid] >> nth=0'); sb=await src.bounding_box()
+        tgt=await pg.query_selector('.mnode.project[data-label="WTP-21"]'); tb=await tgt.bounding_box()
+        await pg.mouse.move(sb['x']+sb['width']/2, sb['y']+20); await pg.mouse.down(); await pg.mouse.move(sb['x']+40, sb['y']+40, steps=5)
+        await pg.mouse.move(tb['x']+tb['width']/2, tb['y']+tb['height']/2, steps=12); await pg.mouse.up(); await pg.wait_for_timeout(400)
+        print('MOVED', await pg.evaluate("[...window.__AR.St.tasks.values()].map(t=>[t.ref,t.project]).slice(0,6)"))
+        lr = await pg.evaluate("((window.__AR.St.cols.prefs.get('learned')||{}).items||[]).map(x=>[x.field,x.from,x.to])"); print('LEARNED', lr)
+        assert any(x[0] == 'project' and x[2] == 'WTP-21' for x in lr), 'moving a task on the canvas teaches Claude'
+        assert 'CORRECTIONS I MADE BEFORE' in (await pg.evaluate("window.__AR.learnedNotes ? window.__AR.learnedNotes(null) : ''"))
+        # pan & zoom
+        await pg.evaluate("document.getElementById('map-threads').click()"); await pg.wait_for_timeout(300)  # thread cards: see e2e_thread
+        vp=await (await pg.query_selector('#map-vp')).bounding_box()
+        before=await pg.evaluate("JSON.stringify(window.__AR.UI.map)")
+        await pg.mouse.move(vp['x']+vp['width']-60, vp['y']+vp['height']-60); await pg.mouse.down(); await pg.mouse.move(vp['x']+vp['width']-160, vp['y']+vp['height']-120, steps=6); await pg.mouse.up()
+        await pg.mouse.wheel(0,-300); await pg.wait_for_timeout(200)
+        print('CAM', before, '->', await pg.evaluate("JSON.stringify(window.__AR.UI.map)"))
+        # smooth: one wheel notch zooms about 12% and glides there (values in between on the way)
+        await pg.wait_for_timeout(600); k0 = await pg.evaluate("window.__AR.UI.map.k"); await pg.mouse.wheel(0, -100)
+        km = await pg.evaluate("new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(window.__AR.UI.map.k))))"); await pg.wait_for_timeout(700); k1 = await pg.evaluate("window.__AR.UI.map.k")
+        print('MAPZOOM', round(k0, 3), round(km, 3), round(k1, 3)); assert 1.08 < k1 / k0 < 1.16 and k0 < km < k1, 'map zoom: a small step that glides'
+        # a quick drag let go keeps sliding a little
+        # from an empty spot of the canvas (not a card, a tool or the minimap)
+        px, py = await pg.evaluate("""(b) => { for (let fy = 0.85; fy > 0.1; fy -= 0.05) for (let fx = 0.55; fx > 0.2; fx -= 0.05) { const x = b.x + b.width * fx, y = b.y + b.height * fy, e = document.elementFromPoint(x, y);
+          if (e && e.closest('#map-vp') && !e.closest('.mnode, .cv-el, .minimap, .cv-tools, .cv-sub, .cv-ctx, .cv-panel, button, .map-legend, .zoom-hud')) return [x, y]; } return [b.x + 200, b.y + b.height - 30]; }""", vp)
+        await pg.mouse.move(px, py); await pg.mouse.down()
+        for i in range(1, 9): await pg.mouse.move(px-i*25, py); await pg.wait_for_timeout(8)
+        await pg.mouse.up(); xr = await pg.evaluate("window.__AR.UI.map.x"); await pg.wait_for_timeout(700); xs = await pg.evaluate("window.__AR.UI.map.x")
+        print('MAPFLING', round(xr), round(xs)); assert xs < xr - 15, 'map: let go while moving, it slides on'
+        await pg.click('[data-act="map-fit"]'); await pg.wait_for_timeout(500)
+        # complete a task from map -> stays as history
+        await pg.click('.mnode.task .mtick >> nth=1'); await pg.wait_for_timeout(400)
+        print('DONE nodes', await pg.evaluate("document.querySelectorAll('.mnode.task.done').length"))
+        # expand items of first task with items
+        await pg.click('.mitems >> nth=0'); await pg.wait_for_timeout(400)
+        print('ITEM nodes', await pg.evaluate("document.querySelectorAll('.mnode.item').length"))
+        await pg.click('[data-act="map-fit"]'); await pg.wait_for_timeout(500)
+        await pg.screenshot(path=SHOTS+'/73-map-items.png')
+        await pg.click('[data-act="new-task"]'); await pg.wait_for_selector('#d-title')
+        await pg.fill('#d-title','Coordinate with the civil contractor on the revised anchor bolt layout, embedded plates and pipe sleeve openings for the blower building and RAS pump station before the IFC drawing issue next week, including the vendor load data'); await pg.dispatch_event('#d-title','change'); await pg.wait_for_timeout(700)
+        await pg.click('[data-act="close-drawer"]'); await pg.wait_for_timeout(500)
+        ov=await pg.evaluate("[...document.querySelectorAll('.mnode')].filter(n=>n.scrollHeight>n.clientHeight+1).map(n=>n.textContent.trim().slice(0,40))")
+        print('OVERFLOWING nodes', ov)
+        print('TYPES', sorted(set(await pg.eval_on_selector_all('.mnode','e=>e.map(x=>x.dataset.type||"root")'))))
+        print('TOPICS', await pg.eval_on_selector_all('.mnode.topic b','e=>e.map(x=>x.textContent)'))
+        await pg.click('[data-act="map-fit"]'); await pg.wait_for_timeout(500)
+        await pg.screenshot(path=SHOTS+'/76-map-topics.png')
+        await pg.click('[data-act="new-task"]'); await pg.wait_for_selector('#d-title')
+        await pg.fill('#d-title','Coordinate with the civil contractor on the revised anchor bolt layout, embedded plates and pipe sleeve openings for the blower building and RAS pump station before the IFC drawing issue next week, including the vendor load data'); await pg.dispatch_event('#d-title','change'); await pg.wait_for_timeout(600)
+        await pg.click('[data-act="close-drawer"]'); await pg.wait_for_timeout(500)
+        ov=await pg.evaluate("[...document.querySelectorAll('.mnode')].filter(n=>n.scrollHeight>n.clientHeight+1).map(n=>n.textContent.trim().slice(0,40))")
+        print('OVERFLOWING nodes', ov)
+        print('TYPES', sorted(set(await pg.eval_on_selector_all('.mnode','e=>e.map(x=>x.dataset.type||"root")'))))
+        await pg.click('[data-act="map-fit"]'); await pg.wait_for_timeout(500)
+        await pg.screenshot(path=SHOTS+'/76-map-fulltext.png')
+        # activity goto (the panel is off until turned on in More › Show)
+        assert not await pg.evaluate("!!document.querySelector('.map-activity')")
+        await pg.evaluate("document.getElementById('map-act').click()"); await pg.wait_for_timeout(400)
+        await pg.click('.map-activity li button >> nth=3'); await pg.wait_for_timeout(500)
+        print('SEL', await pg.evaluate("window.__AR.UI.mapSel"))
+        # search
+        await pg.fill('#map-q','valves'); await pg.wait_for_timeout(400)
+        print('HITS', await pg.evaluate("document.querySelectorAll('.mnode.task.hit').length"))
+        await pg.fill('#map-q',''); await pg.wait_for_timeout(300)
+        # focus project
+        await pg.click('.mp-chip >> nth=1'); await pg.wait_for_timeout(500)
+        print('FOCUS projects', await pg.eval_on_selector_all('.mnode.project','e=>e.map(x=>x.dataset.label)'))
+        await pg.screenshot(path=SHOTS+'/74-map-focus.png')
+        # mobile
+        m=await b.new_context(viewport={'width':390,'height':844},is_mobile=True,has_touch=True,color_scheme='dark'); mp=await m.new_page(); await mp.route('**/*',route)
+        await mp.goto('https://app.test/'); await mp.wait_for_selector('h1'); await mp.wait_for_timeout(1500); await idle(mp)
+        await mp.click('.tabbar [data-nav="review"]'); await mp.wait_for_timeout(200); await mp.click('[data-act="approve-all"]'); await mp.wait_for_timeout(300)
+        await mp.click('.tabbar [data-nav="todo"]'); await mp.wait_for_timeout(1500)
+        await mp.screenshot(path=SHOTS+'/75-map-mobile.png', full_page=True)
+        print('MOBILE overflow', await mp.evaluate("document.documentElement.scrollWidth>innerWidth"))
+        print('ERRORS',errors); await b.close()
+asyncio.run(main())
