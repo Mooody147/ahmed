@@ -66,14 +66,15 @@ async def main():
         await ev("window.__FIN.mode('mind')"); await pg.wait_for_timeout(900)
         room = await ev("""(() => { const r = document.querySelector('.fin-det[data-det="month"]'), rm = document.querySelector('.fin-room[data-room="month"]'); return { tiles: r.querySelectorAll('.fin-mo-k > button').length, chart: !!r.querySelector('.fin-mo-chart svg'), todo: r.querySelectorAll('.fin-mo-do li').length, weeks: r.querySelectorAll('.fin-mo-wk tbody tr').length, head: r.querySelector('.fin-mo-top b').textContent, del: !!rm.querySelector('[data-act="fin-box-del"]'), basis: r.querySelector('.fin-mo-basis').textContent }; })()""")
         print('ROOM', room)
-        assert room['tiles'] == 6 and room['chart'] and room['todo'] >= 1 and room['weeks'] >= 1, 'the numbers, the line, what to do, week by week'
+        assert room['tiles'] == 6 and room['chart'] and room['todo'] >= 1 and room['weeks'] == 0, 'on the canvas: the numbers, the line, what to do (the details are behind the numbers)'
         assert room['head'] == 'You can manage the rest of the month' and not room['del'], 'a verdict at the top; the section cannot be removed like your own boxes'
         assert 'Facts:' in room['basis'] and 'Estimates:' in room['basis'], 'facts and estimates said apart'
-        # mind map: right under Spending, before the recurring payments
-        order = await ev("(() => { const y = id => { const r = document.querySelector(`.fin-room[data-room=\"${id}\"]`); return r ? parseFloat(r.style.top) : null; }; return [y('exp'), y('month'), y('recur')]; })()")
-        assert order[0] < order[1] < order[2], 'Mind map: Spending, then the rest of this month, then recurring payments'
+        # mind map: under Assets (it starts from your money now); Spending keeps this month's additional expenses, then recurring payments
+        order = await ev("(() => { const y = id => { const r = document.querySelector(`.fin-room[data-room=\"${id}\"]`); return r ? [parseFloat(r.style.left), parseFloat(r.style.top)] : null; }; return [y('mm-assets'), y('month'), y('exp'), y('xe'), y('recur')]; })()")
+        assert order[0][0] == order[1][0] and order[0][1] < order[1][1], 'Mind map: the rest of this month hangs under Assets'
+        assert order[2][1] < order[3][1] < order[4][1], 'under Spending: additional expenses, then recurring payments'
         # 4. each of the six numbers opens a window: where it comes from, and how it is worked out
-        for k, want in [('cash', 'Money to live on now'), ('in', 'Still coming in'), ('bills', 'Bills still due'), ('usual', 'middle month'), ('end', 'End of'), ('day', 'Safety reserve')]:
+        for k, want in [('cash', 'Money to live on now'), ('in', 'Still coming in'), ('bills', 'Bills still due'), ('usual', 'middle month'), ('end', 'End of'), ('day', 'Week by week')]:
             await ev(f"document.querySelector('.fin-det[data-det=\"month\"] [data-act=\"fin-mo-k\"][data-k=\"{k}\"]').click()"); await pg.wait_for_selector('#fin-mo-win')
             txt = await ev("window.__FIN.moWin()"); assert want in txt and '=' in txt, f'{k}: the window explains it — {txt[:200]}'
         assert 'GAMEYA' in (await ev("(document.querySelector('#fin-mo-win [data-k=\"bills\"]').click(), new Promise(r => setTimeout(() => r(window.__FIN.moWin()), 300)))")).upper(), 'bills: each one, with how it is known'

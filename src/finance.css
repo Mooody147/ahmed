@@ -867,3 +867,6 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 @media (max-width: 560px) { .fin-xe-row { grid-template-columns: minmax(0, 1fr) minmax(0, .8fr) auto; } .fin-xe-row input[data-k="note"] { grid-column: 1 / -2; grid-row: 2; } }
 .fin-xe-left { font-weight: 700; color: #b7791f; } .fin-xe-left.neg { color: #d9534f; }
 .fin-xe-accts > div.tot { border-top: 2px solid var(--ink-3); border-bottom: 0; } .fin-xe-accts > div.tot b.num { font-size: 16px; } .fin-xe-accts > div.muted { opacity: .65; }
+.fin-mo-more { margin: 0; color: var(--ink-2); }
+/* the add / edit form always sits above the windows it was opened from (e.g. "My salary is different") */
+.fin-cv-ed { z-index: 40; }

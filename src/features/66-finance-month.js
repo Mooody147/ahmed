@@ -54,7 +54,7 @@ function finMonthRoom() {
     : R.verdict === 'unknown' ? `${R.leftDays} day${R.leftDays === 1 ? '' : 's'} left · add statements to learn your spending`
     : R.verdict === 'short' ? `${R.leftDays} day${R.leftDays === 1 ? '' : 's'} left · short by about ${fkr(R.need)}${R.firstNeg ? ' · runs out around ' + finMoDay(R.firstNeg) : ''}`
     : `${R.leftDays} day${R.leftDays === 1 ? '' : 's'} left · about ${fkr(R.perDay)} a day · month ends near ${fkr(R.endBal)}`;
-  return { id: 'month', kind: 'box', sys: true, icon: '🗓️', title: 'How can I manage the rest of this month?', sum, hue: 190, branch: 'exp' };
+  return { id: 'month', kind: 'box', sys: true, icon: '🗓️', title: 'How can I manage the rest of this month?', sum, hue: 190, branch: 'mm-assets' };
 }
 
 function finMonthHTML() {
@@ -81,11 +81,6 @@ function finMonthHTML() {
     ? `<p class="fin-mo-pay">💼 <b>Until ${esc(R.untilPay.label)} on ${finMoDay(R.untilPay.date)}:</b> at most <b>${fkr(R.untilPay.perDay)} a day</b> — ${fkr(Math.max(0, R.untilPay.room))} has to last ${R.untilPay.days} day${R.untilPay.days === 1 ? '' : 's'} (you usually spend ${fkr(R.untilPay.usual)} in them).</p>` : '';
   const pace = R.pace && R.pace.ratio !== null ? `<p class="small fin-mo-pace ${R.pace.ratio > 1.15 ? 'warn' : R.pace.ratio < 0.85 ? 'good' : ''}">So far this month: ${fkr(R.pace.spent)} in ${R.pace.days} days — ${Math.round(R.pace.ratio * 100)}% of what you usually spend by this day (${fkr(R.pace.usual)}).</p>` : '';
   const logo = t => typeof finLogo === 'function' ? finLogo(t, 'sm') : '';
-  const weeks = R.weeks.length ? `<h4>Week by week</h4><div class="fin-box-scroll"><table class="fin-box-t fin-mo-wk"><thead><tr><th>Days</th><th>Due</th><th class="num">Spend up to</th><th class="num">Usual</th></tr></thead><tbody>${R.weeks.map(w => `<tr><td>${finMoDay(w.from)}${w.days > 1 ? ' – ' + finMoDay(w.to) : ''}</td><td>${[...w.income.map(e => `<span class="fin-rec-chip add">${esc(e.label)} +${fkr(e.amount)}</span>`), ...w.bills.map(e => `<span class="fin-rec-chip">${logo(e.label)}${esc(e.label)} ${fkr(-e.amount)}</span>`)].join(' ') || '<span class="muted">—</span>'}</td><td class="num">${w.cap === null ? '—' : fkr(w.cap)}</td><td class="num muted">${R.expected === null ? '—' : fkr(w.usual)}</td></tr>`).join('')}</tbody></table></div>` : '';
-  const cut = new Map(R.cuts.list.map(c => [c.cat, c]));
-  const cats = R.cats.length ? `<h4>${R.cuts.list.length ? 'Where to hold back' : 'What these days usually cost'}</h4><div class="fin-box-scroll"><table class="fin-box-t fin-mo-cat"><thead><tr><th>Category</th><th class="num">Usual for these days</th><th class="num">Aim for</th></tr></thead><tbody>${R.cats.slice(0, 8).map(c => { const x = cut.get(c.cat);
-      return `<tr class="${x ? 'cut' : ''}"><td>${esc(finMoCat(c.cat))}${c.prio ? ` <small class="muted">${esc(c.prio)}</small>` : ''}</td><td class="num">${fkr(c.usual)}</td><td class="num">${x ? `<b>${fkr(x.cap)}</b><br><small>saves ${fkr(x.cut)}</small>` : fkr(c.usual)}</td></tr>`; }).join('')}</tbody></table></div>` : '';
-  const ev = R.events.length ? `<h4>Still due and still coming</h4><div class="fin-box-list">${R.events.map(e => `<div>${logo(e.label)}<span><b>${esc(e.label)}</b><small>${finMoDay(e.date)} · ${{ income: 'income', bill: 'bill', instalment: 'instalment', card: 'card bill' }[e.kind] || e.kind}${e.onCard ? ' · on the card' : ''}${e.date < today ? ' · may already be paid (after your latest figures)' : ''}</small></span><b class="num ${e.amount < 0 ? 'fin-neg' : ''}">${fm(e.amount, null, { plus: true, dec: 0 })}</b></div>`).join('')}</div>` : '';
   const todo = finMoActions(R);
   return `<div class="fin-mo ${R.verdict}">
     <div class="fin-mo-top"><span class="ic" aria-hidden="true">${V[0]}</span><div><b>${esc(V[1])}</b><span class="small">${V[2]}</span></div></div>
@@ -93,9 +88,20 @@ function finMonthHTML() {
     <div class="fin-mo-k">${tiles}</div>${pay}${pace}
     ${chart ? `<div class="fin-mo-chart">${chart}</div>` : ''}
     ${todo.length ? `<h4>What to do</h4><ol class="fin-mo-do">${todo.map(t => `<li>${t}</li>`).join('')}</ol>` : ''}
-    ${weeks}${cats}${ev}
+    <p class="small fin-mo-more">Tap any number above to see where it comes from — the week-by-week plan, where to hold back and every bill and income are there.</p>
     <p class="small muted fin-mo-basis"><b>Facts:</b> your balances${R.asOf ? ` (to ${finMoDay(R.asOf)})` : ''}, and the bills, instalments, card bill and income still due — only payments running today. <b>Estimates:</b> the usual spending, from the same days of your last ${R.months} complete month${R.months === 1 ? '' : 's'} (the median month; the range is your cheaper and dearer quarter), with recurring payments and instalments taken out because they are counted as bills. Card purchases count when you make them. Dates of bills and income are estimated from when they came before.</p>
   </div>`;
+}
+
+// the plan in detail (shown in the windows behind the six numbers, so the section on the canvas stays short)
+function finMoWeeksHTML(R) {
+  const logo = t => typeof finLogo === 'function' ? finLogo(t, 'sm') : '';
+  return R.weeks.length ? `<h4>Week by week</h4><div class="fin-box-scroll"><table class="fin-box-t fin-mo-wk"><thead><tr><th>Days</th><th>Due</th><th class="num">Spend up to</th><th class="num">Usual</th></tr></thead><tbody>${R.weeks.map(w => `<tr><td>${finMoDay(w.from)}${w.days > 1 ? ' – ' + finMoDay(w.to) : ''}</td><td>${[...w.income.map(e => `<span class="fin-rec-chip add">${esc(e.label)} +${fkr(e.amount)}</span>`), ...w.bills.map(e => `<span class="fin-rec-chip">${logo(e.label)}${esc(e.label)} ${fkr(-e.amount)}</span>`)].join(' ') || '<span class="muted">—</span>'}</td><td class="num">${w.cap === null ? '—' : fkr(w.cap)}</td><td class="num muted">${R.expected === null ? '—' : fkr(w.usual)}</td></tr>`).join('')}</tbody></table></div>` : '';
+}
+function finMoCatsHTML(R) {
+  const cut = new Map(R.cuts.list.map(c => [c.cat, c]));
+  return R.cats.length ? `<h4>${R.cuts.list.length ? 'Where to hold back' : 'What these days usually cost'}</h4><div class="fin-box-scroll"><table class="fin-box-t fin-mo-cat"><thead><tr><th>Category</th><th class="num">Usual for these days</th><th class="num">Aim for</th></tr></thead><tbody>${R.cats.slice(0, 8).map(c => { const x = cut.get(c.cat);
+  return `<tr class="${x ? 'cut' : ''}"><td>${esc(finMoCat(c.cat))}${c.prio ? ` <small class="muted">${esc(c.prio)}</small>` : ''}</td><td class="num">${fkr(c.usual)}</td><td class="num">${x ? `<b>${fkr(x.cap)}</b><br><small>saves ${fkr(x.cut)}</small>` : fkr(c.usual)}</td></tr>`; }).join('')}</tbody></table></div>` : '';
 }
 // what to do, in order
 function finMoActions(R) {
@@ -164,7 +170,7 @@ function finMoWinHTML() {
     body = `<p>An estimate from your own history: what the same days of the month cost you in your last ${R.months} complete month${R.months === 1 ? '' : 's'} (from day ${perM[0] ? perM[0].from[0] : '—'} to the month end). The middle month is used — not the average, so one unusual month does not swing it. Recurring payments and instalments are taken out: they are counted as bills.</p>`
       + (perM.length ? `<div class="fin-box-scroll"><table class="fin-box-t"><thead><tr><th>Month</th><th>Days</th><th class="num">Spent in those days</th></tr></thead><tbody>${perM.slice().reverse().map(x => `<tr class="${mids.has(x.amount) ? 'mid' : ''}"><td>${fmon(x.m)}</td><td>${x.from[0]}–${FIN.dim(x.m)}</td><td class="num">${fk(x.amount)}${mids.has(x.amount) ? ` <small>← ${mids.size > 1 ? 'middle (the usual is halfway between these two)' : 'middle month'}</small>` : ''}</td></tr>`).join('')}</tbody></table></div>`
         + eq([['', 'Usual for these days', med === null ? '—' : fk(med), `your cheaper months ${fk(R.lowS)} · dearer months ${fk(R.highS)}`], ...(R.gapSpend > 0 ? [['−', 'Days already gone but not in your figures', fk(R.gapSpend), `${R.gapDays} day${R.gapDays === 1 ? '' : 's'} after ${fday(R.asOf)}`]] : []), ['=', 'Usual spending to month end', fk(R.usualFromToday), 'from today', 'tot']]) : '<p class="muted">No complete month to learn from yet.</p>')
-      + (R.cats.length ? `<h4>By category</h4><div class="fin-box-list">${R.cats.slice(0, 8).map(c => row(esc(finMoCat(c.cat)), fk(c.usual), `usual for these days · cheaper months ${fk(c.low)}${c.prio ? ' · ' + esc(c.prio) : ''}`)).join('')}</div>` : '')
+      + finMoCatsHTML(R)
       + (big.length ? `<h4>The biggest payments in those days</h4><p class="small muted">If one of these was not really spending (money moved between your accounts, or paid out for someone else), change its category in All transactions and every number follows.</p><div class="fin-box-list">${big.map(s => row(`${logo(s.desc)}${esc(FIN.cleanDesc(s.desc))}`, fk(s.amount), `${fday(s.date)} · ${esc(finMoCat(s.cat))}`)).join('')}</div><div class="row"><button class="btn sm ghost" data-act="fin-sec" data-s="ledger">📒 All transactions</button></div>` : '');
   } else if (key === 'end') {
     body = `<p>Where the month ends if you spend as usual — your money now, plus what still comes in, minus what is still due and your usual spending.</p>`
@@ -180,7 +186,8 @@ function finMoWinHTML() {
           ['=', 'You can spend a day', R.perDay === null ? '—' : fk(R.perDay), R.room !== null && R.room - R.reserve <= 0 ? 'nothing is left above the reserve' : '', 'tot']])
       + `<p class="small">Without keeping the reserve: ${R.perDayAll === null ? '—' : fk(R.perDayAll)} a day. You usually spend about ${R.usualFromToday === null ? '—' : fk(R.usualFromToday / Math.max(1, R.leftDays))} a day in these days.</p>`
       + (R.untilPay && R.untilPay.perDay !== null ? `<p class="small">Until ${esc(R.untilPay.label)} on ${fday(R.untilPay.date)} the money has to last on its own: ${fk(Math.max(0, R.untilPay.room))} for ${R.untilPay.days} day${R.untilPay.days === 1 ? '' : 's'} = <b>${fk(R.untilPay.perDay)} a day</b>.</p>` : '')
-      + `<p class="small muted">The reserve follows your settings (months of essentials). Card spending counts too — it is paid from next month’s bill.</p>`;
+      + `<p class="small muted">The reserve follows your settings (months of essentials). Card spending counts too — it is paid from next month’s bill.</p>`
+      + finMoWeeksHTML(R);
   }
   return `<section class="fin-talk-win fin-mo-win" id="fin-mo-win" role="dialog" aria-label="${esc(W[1])}">
     <div class="fin-talk-win-h"><span aria-hidden="true">${W[0]}</span><b>${esc(W[1])} — where from, and how</b><span class="spacer"></span><button class="icon-btn" data-act="fin-mo-k" data-k="close" aria-label="Close">${I.x}</button></div>
