@@ -854,3 +854,16 @@ html.fin-cv-lock, html.fin-cv-lock body { overflow: hidden; }
 .fin-mo-tabs button { font: 600 12px/1.2 var(--font, system-ui); padding: 6px 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: inherit; cursor: pointer; }
 .fin-mo-tabs button.on { border-color: #c9a227; background: color-mix(in srgb, #c9a227 14%, var(--surface)); }
 .fin-room-t { padding-top: 6px; padding-bottom: 6px; }   /* a selected (highlighted) title keeps its words clear of its edge */
+
+/* Additional expenses — one box a month (68-finance-extra) */
+.fin-xe { display: grid; gap: 10px; } .fin-xe h4 { margin: 4px 0 0; } .fin-xe p { margin: 0; }
+.fin-xe-box { display: grid; gap: 10px; }
+.fin-xe-bar { height: 8px; border-radius: 4px; background: color-mix(in srgb, #e0a030 30%, var(--surface)); overflow: hidden; } .fin-xe-bar i { display: block; height: 100%; background: #2e9e5b; border-radius: 4px; }
+.fin-xe .fin-box-list > div.open b:first-child, .fin-xe .fin-box-list > div.open small { color: #b7791f; }
+.fin-xe-win { left: 16px; right: 16px; margin: 0 auto; top: 16px; bottom: auto; width: min(640px, calc(100% - 32px)); max-height: calc(100% - 32px); }
+.fin-xe-w { display: block; } .fin-xe-w > * + * { margin-top: 10px; } .fin-xe-w p { margin: 0; }
+.fin-xe-rows { display: grid; gap: 6px; }
+.fin-xe-row { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, .8fr) minmax(0, 1.2fr) auto; gap: 6px; align-items: center; }
+@media (max-width: 560px) { .fin-xe-row { grid-template-columns: minmax(0, 1fr) minmax(0, .8fr) auto; } .fin-xe-row input[data-k="note"] { grid-column: 1 / -2; grid-row: 2; } }
+.fin-xe-left { font-weight: 700; color: #b7791f; } .fin-xe-left.neg { color: #d9534f; }
+.fin-xe-accts > div.tot { border-top: 2px solid var(--ink-3); border-bottom: 0; } .fin-xe-accts > div.tot b.num { font-size: 16px; } .fin-xe-accts > div.muted { opacity: .65; }

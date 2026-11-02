@@ -130,7 +130,8 @@ function finCvRooms(root) {
   const buy = root.children.find(b => b.id === 'buy');
   if (buy) R.push({ id: 'buy', kind: 'goals', full: true, node: buy, icon: buy.icon, title: buy.label, sum: buy.sum, hue: buy.hue });
   for (const b of root.children) if (b.id !== 'buy') R.push({ id: b.id, kind: 'room', node: b, icon: b.icon, title: b.label, sum: b.sum, hue: b.hue, sec: b.sec });
-  if (typeof finMonthRoom === 'function') R.push(finMonthRoom());   // how to manage the rest of this month (66-finance-month)
+  if (typeof finMonthRoom === 'function') R.push(finMonthRoom());
+  if (typeof finXeRoom === 'function') R.push(finXeRoom());   // this month's Additional expenses (68-finance-extra)   // how to manage the rest of this month (66-finance-month)
   if (typeof finBoxRooms === 'function') R.push(...finBoxRooms());   // your own boxes, made with Tell the canvas
   // parts opened as rooms, each right after the room it belongs to
   const out = [];
@@ -289,6 +290,7 @@ function finDetBody(id, plan, n) {
   if (id === 'free' && typeof finFreeHTML === 'function') return finFreeHTML();
   if ((id.startsWith('rc:') || id === 'rc~months') && typeof finRecDetail === 'function') return finRecDetail(id);
   if (id === 'month' && typeof finMonthHTML === 'function') return finMonthHTML();
+  if (id === 'xe' && typeof finXeHTML === 'function') return finXeHTML();
   if (id.startsWith('box:') && typeof finBoxHTML === 'function') return finBoxHTML(id);
   if (id === 'gk') return finGoalsHead(plan, n);
   if (id === 'gt') return finGoalsTimeline(plan);
@@ -414,7 +416,7 @@ VIEW_FN.finance = () => {
   const cv = UI.fin.cv;
   // full screen: the canvas alone — no title, no description, no talk box; a few controls float in its corner
   if (cv.full) return `<div class="wrap fin fin-canvas-page"><section class="fin-cvwrap full" id="fin-s-map" aria-label="Money canvas, full screen">
-    <div class="fin-cv-stage">${finCvBoard()}${finPopHTML()}${typeof finCvMiniHTML === 'function' ? finCvMiniHTML() + finCvHelpHTML() : ''}${typeof finCvEditorHTML === 'function' ? finCvEditorHTML() : ''}${typeof finTalkWinHTML === 'function' ? finTalkWinHTML() + finMenuHTML() : ''}${typeof finBalWinHTML === 'function' ? finBalTabHTML() + finBalWinHTML() : ''}${typeof finHealthHTML === 'function' && UI.fin.healthWin ? finHealthHTML() : ''}${typeof finChanWinHTML === 'function' && UI.fin.chWin ? finChanWinHTML() : ''}${typeof finMoWinHTML === 'function' && UI.fin.moWin ? finMoWinHTML() : ''}
+    <div class="fin-cv-stage">${finCvBoard()}${finPopHTML()}${typeof finCvMiniHTML === 'function' ? finCvMiniHTML() + finCvHelpHTML() : ''}${typeof finCvEditorHTML === 'function' ? finCvEditorHTML() : ''}${typeof finTalkWinHTML === 'function' ? finTalkWinHTML() + finMenuHTML() : ''}${typeof finBalWinHTML === 'function' ? finBalTabHTML() + finBalWinHTML() : ''}${typeof finHealthHTML === 'function' && UI.fin.healthWin ? finHealthHTML() : ''}${typeof finChanWinHTML === 'function' && UI.fin.chWin ? finChanWinHTML() : ''}${typeof finMoWinHTML === 'function' && UI.fin.moWin ? finMoWinHTML() : ''}${typeof finXeWinHTML === 'function' && UI.fin.xeEdit ? finXeWinHTML() : ''}
       <div class="fin-cv-float" role="toolbar" aria-label="Canvas controls">${typeof finCvToolsHTML === 'function' ? finCvToolsHTML() : ''}
         ${UI.fin.cvOpen.length || UI.fin.pop ? `<button class="btn sm" data-act="fin-cv-close-all" title="Fold every opened detail and part">Close details</button>` : ''}
         <div class="seg zoom" role="group" aria-label="Zoom"><button data-act="fin-cv-zoom" data-v="out" aria-label="Zoom out">−</button><button data-act="fin-cv-fit" title="Fit to the screen"><span id="fin-cv-z">${Math.round(cv.k * 100)}%</span></button><button data-act="fin-cv-zoom" data-v="in" aria-label="Zoom in">+</button></div>
@@ -432,7 +434,7 @@ VIEW_FN.finance = () => {
       <button class="btn sm" data-act="fin-cv-all" data-v="open" title="Unfold every room">Unfold all</button><button class="btn sm" data-act="fin-cv-all" data-v="fold" title="Fold every room to its title">Fold all</button>
       <div class="seg zoom" role="group" aria-label="Zoom"><button data-act="fin-cv-zoom" data-v="out" aria-label="Zoom out">−</button><button data-act="fin-cv-fit" title="Fit to the screen"><span id="fin-cv-z">${Math.round(cv.k * 100)}%</span></button><button data-act="fin-cv-zoom" data-v="in" aria-label="Zoom in">+</button></div>
       <button class="btn sm" data-act="fin-cv-full" aria-pressed="${cv.full}" title="${cv.full ? 'Back (Esc)' : 'Full screen'}">${cv.full ? '✕ Close' : '⤢ Full screen'}</button></div>
-    <div class="fin-cv-stage">${finCvBoard()}${finPopHTML()}${typeof finCvMiniHTML === 'function' ? finCvMiniHTML() + finCvHelpHTML() : ''}${typeof finCvEditorHTML === 'function' ? finCvEditorHTML() : ''}${typeof finTalkWinHTML === 'function' ? finTalkWinHTML() + finMenuHTML() : ''}${typeof finBalWinHTML === 'function' ? finBalTabHTML() + finBalWinHTML() : ''}${typeof finHealthHTML === 'function' && UI.fin.healthWin ? finHealthHTML() : ''}${typeof finChanWinHTML === 'function' && UI.fin.chWin ? finChanWinHTML() : ''}${typeof finMoWinHTML === 'function' && UI.fin.moWin ? finMoWinHTML() : ''}</div>
+    <div class="fin-cv-stage">${finCvBoard()}${finPopHTML()}${typeof finCvMiniHTML === 'function' ? finCvMiniHTML() + finCvHelpHTML() : ''}${typeof finCvEditorHTML === 'function' ? finCvEditorHTML() : ''}${typeof finTalkWinHTML === 'function' ? finTalkWinHTML() + finMenuHTML() : ''}${typeof finBalWinHTML === 'function' ? finBalTabHTML() + finBalWinHTML() : ''}${typeof finHealthHTML === 'function' && UI.fin.healthWin ? finHealthHTML() : ''}${typeof finChanWinHTML === 'function' && UI.fin.chWin ? finChanWinHTML() : ''}${typeof finMoWinHTML === 'function' && UI.fin.moWin ? finMoWinHTML() : ''}${typeof finXeWinHTML === 'function' && UI.fin.xeEdit ? finXeWinHTML() : ''}</div>
   </section>
   ${typeof finTalkHTML === 'function' ? `<section class="card fin-card fin-talk-card" aria-label="Tell the canvas"><div class="row"><h2>Tell the canvas</h2><span class="spacer"></span>${UI.fin.talk.win ? '' : `<button class="btn sm ghost" data-act="fin-talk-win" title="Open it in a window on the canvas ( T )">⧉ Open on the canvas</button>`}</div>${UI.fin.talk.win ? finTalkDockedHTML() : finTalkHTML()}</section>` : ''}
 </div>`;

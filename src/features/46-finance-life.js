@@ -246,6 +246,7 @@ function finAnswer(id, how, extra = {}) {
   } else {
     finSave(q => { const x = (q.questions || []).find(z => z.id === id); if (x) Object.assign(x, { answered: nowISO(), answer: how, ...extra }); q.questions = (q.questions || []).filter(z => !z.answered || z.answered > FIN.addDays(finToday(), -60)); });
     const x = (p.questions || []).find(z => z.id === id);
+    if (x && x.kind === 'balance' && how === 'spend' && x.diff < 0 && typeof finXeAdd === 'function' && FIN_XE_KINDS.includes((finAcct(x.acct) || {}).kind)) { finXeAdd(x.acct, x.date, x.diff, { cat: extra.cat }); render(); return; }
     if (x && x.kind === 'balance' && ['spend', 'income', 'theirs'].includes(how)) {
       const amt = x.diff, a = finAcct(x.acct);
       const t = { id: E.uid('tx'), acct: x.acct, date: x.date, desc: how === 'spend' ? 'Spending seen in the balance' : how === 'income' ? 'Money in seen in the balance' : 'Someone else’s money (balance)', amount: amt, currency: (a || {}).currency, cat: how === 'spend' ? (extra.cat || 'other_exp') : how === 'income' ? 'other_inc' : 'held', party: how === 'theirs' ? (extra.party || '') : '', catSrc: 'manual', flags: ['from_balance'], manual: true, src: { f: '', manual: true }, createdAt: nowISO(), hist: [{ at: nowISO(), f: 'created', to: 'from a balance update', why: 'you explained a balance change' }] };
@@ -428,7 +429,7 @@ function finDailyCheck() {
     if (r.balance === null && r.available === null && r.outstanding === null) continue;
     const newBal = r.balance !== null ? r.balance : r.outstanding !== null ? -r.outstanding : null;
     const xb = finLatest(x.a, { base: true });   // compared with the last balance known for sure (later lines are counted below, once)
-    if (newBal !== null) r.change = FIN.balanceChange(xb.date && typeof (xb.balance ?? (xb.owed !== undefined && xb.owed !== null ? -xb.owed : null)) === 'number' ? { balance: xb.balance ?? -xb.owed, date: xb.date } : null, { balance: newBal, date: U.date }, finTx().filter(t => t.acct === id));
+    if (newBal !== null) r.change = FIN.balanceChange(xb.date && typeof (xb.balance ?? (xb.owed !== undefined && xb.owed !== null ? -xb.owed : null)) === 'number' ? { balance: xb.balance ?? -xb.owed, date: xb.date } : null, { balance: newBal, date: U.date }, finTx().filter(t => t.acct === id && !(t.flags || []).includes('from_balance')));
     out.push(r);
   }
   // an unexplained drop in one account matched by the same rise in another: money moved between your accounts
@@ -437,7 +438,7 @@ function finDailyCheck() {
 }
 function finDailyPreviewHTML(U) {
   const P = U.preview; if (!P.length) return '<p class="small muted">Nothing filled in.</p>';
-  const cls = r => { const c = r.change; if (!c || c.first) return 'first balance recorded'; if (!c.unexplained) return c.n ? `matches ${c.n} recorded transaction${c.n === 1 ? '' : 's'} ✓` : 'no change'; if (r.transfer) return `moved to/from ${esc(r.transfer)} (between your accounts)`; return c.unexplained < 0 ? `${fm(-c.unexplained)} not in any statement: spending, a withdrawal or a transfer? — you will be asked` : `${fm(c.unexplained)} not in any statement: income, a deposit, a transfer or someone else’s money? — you will be asked`; };
+  const cls = r => { const c = r.change; if (!c || c.first) return 'first balance recorded'; if (!c.unexplained) return c.n ? `matches ${c.n} recorded transaction${c.n === 1 ? '' : 's'} ✓` : 'no change'; if (r.transfer) return `moved to/from ${esc(r.transfer)} (between your accounts)`; return c.unexplained < 0 ? (FIN_XE_KINDS.includes(r.kind) ? `${fm(-c.unexplained)} less than your transactions explain — goes to this month’s Additional expenses, where you can say where it went` : `${fm(-c.unexplained)} not in any statement: spending, a withdrawal or a transfer? — you will be asked`) : `${fm(c.unexplained)} not in any statement: income, a deposit, a transfer or someone else’s money? — you will be asked`; };
   const left = finNow().accts.filter(x => !P.some(r => r.id === x.a.id)).map(x => x.a.name);
   return `<div class="fin-preview"><h3>Check before saving</h3><div class="tbl-wrap"><table class="tbl"><thead><tr><th>Account</th><th class="num">Previous</th><th class="num">New</th><th class="num">Difference</th><th>What it looks like</th></tr></thead><tbody>
     ${P.map(r => `<tr><td>${esc(r.name)}</td><td class="num">${r.holding ? '' : r.prev && r.prev.date ? `${fm(r.prev.balance ?? (r.prev.owed !== undefined ? -r.prev.owed : null))}<br><small class="muted">${fday(r.prev.date)}</small>` : '—'}</td><td class="num">${r.balance !== null ? fm(r.balance) : ''}${r.outstanding !== null && r.outstanding !== undefined ? `owed ${fm(r.outstanding)}` : ''}${r.available !== null && r.available !== undefined ? `<br><small>available ${fm(r.available)}</small>` : ''}</td><td class="num">${r.change && !r.change.first ? fmc(r.change.diff) : ''}</td><td class="small">${r.holding ? 'principal updated' : cls(r)}</td></tr>`).join('')}</tbody></table></div>
@@ -445,16 +446,18 @@ function finDailyPreviewHTML(U) {
     <div class="row end"><button class="btn ghost" data-act="fin-daily-x">Cancel</button><button class="btn primary" data-act="fin-daily-save">Save these balances</button></div></div>`;
 }
 function finDailySave() {
-  const U = UI.fin.daily, at = nowISO(), snaps = [], qs = [];
+  const U = UI.fin.daily, at = nowISO(), snaps = [], qs = [], xe = [];
   for (const r of U.preview || []) {
     if (r.holding) { finSave(q => { const h = q.holdings.find(x => x.id === 'mom'); if (h) { h.history = [...(h.history || []), { at, principal: h.principal }]; h.principal = r.balance; } }); continue; }
     snaps.push({ id: E.uid('bl'), acct: r.id, date: U.date, balance: r.balance, available: r.available, outstanding: r.outstanding, source: 'daily', at });
+    // a bank or cash account lower than its transactions explain: the difference goes to this month's Additional expenses
+    if (r.change && r.change.unexplained < 0 && !r.transfer && typeof finXeAdd === 'function' && FIN_XE_KINDS.includes(r.kind)) { finXeAdd(r.id, U.date, r.change.unexplained, { prev: FIN.r2(r.balance - r.change.unexplained), now: r.balance }); xe.push(r); continue; }
     if (r.change && r.change.unexplained && !r.transfer) qs.push({ id: E.uid('q'), kind: 'balance', acct: r.id, date: U.date, diff: r.change.unexplained, at, text: `${r.name}: ${fm(Math.abs(r.change.unexplained))} ${r.change.unexplained < 0 ? 'left' : 'came into'} the account by ${fday(U.date)} that no statement shows yet. What was it?` });
   }
   if (snaps.length) finAddSnaps(snaps);
   if (qs.length) finSave(q => { q.questions = [...(q.questions || []), ...qs]; });
   finLog('balances updated', { n: snaps.length });
-  UI.fin.daily = { date: finToday(), v: {} }; render(); toast(`${snaps.length} balance${snaps.length === 1 ? '' : 's'} saved${qs.length ? ` · ${qs.length} question${qs.length === 1 ? '' : 's'} for you` : ''}.`);
+  UI.fin.daily = { date: finToday(), v: {} }; render(); toast(`${snaps.length} balance${snaps.length === 1 ? '' : 's'} saved${xe.length ? ` · ${fm(-xe.reduce((s, r) => s + r.change.unexplained, 0))} added to Additional expenses — explain it there` : ''}${qs.length ? ` · ${qs.length} question${qs.length === 1 ? '' : 's'} for you` : ''}.`);
 }
 // balances over time and between two dates
 function finBalHistoryHTML() {

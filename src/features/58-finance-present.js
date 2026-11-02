@@ -13,7 +13,8 @@ const FPR_STEP = 1300, FPR_MAX = 14;
 function finChangeIndex() {
   const m = finCvIndex();
   if (typeof finCanvasP === 'function') for (const b of finCanvasP().boxes) m.set('box:' + b.id, [b.title || '', '', JSON.stringify(b.show || {}) + (b.note || '') + (b.branch || ''), ''].join('|'));
-  if (typeof finMonthRoom === 'function') m.set('month', ['', '', finMonthRoom().sum, ''].join('|'));   // the rest of this month moves with every change
+  if (typeof finMonthRoom === 'function') { const r = finMonthRoom(); m.set('month', [r.title, '', r.sum, ''].join('|')); }
+  if (typeof finXeRoom === 'function') { const r = finXeRoom(); m.set('xe', [r.title, '', r.sum, ''].join('|')); }   // the rest of this month moves with every change
   m.pos = new Map(UI.fin.cvPos || []); m.mode = UI.fin.cv.mode;
   return m;
 }

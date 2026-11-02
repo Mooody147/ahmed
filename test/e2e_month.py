@@ -92,7 +92,7 @@ async def main():
         await ev("window.__AR.UI.fin.moWin = null"); await ev("window.__FIN.open('map')"); await pg.wait_for_timeout(500)
         # 6. a new balance: the forecast follows at once (the Balances tab)
         prim = await ev("window.__FIN.prefs().accounts.find(a => a.kind === 'current' && a.number && a.number.endsWith('0012')).id")
-        await pg.click('[data-act="fin-bal-win"]'); await pg.wait_for_selector('#fin-bal-win')
+        await pg.click('.fin-bal-tab'); await pg.wait_for_selector('#fin-bal-win')
         await pg.fill(f'#fin-bal-win [data-id="{prim}"][data-k="balance"]', '1000'); await pg.click('[data-act="fin-bal-save"]'); await pg.wait_for_timeout(900)
         M2 = await ev("window.__FIN.month()"); print('AFTER 1,000', {k: M2[k] for k in ['start', 'asOf', 'cash', 'income', 'bills', 'expected', 'usualFromToday', 'endBal', 'perDay', 'perDayAll', 'verdict', 'need', 'untilPay']}, M2['cuts'], M2['actions'])
         assert M2['cash'] == 1000 and M2['asOf'] == today.isoformat() and M2['start'] == today.isoformat(), 'from today’s balance, starting today'
